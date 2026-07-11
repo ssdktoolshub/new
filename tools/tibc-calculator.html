@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TIBC & Transferrin Saturation Calculator &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Calculate Transferrin Saturation and evaluate Total Iron Binding Capacity (TIBC) online with bilingual EN/BN support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--low-color) 0%, 
+        var(--normal-color) 45%, 
+        var(--high-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">TIBC Calculator</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Evaluate Total Iron Binding Capacity (TIBC) and calculate Transferrin Saturation percentage to assess iron transport status.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Iron & TIBC Inputs</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valIron" data-translate="labelIron">Serum Iron (µg/dL)</label>
+              <input type="number" step="0.1" id="valIron" placeholder="e.g. 95" min="0" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valTibc" data-translate="labelTibc">Total Iron Binding Capacity - TIBC (µg/dL)</label>
+              <input type="number" step="0.1" id="valTibc" placeholder="e.g. 320" min="1" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="calculateTIBC()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnCalculate">Calculate & Analyze</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">⚖️</span>
+          <h4 data-translate="placeholderTitle">Calculation Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter Serum Iron and TIBC levels then click calculate to evaluate transferrin saturation and capacities.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 TIBC & Saturation Analysis</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="sumIron">Iron</strong>: <span id="resIronVal">-</span> µg/dL</span>
+            <span><strong data-translate="sumTibc">TIBC</strong>: <span id="resTibcVal">-</span> µg/dL (<span id="resTibcStatus">-</span>)</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resSatVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" data-translate="satLabel">Transferrin Saturation (%)</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--low-color);">< 20%</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">20% - 50%</span>
+              <span id="tickHigh" style="color: var(--high-color);">50%+</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: TIBC & Saturation</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is TIBC?</strong><br><span data-translate="eduA1">Total Iron Binding Capacity (TIBC) measures the maximum amount of iron that can bind to transferrin (the primary iron-transporting protein). It serves as an indirect gauge of transferrin concentration.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is Transferrin Saturation?</strong><br><span data-translate="eduA2">Transferrin Saturation (TSAT) indicates the percentage of transferrin binding sites occupied by iron. A low TSAT (< 20%) points towards iron deficiency anemia, while a high TSAT (> 50%) suggests iron overload or hemochromatosis.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "TIBC Calculator",
+      toolDesc: "Evaluate Total Iron Binding Capacity (TIBC) and calculate Transferrin Saturation percentage to assess iron transport status.",
+      inputsTitle: "🧬 Iron & TIBC Inputs",
+      clearBtn: "Reset",
+      labelIron: "Serum Iron (µg/dL)",
+      labelTibc: "Total Iron Binding Capacity - TIBC (µg/dL)",
+      btnCalculate: "Calculate & Analyze",
+      placeholderTitle: "Calculation Report Pending",
+      placeholderDesc: "Enter Serum Iron and TIBC levels then click calculate to evaluate transferrin saturation and capacities.",
+      reportTitle: "🔬 TIBC & Saturation Analysis",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      sumIron: "Iron",
+      sumTibc: "TIBC",
+      labelDate: "Date",
+      satLabel: "Transferrin Saturation (%)",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      tibcLow: "Low TIBC",
+      tibcNormal: "Normal TIBC",
+      tibcHigh: "High TIBC",
+      badgeLow: "Low Saturation (Iron Deficiency risk)",
+      badgeNormal: "Normal Transferrin Saturation",
+      badgeHigh: "High Saturation (Possible Iron Overload)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "টিআইবিসি ক্যালকুলেটর",
+      toolDesc: "শরীরে লোহা পরিবহনের অবস্থা মূল্যায়নের জন্য টোটাল আয়রন বাইন্ডিং ক্যাপাসিটি (TIBC) এবং ট্রান্সফারিন স্যাচুরেশনের শতকরা হার হিসাব করুন।",
+      inputsTitle: "🧬 আয়রন ও টিআইবিসি ইনপুট",
+      clearBtn: "মুছে ফেলুন",
+      labelIron: "সিরাম আয়রন (µg/dL)",
+      labelTibc: "টোটাল আয়রন বাইন্ডিং ক্যাপাসিটি - TIBC (µg/dL)",
+      btnCalculate: "হিসাব ও বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "সিরাম আয়রন এবং টিআইবিসি-এর মান লিখে হিসাব বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 টিআইবিসি ও স্যাচুরেশন বিশ্লেষণ",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      sumIron: "আয়রন",
+      sumTibc: "TIBC",
+      labelDate: "তারিখ",
+      satLabel: "ট্রান্সফারিন স্যাচুরেশন (%)",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      tibcLow: "কম TIBC",
+      tibcNormal: "স্বাভাবিক TIBC",
+      tibcHigh: "উচ্চ TIBC",
+      badgeLow: "কম স্যাচুরেশন (আয়রন স্বল্পতার ঝুঁকি)",
+      badgeNormal: "স্বাভাবিক ট্রান্সফারিন স্যাচুরেশন",
+      badgeHigh: "উচ্চ স্যাচুরেশন (আয়রন আধিক্যের সম্ভাবনা)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "टीआईबीसी कैलकुलेटर",
+      toolDesc: "कुल आयरन बाइंडिंग क्षमता (टीआईबीसी) का मूल्यांकन करें और आयरन परिवहन स्थिति का आकलन करने के लिए ट्रांसफरिन संतृप्ति प्रतिशत की गणना करें।",
+      inputsTitle: "🧬 आयरन और टीआईबीसी इनपुट",
+      clearBtn: "रीसेट करें",
+      labelIron: "सीरम आयरन (µg/dL)",
+      labelTibc: "कुल आयरन बाइंडिंग क्षमता - TIBC (µg/dL)",
+      btnCalculate: "गणना एवं विश्लेषण करें",
+      placeholderTitle: "गणना रिपोर्ट लंबित",
+      placeholderDesc: "सीरम आयरन और टीआईबीसी स्तर दर्ज करें, फिर ट्रांसफ़रिन संतृप्ति और क्षमताओं का मूल्यांकन करने के लिए गणना पर क्लिक करें।",
+      reportTitle: "🔬 टीआईबीसी और संतृप्ति विश्लेषण",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      sumIron: "लोहा",
+      sumTibc: "टीआईबीसी",
+      labelDate: "दिनांक",
+      satLabel: "ट्रांसफ़रिन संतृप्ति (%)",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      tibcLow: "कम टीआईबीसी",
+      tibcNormal: "सामान्य टीआईबीसी",
+      tibcHigh: "उच्च टीआईबीसी",
+      badgeLow: "कम संतृप्ति (आयरन की कमी का जोखिम)",
+      badgeNormal: "सामान्य ट्रांसफ़रिन संतृप्ति",
+      badgeHigh: "उच्च संतृप्ति (संभावित लौह अधिभार)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is TIBC?", a: "TIBC stands for Total Iron Binding Capacity. It measures how well transferrin (a protein) can carry iron through your blood." },
+      { q: "What is the normal range of TIBC?", a: "The normal range is 250 to 370 µg/dL." },
+      { q: "What is Transferrin Saturation?", a: "It is the percentage of transferrin that is carrying iron. It is calculated by dividing Serum Iron by TIBC and multiplying by 100." },
+      { q: "What does high TIBC and low saturation mean?", a: "This is a classic sign of iron deficiency anemia. The body builds more transferrin (raising TIBC) but there is little iron to load onto it." },
+      { q: "What does low TIBC and high saturation mean?", a: "This is often associated with iron overload conditions, such as hemochromatosis, or liver disease where transferrin production is reduced." }
+    ],
+    bn: [
+      { q: "টিআইবিসি (TIBC) কী?", a: "TIBC এর পূর্ণরূপ হলো টোটাল আয়রন বাইন্ডিং ক্যাপাসিটি। এটি রক্তে আয়রন বহনকারী প্রোটিন ট্রান্সফারিনের মোট ধারণক্ষমতা নির্দেশ করে।" },
+      { q: "টিআইবিসি-এর স্বাভাবিক মাত্রা কত?", a: "স্বাভাবিক মাত্রা ২৫০ থেকে ৩৭০ µg/dL।" },
+      { q: "ট্রান্সফারিন স্যাচুরেশন কী?", a: "এটি প্রোটিনের লোহা বহনের শতকরা হার। সিরাম আয়রনকে টিআইবিসি দ্বারা ভাগ করে ১০০ দিয়ে গুণ করে এটি হিসাব করা হয়।" },
+      { q: "উচ্চ টিআইবিসি এবং কম স্যাচুরেশন বলতে কী বোঝায়?", a: "এটি আয়রন স্বল্পতাজনিত রক্তাল্পতার প্রধান লক্ষণ। শরীর বেশি বাহক তৈরি করে (TIBC বৃদ্ধি পায়) কিন্তু তাতে চড়ার মতো লোহা থাকে না।" },
+      { q: "কম টিআইবিসি এবং উচ্চ স্যাচুরেশন বলতে কী বোঝায়?", a: "এটি মূলত শরীরে অতিরিক্ত লোহা জমার রোগ (হেমোক্রোমাটোসিস) বা লিভারের জটিলতায় ঘটে যেখানে বাহক প্রোটিন উৎপাদন ব্যাহত হয়।" }
+    ],
+    hi: [
+      { q: "टीआईबीसी क्या है?", a: "TIBC का मतलब टोटल आयरन बाइंडिंग कैपेसिटी है। यह मापता है कि ट्रांसफ़रिन (एक प्रोटीन) आपके रक्त के माध्यम से आयरन को कितनी अच्छी तरह ले जा सकता है।" },
+      { q: "टीआईबीसी की सामान्य सीमा क्या है?", a: "सामान्य सीमा 250 से 370 µg/dL है।" },
+      { q: "ट्रांसफ़रिन संतृप्ति क्या है?", a: "यह ट्रांसफ़रिन का प्रतिशत है जो आयरन ले जाता है। इसकी गणना सीरम आयरन को TIBC से विभाजित करके और 100 से गुणा करके की जाती है।" },
+      { q: "उच्च TIBC और निम्न संतृप्ति का क्या अर्थ है?", a: "यह आयरन की कमी से होने वाले एनीमिया का एक क्लासिक संकेत है। शरीर अधिक ट्रांसफ़रिन बनाता है (TIBC बढ़ाता है) लेकिन उस पर लोड करने के लिए बहुत कम आयरन होता है।" },
+      { q: "निम्न TIBC और उच्च संतृप्ति का क्या अर्थ है?", a: "यह अक्सर आयरन अधिभार स्थितियों से जुड़ा होता है, जैसे हेमोक्रोमैटोसिस, या यकृत रोग जहां ट्रांसफ़रिन उत्पादन कम हो जाता है।" }
+    ]
+  };
+
+  const tibcInsights = {
+    en: {
+      low: {
+        desc: "Your Transferrin Saturation is low (< 20%), indicating insufficient iron binding. If accompanied by high TIBC, this strongly points to Iron Deficiency Anemia.",
+        factors: ["Poor dietary iron intake", "Chronic blood loss (heavy menses, ulcer, GI bleeding)", "Increased iron demand (pregnancy, growth phases)"],
+        symptoms: ["Fatigue, generalized weakness", "Pale skin, tongue inflammation", "Shortness of breath under mild strain", "Cold intolerance"],
+        prevention: ["Incorporate heme iron (poultry, fish, red meat) and non-heme iron (leafy greens, legumes)", "Limit caffeine at meal times to avoid blocking iron absorption"],
+        consult: "Consult your doctor. A CBC, ferritin level, and targeted iron supplementation are typical next steps."
+      },
+      normal: {
+        desc: "Your Transferrin Saturation is normal (20% - 50%), representing a healthy equilibrium between available iron and carrier proteins.",
+        factors: ["Adequate dietary iron", "Healthy protein synthesis in liver", "Normal iron recycling in spleen"],
+        symptoms: ["No iron-related clinical symptoms", "Good stamina and concentration"],
+        prevention: ["Continue eating a well-balanced diet containing iron and vitamins"],
+        consult: "Continue routine wellness checks."
+      },
+      high: {
+        desc: "Your Transferrin Saturation is elevated (> 50%), suggesting a high saturation of iron carriers. This is a primary screening indicator for Iron Overload or Hemochromatosis.",
+        factors: ["Genetic Hemochromatosis (excess iron accumulation)", "Frequent red cell transfusions", "Excessive therapeutic iron supplements", "Severe liver failure"],
+        symptoms: ["Chronic joint pain, particularly in hands", "Persistent fatigue", "Abdominal discomfort", "Hyperpigmentation of the skin"],
+        prevention: ["Immediately halt any active iron or vitamin C supplements", "Limit high-iron dietary sources and avoid alcohol"],
+        consult: "Consult a healthcare provider or hematologist. Confirming iron levels, ferritin, or genetic markers is crucial."
+      }
+    },
+    bn: {
+      low: {
+        desc: "আপনার ট্রান্সফারিন স্যাচুরেশন কম (< ২০%)। এটি আয়রনের মারাত্মক ঘাটতির ইঙ্গিত দেয়। যদি টিআইবিসি অতিরিক্ত থাকে, তবে এটি আয়রন ডেফিসিয়েন্সি অ্যানিমিয়া নিশ্চিত করে।",
+        factors: ["খাদ্যে পর্যাপ্ত আয়রন বা লোহার অভাব", "ঋতুস্রাব বা পাকস্থলী থেকে দীর্ঘমেয়াদী রক্তক্ষরণ", "গর্ভাবস্থা বা বর্ধনশীল বয়সে বাড়তি চাহিদা"],
+        symptoms: ["তীব্র অবসাদ, সাধারণ দুর্বলতা", "ত্বক ও জিহ্বা ফেকাসে হয়ে যাওয়া", "সামান্য পরিশ্রমে শ্বাসকষ্ট", "হাত-পা ঠান্ডা হয়ে যাওয়া"],
+        prevention: ["আয়রনসমৃদ্ধ খাবার (লাল মাংস, ডাল, পালংশাক) গ্রহণ করুন", "খাবারের সাথে ভিটামিন সি গ্রহণ করুন এবং চা/কফি এড়িয়ে চলুন"],
+        consult: "চিকিৎসকের পরামর্শ নিয়ে কারণ নির্ণয় ও যথাযথ ওরাল আয়রন সাপ্লিমেন্ট সেবন শুরু করুন।"
+      },
+      normal: {
+        desc: "আপনার ট্রান্সফারিন স্যাচুরেশন স্বাভাবিক সীমার (২০% - ৫০%) মধ্যে রয়েছে, যা রক্তে আয়রন ও প্রোটিনের ভারসাম্যপূর্ণ অবস্থা নির্দেশ করে।",
+        factors: ["আয়রনসমৃদ্ধ সুষম খাদ্যগ্রহণ", "লিভারের স্বাভাবিক কার্যক্রম"],
+        symptoms: ["কোনো উল্লেখযোগ্য শারীরিক ক্লান্তি না থাকা", "স্বাভাবিক কর্মক্ষমতা"],
+        prevention: ["পুষ্টিকর খাবার ও স্বাস্থ্যকর জীবনযাপন বজায় রাখুন"],
+        consult: "সবকিছু স্বাভাবিক। বার্ষিক রুটিন স্ক্রিনিং অব্যাহত রাখুন।"
+      },
+      high: {
+        desc: "আপনার ট্রান্সফারিন স্যাচুরেশন অতিরিক্ত (> ৫০%)। এর অর্থ রক্তের বাহক প্রোটিনগুলো অতিরিক্ত লোহা দ্বারা পূর্ণ, যা আয়রন ওভারলোড বা হেমোক্রোমাটোসিসের লক্ষণ হতে পারে।",
+        factors: ["বংশগত হেমোক্রোমাটোসিস রোগ", "বারবার রক্তগ্রহণ", "অতিরিক্ত আয়রন বা ভিটামিন সি সাপ্লিমেন্ট খাওয়া"],
+        symptoms: ["জয়েন্টে বা গিঁটে ব্যথা", "অতিরিক্ত শারীরিক ক্লান্তি", "পেটে অস্বস্তি বা ব্যথা", "ত্বক তামাটে বা বিবর্ণ হওয়া"],
+        prevention: ["সব ধরনের আয়রন ও অতিরিক্ত ভিটামিন সি সাপ্লিমেন্ট অবিলম্বে বন্ধ করুন", "লাল মাংসের ব্যবহার কমান এবং অ্যালকোহল বর্জন করুন"],
+        consult: "অবিলম্বে একজন চিকিৎসকের সাথে দেখা করুন। লিভার ফাংশন ও ফেরিটিন টেস্টের মাধ্যমে নিশ্চিত হওয়া প্রয়োজন।"
+      }
+    },
+    hi: {
+      low: {
+        desc: "आपका ट्रांसफ़रिन संतृप्ति कम (<20%) है, जो अपर्याप्त आयरन बाइंडिंग का संकेत देता है। यदि उच्च टीआईबीसी के साथ है, तो यह दृढ़ता से आयरन की कमी वाले एनीमिया की ओर इशारा करता है।",
+        factors: ["आहार में आयरन की कमी", "दीर्घकालिक रक्त हानि (भारी मासिक धर्म, अल्सर, जीआई रक्तस्राव)", "आयरन की बढ़ी हुई मांग (गर्भावस्था, विकास के चरण)"],
+        symptoms: ["थकान, सामान्यीकृत कमजोरी", "पीली त्वचा, जीभ में सूजन", "हल्के तनाव में सांस लेने में तकलीफ", "शीत असहिष्णुता"],
+        prevention: ["हीम आयरन (पोल्ट्री, मछली, लाल मांस) और गैर-हीम आयरन (पत्तेदार साग, फलियां) शामिल करें", "आयरन के अवशोषण को अवरुद्ध होने से बचाने के लिए भोजन के समय कैफीन को सीमित करें"],
+        consult: "अपने डॉक्टर से सलाह लें. सीबीसी, फ़ेरिटिन स्तर और लक्षित लौह अनुपूरण विशिष्ट अगले चरण हैं।"
+      },
+      normal: {
+        desc: "आपकी ट्रांसफ़रिन संतृप्ति सामान्य (20% - 50%) है, जो उपलब्ध आयरन और वाहक प्रोटीन के बीच एक स्वस्थ संतुलन का प्रतिनिधित्व करती है।",
+        factors: ["पर्याप्त आहार आयरन", "लीवर में स्वस्थ प्रोटीन संश्लेषण", "तिल्ली में सामान्य लौह पुनर्चक्रण"],
+        symptoms: ["आयरन से संबंधित कोई नैदानिक लक्षण नहीं", "अच्छी सहनशक्ति और एकाग्रता"],
+        prevention: ["आयरन और विटामिन युक्त संतुलित आहार खाना जारी रखें"],
+        consult: "नियमित स्वास्थ्य जांच जारी रखें।"
+      },
+      high: {
+        desc: "आपका ट्रांसफ़रिन संतृप्ति ऊंचा (>50%) है, जो लौह वाहकों की उच्च संतृप्ति का संकेत देता है। यह आयरन ओवरलोड या हेमोक्रोमैटोसिस के लिए एक प्राथमिक स्क्रीनिंग संकेतक है।",
+        factors: ["आनुवंशिक हेमोक्रोमैटोसिस (अतिरिक्त लौह संचय)", "बार-बार लाल कोशिका का संक्रमण", "अत्यधिक चिकित्सीय लौह अनुपूरक", "गंभीर जिगर की विफलता"],
+        symptoms: ["जोड़ों का पुराना दर्द, विशेषकर हाथों में", "लगातार थकान रहना", "पेट में तकलीफ", "त्वचा का हाइपरपिग्मेंटेशन"],
+        prevention: ["किसी भी सक्रिय आयरन या विटामिन सी की खुराक को तुरंत बंद कर दें", "उच्च लौह युक्त आहार स्रो��ों को सीमित करें और शराब से बचें"],
+        consult: "किसी स्वास्थ्य सेवा प्रदाता या हेमेटोलॉजिस्ट से परामर्श लें। आयरन के स्तर, फ़ेरिटिन, या आनुवंशिक मार्करों की पुष्टि करना महत्वपूर्ण है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-tibc-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valIron").value = "";
+    document.getElementById("valTibc").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function calculateTIBC() {
+    const valIron = parseFloat(document.getElementById("valIron").value);
+    const valTibc = parseFloat(document.getElementById("valTibc").value);
+
+    if (isNaN(valIron) || valIron <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid Serum Iron value." : "দয়া করে সিরাম আয়রনের সঠিক মান লিখুন।");
+      return;
+    }
+    if (isNaN(valTibc) || valTibc <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid TIBC value." : "দয়া করে টিআইবিসির সঠিক মান লিখুন।");
+      return;
+    }
+    if (valIron > valTibc) {
+      alert(currentLang === "en" 
+        ? "Warning: Serum Iron cannot typically exceed Total Iron Binding Capacity (TIBC)." 
+        : "সতর্কতা: সিরাম আয়রন সাধারণত টোটাল আয়রন বাইন্ডিং ক্যাপাসিটি (TIBC) এর চেয়ে বেশি হতে পারে না।");
+    }
+
+    const satPct = (valIron / valTibc) * 100;
+
+    // Evaluate TIBC status (Normal: 250 - 370)
+    let tibcStatusKey = "tibcNormal";
+    if (valTibc < 250) tibcStatusKey = "tibcLow";
+    else if (valTibc > 370) tibcStatusKey = "tibcHigh";
+
+    // Evaluate Saturation status (Normal: 20 - 50%)
+    let satStatusKey = "normal";
+    let badgeKey = "badgeNormal";
+    if (satPct < 20) {
+      satStatusKey = "low";
+      badgeKey = "badgeLow";
+    } else if (satPct > 50) {
+      satStatusKey = "high";
+      badgeKey = "badgeHigh";
+    }
+
+    // Scale mapping for gauge (Transferrin saturation 0% to 100%)
+    const pointerPct = Math.max(5, Math.min(95, satPct));
+
+    activeReportData = {
+      valIron,
+      valTibc,
+      satPct,
+      tibcStatusKey,
+      satStatusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valIron, valTibc, satPct);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resIronVal").textContent = d.valIron.toFixed(1);
+    document.getElementById("resTibcVal").textContent = d.valTibc.toFixed(1);
+    document.getElementById("resTibcStatus").textContent = translations[currentLang][d.tibcStatusKey];
+    document.getElementById("resSatVal").textContent = d.satPct.toFixed(1) + "%";
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.satStatusKey === "low") colorClass = "low";
+    else if (d.satStatusKey === "high") colorClass = "high";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resSatVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = tibcInsights[currentLang][d.satStatusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valIron, valTibc, satPct) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valIron,
+      valTibc,
+      satPct,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-tibc-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>Iron: ${item.valIron.toFixed(0)} | TIBC: ${item.valTibc.toFixed(0)} | TSAT: ${item.satPct.toFixed(1)}% (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- TIBC & TRANSFERRIN SATURATION REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Serum Iron: ${activeReportData.valIron.toFixed(1)} µg/dL\n`;
+    t += `TIBC: ${activeReportData.valTibc.toFixed(1)} µg/dL (${translations[currentLang][activeReportData.tibcStatusKey]})\n`;
+    t += `Transferrin Saturation: ${activeReportData.satPct.toFixed(1)}%\n`;
+    t += `Saturation Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `tibc-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

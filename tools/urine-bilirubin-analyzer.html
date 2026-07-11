@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Urine Bilirubin Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze urine bilirubin presence using dipstick grading to screen for biliary tract obstruction, hepatic dysfunction, or jaundice. Bilingual English/Bengali support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+
+  <!-- html2canvas for PNG export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --trace-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .lab-grid { grid-template-columns: 1fr; }
+    }
+
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255,255,255,0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      font-family: 'Outfit', sans-serif;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .lang-btn.active,
+    .lang-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 420px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    /* Big grade display */
+    .grade-display-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 20px;
+      text-align: center;
+      gap: 8px;
+    }
+
+    .grade-emoji {
+      font-size: 3rem;
+      line-height: 1;
+    }
+
+    .grade-label-text {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .grade-value-big {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+    }
+
+    .status-badge {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 8px;
+    }
+
+    .insight-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .insight-two-col { grid-template-columns: 1fr; }
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    /* Dipstick grade color strip */
+    .grade-strip {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .grade-pill {
+      flex: 1;
+      min-width: 64px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 0.68rem;
+      font-weight: 700;
+      border: 1.5px solid transparent;
+      opacity: 0.5;
+      transition: all 0.3s;
+    }
+
+    .grade-pill.active {
+      opacity: 1;
+      border-color: currentColor;
+      box-shadow: 0 0 10px rgba(255,255,255,0.08);
+    }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding-top: 0 !important; }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category,
+      .tool-meta, .faq-section, .history-card, .btn, .btn-icon { display: none !important; }
+      .results-display {
+        border: none !important; background: #fff !important;
+        color: #000 !important; min-height: auto !important; padding: 0 !important;
+      }
+      .insight-card, .grade-display-box, .status-badge { border: 1px solid #ddd !important; background: #fff !important; color: #000 !important; }
+      .lab-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumb -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Urine Bilirubin Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze urine bilirubin presence via dipstick grading to screen for biliary tract obstruction, hepatic dysfunction, or jaundice.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Main Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+
+      <!-- LEFT: Input -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧪 Dipstick Input</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+
+            <div class="input-wrapper">
+              <label for="gradeSelect" data-translate="labelGrade">Dipstick Bilirubin Grade</label>
+              <select id="gradeSelect">
+                <option value="" disabled selected data-translate="gradePlaceholder">-- Select Grade --</option>
+                <option value="negative">Negative</option>
+                <option value="trace">Trace / 1+</option>
+                <option value="moderate">Moderate / 2+</option>
+                <option value="large">Large / 3+</option>
+              </select>
+            </div>
+
+            <!-- Visual grade strip -->
+            <div>
+              <div style="font-size:0.75rem; font-weight:700; color:var(--muted); margin-bottom:6px;" data-translate="gradeScaleLabel">Grade Scale</div>
+              <div class="grade-strip" id="gradeStrip">
+                <div class="grade-pill" id="pill-negative" style="background:rgba(16,185,129,0.12); color:var(--normal-color);">Negative</div>
+                <div class="grade-pill" id="pill-trace" style="background:rgba(59,130,246,0.12); color:#3b82f6;">Trace/1+</div>
+                <div class="grade-pill" id="pill-moderate" style="background:rgba(245,158,11,0.12); color:var(--high-color);">Moderate/2+</div>
+                <div class="grade-pill" id="pill-large" style="background:rgba(239,68,68,0.12); color:var(--critical-color);">Large/3+</div>
+              </div>
+            </div>
+
+            <!-- Info box -->
+            <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:8px; padding:12px; font-size:0.8rem; color:var(--muted); line-height:1.6;">
+              <strong style="color:var(--text); font-size:0.82rem;" data-translate="referenceLabel">📌 Reference</strong><br>
+              <span data-translate="referenceText">Normal urine contains NO bilirubin. Only conjugated (direct) bilirubin can spill into urine when liver is damaged or bile duct is blocked.</span>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width:100%; justify-content:center;" onclick="analyzeUrineBilirubin()">
+            <span class="btn-icon-inside">🔬</span> <span data-translate="btnAnalyze">Analyze Urine Bilirubin</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🫧</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Select a dipstick grade and click Analyze to view your urine bilirubin interpretation.</p>
+        </div>
+
+        <div class="report-card" id="reportCardSec" style="display:none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Urine Bilirubin Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" title="Copy" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" title="Print" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" title="Save Image" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelTestType">Test</strong>: <span data-translate="testTypeName">Urine Dipstick Bilirubin</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <!-- Grade Display -->
+          <div class="grade-display-box" id="gradeDisplayBox">
+            <div class="grade-emoji" id="gradeEmoji">🫧</div>
+            <div class="grade-label-text" data-translate="gradeResultLabel">Dipstick Grade</div>
+            <div class="grade-value-big" id="gradeValueBig">-</div>
+          </div>
+
+          <!-- Status Badge -->
+          <div class="status-badge" id="resStatusLabel">-</div>
+
+          <!-- Insight section -->
+          <div id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Notes: Urine Bilirubin & Jaundice</h3>
+    <div style="display:flex; flex-direction:column; gap:14px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p>
+        <strong style="color:var(--text);" data-translate="eduQ1">What is urine bilirubin?</strong><br>
+        <span data-translate="eduA1">Normally, urine should contain no detectable bilirubin. Only conjugated (direct/water-soluble) bilirubin can appear in urine, since unconjugated bilirubin is protein-bound and not filterable by the kidneys.</span>
+      </p>
+      <p>
+        <strong style="color:var(--text);" data-translate="eduQ2">Why does bilirubin appear in urine?</strong><br>
+        <span data-translate="eduA2">When the liver is damaged (hepatitis, cirrhosis) or bile flow is blocked (cholestasis, gallstones, biliary obstruction), conjugated bilirubin builds up in the blood and overflows into urine — producing a characteristic dark, tea-colored appearance.</span>
+      </p>
+      <p>
+        <strong style="color:var(--text);" data-translate="eduQ3">How is the dipstick test performed?</strong><br>
+        <span data-translate="eduA3">A dipstick reagent strip is dipped into fresh urine. The bilirubin pad changes color in proportion to bilirubin concentration. Results are graded from Negative to 3+ (Large). Trace and above are clinically significant and warrant follow-up serum testing.</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQ Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Medical Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and must not replace professional medical advice. Always consult a licensed physician for interpretation of any lab report.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  /* ============================================================
+     TRANSLATIONS
+  ============================================================ */
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical &amp; Lab Tools",
+      toolTitle: "Urine Bilirubin Analyzer",
+      toolDesc: "Analyze urine bilirubin presence via dipstick grading to screen for biliary tract obstruction, hepatic dysfunction, or jaundice.",
+      inputsTitle: "🧪 Dipstick Input",
+      clearBtn: "Reset",
+      labelGrade: "Dipstick Bilirubin Grade",
+      gradePlaceholder: "-- Select Grade --",
+      gradeScaleLabel: "Grade Scale",
+      referenceLabel: "📌 Reference",
+      referenceText: "Normal urine contains NO bilirubin. Only conjugated (direct) bilirubin can spill into urine when liver is damaged or bile duct is blocked.",
+      btnAnalyze: "Analyze Urine Bilirubin",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Select a dipstick grade and click Analyze to view your urine bilirubin interpretation.",
+      reportTitle: "🔬 Urine Bilirubin Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelTestType: "Test",
+      testTypeName: "Urine Dipstick Bilirubin",
+      labelDate: "Date",
+      gradeResultLabel: "Dipstick Grade",
+      titleEdu: "📚 Clinical Notes: Urine Bilirubin & Jaundice",
+      eduQ1: "What is urine bilirubin?",
+      eduA1: "Normally, urine should contain no detectable bilirubin. Only conjugated (direct/water-soluble) bilirubin can appear in urine, since unconjugated bilirubin is protein-bound and not filterable by the kidneys.",
+      eduQ2: "Why does bilirubin appear in urine?",
+      eduA2: "When the liver is damaged (hepatitis, cirrhosis) or bile flow is blocked (cholestasis, gallstones, biliary obstruction), conjugated bilirubin builds up in the blood and overflows into urine — producing a characteristic dark, tea-colored appearance.",
+      eduQ3: "How is the dipstick test performed?",
+      eduA3: "A dipstick reagent strip is dipped into fresh urine. The bilirubin pad changes color in proportion to bilirubin concentration. Results are graded from Negative to 3+ (Large). Trace and above are clinically significant and warrant follow-up serum testing.",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and must not replace professional medical advice. Always consult a licensed physician for interpretation of any lab report.",
+      badgeNegative: "Normal — No Bilirubin Detected",
+      badgeTrace: "Trace Bilirubinuria — Possible Early Hepatic Issue",
+      badgeModerate: "Bilirubinuria (2+) — Hepatic or Obstructive Jaundice Likely",
+      badgeLarge: "Severe Bilirubinuria (3+) — Significant Hepatic/Obstructive Pathology",
+      titleInterpretation: "📋 Clinical Interpretation",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Recommended Actions",
+      titleConsult: "When to Consult a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ইউরিন বিলিরুবিন বিশ্লেষক",
+      toolDesc: "ডিপস্টিক গ্রেডের মাধ্যমে প্রস্রাবে বিলিরুবিনের উপস্থিতি বিশ্লেষণ করে পিত্তনালীর বাধা বা যকৃতের কার্যকারিতা যাচাই করুন।",
+      inputsTitle: "🧪 ডিপস্টিক ইনপুট",
+      clearBtn: "মুছুন",
+      labelGrade: "ডিপস্টিক বিলিরুবিন গ্রেড",
+      gradePlaceholder: "-- গ্রেড নির্বাচন করুন --",
+      gradeScaleLabel: "গ্রেড স্কেল",
+      referenceLabel: "📌 রেফারেন্স",
+      referenceText: "স্বাভাবিক প্রস্রাবে কোনো বিলিরুবিন থাকার কথা নয়। কনজুগেটেড (ডাইরেক্ট) বিলিরুবিনই কেবল লিভার ক্ষতিগ্রস্ত হলে বা পিত্তনালী বন্ধ হলে প্রস্রাবে মিশতে পারে।",
+      btnAnalyze: "ইউরিন বিলিরুবিন বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অপেক্ষমান",
+      placeholderDesc: "একটি ডিপস্টিক গ্রেড নির্বাচন করুন এবং বিশ্লেষণ বোতামে ক্লিক করুন।",
+      reportTitle: "🔬 ইউরিন বিলিরুবিন রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelTestType: "পরীক্ষার ধরন",
+      testTypeName: "ইউরিন ডিপস্টিক বিলিরুবিন",
+      labelDate: "তারিখ",
+      gradeResultLabel: "ডিপস্টিক গ্রেড",
+      titleEdu: "📚 ক্লিনিক্যাল নোটস: ইউরিন বিলিরুবিন ও জন্ডিস",
+      eduQ1: "ইউরিন বিলিরুবিন কী?",
+      eduA1: "স্বাভাবিক অবস্থায় প্রস্রাবে কোনো বিলিরুবিন থাকে না। শুধুমাত্র কনজুগেটেড (পানিতে দ্রবণীয়) বিলিরুবিন প্রস্রাবে আসতে পারে; ইনকনজুগেটেড বিলিরুবিন প্রোটিনের সাথে যুক্ত থাকায় কিডনি ছাঁকতে পারে না।",
+      eduQ2: "প্রস্রাবে বিলিরুবিন কেন আসে?",
+      eduA2: "লিভার ক্ষতিগ্রস্ত হলে (হেপাটাইটিস, সিরোসিস) বা পিত্তনালীতে বাধা সৃষ্টি হলে (কোলেস্ট্যাসিস, পাথর) রক্তে কনজুগেটেড বিলিরুবিন বেড়ে যায় এবং প্রস্রাবে মিশে — যার ফলে প্রস্রাব চা-রঙা হয়ে যায়।",
+      eduQ3: "ডিপস্টিক পরীক্ষা কীভাবে করা হয়?",
+      eduA3: "একটি ডিপস্টিক রিএজেন্ট স্ট্রিপ তাজা প্রস্রাবে ডুবানো হয়। বিলিরুবিনের মাত্রা অনুযায়ী প্যাডের রঙ পরিবর্তিত হয়। ফলাফল Negative থেকে 3+ (Large) পর্যন্ত গ্রেড দেওয়া হয়।",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়।",
+      badgeNegative: "স্বাভাবিক — কোনো বিলিরুবিন পাওয়া যায়নি",
+      badgeTrace: "ট্রেস বিলিরুবিনুরিয়া — সম্ভাব্য প্রাথমিক যকৃতের সমস্যা",
+      badgeModerate: "বিলিরুবিনুরিয়া (2+) — হেপাটিক বা অবস্ট্রাক্টিভ জন্ডিস সম্ভব",
+      badgeLarge: "তীব্র বিলিরুবিনুরিয়া (3+) — উল্লেখযোগ্য যকৃত বা পিত্তনালীর রোগ",
+      titleInterpretation: "📋 ক্লিনিক্যাল ব্যাখ্যা",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "প্রস্তাবিত পদক্ষেপ",
+      titleConsult: "কখন ডাক্তারের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "मूत्र बिलीरुबिन विश्लेषक",
+      toolDesc: "पित्त पथ में रुकावट, यकृत संबंधी शिथिलता, या पीलिया की जांच के लिए डिपस्टिक ग्रेडिंग के माध्यम से मूत्र में बिलीरुबिन की उपस्थिति का विश्लेषण करें।",
+      inputsTitle: "🧪 डिपस्टिक इनपुट",
+      clearBtn: "रीसेट करें",
+      labelGrade: "डिपस्टिक बिलीरुबिन ग्रेड",
+      gradePlaceholder: "-- ग्रेड चुनें --",
+      gradeScaleLabel: "ग्रेड स्केल",
+      referenceLabel: "📌 सन्दर्भ",
+      referenceText: "सामान्य मूत्र में बिलीरुबिन नहीं होता है। केवल संयुग्मित (प्रत्यक्ष) बिलीरुबिन ही मूत्र में फैल सकता है जब लीवर क्षतिग्रस्त हो या पित्त नली अवरुद्ध हो।",
+      btnAnalyze: "मूत्र बिलीरुबिन का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "डिपस्टिक ग्रेड का चयन करें और अपने मूत्र बिलीरुबिन व्याख्या को देखने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 मूत्र बिलीरुबिन रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelTestType: "परीक्षण",
+      testTypeName: "मूत्र डिपस्टिक बिलीरुबिन",
+      labelDate: "दिनांक",
+      gradeResultLabel: "डिपस्टिक ग्रेड",
+      titleEdu: "📚 क्लिनिकल नोट्स: मूत्र बिलीरुबिन और पीलिया",
+      eduQ1: "मूत्र बिलीरुबिन क्या है?",
+      eduA1: "आम तौर पर, मूत्र में कोई पता लगाने योग्य बिलीरुबिन नहीं होना चाहिए। केवल संयुग्मित (प्रत्यक्ष/पानी में घुलनशील) बिलीरुबिन ही मूत्र में दिखाई दे सकता है, क्योंकि असंयुग्मित बिलीरुबिन प्रोटीन से बंधा होता है और गुर्दे द्वारा फ़िल्टर करने योग्य नहीं होता है।",
+      eduQ2: "मूत्र में बिलीरुबिन क्यों दिखाई देता है?",
+      eduA2: "जब यकृत क्षतिग्रस्त हो जाता है (हेपेटाइटिस, सिरोसिस) या पित्त प्रवाह अवरुद्ध हो जाता है (कोलेस्टेसिस, पित्त पथरी, पि��्त अवरोध), संयुग्मित बिलीरुबिन रक्त में बनता है और मूत्र में बह जाता है - एक विशिष्ट गहरे, चाय के रंग का रूप पैदा करता है।",
+      eduQ3: "डिपस्टिक परीक्षण कैसे किया जाता है?",
+      eduA3: "एक डिपस्टिक अभिकर्मक पट्टी को ताजा मूत्र में डुबोया जाता है। बिलीरुबिन पैड बिलीरुबिन सांद्रता ��े अनुपात में रंग बदलता है। परिणाम नकारात्मक से 3+ (बड़े) तक वर्गीकृत किए गए हैं। ट्रेस और इसके बाद के संस्करण चिकित्सकीय रूप से महत्वपूर्ण हैं और अनुवर्ती सीरम परीक्षण की गारंटी देते हैं।",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। किसी भी लैब रिपोर्ट की व��याख्या के लिए हमेशा एक लाइसेंस प्राप्त चिकित्सक से परामर्श लें।",
+      badgeNegative: "सामान्य - कोई बिलीरुबिन नहीं पाया गया",
+      badgeTrace: "ट्रेस बिलीरुबिनुरिया - संभावित प्रारंभिक हेपेटिक समस्या",
+      badgeModerate: "बिलीरुबिनुरिया (2+) - हेपेटिक या ऑब्सट्रक्टिव पीलिया की संभावना",
+      badgeLarge: "गंभीर बिलीरुबिनुरिया (3+) - महत्वपूर्ण हेपेटिक/अवरोधक विकृति",
+      titleInterpretation: "📋नैदानिक व्याख्या",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "अनुशंसित कार्रवाइयां",
+      titleConsult: "डॉक्टर से कब परामर्श लें"
+    }
+  };
+
+  /* ============================================================
+     FAQ DATA
+  ============================================================ */
+  const faqData = {
+    en: [
+      { q: "Can healthy people have bilirubin in urine?", a: "No. Healthy individuals have NO detectable bilirubin in urine. Any positive result is clinically abnormal and should be evaluated." },
+      { q: "What does a 'Trace' result mean?", a: "A Trace (1+) result indicates a small amount of bilirubin in urine, possibly an early sign of hepatic stress. It should be confirmed with serum bilirubin and liver function tests." },
+      { q: "What conditions cause bilirubinuria?", a: "The most common causes are: viral hepatitis, liver cirrhosis, intrahepatic cholestasis, gallstones or tumors blocking the bile duct, and drug-induced liver injury." },
+      { q: "Is urobilinogen the same as bilirubin in urine?", a: "No. Urobilinogen is a breakdown product of bilirubin formed by gut bacteria. They are measured separately and give complementary clinical information." },
+      { q: "What urine color indicates bilirubinuria?", a: "Bilirubinuria typically produces dark yellow, amber, or tea-colored urine. When shaken, the foam produced is also characteristically yellow." },
+      { q: "What tests should be done after a positive urine bilirubin?", a: "Serum total and direct bilirubin, liver function tests (ALT, AST, ALP, GGT), abdominal ultrasound, and possibly MRCP if biliary obstruction is suspected." }
+    ],
+    bn: [
+      { q: "সুস্থ মানুষের প্রস্রাবে কি বিলিরুবিন থাকে?", a: "না। সুস্থ ব্যক্তির প্রস্রাবে কোনো বিলিরুবিন থাকার কথা নয়। যেকোনো পজিটিভ ফলাফল চিকিৎসাগতভাবে অস্বাভাবিক এবং পরীক্ষা-নিরীক্ষা প্রয়োজন।" },
+      { q: "'ট্রেস' ফলাফলের অর্থ কী?", a: "ট্রেস (1+) মানে প্রস্রাবে অল্প পরিমাণে বিলিরুবিন আছে, যা যকৃতের প্রাথমিক চাপের লক্ষণ হতে পারে। সিরাম বিলিরুবিন ও লিভার ফাংশন টেস্ট করে নিশ্চিত হওয়া উচিত।" },
+      { q: "বিলিরুবিনুরিয়ার কারণ কী?", a: "সবচেয়ে সাধারণ কারণ: ভাইরাল হেপাটাইটিস, লিভার সিরোসিস, ইন্ট্রাহেপাটিক কোলেস্ট্যাসিস, পিত্তথলির পাথর বা টিউমার দ্বারা পিত্তনালীতে বাধা, এবং ওষুধজনিত লিভার ক্ষতি।" },
+      { q: "ইউরোবিলিনোজেন কি প্রস্রাবে বিলিরুবিনের মতো?", a: "না। ইউরোবিলিনোজেন হলো অন্ত্রের ব্যাকটেরিয়া দ্বারা তৈরি বিলিরুবিনের ভাঙা পদার্থ। এগুলো আলাদাভাবে পরিমাপ করা হয় এবং পরিপূরক তথ্য দেয়।" },
+      { q: "বিলিরুবিনুরিয়ায় প্রস্রাবের রং কেমন হয়?", a: "বিলিরুবিনুরিয়ায় প্রস্রাব গাঢ় হলুদ, অ্যাম্বার বা চা-রঙা হয়। ঝাঁকালে ফেনাও হলুদ রং ধারণ করে।" },
+      { q: "পজিটিভ ইউরিন বিলিরুবিনের পর কী কী পরীক্ষা করা উচিত?", a: "সিরাম টোটাল ও ডাইরেক্ট বিলিরুবিন, লিভার ফাংশন টেস্ট (ALT, AST, ALP, GGT), পেটের আল্ট্রাসাউন্ড এবং প্রয়োজনে MRCP।" }
+    ],
+    hi: [
+      { q: "क्या स्वस्थ लोगों के मूत्र में बिलीरुबिन हो सकता है?", a: "नहीं, स्वस्थ व्यक्तियों के मूत्र में कोई पता लगाने योग्य बिलीरुबिन नहीं होता है। कोई भी सकारात्मक परिणाम चिकित्सकीय रूप से असामान्य है और इसका मूल्यांकन किया जाना चाहिए।" },
+      { q: "'ट्रेस' परिणाम का क्या मतलब है?", a: "ट्रेस (1+) परिणाम मूत्र में बिलीरुबिन की थोड़ी मात्रा का संकेत देता है, जो संभवतः यकृत तनाव का प्रारंभिक संकेत है। इसकी पुष्टि सीरम बिलीरुबिन और लिवर फंक्शन टेस्ट से की जानी चाहिए।" },
+      { q: "कौन सी स्थितियाँ बिलीरुबिनुरिया का कारण बनती हैं?", a: "सबसे आम कारण हैं: वायरल हेपेटाइटि��, लीवर सिरोसिस, इंट्राहेपेटिक कोलेस्टेसिस, पित्त पथरी या पित्त नली को अवरुद्ध करने वाले ट्यूमर, और दवा-प्रेरित लीवर की चोट।" },
+      { q: "क्या यूरोबिलिनोजेन मूत्र में बिलीरुबिन के समान है?", a: "नहीं, यूरोबिलिनोजेन आंत बैक्टीरिया द्वारा निर्मित बिलीरुबिन का एक टूटने वाला उत्पाद है। उन्हें अलग से मापा जाता है और पूरक नैदानिक ​​जानकारी देते हैं।" },
+      { q: "मूत्र का कौन सा रंग बिलीरुबिनुरिया का संकेत देता है?", a: "बिलीरुबिनुरिया में आमतौर पर गहरे पीले, एम्बर या चाय के रंग का मूत्र उत्पन्न होता है। हिलाने पर उत्पन्न झाग भी विशिष्ट रूप से पीला होता है।" },
+      { q: "मूत्र में बिलीरुबिन सकारात्मक होने के बाद कौन से परीक्षण किए जाने चाहिए?", a: "सीरम टोटल और डायरेक्ट बिलीरुबिन, लिवर फंक्शन टेस्ट (एएलटी, एएसटी, एएलपी, जीजीटी), पेट का अल्ट्रासाउंड, और यदि पित्त रुकावट का संदेह हो तो संभवतः एमआरसीपी।" }
+    ]
+  };
+
+  /* ============================================================
+     INSIGHTS DATA
+  ============================================================ */
+  const insights = {
+    en: {
+      negative: {
+        emoji: "✅",
+        desc: "No bilirubin was detected in the urine. This is the expected normal finding indicating intact hepatobiliary function and normal red cell metabolism.",
+        causes: ["Normal bilirubin metabolism", "Healthy liver and bile duct function", "No hemolytic process present"],
+        symptoms: ["No jaundice symptoms", "Normal urine color"],
+        actions: ["No immediate action needed", "Stay hydrated and maintain healthy liver diet", "Repeat annually or when symptomatic"],
+        consult: "No urgent follow-up needed unless other symptoms are present."
+      },
+      trace: {
+        emoji: "🔵",
+        desc: "A trace amount of bilirubin was detected. This may indicate early hepatic stress, mild liver injury, or a borderline biliary issue. It warrants confirmatory serum testing.",
+        causes: ["Early hepatitis or mild hepatocellular injury", "Mild cholestasis or bile stasis", "Drug-induced liver stress"],
+        symptoms: ["Possibly mild fatigue", "Slight yellow tinge in eyes", "Slightly dark urine"],
+        actions: ["Get serum LFT (ALT, AST, ALP) done", "Reduce alcohol and hepatotoxic medications", "Increase fluid intake and rest"],
+        consult: "Consult a doctor within 1–2 days. Serum liver function tests are recommended."
+      },
+      moderate: {
+        emoji: "⚠️",
+        desc: "A moderate (2+) amount of bilirubin found in urine suggests confirmed bilirubinuria. This strongly indicates hepatic or obstructive jaundice and requires immediate medical evaluation.",
+        causes: ["Viral hepatitis (A, B, C, E)", "Intrahepatic cholestasis", "Extrahepatic biliary obstruction (gallstones, tumor)", "Liver cirrhosis"],
+        symptoms: ["Visible jaundice (yellow skin and eyes)", "Dark, tea-colored urine", "Pale or clay-colored stools", "Right upper quadrant pain or discomfort"],
+        actions: ["Get serum bilirubin, LFT, and abdominal ultrasound urgently", "Avoid fatty foods, alcohol, and NSAIDs", "Seek medical care immediately"],
+        consult: "⚠️ Consult a doctor immediately. Liver function tests and abdominal imaging are indicated."
+      },
+      large: {
+        emoji: "🚨",
+        desc: "A large (3+) concentration of bilirubin in urine indicates severe bilirubinuria, pointing to significant hepatic damage or complete biliary obstruction. This is a medical emergency requiring urgent evaluation.",
+        causes: ["Severe viral or alcoholic hepatitis", "Advanced liver cirrhosis", "Pancreatic head tumor or bile duct cancer (cholangiocarcinoma)", "Complete bile duct obstruction by gallstone"],
+        symptoms: ["Intense jaundice with deep yellow/orange skin", "Very dark (cola-colored) urine", "Completely pale (acholic) stools", "Severe itching (pruritus)", "Abdominal pain, fever"],
+        actions: ["Go to an emergency room or hospital immediately", "Do NOT delay — complete serum LFT, CBC, abdominal CT/MRCP urgently", "Avoid all alcohol, NSAIDs, and unnecessary medications"],
+        consult: "🚨 URGENT: Seek emergency medical care. This may indicate life-threatening hepatic or biliary tract disease."
+      }
+    },
+    bn: {
+      negative: {
+        emoji: "✅",
+        desc: "প্রস্রাবে কোনো বিলিরুবিন পাওয়া যায়নি। এটি একটি স্বাভাবিক ফলাফল এবং সুস্থ লিভার ও পিত্তনালীর কার্যকারিতা নির্দেশ করে।",
+        causes: ["স্বাভাবিক বিলিরুবিনের বিপাক", "সুস্থ লিভার ও পিত্তনালী", "কোনো হেমোলাইটিক প্রক্রিয়া নেই"],
+        symptoms: ["জন্ডিসের কোনো লক্ষণ নেই", "প্রস্রাবের রং স্বাভাবিক"],
+        actions: ["এখনই কোনো পদক্ষেপ নেওয়ার দরকার নেই", "পানি পান করুন ও স্বাস্থ্যকর খাদ্যাভ্যাস বজায় রাখুন"],
+        consult: "জরুরি ফলো-আপের প্রয়োজন নেই, তবে অন্য কোনো উপসর্গ থাকলে চিকিৎসক দেখান।"
+      },
+      trace: {
+        emoji: "🔵",
+        desc: "প্রস্রাবে অল্প পরিমাণে বিলিরুবিন পাওয়া গেছে। এটি প্রাথমিক যকৃতের চাপ বা হালকা বিলিয়ারি সমস্যার ইঙ্গিত হতে পারে। নিশ্চিত করতে সিরাম পরীক্ষা করান।",
+        causes: ["প্রাথমিক হেপাটাইটিস বা হালকা লিভার ক্ষতি", "মৃদু কোলেস্ট্যাসিস", "ওষুধজনিত লিভারের চাপ"],
+        symptoms: ["হালকা ক্লান্তি", "চোখে সামান্য হলুদ ভাব", "প্রস্রাব একটু গাঢ়"],
+        actions: ["সিরাম LFT (ALT, AST, ALP) করান", "অ্যালকোহল ও ক্ষতিকর ওষুধ বর্জন করুন", "পর্যাপ্ত বিশ্রাম ও পানি পান করুন"],
+        consult: "১-২ দিনের মধ্যে চিকিৎসকের পরামর্শ নিন।"
+      },
+      moderate: {
+        emoji: "⚠️",
+        desc: "প্রস্রাবে মাঝারি পরিমাণে (2+) বিলিরুবিন পাওয়া গেছে। এটি হেপাটিক বা অবস্ট্রাক্টিভ জন্ডিসের শক্তিশালী ইঙ্গিত এবং অবিলম্বে চিকিৎসা মূল্যায়ন প্রয়োজন।",
+        causes: ["ভাইরাল হেপাটাইটিস (A, B, C, E)", "ইন্ট্রাহেপাটিক কোলেস্ট্যাসিস", "বাহ্যিক পিত্তনালীতে বাধা (পাথর, টিউমার)", "লিভার সিরোসিস"],
+        symptoms: ["দৃশ্যমান জন্ডিস (ত্বক ও চোখ হলুদ)", "গাঢ় চা-রঙা প্রস্রাব", "ফ্যাকাশে মল", "পেটের উপরের ডানদিকে ব্যথা"],
+        actions: ["জরুরিভাবে সিরাম বিলিরুবিন, LFT ও পেটের আল্ট্রাসাউন্ড করান", "চর্বিযুক্ত খাবার, অ্যালকোহল ও NSAIDs বর্জন করুন", "দ্রুত চিকিৎসকের কাছে যান"],
+        consult: "⚠️ অবিলম্বে চিকিৎসকের পরামর্শ নিন।"
+      },
+      large: {
+        emoji: "🚨",
+        desc: "প্রস্রাবে বিলিরুবিনের মাত্রা অত্যধিক বেশি (3+)। এটি গুরুতর যকৃতের ক্ষতি বা সম্পূর্ণ পিত্তনালীতে বাধার ইঙ্গিত। এটি একটি জরুরি চিকিৎসা পরিস্থিতি।",
+        causes: ["তীব্র ভাইরাল বা অ্যালকোহলিক হেপাটাইটিস", "উন্নত লিভার সিরোসিস", "অগ্ন্যাশয়ের মাথায় টিউমার বা পিত্তনালীর ক্যান্সার", "পাথর দ্বারা সম্পূর্ণ পিত্তনালীতে বাধা"],
+        symptoms: ["গভীর জন্ডিস (ত্বক কমলা রঙের)", "কোলা-রঙা প্রস্রাব", "সম্পূর্ণ ফ্যাকাশে মল", "তীব্র চুলকানি (প্রুরিটাস)", "পেটে ব্যথা ও জ্বর"],
+        actions: ["অবিলম্বে হাসপাতালে যান", "সিরাম LFT, CBC, পেটের CT/MRCP জরুরিভাবে করান", "সব ধরনের অ্যালকোহল ও অপ্রয়োজনীয় ওষুধ বন্ধ করুন"],
+        consult: "🚨 জরুরি: তাৎক্ষণিক চিকিৎসা সেবা নিন।"
+      }
+    },
+    hi: {
+      negative: {
+        emoji: "✅",
+        desc: "मूत्र में बिलीरुबिन नहीं पाया गया। यह अपेक्षित सामान्य निष्कर्ष है जो अक्षुण्ण हेपेटोबिलरी फ़ंक्शन और सामान्य लाल कोशिका चयापचय का संकेत देता है।",
+        causes: ["सामान्य बिलीरुबिन चयापचय", "स्वस्थ यकृत और पित्त नली का कार्य", "कोई हेमोलिटिक प्रक्रिया मौजूद नहीं है"],
+        symptoms: ["पीलिया का कोई लक्षण नहीं", "मूत्र का सामान्य रंग"],
+        actions: ["तत्काल कार्रवाई की जरूरत नहीं", "हाइड्रेटेड रहें और स्वस्थ लीवर आहार बनाए रखें", "प्रतिवर्ष या रोगसूचक होने पर दोहराएँ"],
+        consult: "जब तक अन्य लक्षण मौजूद न हों, तत्काल अनुवर्ती कार्रवाई की आवश्यकता नहीं है।"
+      },
+      trace: {
+        emoji: "🔵",
+        desc: "बिलीरुबिन की थोड़ी मात्रा पाई गई। यह प्रारंभिक यकृत तनाव, हल्की जिगर की चोट, या सीमा रेखा पित्त संबंधी समस्या का संकेत दे सकता है। यह पुष्टिकारक सीरम परीक्षण की गारंटी देता है।",
+        causes: ["प्रारंभिक हेपेटाइटिस या हल्की हेपेटोसेल्यूलर चोट", "हल्का कोलेस्टेसिस या पित्त ठहराव", "नशीली दवाओं से प्रेरित यकृत तनाव"],
+        symptoms: ["संभवतः हल्की थकान", "आंखों में हल्का पीलापन", "थोड़ा गहरा पेशाब"],
+        actions: ["सीरम एलएफटी (एएलटी, एएसटी, एएलपी) कराएं", "शराब और हेपेटोटॉक्सिक दवाएं कम करें", "तरल पदार्थ का सेवन और आराम बढ़ाएँ"],
+        consult: "1-2 दिनों के भीतर डॉक्टर से परामर्श लें। सीरम लिवर फंक्शन टेस्ट की सिफारिश की जाती है।"
+      },
+      moderate: {
+        emoji: "⚠️",
+        desc: "मूत्र में पाई जाने वाली बिलीरुबिन की मध्यम (2+) मात्रा बिलीरुबिनुरिया की पुष्टि का संकेत देती है। यह दृढ़ता से यकृत या प्रतिरोधी पीलिया का संकेत देता है और इसके लिए तत्काल चिकित्सा मूल्यांकन की आवश्यकता होती है।",
+        causes: ["वायरल हेपेटाइटिस (ए, बी, सी, ई)", "इंट्राहेपेटिक कोलेस्टेसिस", "एक्स्ट्राहेपेटिक पित्त अवरोध (पित्ताशय की पथरी, ट्यूमर)", "लीवर सिरोसिस"],
+        symptoms: ["दृश्यमान पीलिया (पीली त्वचा और आँखें)", "गहरा, चाय के रंग का मूत्र", "पीला या मिट्टी के रंग का मल", "दाहिने ऊपरी चतुर्थांश में दर्द या बेचैनी"],
+        actions: ["सीरम बिलीरुबिन, एलएफटी और पेट का अल्ट्रासाउंड तुरंत कराएं", "वसायुक्त भोजन, शराब और एनएसएआईडी से बचें", "तुरंत चिकित्सा देखभाल लें"],
+        consult: "⚠️ तुरंत डॉक्टर से सलाह लें। लिवर फंक्शन परीक्षण और पेट की इमेजिंग का संकेत दिया जाता है।"
+      },
+      large: {
+        emoji: "🚨",
+        desc: "मूत्र में बिलीरुबिन की एक बड़ी (3+) सांद्रता गंभीर बिलीरुबिनुरिया को इंगित करती है, जो महत्वपूर्ण यकृत क्षति या पूर्ण पित्त रुकावट की ओर इशारा करती है। यह एक चिकित्सीय आपात स्थिति है जिसके तत्काल मूल्यांकन की आवश्यकता है।",
+        causes: ["गंभीर वायरल या अल्कोहलिक हेपेटाइटिस", "उन्नत यकृत सिरोसिस", "अग्नाशयी सिर का ट्यूमर या पित्त नली का कैंसर (कोलांगियोकार्सिनोमा)", "पित्त पथरी द्वारा पित्त नली में पूर्ण रुकावट"],
+        symptoms: ["गहरी पीली/नारंगी त्वचा के साथ तीव्र पीलिया", "बहुत गहरा (���ोला के रंग का) मूत्र", "पूरी तरह से पीला (एकॉलिक) मल", "गंभीर खुजली (खुजली)", "पेट दर्द, बुखार"],
+        actions: ["तुरंत किसी आपातकालीन कक्ष या अस्पताल में जाएँ", "देरी न करें - सीरम एलएफटी, सीबीसी, पेट सीटी/एमआरसीपी तुरंत पूरा करें", "सभी शराब, एनएसएआईडी और अनावश्यक दवाओं से बचें"],
+        consult: "🚨 अत्यावश्यक: आपातकालीन चिकित्सा देखभाल की तलाश करें। यह जीवन-घातक यकृत या पित्त पथ की बीमारी का संकेत दे सकता है।"
+      }
+    }
+  };
+
+  /* ============================================================
+     STATE
+  ============================================================ */
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-ubilirubin-history")) || [];
+  let activeReportData = null;
+
+  /* ============================================================
+     LANGUAGE
+  ============================================================ */
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    const btn = document.getElementById("langToggleBtn");
+    if (btn) btn.innerHTML = lang === "bn" ? '🇬🇧 <span>English</span>' : '🇧🇩 <span>Bengali</span>';
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    // Update select options language
+    updateSelectOptions();
+    renderFAQs();
+    renderHistoryDisplay();
+    if (activeReportData) updateReportDisplay();
+  }
+
+  function updateSelectOptions() {
+    const sel = document.getElementById("gradeSelect");
+    const opts = sel.querySelectorAll("option");
+    const gradeNames = {
+      en: { negative: "Negative", trace: "Trace / 1+", moderate: "Moderate / 2+", large: "Large / 3+" },
+      bn: { negative: "নেগেটিভ", trace: "ট্রেস / 1+", moderate: "মডারেট / 2+", large: "লার্জ / 3+" },
+    hi: { negative: "नकारात्मक", trace: "ट्रेस / 1+", moderate: "मध्यम/2+", large: "बड़ा/3+" }
+    };
+    opts.forEach(opt => {
+      if (opt.value && gradeNames[currentLang][opt.value]) opt.textContent = gradeNames[currentLang][opt.value];
+    });
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  /* ============================================================
+     FAQs
+  ============================================================ */
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    const faqs = faqData[currentLang] || faqData.en;
+    faqs.forEach(faq => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  /* ============================================================
+     HISTORY
+  ============================================================ */
+  function addToHistory(gradeKey, gradeLabel) {
+    const item = { date: new Date().toLocaleDateString(), gradeKey, gradeLabel, id: Date.now() };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 6) recentHistory.pop();
+    localStorage.setItem("ssdk-ubilirubin-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+    recentHistory.forEach(item => {
+      const badgeKey = "badge" + item.gradeKey.charAt(0).toUpperCase() + item.gradeKey.slice(1);
+      const statusText = translations[currentLang][badgeKey] || item.gradeLabel;
+      const div = document.createElement("div");
+      div.className = "history-item";
+      div.innerHTML = `<span>📅 ${item.date}</span><strong style="font-size:0.72rem;">${statusText}</strong>`;
+      container.appendChild(div);
+    });
+  }
+
+  /* ============================================================
+     FORM LOGIC
+  ============================================================ */
+  function resetForm() {
+    document.getElementById("gradeSelect").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    // Reset pills
+    ["negative","trace","moderate","large"].forEach(g => {
+      document.getElementById("pill-" + g).classList.remove("active");
+    });
+    activeReportData = null;
+  }
+
+  function getStatusColor(gradeKey) {
+    const map = { negative: "var(--normal-color)", trace: "#3b82f6", moderate: "var(--high-color)", large: "var(--critical-color)" };
+    return map[gradeKey] || "var(--muted)";
+  }
+
+  function getStatusBg(gradeKey) {
+    const map = {
+      negative: "rgba(16,185,129,0.07)",
+      trace: "rgba(59,130,246,0.07)",
+      moderate: "rgba(245,158,11,0.07)",
+      large: "rgba(239,68,68,0.07)"
+    };
+    return map[gradeKey] || "rgba(255,255,255,0.03)";
+  }
+
+  function analyzeUrineBilirubin() {
+    const gradeSelect = document.getElementById("gradeSelect");
+    const gradeKey = gradeSelect.value;
+    if (!gradeKey) {
+      alert(currentLang === "en" ? "Please select a dipstick grade." : "দয়া করে একটি ডিপস্টিক গ্রেড নির্বাচন করুন।");
+      return;
+    }
+
+    activeReportData = {
+      gradeKey,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(gradeKey, gradeSelect.options[gradeSelect.selectedIndex].textContent);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    const { gradeKey, date } = activeReportData;
+    const t = translations[currentLang];
+    const ins = insights[currentLang][gradeKey];
+    const badgeKey = "badge" + gradeKey.charAt(0).toUpperCase() + gradeKey.slice(1);
+    const color = getStatusColor(gradeKey);
+    const bg = getStatusBg(gradeKey);
+
+    document.getElementById("resDate").textContent = date;
+
+    // Grade display
+    document.getElementById("gradeEmoji").textContent = ins.emoji;
+    const gradeDisplayLabels = {
+      en: { negative: "NEGATIVE", trace: "TRACE / 1+", moderate: "MODERATE / 2+", large: "LARGE / 3+" },
+      bn: { negative: "নেগেটিভ", trace: "ট্রেস / 1+", moderate: "মডারেট / 2+", large: "লার্জ / 3+" },
+    hi: { negative: "नकारात्मक", trace: "ट्रेस / 1+", moderate: "मध्यम/2+", large: "बड़ा/3+" }
+    };
+    document.getElementById("gradeValueBig").textContent = gradeDisplayLabels[currentLang][gradeKey] || gradeKey.toUpperCase();
+    document.getElementById("gradeValueBig").style.color = color;
+    document.getElementById("gradeDisplayBox").style.borderColor = color;
+    document.getElementById("gradeDisplayBox").style.background = bg;
+
+    // Status badge
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = t[badgeKey] || gradeKey;
+    statusLabel.style.color = color;
+    statusLabel.style.border = `1px solid ${color}`;
+    statusLabel.style.background = bg;
+
+    // Active pill
+    ["negative","trace","moderate","large"].forEach(g => {
+      document.getElementById("pill-" + g).classList.remove("active");
+    });
+    const activePill = document.getElementById("pill-" + gradeKey);
+    if (activePill) activePill.classList.add("active");
+
+    // Insight cards
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    if (ins) {
+      const card = document.createElement("div");
+      card.className = "insight-card";
+      card.style.borderLeft = `4px solid ${color}`;
+
+      const causesHtml = ins.causes.map(c => `<li>${c}</li>`).join("");
+      const symptomsHtml = ins.symptoms.map(s => `<li>${s}</li>`).join("");
+      const actionsHtml = ins.actions.map(a => `<li>${a}</li>`).join("");
+
+      card.innerHTML = `
+        <h5>${t.titleInterpretation}</h5>
+        <p>${ins.desc}</p>
+        <div class="insight-two-col">
+          <div>
+            <strong style="font-size:0.8rem; color:var(--text);">${t.titleCauses}</strong>
+            <ul>${causesHtml}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem; color:var(--text);">${t.titleSymptoms}</strong>
+            <ul>${symptomsHtml}</ul>
+          </div>
+        </div>
+        <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem; color:var(--text);">${t.titlePrevention}</strong>
+          <ul>${actionsHtml}</ul>
+        </div>
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${t.titleConsult}:</strong> ${ins.consult}
+        </div>
+      `;
+      insightSection.appendChild(card);
+    }
+  }
+
+  /* ============================================================
+     EXPORT
+  ============================================================ */
+  function printReport() { window.print(); }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const { gradeKey, date } = activeReportData;
+    const t = translations[currentLang];
+    const badgeKey = "badge" + gradeKey.charAt(0).toUpperCase() + gradeKey.slice(1);
+    let text = `--- URINE BILIRUBIN REPORT ---\n`;
+    text += `Date: ${date}\n`;
+    text += `Test: Urine Dipstick Bilirubin\n`;
+    text += `Grade: ${gradeKey.toUpperCase()}\n`;
+    text += `Assessment: ${t[badgeKey]}\n`;
+    text += `-----------------------------\n`;
+    text += `Note: For educational use only.\n`;
+    navigator.clipboard.writeText(text).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, { backgroundColor: "#0a0e17", scale: 2 }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `urine-bilirubin-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  /* ============================================================
+     INIT
+  ============================================================ */
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

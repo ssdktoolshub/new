@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Urine Ketone Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze urine ketone levels to screen for ketonuria, diabetic ketoacidosis (DKA), starvation, or low-carb diet states.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root { --normal-color:#10b981; --low-color:#3b82f6; --high-color:#f59e0b; --critical-color:#ef4444; --border-color:#fbbf24; }
+    .lab-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; align-items:start; }
+    @media(max-width:1024px){ .lab-grid{ grid-template-columns:1fr; } }
+    .panel-title-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+    .panel-title-bar h3 { font-size:1.1rem; font-weight:800; }
+    .fields-category { background:rgba(255,255,255,0.01); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:16px; }
+    .form-inputs-grid { display:grid; grid-template-columns:1fr; gap:16px; }
+    .input-wrapper { display:flex; flex-direction:column; gap:4px; }
+    .input-wrapper label { font-size:0.8rem; font-weight:700; color:var(--muted); }
+    .input-wrapper select { padding:12px; border-radius:8px; border:1px solid var(--border); background:var(--bg3); color:var(--text); outline:none; font-size:0.9rem; transition:all 0.25s; }
+    .input-wrapper select:focus { border-color:var(--accent); box-shadow:0 0 8px var(--glow); }
+    .lang-toggle-container { display:flex; justify-content:flex-end; margin-bottom:14px; }
+    .lang-btn { background:var(--bg3); border:1px solid var(--border); color:var(--muted); padding:6px 14px; border-radius:20px; cursor:pointer; font-size:0.8rem; font-weight:700; transition:all 0.3s; display:flex; align-items:center; gap:6px; }
+    .results-display { background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:20px; min-height:400px; }
+    .results-placeholder { text-align:center; padding:80px 20px; color:var(--muted); }
+    .results-placeholder .icon { font-size:3.5rem; margin-bottom:12px; opacity:0.5; display:block; }
+    .report-card { display:flex; flex-direction:column; gap:16px; }
+    .patient-summary { background:rgba(255,255,255,0.02); border:1px solid var(--border); border-radius:10px; padding:12px 16px; display:flex; justify-content:space-between; font-size:0.85rem; }
+    .patient-summary span strong { color:var(--accent); }
+    .gauge-container { background:var(--bg3); border:1px solid var(--border); border-radius:12px; padding:20px; text-align:center; }
+    .val-large { font-size:3.2rem; font-weight:900; line-height:1.1; margin-bottom:4px; }
+    .status-label { font-weight:800; font-size:1.1rem; text-transform:uppercase; margin-bottom:16px; }
+    .insight-card { background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:16px; margin-top:14px; }
+    .insight-card h5 { font-size:0.95rem; font-weight:800; margin-bottom:8px; }
+    .insight-card p { font-size:0.85rem; color:var(--muted); line-height:1.5; }
+    .insight-card ul { margin-left:18px; font-size:0.8rem; color:var(--muted); line-height:1.5; margin-top:8px; }
+    .history-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; margin-top:16px; }
+    .history-item { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--bg3); border-radius:6px; font-size:0.75rem; border:1px solid var(--border); margin-bottom:6px; }
+    .medical-disclaimer-box { background:rgba(245,158,11,0.03); border:1px dashed var(--border-color); border-radius:10px; padding:14px; margin-top:16px; font-size:0.8rem; color:#fbbf24; line-height:1.5; }
+    @media print { body{background:#fff!important;color:#000!important;} .bg-fx,nav,footer,.tool-control,.lang-toggle-container,.fields-category,.tool-meta,.faq-section,.history-card,.btn,.btn-icon{display:none!important;} .results-display{border:none!important;background:#fff!important;} }
+  </style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<main class="page reveal-on-scroll">
+  
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Urine Ketone Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze urine ketone bodies to evaluate diabetic ketoacidosis, starvation ketosis, or ketogenic diet compliance.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Urine Ketone Entry</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valKetone" data-translate="labelKetone">Dipstick Ketone Grade</label>
+              <select id="valKetone">
+                <option value="negative" selected>Negative (Nil)</option>
+                <option value="trace">Trace (~5 mg/dL)</option>
+                <option value="small">Small/1+ (~15 mg/dL)</option>
+                <option value="moderate">Moderate/2+ (~40 mg/dL)</option>
+                <option value="large">Large/3+ (&ge; 80 mg/dL)</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label for="diabeticStatus" data-translate="labelDiabetes">Patient Context</label>
+              <select id="diabeticStatus">
+                <option value="unknown" selected>Unknown / Not specified</option>
+                <option value="diabetic">Known Diabetic</option>
+                <option value="keto">On Ketogenic Diet</option>
+                <option value="fasting">Fasting / Reduced Intake</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="tool-control">
+          <button class="btn" style="width:100%;justify-content:center;" onclick="analyzeKetone()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Ketone Level</span>
+          </button>
+        </div>
+      </div>
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Pending</h4>
+          <p data-translate="placeholderDesc">Select your ketone dipstick grade and patient context, then click analyze.</p>
+        </div>
+        <div class="report-card" id="reportCardSec" style="display:none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Urine Ketone Profile</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()">📋</button>
+              <button class="btn-icon" onclick="printReport()">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()">🖼️</button>
+            </div>
+          </div>
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Urine Ketones (Dipstick)</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+          <div class="gauge-container">
+            <div class="val-large" id="resKetoneVal">-</div>
+            <div style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;">Dipstick Grade</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+          </div>
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Notes: Urine Ketones</h3>
+    <div style="font-size:0.85rem;line-height:1.6;color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What are Ketones?</strong><br><span data-translate="eduA1">Ketones (acetoacetate, beta-hydroxybutyrate, acetone) are produced when the body burns fat for energy instead of glucose. They are excreted through urine and breath.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">When is this dangerous?</strong><br><span data-translate="eduA2">In diabetic patients, significant ketonuria (Moderate to Large) combined with high blood glucose and acidic blood pH indicates **Diabetic Ketoacidosis (DKA)** — a life-threatening emergency requiring immediate hospital care.</span></p>
+    </div>
+  </section>
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div id="historyListContainer"><p style="font-size:0.75rem;color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p></div>
+  </div>
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">⚠️ <strong>Medical Disclaimer:</strong> Educational only. Not a substitute for professional medical advice.</div>
+</main>
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+<script>
+const translations = {
+  en: {
+    navHome:"Home", navCat:"Medical & Lab Tools", toolTitle:"Urine Ketone Analyzer",
+    toolDesc:"Analyze urine ketone bodies to evaluate diabetic ketoacidosis, starvation ketosis, or ketogenic diet compliance.",
+    inputsTitle:"🧬 Urine Ketone Entry", clearBtn:"Reset", labelKetone:"Dipstick Ketone Grade",
+    labelDiabetes:"Patient Context", btnAnalyze:"Analyze Ketone Level",
+    placeholderTitle:"Analysis Pending", placeholderDesc:"Select your ketone dipstick grade and patient context, then click analyze.",
+    reportTitle:"🔬 Urine Ketone Profile", labelType:"Test", labelDate:"Date",
+    recentRuns:"Recent Interpretations", noHistory:"No recent runs recorded.",
+    faqTitle:"❓ Frequently Asked Questions", disclaimerText:"⚠️ <strong>Medical Disclaimer:</strong> Educational only. Not a substitute for professional medical advice.",
+    badgeNormal:"Normal (No Ketonuria)", badgeTrace:"Trace Ketonuria",
+    badgeModerate:"Moderate Ketonuria (Metabolic Shift)", badgeLarge:"Significant Ketonuria (DKA Risk if Diabetic)",
+    titleInterpretation:"📋 Clinical Overview", titleCauses:"Possible Factors",
+    titleSymptoms:"Common Symptoms", titlePrevention:"Actionable Tips", titleConsult:"When to see a Doctor"
+  },
+  bn: {
+    navHome:"হোম", navCat:"মেডিকেল ও ল্যাব টুলস", toolTitle:"প্রস্রাবে কিটোন বিশ্লেষক",
+    toolDesc:"প্রস্রাবে কিটোন বডির মাত্রা বিশ্লেষণ করে ডায়াবেটিক কিটোঅ্যাসিডোসিস ও উপবাস কিটোসিস পরীক্ষা করুন।",
+    inputsTitle:"🧬 কিটোন ইনপুট", clearBtn:"মুছে ফেলুন", labelKetone:"ডিপস্টিক কিটোন গ্রেড",
+    labelDiabetes:"রোগীর অবস্থা", btnAnalyze:"কিটোন বিশ্লেষণ করুন",
+    placeholderTitle:"বিশ্লেষণ অমীমাংসিত", placeholderDesc:"কিটোন গ্রেড নির্বাচন করুন এবং বিশ্লেষণ বোতামটি চাপুন।",
+    reportTitle:"🔬 প্রস্রাবের কিটোন প্রোফাইল", labelType:"পরীক্ষা", labelDate:"তারিখ",
+    recentRuns:"সাম্প্রতিক বিশ্লেষণ", noHistory:"কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+    faqTitle:"❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী", disclaimerText:"⚠️ <strong>মেডিকেল সতর্কতা:</strong> শুধুমাত্র শিক্ষামূলক। পেশাদার চিকিৎসার বিকল্প নয়।",
+    badgeNormal:"স্বাভাবিক (কোনো কিটোন নেই)", badgeTrace:"সামান্য কিটোন সনাক্ত",
+    badgeModerate:"মধ্যম কিটোনুরিয়া (বিপাকীয় পরিবর্তন)", badgeLarge:"তীব্র কিটোনুরিয়া (ডায়াবেটিকদের ক্ষেত্রে DKA ঝুঁকি)",
+    titleInterpretation:"📋 ক্লিনিক্যাল বিশ্লেষণ", titleCauses:"সম্ভাব্য কারণ",
+    titleSymptoms:"সাধারণ লক্ষণ", titlePrevention:"করণীয় টিপস", titleConsult:"কখন ডাক্তার দেখাবেন"
+  },
+    hi: {
+    navHome:"घर", navCat:"चिकित्सा एवं प्रयोगशाला उपकरण", toolTitle:"मूत्र कीटोन विश्लेषक",
+    toolDesc:"मधुमेह कीटोएसिडोसिस, भुखमरी कीटोसिस, या कीटोजेनिक आहार अनुपालन का मूल्यांकन करने के लिए मूत्र कीटोन निकायों का विश्लेषण करें।",
+    inputsTitle:"🧬मूत्र कीटोन प्रवेश", clearBtn:"रीसेट करें", labelKetone:"डिपस्टिक कीटोन ग्रेड",
+    labelDiabetes:"रोगी प्रसंग", btnAnalyze:"केटोन स्तर का विश्लेषण करें",
+    placeholderTitle:"विश्लेषण लंबित", placeholderDesc:"अपने कीटोन डिपस्टिक ग्रेड और रोगी संदर्भ का चयन करें, फिर विश्लेषण पर क्लिक करें।",
+    reportTitle:"🔬 मूत्र कीटोन प्रोफाइल", labelType:"परीक्षण", labelDate:"दिनांक",
+    recentRuns:"हालिया व्याख्याएँ", noHistory:"कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+    faqTitle:"❓अक्सर पूछे जाने वाले प्रश्न", disclaimerText:"⚠️ <strong>चिकित्सा अस्वीकरण:</strong> केवल शैक्षिक। पेशेवर चिकित्सा सलाह का विकल्प नहीं।",
+    badgeNormal:"सामान्य (कोई केटोन��रिया नहीं)", badgeTrace:"ट्रेस केटोनुरिया",
+    badgeModerate:"मध्यम केटोनुरिया (चयापचय बदलाव)", badgeLarge:"महत्वपूर्ण केटोनुरिया (मधुमेह होने पर डीकेए जोखिम)",
+    titleInterpretation:"📋 क्लिनिकल अवलोकन", titleCauses:"संभावित कारक",
+    titleSymptoms:"सामान्य लक्षण", titlePrevention:"कार्रवाई योग्य युक्तियाँ", titleConsult:"डॉक्टर से कब मिलना है"
+  }
+};
+const faqData = {
+  en:[
+    {q:"What are urine ketones?",a:"Ketone bodies produced from fat metabolism. Detected by urinalysis dipstick."},
+    {q:"What causes ketonuria?",a:"Diabetic ketoacidosis (DKA), starvation, prolonged fasting, ketogenic diet, or high fever."},
+    {q:"Is some ketonuria normal?",a:"Trace to small ketones can be normal during fasting or on a ketogenic diet."},
+    {q:"What is DKA?",a:"Diabetic Ketoacidosis — a life-threatening complication of uncontrolled diabetes combining hyperglycemia, ketonuria, and metabolic acidosis."}
+  ],
+  bn:[
+    {q:"প্রস্রাবে কিটোন কেন হয়?",a:"ডায়াবেটিক কিটোঅ্যাসিডোসিস, দীর্ঘ উপবাস, কিটোজেনিক ডায়েট বা তীব্র জ্বরের কারণে।"},
+    {q:"সামান্য কিটোন কি স্বাভাবিক?",a:"হ্যাঁ, দীর্ঘ উপবাস বা কিটো ডায়েটে সামান্য কিটোন থাকতে পারে।"},
+    {q:"DKA কী?",a:"ডায়াবেটিক কিটোঅ্যাসিডোসিস — ডায়াবেটিসের একটি জটিল অবস্থা যেখানে রক্তে অতিরিক্ত সুগার ও কিটোন একসাথে থাকে।"}
+  ],
+    hi: [
+    {q:"मूत्र कीटोन्स क्या हैं?",a:"वसा चयापचय से निर्मित कीटोन बॉडीज। यूरिनलिसिस डिपस्टिक द्वारा पता लगाया गया।"},
+    {q:"कीटोनुरिया का क्या कारण है?",a:"मधुमेह कीटोएसिडोसिस (डीकेए), भुखमरी, लंबे समय तक उपवास, केटोजेनिक आहार, या तेज बुखार।"},
+    {q:"क्या कुछ कीटोनुरिया सामान्य है?",a:"उपवास के दौरान या कीटोजेनिक आहार पर छोटे कीटोन का पता लगना सामान्य हो सकता है।"},
+    {q:"डीकेए क्या है?",a:"डायबिटिक केटोएसिडोसिस - हाइपरग्लेसेमिया, केटोनुरिया और मेटाबोलिक एसिडोसिस के संयोजन से अनियंत्रित मधुमेह की एक जीवन-घातक जटिलता।"}
+  ]
+};
+const insights = {
+  en:{
+    normal:{desc:"No ketones detected. Glucose is being used as primary energy efficiently.",factors:["Adequate carbohydrate intake","Normal insulin function"],symptoms:["None"],prevention:["Maintain balanced nutrition"],consult:"Annual checkups."},
+    trace:{desc:"Trace ketones noted. Typically associated with overnight fasting or low-calorie intake.",factors:["Light breakfast or fasting","Low-carb diet"],symptoms:["None"],prevention:["Eat regular balanced meals"],consult:"Normal if context is fasting or keto diet."},
+    moderate:{desc:"Moderate ketonuria detected. Fat is being used as primary fuel — evaluate context (fasting, diet, or illness).",factors:["Extended low-carb diet or fasting","Fever or metabolic illness","Diabetic with poor control"],symptoms:["Fatigue, nausea, fruity-smelling breath"],prevention:["Ensure adequate carbohydrate intake if not intentional","Check blood glucose if diabetic"],consult:"If diabetic — check blood glucose and seek medical advice immediately."},
+    large:{desc:"Significant ketonuria detected. In a diabetic patient, this strongly indicates DKA — a medical emergency.",factors:["Uncontrolled diabetes with insulin deficiency","Acute illness triggering DKA in diabetics"],symptoms:["Extreme thirst, vomiting, abdominal pain, rapid breathing, fruity breath"],prevention:["Ensure insulin therapy is active","Avoid missing diabetes medications"],consult:"⚠️ If diabetic — seek EMERGENCY medical care immediately. DKA can be fatal."}
+  },
+  bn:{
+    normal:{desc:"কোনো কিটোন সনাক্ত হয়নি। গ্লুকোজ সঠিকভাবে শক্তি হিসেবে ব্যবহৃত হচ্ছে।",factors:["পর্যাপ্ত কার্বোহাইড্রেট গ্রহণ","স্বাভাবিক ইনসুলিন কার্যক্রম"],symptoms:["কোনো লক্ষণ নেই"],prevention:["সুষম পুষ্টি বজায় রাখুন"],consult:"বার্ষিক চেকআপ করান।"},
+    trace:{desc:"সামান্য কিটোন সনাক্ত হয়েছে। রাতে না খেয়ে ঘুমানো বা কম খাবার খাওয়ার কারণে সাধারণত হয়।",factors:["রাতের উপবাস","কম কার্বোহাইড্রেট গ্রহণ"],symptoms:["কোনো লক্ষণ নেই"],prevention:["নিয়মিত সুষম খাবার খান"],consult:"কিটো ডায়েট বা উপবাসের ক্ষেত্রে স্বাভাবিক।"},
+    moderate:{desc:"মধ্যম মাত্রায় কিটোন সনাক্ত হয়েছে। চর্বি প্রধান শক্তির উৎস হিসেবে ব্যবহৃত হচ্ছে।",factors:["দীর্ঘ উপবাস বা কম খাবার","জ্বর বা বিপাকীয় সমস্যা","অনিয়ন্ত্রিত ডায়াবেটিস"],symptoms:["ক্লান্তি, বমি ভাব, মুখে মিষ্টি গন্ধ"],prevention:["পর্যাপ্ত শর্করা গ্রহণ করুন","ডায়াবেটিক হলে রক্তের সুগার পরীক্ষা করুন"],consult:"ডায়াবেটিক হলে অবিলম্বে চিকিৎসকের পরামর্শ নিন।"},
+    large:{desc:"তীব্র কিটোনুরিয়া সনাক্ত হয়েছে। ডায়াবেটিক রোগীর ক্ষেত্রে এটি DKA (ডায়াবেটিক কিটোঅ্যাসিডোসিস) এর জরুরি লক্ষণ।",factors:["গুরুতর অনিয়ন্ত্রিত ডায়াবেটিস","ইনসুলিনের তীব্র ঘাটতি"],symptoms:["তীব্র তৃষ্ণা, বমি, পেট ব্যথা, দ্রুত শ্বাস, মুখে মিষ্টি গন্ধ"],prevention:["নিয়মিত ইনসুলিন ইনজেকশন নিন","ডায়াবেটিসের ওষুধ বন্ধ করবেন না"],consult:"⚠️ ডায়াবেটিক হলে অবিলম্বে জরুরি হাসপাতালে যান। DKA মারাত্মক হতে পারে।"}
+  },
+    hi: {
+    normal:{desc:"कोई कीटोन नहीं पाया गया. ग्लूकोज का उपयोग प्राथमिक ऊर्जा के रूप में कुशलतापूर्वक किया जा रहा है।",factors:["पर्याप्त कार्बोहाइड्रेट का सेवन","सामान्य इंसुलिन कार्य"],symptoms:["कोई नहीं"],prevention:["संतुल���त पोषण बनाए रखें"],consult:"वार्षिक जांच."},
+    trace:{desc:"ट्रेस कीटोन्स का उल्लेख किया गया। आमतौर पर यह रात भर के उपवास या कम कैलोरी वाले सेवन से जुड़ा होता है।",factors:["हल्का नाश्ता या उपवास","कम कार��ब वाला आहार"],symptoms:["कोई नहीं"],prevention:["नियमित संतुलित भोजन करें"],consult:"यदि संदर्भ उपवास या कीटो आहार का हो तो सामान्य है।"},
+    moderate:{desc:"मध्यम कीटोनुरिया का पता चला। वसा का उपयोग प्राथमिक ईंधन के रूप में किया जा रहा है - संदर्भ (उपवास, आहार, या बीमारी) का मूल्यांकन करें।",factors:["विस्तारित कम कार्ब आहार या उपवास","बुखार या चयापचय संबंधी बीमारी","खराब नियंत्रण के साथ मधुमेह"],symptoms:["थकान, मतली, फल जैसी गंध वाली सांस"],prevention:["यदि जानबूझकर नहीं तो पर्याप्त कार्बोहाइड्रेट का सेवन सुनिश्चित करें","मधुमेह होने पर रक्त शर्करा की जाँच करें"],consult:"यदि मधुमेह है - रक्त शर्करा की जांच करें और तुरंत चिकित्सा सलाह लें।"},
+    large:{desc:"महत्वपूर्ण कीटोनुरिया का पता चला। मधुमेह के रोगी में, यह दृढ़ता से डीकेए - एक चिकित्सा आपातकाल का संकेत देता है।",factors:["इंसुलिन की कमी के साथ अनियंत्रित मधुमेह","मधुमेह रोगियों में डीकेए को ट्रिगर करने वाली गंभीर बीमारी"],symptoms:["अत्यधिक प्य���स, उल्टी, पेट में दर्द, तेजी से सांस लेना, सांस फूलना"],prevention:["सुनिश्चित करें कि इंसुलिन थेरेपी सक्रिय है","मधुमेह की दवाएँ भूलने से बचें"],consult:"⚠️ यदि मधुमेह है - तो तुरंत आपातकालीन चिकित्सा देखभाल लें। डीकेए घातक हो सकता है."}
+  }
+};
+let currentLang = localStorage.getItem("ssdk-lang")||"en";
+let recentHistory = JSON.parse(localStorage.getItem("ssdk-uketone-history"))||[];
+let activeReportData = null;
+function setLanguage(lang){
+  currentLang=lang; localStorage.setItem("ssdk-lang",lang);
+  const btn=document.getElementById("langToggleBtn");
+  if(btn) btn.innerHTML=lang==="bn"?'🇬🇧 <span>English</span>':'🇧🇩 <span>Bengali</span>';
+  document.querySelectorAll("[data-translate]").forEach(el=>{
+    const key=el.getAttribute("data-translate");
+    if(translations[lang]&&translations[lang][key]){
+      if(el.tagName==="INPUT"||el.tagName==="TEXTAREA") el.placeholder=translations[lang][key];
+      else el.innerHTML=translations[lang][key];
+    }
+  });
+  renderFAQs(); renderHistoryDisplay();
+  if(activeReportData) updateReportDisplay();
+}
+function toggleLanguage(){ setLanguage(currentLang==="en"?"bn":"en"); }
+function resetForm(){
+  document.getElementById("valKetone").selectedIndex=0;
+  document.getElementById("diabeticStatus").selectedIndex=0;
+  document.getElementById("placeholderSec").style.display="block";
+  document.getElementById("reportCardSec").style.display="none";
+}
+function analyzeKetone(){
+  const grade=document.getElementById("valKetone").value;
+  const context=document.getElementById("diabeticStatus").value;
+  let statusKey="normal", badgeKey="badgeNormal";
+  if(grade==="trace"){ statusKey="trace"; badgeKey="badgeTrace"; }
+  else if(grade==="small"||grade==="moderate"){ statusKey="moderate"; badgeKey="badgeModerate"; }
+  else if(grade==="large"){ statusKey="large"; badgeKey="badgeLarge"; }
+  activeReportData={ grade, context, statusKey, badgeKey, date:new Date().toLocaleDateString() };
+  updateReportDisplay();
+  document.getElementById("placeholderSec").style.display="none";
+  document.getElementById("reportCardSec").style.display="block";
+  addToHistory(badgeKey, grade);
+}
+function updateReportDisplay(){
+  if(!activeReportData) return;
+  const d=activeReportData;
+  document.getElementById("resDate").textContent=d.date;
+  document.getElementById("resKetoneVal").textContent=d.grade.toUpperCase();
+  const statusLabel=document.getElementById("resStatusLabel");
+  statusLabel.textContent=translations[currentLang][d.badgeKey];
+  let colorClass="normal";
+  if(d.statusKey==="trace") colorClass="high";
+  else if(d.statusKey==="moderate") colorClass="high";
+  else if(d.statusKey==="large") colorClass="critical";
+  statusLabel.style.color=`var(--${colorClass}-color)`;
+  document.getElementById("resKetoneVal").style.color=`var(--${colorClass}-color)`;
+  const insightSection=document.getElementById("insightSection");
+  insightSection.innerHTML="";
+  const details=insights[currentLang][d.statusKey];
+  if(details){
+    const card=document.createElement("div"); card.className="insight-card";
+    card.style.borderLeft=`4px solid var(--${colorClass}-color)`;
+    card.innerHTML=`<h5>${translations[currentLang].titleInterpretation}</h5><p>${details.desc}</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px;">
+      <div><strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong><ul>${details.factors.map(f=>`<li>${f}</li>`).join("")}</ul></div>
+      <div><strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong><ul>${details.symptoms.map(s=>`<li>${s}</li>`).join("")}</ul></div>
+    </div>
+    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px;">
+      <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+      <ul>${details.prevention.map(p=>`<li>${p}</li>`).join("")}</ul>
+    </div>
+    <div style="margin-top:10px;font-size:0.8rem;color:#fbbf24;"><strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}</div>`;
+    insightSection.appendChild(card);
+    if(d.statusKey==="large"&&d.context==="diabetic"){
+      const dkaAlert=document.createElement("div");
+      dkaAlert.style.cssText="background:rgba(239,68,68,0.1);border:2px solid var(--critical-color);border-radius:10px;padding:16px;margin-top:12px;font-weight:700;color:var(--critical-color);font-size:0.9rem;";
+      dkaAlert.innerHTML=currentLang==="en"?"🚨 DKA ALERT: Diabetic patient with large ketonuria. Seek EMERGENCY care NOW. Do NOT delay.":"🚨 DKA সতর্কতা: ডায়াবেটিক রোগীর তীব্র কিটোনুরিয়া। এখনই জরুরি হাসপাতালে যান।";
+      insightSection.appendChild(dkaAlert);
+    }
+  }
+}
+function addToHistory(badgeKey, grade){
+  const item={date:new Date().toLocaleDateString(),badgeKey,grade,id:Date.now()};
+  recentHistory.unshift(item);
+  if(recentHistory.length>5) recentHistory.pop();
+  localStorage.setItem("ssdk-uketone-history",JSON.stringify(recentHistory));
+  renderHistoryDisplay();
+}
+function renderHistoryDisplay(){
+  const container=document.getElementById("historyListContainer");
+  if(!container) return;
+  container.innerHTML="";
+  if(recentHistory.length===0){ container.innerHTML=`<p style="font-size:0.75rem;color:var(--muted);">${translations[currentLang].noHistory}</p>`; return; }
+  recentHistory.forEach(item=>{
+    const div=document.createElement("div"); div.className="history-item";
+    const statusText=translations[currentLang][item.badgeKey]||item.badgeKey;
+    div.innerHTML=`<span>📅 ${item.date}</span><strong>Ketone: ${item.grade.toUpperCase()} (${statusText})</strong>`;
+    container.appendChild(div);
+  });
+}
+function renderFAQs(){
+  const container=document.getElementById("faqAccordionContainer");
+  if(!container) return; container.innerHTML="";
+  const faqs=faqData[currentLang]||faqData["en"];
+  faqs.forEach(faq=>{
+    const item=document.createElement("div"); item.className="faq-item";
+    item.innerHTML=`<div class="faq-q">${faq.q}<span>＋</span></div><div class="faq-a">${faq.a}</div>`;
+    const q=item.querySelector(".faq-q");
+    q.onclick=()=>{ const isOpen=item.classList.toggle("open"); const a=item.querySelector(".faq-a"); a.style.maxHeight=isOpen?"250px":"0"; a.style.padding=isOpen?"0 22px 16px":"0 22px"; };
+    container.appendChild(item);
+  });
+}
+function printReport(){ window.print(); }
+function copyFormattedResult(){
+  if(!activeReportData) return;
+  let t=`--- URINE KETONE REPORT ---\nDate: ${activeReportData.date}\nGrade: ${activeReportData.grade.toUpperCase()}\nAssessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+  navigator.clipboard.writeText(t).then(()=>alert(currentLang==="en"?"Report copied!":"রিপোর্ট কপি হয়েছে!"));
+}
+function captureReportPng(){
+  const target=document.getElementById("resultsPanel"); if(!target) return;
+  html2canvas(target,{backgroundColor:"#0a0e17",scale:2}).then(canvas=>{
+    const link=document.createElement("a"); link.download=`urine-ketone-${Date.now()}.png`; link.href=canvas.toDataURL("image/png"); link.click();
+  });
+}
+function toggleFavorite(){ document.getElementById("toolFavBtn").classList.toggle("on"); }
+window.addEventListener("DOMContentLoaded",()=>setLanguage(currentLang));
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

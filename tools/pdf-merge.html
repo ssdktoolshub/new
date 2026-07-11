@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Merger &bull; Combine PDF Files Online - SSDK TOOLS HUB</title>
+  <meta name="description" content="Merge multiple PDF files into a single document instantly in your browser. 100% secure client-side merge with zero file uploads.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <!-- Load pdf-lib library from CDN -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <style>
+    .pdf-queue {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      font-size: 0.85rem;
+    }
+    .pdf-queue th, .pdf-queue td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .pdf-queue th {
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .pdf-queue tr {
+      transition: background 0.2s;
+    }
+    .pdf-queue tr:hover {
+      background: rgba(0,0,0,0.1);
+    }
+    .order-btns {
+      display: flex;
+      gap: 4px;
+      justify-content: center;
+    }
+    .btn-small {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .btn-small:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-small:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">PDF Merger</h1>
+  <p class="page-sub">Combine multiple PDF documents into a single file securely in your browser.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 1fr; gap: 24px;">
+      
+      <!-- Upload Drop Zone -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Upload PDF Files</h4>
+        <div id="dropZone" style="border: 2px dashed var(--border); padding: 35px 24px; border-radius: 12px; text-align: center; cursor: pointer; background: var(--bg2); transition: 0.3s; margin-bottom: 16px;">
+          <span style="font-size: 2.8rem; display: block; margin-bottom: 8px;">📄</span>
+          <p style="font-size: 0.9rem; color: var(--muted); margin: 0;">Drag & drop your PDF documents here, or <span style="color: var(--accent); font-weight: 700;">browse</span></p>
+          <input type="file" id="pdfInput" accept="application/pdf" multiple style="display: none;">
+        </div>
+      </div>
+
+      <!-- PDF Queue List -->
+      <div id="queueContainer" style="display: none;">
+        <h4 style="margin-bottom: 6px;">Merge Order List (<span id="queueCount">0</span> files loaded)</h4>
+        <div style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg3);">
+          <table class="pdf-queue">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;">#</th>
+                <th>File Name</th>
+                <th>Size</th>
+                <th>Pages</th>
+                <th style="width: 100px; text-align: center;">Arrange</th>
+                <th style="width: 60px; text-align: center;">Remove</th>
+              </tr>
+            </thead>
+            <tbody id="pdfQueueBody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnMerge" style="display: none; background: var(--grad2);">🔗 Merge PDFs</button>
+      <button class="btn ghost" id="btnClear" style="display: none; border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear Queue</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Arrangement Controls:</strong> Arrange PDFs in the exact order you want them merged using simple Up/Down buttons.</li>
+      <li><strong>100% Serverless:</strong> Powered by <code>pdf-lib.js</code>, all parsing and compiling are computed client-side inside your browser's runtime.</li>
+      <li><strong>No Limits:</strong> Merge large documents with multiple pages instantly.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">Is my file data secure during the merge?<span>＋</span></div>
+        <div class="faq-a">Yes. Your PDF files do not get sent to any server. They are processed entirely within your computer's browser window, guaranteeing maximum data security and offline functionality.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Can I merge files with different page layouts or sizes?<span>＋</span></div>
+        <div class="faq-a">Yes. The tool copies all dimensions, formats, and objects of each page directly from your source PDFs, ensuring that the merged file retains all layout properties.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  let pdfQueue = [];
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  // Handle Drag & Drop
+  const dropZone = $('dropZone');
+  dropZone.onclick = () => $('pdfInput').click();
+
+  dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--accent)';
+  };
+  dropZone.ondragleave = () => {
+    dropZone.style.borderColor = 'var(--border)';
+  };
+  dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files.length) {
+      appendPdfs(e.dataTransfer.files);
+    }
+  };
+  $('pdfInput').onchange = (e) => {
+    if (e.target.files.length) {
+      appendPdfs(e.target.files);
+    }
+  };
+
+  function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  async function appendPdfs(filesList) {
+    if (typeof PDFLib === 'undefined') {
+      showStatus('Error: pdf-lib failed to load. Check your internet connection.', true);
+      return;
+    }
+
+    showStatus('Reading documents...');
+    for (let i = 0; i < filesList.length; i++) {
+      const file = filesList[i];
+      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+        continue;
+      }
+      
+      try {
+        const buffer = await file.arrayBuffer();
+        const pdf = await PDFLib.PDFDocument.load(buffer, { updateMetadata: false });
+        const pagesCount = pdf.getPageCount();
+        
+        pdfQueue.push({
+          file: file,
+          name: file.name,
+          size: file.size,
+          pages: pagesCount
+        });
+      } catch (e) {
+        console.error(e);
+        showStatus(`Could not read PDF "${file.name}": it may be encrypted or corrupted.`, true);
+      }
+    }
+
+    renderQueue();
+    showStatus('✅ PDF files added to the queue.');
+  }
+
+  function renderQueue() {
+    const tbody = $('pdfQueueBody');
+    tbody.innerHTML = '';
+    
+    if (pdfQueue.length === 0) {
+      $('queueContainer').style.display = 'none';
+      $('btnMerge').style.display = 'none';
+      $('btnClear').style.display = 'none';
+      return;
+    }
+
+    $('queueContainer').style.display = 'block';
+    $('btnMerge').style.display = 'inline-flex';
+    $('btnClear').style.display = 'inline-flex';
+    $('queueCount').textContent = pdfQueue.length;
+
+    pdfQueue.forEach((item, index) => {
+      const tr = document.createElement('tr');
+      
+      const upDisabled = index === 0 ? 'disabled' : '';
+      const downDisabled = index === pdfQueue.length - 1 ? 'disabled' : '';
+
+      tr.innerHTML = `
+        <td style="text-align: center; font-weight: 700; color: var(--muted);">${index + 1}</td>
+        <td style="word-break: break-all; font-weight: 600;">${item.name}</td>
+        <td>${formatBytes(item.size)}</td>
+        <td style="font-weight: bold; color: var(--accent);">${item.pages}</td>
+        <td style="text-align: center;">
+          <div class="order-btns">
+            <button class="btn-small" ${upDisabled} onclick="moveItem(${index}, -1)" title="Move Up">▲</button>
+            <button class="btn-small" ${downDisabled} onclick="moveItem(${index}, 1)" title="Move Down">▼</button>
+          </div>
+        </td>
+        <td style="text-align: center;">
+          <button class="btn-rule-del" onclick="removeItem(${index})" title="Remove">🗑</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  window.moveItem = (index, direction) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= pdfQueue.length) return;
+    const temp = pdfQueue[index];
+    pdfQueue[index] = pdfQueue[targetIndex];
+    pdfQueue[targetIndex] = temp;
+    renderQueue();
+  };
+
+  window.removeItem = (index) => {
+    pdfQueue.splice(index, 1);
+    renderQueue();
+  };
+
+  $('btnMerge').onclick = async () => {
+    if (pdfQueue.length < 2) {
+      showStatus('Please add at least 2 PDF files to merge.', true);
+      return;
+    }
+
+    showStatus('Merging PDF files...');
+
+    try {
+      const mergedPdf = await PDFLib.PDFDocument.create();
+      
+      for (const item of pdfQueue) {
+        const fileBuffer = await item.file.arrayBuffer();
+        const loadedDoc = await PDFLib.PDFDocument.load(fileBuffer);
+        const pagesToCopy = loadedDoc.getPageIndices();
+        const copiedPages = await mergedPdf.copyPages(loadedDoc, pagesToCopy);
+        
+        copiedPages.forEach(page => mergedPdf.addPage(page));
+      }
+
+      const mergedPdfBytes = await mergedPdf.save();
+      const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'merged-document.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showStatus('✅ PDF files merged and downloaded successfully!');
+    } catch (err) {
+      console.error(err);
+      showStatus(`❌ Merge failed: ${err.message}`, true);
+    }
+  };
+
+  $('btnClear').onclick = () => {
+    pdfQueue = [];
+    $('pdfInput').value = '';
+    renderQueue();
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

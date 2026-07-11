@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>URL Encoder/Decoder &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Free online URL Encoder, Base64 Encoder and HTML Entity Encoder/Decoder — encode or decode text with instant live analysis.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+
+  <style>
+    /* ── Tab switcher ── */
+    .enc-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+      background: var(--bg3);
+      border-radius: 12px;
+      padding: 5px;
+      border: 1px solid var(--border);
+    }
+    .enc-tab {
+      flex: 1;
+      padding: 9px 12px;
+      border-radius: 9px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      white-space: nowrap;
+    }
+    .enc-tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    .enc-tab:hover:not(.active) {
+      background: var(--bg2);
+      color: var(--text);
+    }
+
+    /* ── Sample snippets ── */
+    .sample-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+    .sample-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-right: 2px;
+    }
+    .sample-btn {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--muted);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .sample-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--bg2);
+    }
+
+    /* ── I/O grid ── */
+    .enc-io-grid {
+      display: grid;
+      grid-template-columns: 1fr 48px 1fr;
+      gap: 0 10px;
+      align-items: start;
+    }
+    .enc-io-col h4 {
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+      color: var(--text);
+      font-weight: 700;
+    }
+    #encInput {
+      width: 100%;
+      min-height: 200px;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .enc-output-box {
+      min-height: 200px;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      color: var(--muted);
+      word-break: break-all;
+      line-height: 1.6;
+      transition: color 0.2s;
+    }
+
+    /* ── Swap button ── */
+    .swap-col {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-top: 30px;
+    }
+    .swap-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: var(--bg3);
+      color: var(--muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, transform 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .swap-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: rotate(180deg);
+    }
+
+    /* ── Stat strip ── */
+    .stat-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      margin: 14px 0 0;
+      padding: 10px 14px;
+      background: var(--bg3);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .stat-item .stat-val {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    /* ── Controls row ── */
+    .enc-controls {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    /* ── Auto-detect banner ── */
+    .detect-banner {
+      display: none;
+      margin-top: 10px;
+      padding: 9px 14px;
+      border-radius: 9px;
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+      font-size: 0.83rem;
+      color: var(--text);
+      gap: 8px;
+      align-items: center;
+    }
+    .detect-banner.visible {
+      display: flex;
+    }
+    .detect-banner .detect-icon { font-size: 1rem; }
+
+    /* ── Status message ── */
+    #encStatus {
+      display: none;
+      margin-top: 10px;
+      font-weight: 700;
+      font-size: 0.88rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      .enc-io-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+      }
+      .swap-col {
+        padding-top: 0;
+        justify-content: flex-start;
+      }
+      .swap-btn {
+        transform: rotate(90deg);
+      }
+      .swap-btn:hover {
+        transform: rotate(270deg);
+      }
+      .enc-tab { font-size: 0.78rem; padding: 8px 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Encode / Decode</h1>
+  <p class="page-sub">URL-encode query strings, Base64-encode arbitrary text, or escape HTML entities — all in one tool with live analysis.</p>
+
+  <div class="content-card tool-playground">
+
+    <!-- Tab switcher -->
+    <div class="enc-tabs" role="tablist">
+      <button class="enc-tab active" data-tab="url"  role="tab" aria-selected="true">🔗 URL Encode</button>
+      <button class="enc-tab"        data-tab="b64"  role="tab" aria-selected="false">🔐 Base64</button>
+      <button class="enc-tab"        data-tab="html" role="tab" aria-selected="false">🏷️ HTML Entities</button>
+    </div>
+
+    <!-- Sample snippets -->
+    <div class="sample-row">
+      <span class="sample-label">Samples:</span>
+      <button class="sample-btn" data-sample="url">🌐 URL with params</button>
+      <button class="sample-btn" data-sample="html">📄 HTML with tags</button>
+      <button class="sample-btn" data-sample="special">✨ Special chars</button>
+    </div>
+
+    <!-- I/O grid -->
+    <div class="enc-io-grid">
+      <!-- Input -->
+      <div class="enc-io-col">
+        <h4>Input</h4>
+        <textarea id="encInput" placeholder="Type or paste text here…" spellcheck="false"></textarea>
+      </div>
+
+      <!-- Swap -->
+      <div class="swap-col">
+        <button class="swap-btn" id="swapBtn" title="Swap input ↔ output">⇄</button>
+      </div>
+
+      <!-- Output -->
+      <div class="enc-io-col">
+        <h4>Output</h4>
+        <div class="enc-output-box" id="encOutput">Result will appear here…</div>
+      </div>
+    </div>
+
+    <!-- Live stat strip -->
+    <div class="stat-strip" id="statStrip">
+      <div class="stat-item">📝 Total chars: <span class="stat-val" id="statTotal">0</span></div>
+      <div class="stat-item">⚡ Special chars: <span class="stat-val" id="statSpecial">0%</span></div>
+      <div class="stat-item">📏 Input length: <span class="stat-val" id="statInputLen">0</span></div>
+      <div class="stat-item">📐 Output length: <span class="stat-val" id="statOutputLen">—</span></div>
+      <div class="stat-item">📊 Size change: <span class="stat-val" id="statDelta">—</span></div>
+    </div>
+
+    <!-- Auto-detect banner -->
+    <div class="detect-banner" id="detectBanner">
+      <span class="detect-icon">🤖</span>
+      <span id="detectMsg"></span>
+    </div>
+
+    <!-- Controls -->
+    <div class="enc-controls">
+      <button class="btn" id="btnEncode">🔒 Encode</button>
+      <button class="btn" id="btnDecode">🔓 Decode</button>
+      <button class="btn ghost" id="btnCopy">📋 Copy Result</button>
+      <button class="btn ghost" id="btnClear" style="border-color:#ff6b6b;color:#ff6b6b;">🗑 Clear</button>
+    </div>
+
+    <p id="encStatus"></p>
+  </div>
+
+  <!-- Features card -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>URL Encode/Decode:</strong> Converts strings using <code>encodeURIComponent</code> / <code>decodeURIComponent</code> (RFC 3986).</li>
+      <li><strong>Base64 Encode/Decode:</strong> Fast browser-native Base64 using <code>btoa</code> / <code>atob</code> with UTF-8 support.</li>
+      <li><strong>HTML Entity Encode/Decode:</strong> Escapes <code>&lt; &gt; &amp; &quot; &#39;</code> and unescapes them back safely.</li>
+      <li><strong>Live Analysis:</strong> Real-time character count, special-char percentage, and output length delta as you type.</li>
+      <li><strong>Auto-detect Mode:</strong> Click Encode and let the tool suggest the best mode for your input.</li>
+      <li><strong>Swap:</strong> Instantly move output back to input for chained operations.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  /* ─── Helpers ─────────────────────────────────────────── */
+  const $ = id => document.getElementById(id);
+  let currentTab = 'url';
+  let lastOutput = '';
+
+  /* ─── Tab switcher ─────────────────────────────────────── */
+  document.querySelectorAll('.enc-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.enc-tab').forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      currentTab = tab.dataset.tab;
+      hideDetect();
+      updateStats();
+    });
+  });
+
+  /* ─── Sample snippets ──────────────────────────────────── */
+  const SAMPLES = {
+    url:     'https://example.com/search?q=hello world&lang=en&filter=A+B&price=<100',
+    html:    '<h1>Hello & "World"</h1>\n<p>It\'s a <strong>great</strong> day!</p>',
+    special: 'Café 50% off! ©2024 – "naïve" résumé #1 @ $9.99 + tax'
+  };
+
+  document.querySelectorAll('.sample-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $('encInput').value = SAMPLES[btn.dataset.sample];
+      clearOutput();
+      updateStats();
+    });
+  });
+
+  /* ─── Status message ───────────────────────────────────── */
+  function showStatus(text, isError = false) {
+    const el = $('encStatus');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.display = 'none'; }, 2500);
+  }
+
+  /* ─── Output helpers ───────────────────────────────────── */
+  function setOutput(text, isError = false) {
+    const el = $('encOutput');
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--text)';
+    lastOutput = isError ? '' : text;
+    updateStats(text);
+  }
+
+  function clearOutput() {
+    const el = $('encOutput');
+    el.textContent = 'Result will appear here…';
+    el.style.color = 'var(--muted)';
+    lastOutput = '';
+    updateStats('');
+    $('encStatus').style.display = 'none';
+  }
+
+  /* ─── Live stat strip ──────────────────────────────────── */
+  function updateStats(outputText) {
+    const input  = $('encInput').value;
+    const inLen  = input.length;
+    const out    = (outputText !== undefined) ? outputText : lastOutput;
+    const outLen = out.length;
+
+    // Count "special" chars depending on tab
+    let specialCount = 0;
+    if (currentTab === 'url') {
+      specialCount = [...input].filter(c => !/[A-Za-z0-9\-_.~]/.test(c)).length;
+    } else if (currentTab === 'html') {
+      specialCount = [...input].filter(c => /[<>&"']/.test(c)).length;
+    } else {
+      // Base64: non-ASCII chars need special handling
+      specialCount = [...input].filter(c => c.charCodeAt(0) > 127).length;
+    }
+
+    const pct  = inLen ? Math.round((specialCount / inLen) * 100) : 0;
+    const diff = outLen - inLen;
+    const deltaStr = outLen === 0 ? '—'
+                   : diff === 0 ? '±0 bytes'
+                   : diff > 0   ? `+${diff} bytes`
+                                : `${diff} bytes`;
+
+    $('statTotal').textContent    = inLen;
+    $('statSpecial').textContent  = inLen ? `${pct}% (${specialCount})` : '0%';
+    $('statInputLen').textContent = inLen;
+    $('statOutputLen').textContent = outLen || '—';
+    $('statDelta').textContent    = deltaStr;
+  }
+
+  $('encInput').addEventListener('input', () => {
+    updateStats();
+    hideDetect();
+  });
+
+  /* ─── Auto-detect ──────────────────────────────────────── */
+  function autoDetect(input) {
+    // Already percent-encoded?
+    if (/%[0-9A-Fa-f]{2}/.test(input)) return { mode:'url', label:'Input looks like a percent-encoded URL → try URL Decode.' };
+    // Base64-ish?
+    if (/^[A-Za-z0-9+/]+=*$/.test(input.trim()) && input.trim().length % 4 === 0 && input.trim().length >= 4)
+      return { mode:'b64', label:'Input looks like Base64 → try Base64 Decode.' };
+    // HTML entities already present?
+    if (/&(lt|gt|amp|quot|#39);/.test(input)) return { mode:'html', label:'Input contains HTML entities → try HTML Entity Decode.' };
+    // Contains HTML tags?
+    if (/<\/?[a-z][\s\S]*>/i.test(input)) return { mode:'html', label:'Input contains HTML tags → HTML Entity Encode recommended.' };
+    // Looks like a URL?
+    if (/^https?:\/\//i.test(input.trim())) return { mode:'url', label:'Input looks like a URL → URL Encode recommended.' };
+    return null;
+  }
+
+  function showDetect(msg) {
+    $('detectMsg').textContent = msg;
+    $('detectBanner').classList.add('visible');
+  }
+  function hideDetect() {
+    $('detectBanner').classList.remove('visible');
+  }
+
+  /* ─── URL encode/decode ────────────────────────────────── */
+  function urlEncode() {
+    const input = $('encInput').value;
+    if (!input) { showStatus('Please enter some text first.', true); return; }
+    const hint = autoDetect(input);
+    if (hint) showDetect(hint.label); else hideDetect();
+    try {
+      setOutput(encodeURIComponent(input));
+      showStatus('✅ URL encoded successfully!');
+    } catch(e) { setOutput(e.message, true); showStatus('❌ ' + e.message, true); }
+  }
+
+  function urlDecode() {
+    const input = $('encInput').value.trim();
+    if (!input) { showStatus('Please enter some text first.', true); return; }
+    try {
+      setOutput(decodeURIComponent(input));
+      showStatus('✅ URL decoded successfully!');
+    } catch(e) {
+      setOutput('⚠️ ' + e.message + '\n\nMake sure input is a valid percent-encoded string.', true);
+      showStatus('❌ Decoding failed. Check URL syntax.', true);
+    }
+  }
+
+  /* ─── Base64 encode/decode ─────────────────────────────── */
+  // UTF-8-safe btoa / atob wrappers
+  function b64Encode(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+  function b64Decode(str) {
+    return decodeURIComponent(escape(atob(str.trim())));
+  }
+
+  function base64Encode() {
+    const input = $('encInput').value;
+    if (!input) { showStatus('Please enter some text first.', true); return; }
+    const hint = autoDetect(input);
+    if (hint) showDetect(hint.label); else hideDetect();
+    try {
+      setOutput(b64Encode(input));
+      showStatus('✅ Base64 encoded successfully!');
+    } catch(e) { setOutput(e.message, true); showStatus('❌ ' + e.message, true); }
+  }
+
+  function base64Decode() {
+    const input = $('encInput').value.trim();
+    if (!input) { showStatus('Please enter some text first.', true); return; }
+    try {
+      setOutput(b64Decode(input));
+      showStatus('✅ Base64 decoded successfully!');
+    } catch(e) {
+      setOutput('⚠️ Invalid Base64 string. ' + e.message, true);
+      showStatus('❌ Decoding failed. Check Base64 syntax.', true);
+    }
+  }
+
+  /* ─── HTML entity encode/decode ────────────────────────── */
+  function htmlEntityEncode(str) {
+    return str
+      .replace(/&/g,  '&amp;')
+      .replace(/</g,  '&lt;')
+      .replace(/>/g,  '&gt;')
+      .replace(/"/g,  '&quot;')
+      .replace(/'/g,  '&#39;');
+  }
+
+  function htmlEntityDecode(str) {
+    return str
+      .replace(/&amp;/g,  '&')
+      .replace(/&lt;/g,   '<')
+      .replace(/&gt;/g,   '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g,  "'")
+      .replace(/&apos;/g, "'");
+  }
+
+  function htmlEncode() {
+    const input = $('encInput').value;
+    if (!input) { showStatus('Please enter some text first.', true); return; }
+    const hint = autoDetect(input);
+    if (hint) showDetect(hint.label); else hideDetect();
+    setOutput(htmlEntityEncode(input));
+    showStatus('✅ HTML entities encoded successfully!');
+  }
+
+  function htmlDecode() {
+    const input = $('encInput').value;
+    if (!input) { showStatus('Please enter some text first.', true); return; }
+    setOutput(htmlEntityDecode(input));
+    showStatus('✅ HTML entities decoded successfully!');
+  }
+
+  /* ─── Encode / Decode buttons (mode-aware) ─────────────── */
+  $('btnEncode').addEventListener('click', () => {
+    if (currentTab === 'url')  urlEncode();
+    else if (currentTab === 'b64')  base64Encode();
+    else htmlEncode();
+  });
+
+  $('btnDecode').addEventListener('click', () => {
+    if (currentTab === 'url')  urlDecode();
+    else if (currentTab === 'b64')  base64Decode();
+    else htmlDecode();
+  });
+
+  /* ─── Copy result ──────────────────────────────────────── */
+  $('btnCopy').addEventListener('click', () => {
+    if (!lastOutput) { showStatus('Nothing to copy yet.', true); return; }
+    navigator.clipboard.writeText(lastOutput).then(() => {
+      showStatus('📋 Copied to clipboard!');
+    }).catch(() => showStatus('❌ Clipboard access denied.', true));
+  });
+
+  /* ─── Clear ────────────────────────────────────────────── */
+  $('btnClear').addEventListener('click', () => {
+    $('encInput').value = '';
+    clearOutput();
+    hideDetect();
+    updateStats('');
+  });
+
+  /* ─── Swap ─────────────────────────────────────────────── */
+  $('swapBtn').addEventListener('click', () => {
+    if (!lastOutput) { showStatus('No output to swap yet.', true); return; }
+    $('encInput').value = lastOutput;
+    clearOutput();
+    hideDetect();
+    updateStats('');
+    showStatus('⇄ Output moved to input!');
+  });
+
+  /* ─── Init stats ───────────────────────────────────────── */
+  updateStats('');
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

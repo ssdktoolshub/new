@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Total Cholesterol Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate serum Total Cholesterol levels online. Check for cardiovascular risks, lipid status, and obtain healthy lifestyle tips.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--normal-color) 0%, 
+        var(--high-color) 60%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Total Cholesterol Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze serum Total Cholesterol levels to assess overall lipid profiles and cardiovascular risk metrics.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Cholesterol Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="mgdl" selected>mg/dL</option>
+                <option value="mmoll">mmol/L</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valChol" id="inputLabel" data-translate="labelChol">Total Cholesterol</label>
+              <input type="number" step="0.1" id="valChol" placeholder="e.g. 185" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeCholesterol()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Cholesterol</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your Total Cholesterol level and click the analyze button to display cardiovascular assessments.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Serum Lipid Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Total Cholesterol</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resCholVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">mg/dL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--normal-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--high-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Total Cholesterol</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Total Cholesterol?</strong><br><span data-translate="eduA1">Total Cholesterol is the sum of all cholesterol in your blood, including LDL (bad), HDL (good), and VLDL. It is used as a screening tool to assess cardiovascular plaque risks.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What are the reference limits?</strong><br><span data-translate="eduA2">- **Desirable (&lt; 200 mg/dL)**: Associated with lower cardiovascular plaque risks.<br>- **Borderline High (200 - 239 mg/dL)**: Indicates moderate lifestyle adjustments are needed.<br>- **High (&ge; 240 mg/dL)**: Elevated risk of atherosclerosis. Requires clinical review.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Total Cholesterol Analyzer",
+      toolDesc: "Analyze serum Total Cholesterol levels to assess overall lipid profiles and cardiovascular risk metrics.",
+      inputsTitle: "🧬 Cholesterol Parameters",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      labelChol: "Total Cholesterol",
+      btnAnalyze: "Analyze Cholesterol",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your Total Cholesterol level and click the analyze button to display cardiovascular assessments.",
+      reportTitle: "🔬 Serum Lipid Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Desirable Total Cholesterol",
+      badgeHigh: "Borderline High Cholesterol",
+      badgeCriticalHigh: "High Total Cholesterol (Atherosclerosis Risk)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "মোট কোলেস্টেরল বিশ্লেষক",
+      toolDesc: "রক্তের মোট কোলেস্টেরল মাত্রা বিশ্লেষণ করে হৃদরোগের ঝুঁকি ও ধমনীতে চর্বি জমার পরিমাপ করুন।",
+      inputsTitle: "🧬 কোলেস্টেরল ইনপুট",
+      clearBtn: "মুছে ফেলুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelChol: "মোট কোলেস্টেরল",
+      btnAnalyze: "কোলেস্টেরল বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "কোলেস্টেরলের মান লিখুন এবং বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 রক্তে চর্বি ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক মোট কোলেস্টেরল",
+      badgeHigh: "সীমান্তবর্তী উচ্চ কোলেস্টেরল",
+      badgeCriticalHigh: "অতিরিক্ত কোলেস্টেরল (হৃদরোগের উচ্চ ঝুঁকি)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "कुल कोलेस्ट्रॉल विश्लेषक",
+      toolDesc: "समग्र लिपिड प्रोफाइल और कार्डियोवैस्कुलर जोखिम मेट्रिक्स का आकलन करने के लिए सीरम कुल कोलेस्ट्रॉल स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬कोलेस्ट्रॉल पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      labelChol: "कुल कोलेस्ट्रॉल",
+      btnAnalyze: "कोलेस्ट्रॉल का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना कुल कोलेस्ट्रॉल स्तर दर्ज करें और हृदय संबंधी आकलन प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 सीरम लिपिड डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "वांछनीय कुल कोलेस्ट्रॉल",
+      badgeHigh: "सीमा रेखा उच्च कोलेस्ट्रॉल",
+      badgeCriticalHigh: "उच्च कुल कोलेस्ट्रॉल (एथेरोस्क्लेरोसिस जोखिम)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Total Cholesterol?", a: "It is the total amount of cholesterol in the blood, representing LDL, HDL, and VLDL." },
+      { q: "What is a desirable level of total cholesterol?", a: "Less than 200 mg/dL (5.18 mmol/L) is desirable for adults." },
+      { q: "What causes elevated cholesterol?", a: "High dietary intake of saturated/trans fats, lack of exercise, obesity, genetics, or hypothyroidism." },
+      { q: "How does high cholesterol affect arteries?", a: "Excess cholesterol builds up inside artery walls as plaque (atherosclerosis), narrowing them and increasing heart attack risks." },
+      { q: "How are mg/dL and mmol/L converted?", a: "Multiply mg/dL by 0.02586 to get mmol/L. Divide mmol/L by 0.02586 to get mg/dL." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "মোট কোলেস্টেরল কী?", a: "এটি রক্তে অবস্থিত মোট চর্বির পরিমাণ, যা এলডিএল, এইচডিএল ও ভিএলডিএল এর সমষ্টি নির্দেশ করে।" },
+      { q: "মোট কোলেস্টেরলের স্বাভাবিক মাত্রা কত?", a: "প্রাপ্তবয়স্কদের জন্য ২০০ mg/dL (৫.১৮ mmol/L) এর কম থাকা বাঞ্ছনীয়।" },
+      { q: "কোলেস্টেরল বাড়ার কারণ কী?", a: "খাবারে স্যাচুরেটেড বা ট্রান্স ফ্যাটের আধিক্য, ব্যায়াম না করা, বংশগত কারণ বা থাইরয়েডের সমস্যা।" },
+      { q: "উচ্চ কোলেস্টেরল কীভাবে রক্তনালীকে ক্ষতি করে?", a: "অতিরিক্ত কোলেস্টেরল ধমনীর দেয়ালে প্লাক বা চর্বি হিসেবে জমে রক্তনালীকে সংকুচিত করে, যা হার্ট অ্যাটাকের ঝুঁকি বাড়ায়।" },
+      { q: "mg/dL এবং mmol/L কীভাবে রূপান্তর করা হয়?", a: "mg/dL কে ০.০২৫৮৬ দিয়ে গুণ করলে mmol/L পাওয়া যায়। mmol/L কে ০.০২৫৮৬ দিয়ে ভাগ করলে mg/dL পাওয়া যায়।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "कुल कोलेस्ट्रॉल क्या है?", a: "यह रक्त में कोलेस्ट्रॉल की कुल मात्रा है, जो एलडीएल, एचडीएल और वीएलडीएल का प्रतिनिधित्व करती है।" },
+      { q: "कुल कोलेस्ट्रॉल का वांछनीय स्तर क्या है?", a: "वयस्कों के लिए 200 mg/dL (5.18 mmol/L) से कम वांछनीय है।" },
+      { q: "बढ़े हुए कोलेस्ट्रॉल का क्या कारण है?", a: "संतृप्त/ट्रांस वसा का उच्च आहार सेवन, व्यायाम की कमी, मोटापा, आनुवांशिकी, या हाइपोथायरायडिज्म।" },
+      { q: "उच्च कोलेस्ट्रॉल धमनियों को कैसे प्रभावित करता है?", a: "अतिरिक्त कोलेस्ट्रॉल धमनियों की दीवारों के अंदर प्���ाक (एथेरोस्क्लेरोसिस) के रूप में जमा हो जाता है, जिससे वे सिकुड़ जाती हैं और दिल का दौरा पड़ने का खतरा बढ़ जाता है।" },
+      { q: "एमजी/डीएल और एमएमओएल/एल को कैसे परिवर्तित किया जाता है?", a: "mmol/L प्राप्त करने के लिए mg/dL को 0.02586 से गुणा करें। mg/dL प्राप्त करने के लिए mmol/L को 0.02586 से विभाजित करें।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const cholesterolInsights = {
+    en: {
+      normal: {
+        desc: "Your total cholesterol level is desirable. This suggests a healthy balance of lipoproteins and a lower baseline risk of atherosclerotic cardiovascular disease (ASCVD).",
+        factors: ["Low dietary saturated fat intake", "Regular physical activity", "Favorable genetics"],
+        symptoms: ["No clinical symptoms (lipid accumulation is silent)"],
+        prevention: ["Maintain a fiber-rich, heart-healthy diet", "Keep active with 150 minutes of moderate exercise weekly"],
+        consult: "Monitor with standard panels every 3 to 5 years."
+      },
+      high: {
+        desc: "Your cholesterol is borderline elevated. It serves as an early indicator to implement dietary and lifestyle changes to prevent further increases.",
+        factors: ["Diets high in saturated fats or red meat", "Sedentary lifestyle or weight gain", "Mild genetic predisposition"],
+        symptoms: ["None; lipid abnormalities are completely asymptomatic"],
+        prevention: ["Replace saturated fats with monounsaturated fats (olive oil, avocados)", "Increase soluble fiber intake (oats, legumes)"],
+        consult: "Discuss with your physician to calculate your 10-year ASCVD cardiovascular risk score."
+      },
+      criticalHigh: {
+        desc: "Your total cholesterol is high. This level increases the risk of plaque build-up inside the coronary arteries, potentially leading to heart disease or stroke.",
+        factors: ["Familial hypercholesterolemia (genetic)", "Diets high in saturated and trans fats", "Hypothyroidism or chronic kidney strain"],
+        symptoms: ["Asymptomatic; occasionally xanthomas (fatty deposits under skin) in extreme cases"],
+        prevention: ["Strict heart-healthy Mediterranean diet", "Incorporate daily cardiovascular exercise", "Avoid smoking which damages blood vessels"],
+        consult: "⚠️ Recommended to seek medical evaluation. A full fasting lipid panel and evaluation for statin therapy are often indicated."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার মোট কোলেস্টেরলের মাত্রা স্বাভাবিক রয়েছে। এটি রক্তনালীতে চর্বি জমার কম ঝুঁকি এবং হৃদরোগের নিম্ন আশঙ্কা নির্দেশ করে।",
+        factors: ["কম চর্বিযুক্ত স্বাস্থ্যকর খাদ্য গ্রহণ", "নিয়মিত কায়িক পরিশ্রম"],
+        symptoms: ["কোনো লক্ষণ নেই"],
+        prevention: ["হৃদবান্ধব আঁশযুক্ত খাবার গ্রহণ বজায় রাখুন", "সপ্তাহে অন্তত ১৫০ মিনিট মাঝারি ব্যায়াম করুন"],
+        consult: "প্রতি ৩-৫ বছর পর পর লিপিড প্রোফাইল চেক করুন।"
+      },
+      high: {
+        desc: "আপনার কোলেস্টেরলের মাত্রা সীমারেখায় বা কিছুটা বেশি। হৃদরোগ প্রতিরোধে এখনই খাদ্যাভ্যাস ও জীবনযাত্রার পরিবর্তন শুরু করা উচিত।",
+        factors: ["অতিরিক্ত চর্বিযুক্ত খাবার বা লাল মাংস খাওয়া", "পর্যাপ্ত পরিশ্রমের অভাব বা মেদ বৃদ্ধি"],
+        symptoms: ["লক্ষণহীন; রক্ত পরীক্ষার মাধ্যমেই ধরা পড়ে"],
+        prevention: ["ভোজ্য তেল পরিবর্তন করে অলিভ অয়েল ব্যবহার করুন", "ওটস, ডাল বা আঁশযুক্ত সবজি বেশি খান"],
+        consult: "উচ্চ রক্তচাপের সাথে লিপিড প্রোফাইলের সমন্বয় বুঝতে ডাক্তারের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার মোট কোলেস্টেরলের মাত্রা অতিরিক্ত বেশি। এটি ধমনীর দেয়ালে রক্ত চলাচলে বাধা সৃষ্টি করতে পারে এবং হার্ট অ্যাটাকের ঝুঁকি বাড়ায়।",
+        factors: ["বংশগত উচ্চ কোলেস্টেরল (Familial Hypercholesterolemia)", "স্যাচুরেটেড ফ্যাট ও ভাজাপোড়া বেশি খাওয়া", "থাইরয়েড হরমোনের ঘাটতি"],
+        symptoms: ["সাধারণত কোনো বাহ্যিক লক্ষণ থাকে না"],
+        prevention: ["ধূমপান সম্পূর্ণ পরিহার করুন", "প্রতিদিন ৩০ মিনিট হাঁটুন", "মিষ্টি ও অতিরিক্ত শর্করা জাতীয় খাবার কমান"],
+        consult: "⚠️ অবিলম্বে চিকিৎসকের পরামর্শ নিন এবং কোলেস্টেরল কমানোর ওষুধ (Statin) প্রয়োজন কিনা মূল্যায়ন করুন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका कुल कोलेस्ट्रॉल स्तर वांछनीय है। यह लिपोप्रोटीन के स्वस्थ संतुलन और एथेरोस्क्लेरोटिक कार्डियोवैस्कुलर बीमारी (एएससीवीडी) के कम आधारभूत जोखिम का सुझाव देता है।",
+        factors: ["आहार में संतृप्त वसा का कम सेवन", "नियमित शारीरिक गतिविधि", "अनुकूल आनुवंशिकी"],
+        symptoms: ["कोई नैदानिक लक्षण नहीं (लिपिड संचय मौन है)"],
+        prevention: ["फाइबर युक्त, हृदय-स्वस्थ आहार बनाए रखें", "साप्ताहिक 150 मिनट के मध्यम व्यायाम के साथ सक्रिय रहें"],
+        consult: "हर 3 से 5 साल में मानक पैनल से म���निटर करें।"
+      },
+      high: {
+        desc: "आपका कोलेस्ट्रॉल सीमा रेखा पर बढ़ा हुआ है। यह आगे की वृद्धि को रोकने के लिए आहार और जीवनशैली में बदलाव को लागू करने के लिए एक प्रारंभिक संकेतक के रूप में कार्य करता है।",
+        factors: ["संतृप्त वसा या लाल मांस से भरपूर आहार", "गतिहीन जीवनशैली या वजन बढ़ना", "हल्की आनुवंशिक प्रवृत्ति"],
+        symptoms: ["कोई नहीं; लिपिड असामान्यताएं पूरी तरह से स्पर्शोन्मुख हैं"],
+        prevention: ["संतृप्त वसा को मोनोअनसैचुरेटेड वसा (जैतून का तेल, एवोकैडो) से बदलें", "घुलनशील फाइबर का सेवन बढ़ाएँ (जई, फलियाँ)"],
+        consult: "अपने 10-वर्षीय एएससीवीडी कार्डियोवैस्कुलर जोखिम स्कोर की गणना करने के लिए अपने चिकित्सक से चर्चा करें।"
+      },
+      criticalHigh: {
+        desc: "आपका कुल कोलेस्ट्रॉल उच्च है। इस स्तर से कोरोनरी धमनियों के अंदर प्लाक बनने का खतरा बढ़ जाता है, जिससे संभावित रूप से हृदय रोग या स्ट्रोक हो सकता है।",
+        factors: ["पारिवारिक हाइपरकोलेस्ट्रोलेमिया (आनुवंशिक)", "संतृप्त और ट्रांस वसा से भरपूर आहार", "हाइपोथायरायडिज्म या क्रोनिक किडनी स्ट्रेन"],
+        symptoms: ["स्पर्शोन्मुख; चरम मामलों में कभी-कभी ज़ैंथोमास (त्वचा के नीचे वसा जमा होना)।"],
+        prevention: ["सख्त हृदय-स्वस्थ भूमध्यसागरीय आहार", "दैनिक हृदय व्यायाम को शामिल करें", "धूम्रपान से बचें जो रक्त वाहिकाओं को नुकसान पहुंचाता है"],
+        consult: "⚠️ चिकित्सीय मूल्यांकन लेने की अनुशंसा की जाती है। एक पूर्ण उपवास लिपिड पैनल और स्टेटिन थेरेपी के मूल्यांकन का अक्सर संकेत दिया जाता है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-chol-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "mgdl"; // mgdl, mmoll
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const label = document.getElementById("inputLabel");
+    const unitText = currentUnit === "mgdl" ? " (mg/dL)" : " (mmol/L)";
+    label.textContent = translations[currentLang].labelChol + unitText;
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valChol").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits() {
+    let min = 200;
+    let max = 240;
+
+    if (currentUnit === "mmoll") {
+      min = 5.18;
+      max = 6.21;
+    }
+    return { min, max };
+  }
+
+  function analyzeCholesterol() {
+    const valChol = parseFloat(document.getElementById("valChol").value);
+
+    if (isNaN(valChol) || valChol <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid Total Cholesterol value." : "দয়া করে কোলেস্টেরলের সঠিক মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits();
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valChol >= limits.min && valChol < limits.max) {
+      statusKey = "high";
+      badgeKey = "badgeHigh";
+    } else if (valChol >= limits.max) {
+      statusKey = "criticalHigh";
+      badgeKey = "badgeCriticalHigh";
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valChol < limits.min) {
+      pointerPct = Math.max(5, (valChol / limits.min) * 45); // 5% - 45%
+    } else if (valChol >= limits.min && valChol < limits.max) {
+      const range = limits.max - limits.min;
+      pointerPct = range > 0 ? 45 + ((valChol - limits.min) / range) * 25 : 55; // 45% - 70%
+    } else {
+      pointerPct = Math.min(95, 70 + ((valChol - limits.max) / (limits.max * 0.5)) * 25); // 70% - 95%
+    }
+
+    activeReportData = {
+      valChol,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valChol, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+
+    const unitText = d.unit === "mgdl" ? " mg/dL" : " mmol/L";
+    document.getElementById("resUnitText").textContent = unitText;
+    document.getElementById("resCholVal").textContent = d.valChol.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey === "criticalHigh") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resCholVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = `< ${d.limits.min.toFixed(1)}`;
+    document.getElementById("tickNormalRange").textContent = `${d.limits.min.toFixed(1)} - ${d.limits.max.toFixed(1)}`;
+    document.getElementById("tickHigh").textContent = `${d.limits.max.toFixed(1)}+`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = cholesterolInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valChol, unit) {
+    const unitText = unit === "mgdl" ? " mg/dL" : " mmol/L";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valChol,
+      unitText,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-chol-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valChol.toFixed(1)}${item.unitText} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const unitText = activeReportData.unit === "mgdl" ? " mg/dL" : " mmol/L";
+    let t = `--- SERUM TOTAL CHOLESTEROL REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Value: ${activeReportData.valChol.toFixed(1)}${unitText}\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `total-cholesterol-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

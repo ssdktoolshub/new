@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uric Acid Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate serum uric acid levels online. Check for normal, low, high, or gout-risk hyperuricemia thresholds with unit conversion and bilingual FAQs.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--low-color) 0%, 
+        var(--normal-color) 45%, 
+        var(--high-color) 75%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Uric Acid Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze serum uric acid levels to evaluate risks of hyperuricemia, gout, or kidney stones.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Uric Acid Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="patientGender" data-translate="labelGender">Gender</label>
+              <select id="patientGender">
+                <option value="male" selected data-translate="genderMale">Male</option>
+                <option value="female" data-translate="genderFemale">Female</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="mgdl" selected>mg/dL</option>
+                <option value="umoll">µmol/L</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valUric" id="inputLabel" data-translate="labelUric">Serum Uric Acid</label>
+              <input type="number" step="0.1" id="valUric" placeholder="e.g. 5.5" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeUricAcid()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Uric Acid</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧬</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your uric acid level and click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Uric Acid Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelGender">Gender</strong>: <span id="resGender">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resUricVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">mg/dL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--low-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Uric Acid</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Uric Acid?</strong><br><span data-translate="eduA1">Uric acid is a waste product formed from the metabolic breakdown of purines, which are natural chemical compounds found in cells and certain foods (like red meat, seafood, and alcohol).</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is Hyperuricemia and Gout?</strong><br><span data-translate="eduA2">Hyperuricemia occurs when there is too much uric acid in the blood. If levels remain high, uric acid can form needle-like crystals in joints, causing a painful inflammatory arthritis known as gout, or in kidneys, leading to kidney stones.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Uric Acid Analyzer",
+      toolDesc: "Analyze serum uric acid levels to evaluate risks of hyperuricemia, gout, or kidney stones.",
+      inputsTitle: "🧬 Uric Acid Parameters",
+      clearBtn: "Reset",
+      labelGender: "Gender",
+      genderMale: "Male",
+      genderFemale: "Female",
+      labelUnit: "Measurement Unit",
+      labelUric: "Serum Uric Acid",
+      btnAnalyze: "Analyze Uric Acid",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your uric acid level and click the analyze button to display medical summaries.",
+      reportTitle: "🔬 Uric Acid Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Uric Acid (Optimal Range)",
+      badgeLow: "Low Uric Acid (Hypouricemia)",
+      badgeHigh: "Elevated Uric Acid (Hyperuricemia)",
+      badgeCriticalHigh: "CRITICAL HIGH URIC ACID (Gout/Stone Risk)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ইউরিক অ্যাসিড বিশ্লেষক",
+      toolDesc: "রক্তে ইউরিক অ্যাসিডের মাত্রা বিশ্লেষণ করে গেঁটে বাত (গাউট) বা কিডনিতে পাথরের ঝুঁকি পরীক্ষা করুন।",
+      inputsTitle: "🧬 ইউরিক অ্যাসিডের পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelGender: "লিঙ্গ",
+      genderMale: "পুরুষ",
+      genderFemale: "নারী",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelUric: "সিরাম ইউরিক অ্যাসিড",
+      btnAnalyze: "ইউরিক অ্যাসিড বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "ইউরিক অ্যাসিডের মান লিখুন এবং বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 ইউরিক অ্যাসিড ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক ইউরিক অ্যাসিড (স্বাভাবিক সীমা)",
+      badgeLow: "কম ইউরিক অ্যাসিড (হাইপোইউরিসেমিয়া)",
+      badgeHigh: "উচ্চ ইউরিক অ্যাসিড (হাইপারইউরিসেমিয়া)",
+      badgeCriticalHigh: "মারাত্মক উচ্চ ইউরিক অ্যাসিড (গাউট/পাথরের ঝুঁকি)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "यूरिक एसिड विश्लेषक",
+      toolDesc: "हाइपरयुरिसीमिया, गाउट या गुर्दे की पथरी के जोखिमों का मूल्यांकन करने के लिए सीरम यूरिक एसिड स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬 यूरिक एसिड पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelGender: "लिंग",
+      genderMale: "पुरुष",
+      genderFemale: "स्त्री",
+      labelUnit: "मापन इकाई",
+      labelUric: "सीरम यूरिक एसिड",
+      btnAnalyze: "यूरिक एसिड का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना यूरिक एसिड स्तर दर्ज करें और चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 यूरिक एसिड डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य यूरिक एसिड (इष्टतम सीमा)",
+      badgeLow: "कम यूरिक एसिड (हाइपोरिसिमिया)",
+      badgeHigh: "ऊंचा यूरिक एसिड (हाइपरयूरिसीमिया)",
+      badgeCriticalHigh: "गंभीर उच्च यूरिक एसिड (गा��ट/स्टोन जोखिम)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Uric Acid?", a: "Uric acid is a waste product created when the body breaks down chemicals called purines." },
+      { q: "What is a normal uric acid range?", a: "For adult males: 3.5 - 7.2 mg/dL. For adult females: 2.6 - 6.0 mg/dL." },
+      { q: "What is Hyperuricemia?", a: "Hyperuricemia is an excess of uric acid in the blood, which can lead to gout crystals or kidney stones." },
+      { q: "What causes high uric acid?", a: "High intake of purine-rich foods (red meat, seafood, beer), kidney disease, obesity, or genetics." },
+      { q: "How are mg/dL and µmol/L converted?", a: "Multiply mg/dL by 59.48 to get µmol/L. Divide µmol/L by 59.48 to get mg/dL." },
+      { q: "What is Gout?", a: "Gout is a type of painful arthritis where uric acid crystals deposit in joints, most commonly the big toe." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "ইউরিক অ্যাসিড কী?", a: "ইউরিক অ্যাসিড হলো পিউরিন নামক জৈব যৌগের ভাঙনের ফলে সৃষ্ট শারীরিক বর্জ্য।" },
+      { q: "ইউরিক অ্যাসিডের স্বাভাবিক মাত্রা কত?", a: "প্রাপ্তবয়স্ক পুরুষ: ৩.৫ - ৭.২ mg/dL। প্রাপ্তবয়স্ক নারী: ২.৬ - ৬.০ mg/dL।" },
+      { q: "হাইপারইউরিসেমিয়া কী?", a: "রক্তে অতিরিক্ত ইউরিক অ্যাসিড জমলে তাকে হাইপারইউরিসেমিয়া বলে, যা গেঁটে বাত বা পাথরের ঝুঁকি বাড়ায়।" },
+      { q: "ইউরিক অ্যাসিড বাড়ার কারণ কী?", a: "পিউরিন সমৃদ্ধ খাবার (যেমন লাল মাংস, সামুদ্রিক মাছ, মসুর ডাল, এলকোহল), স্থূলতা বা কিডনির সমস্যা।" },
+      { q: "mg/dL এবং µmol/L কীভাবে রূপান্তর করা হয়?", a: "mg/dL কে ৫৯.৪৮ দিয়ে গুণ করলে µmol/L পাওয়া যায়। µmol/L কে ৫৯.৪৮ দিয়ে ভাগ করলে mg/dL পাওয়া যায়।" },
+      { q: "গেঁটে বাত বা গাউট কী?", a: "এটি এক ধরণের যন্ত্রণাদায়ক বাতের সমস্যা যেখানে জয়েন্টে ইউরিক অ্যাসিডের ধারালো ক্রিস্টাল জমা হয়, সাধারণত পায়ের বুড়ো আঙুলে।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "यूरिक एसिड क्या है?", a: "यूरिक एसिड एक अपशिष्ट उत्पाद है जो तब बनता है जब शरीर प्यूरीन नामक रसायनों को तोड़ता है।" },
+      { q: "सामान्य यूरिक एसिड रेंज क्या है?", a: "वयस्क पुरुषों के लिए: 3.5 - 7.2 मिलीग्राम/डीएल। वयस्क महिलाओं के लिए: 2.6 - 6.0 मिलीग्राम/डीएल।" },
+      { q: "हाइपरयुरिसीमिया क्या है?", a: "हाइपरयुरिसीमिया रक्त में यूरिक एसिड की अधिकता है, जो गाउट क्रिस्टल या गुर्दे की पथरी का कारण बन सकता है।" },
+      { q: "उच्च यूरिक एसिड का क्या कारण है?", a: "प्यूरीन युक्त खाद्य पदार्थों (लाल मांस, समुद्री भोजन, बीयर) का अधिक सेवन, गुर्दे की बीमारी, मोटापा या आनुवंशिकी।" },
+      { q: "mg/dL और µmol/L को कैसे परिवर्तित किया जाता है?", a: "μmol/L प्राप्त करने के लिए mg/dL को 59.48 से गुणा करें। mg/dL प्राप्त करने के लिए µmol/L को 59.48 से विभाजित करें।" },
+      { q: "गठिया क्��ा है?", a: "गाउट एक प्रकार का दर्दनाक गठिया है जहां यूरिक एसिड क्रिस्टल जोड़ों में जमा होते हैं, आमतौर पर बड़े पैर के अंगूठे में।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबं��ी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const uricInsights = {
+    en: {
+      normal: {
+        desc: "Your serum uric acid level is within the normal reference range. Purine metabolism and renal clearance are operating optimally.",
+        factors: ["Balanced purine intake", "Healthy renal clearance rate"],
+        symptoms: ["No joint pain or inflammation"],
+        prevention: ["Continue drinking adequate water daily", "Limit excess consumption of high-fructose corn syrup"],
+        consult: "Follow up with regular health checks annually."
+      },
+      low: {
+        desc: "Your uric acid level is below normal (hypouricemia). This is typically transient and not clinically concerning unless associated with rare genetic disorders.",
+        factors: ["Low purine vegetarian diets", "High fluid intake or pregnancy", "Use of high-dose vitamin C"],
+        symptoms: ["Generally asymptomatic"],
+        prevention: ["Maintain a balanced diet including proteins and healthy carbohydrates"],
+        consult: "No urgent follow-up needed. Discuss with your doctor if it persists."
+      },
+      high: {
+        desc: "Your uric acid level is elevated (hyperuricemia). You have a higher risk of developing gout flares or uric acid kidney stones.",
+        factors: ["Diet rich in purines (red meat, seafood, organ meats)", "Frequent alcohol or sugary soda consumption", "Mild dehydration or decreased renal filtration"],
+        symptoms: ["Asymptomatic in many cases", "Mild stiffness in joints"],
+        prevention: ["Drink 3 liters of water daily to flush kidneys", "Restrict high-purine foods and beer", "Eat low-fat dairy which helps lower uric acid"],
+        consult: "Consult your doctor to evaluate joint symptoms and monitor levels."
+      },
+      criticalHigh: {
+        desc: "Your uric acid level is critically high. You are at high risk for acute gouty arthritis attacks and uric acid crystalluria (kidney stones).",
+        factors: ["Genetic predisposition to high uric acid", "Chronic kidney disease (CKD)", "High dietary purine load"],
+        symptoms: ["Severe, sudden pain, redness, and swelling in joints (big toe, knee, ankle)", "Back pain or blood in urine if kidney stones form"],
+        prevention: ["Avoid all alcohol, red meat, shellfish, and sugary drinks", "Drink massive amounts of water", "Discuss uric acid lowering therapy (e.g. Allopurinol) with your physician"],
+        consult: "⚠️ URGENT: Seek clinical evaluation, especially if experiencing severe joint inflammation or renal colic."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার ইউরিক অ্যাসিডের মাত্রা স্বাভাবিক রয়েছে। এটি নির্দেশ করে আপনার শরীরে পিউরিন বিপাক এবং কিডনির বর্জ্য অপসারণ ক্ষমতা সঠিক আছে।",
+        factors: ["সুষম খাদ্য তালিকা", "স্বাভাবিক কিডনির ক্রিয়াকলাপ"],
+        symptoms: ["জয়েন্টে কোনো ব্যথা বা ফোলা না থাকা"],
+        prevention: ["পর্যাপ্ত পানি পান করা বজায় রাখুন", "অতিরিক্ত চিনি ও সোডা জাতীয় পানীয় পরিহার করুন"],
+        consult: "বার্ষিক বার স্বাস্থ্য পরীক্ষার অংশ হিসেবে রুটিন চেকআপ করান।"
+      },
+      low: {
+        desc: "আপনার ইউরিক অ্যাসিডের মাত্রা কম। এটি সাধারণত ক্ষতিকর নয়, তবে খাবারে প্রোটিন বা পিউরিনের অভাব নির্দেশ করতে পারে।",
+        factors: ["সম্পূর্ণ নিরামিষাশী ডায়েট", "অতিরিক্ত পানি পান"],
+        symptoms: ["সাধারণত কোনো লক্ষণ থাকে না"],
+        prevention: ["খাদ্যতালিকায় সুষম খাবার বজায় রাখুন"],
+        consult: "রুটিন ডাক্তার দেখানোর সময় বিষয়টি আলোচনা করতে পারেন।"
+      },
+      high: {
+        desc: "আপনার ইউরিক অ্যাসিডের মাত্রা উচ্চ (হাইপারইউরিসেমিয়া)। এটি গেঁটে বাত বা কিডনিতে পাথর তৈরির ঝুঁকি বাড়িয়ে দেয়।",
+        factors: ["অতিরিক্ত পিউরিনযুক্ত খাবার খাওয়া (মাংস, ইলিশ বা সামুদ্রিক মাছ)", "মিষ্টি পানীয় ও মদ্যপান", "শরীরে পানির ঘাটতি বা কিডনির ক্লিয়ারেন্স হ্রাস"],
+        symptoms: ["জয়েন্টগুলোতে সামান্য খচখচে অনুভূতি", "অনেক সময় কোনো লক্ষণ থাকে না"],
+        prevention: ["প্রতিদিন ৩ লিটার পানি পান করে প্রস্রাবের মাধ্যমে ইউরিক অ্যাসিড বের করে দিন", "লাল মাংস ও ফাইবারহীন খাবার কমান", "লো-ফ্যাট ডেইরি বা কম চর্বিযুক্ত দুধ টক দই ডায়েটে যোগ করুন"],
+        consult: "জয়েন্টের কোনো তীব্র সমস্যা দেখা দেওয়ার আগে ডাক্তারের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার ইউরিক অ্যাসিডের মাত্রা মারাত্মক বেশি। আপনার তীব্র বাতের ব্যথা (গাউট অ্যাটাক) এবং কিডনিতে পাথর হওয়ার বড় ঝুঁকি রয়েছে।",
+        factors: ["বংশগত উচ্চ ইউরিক অ্যাসিড", "ক্রনিক কিডনি ডিজিজ (CKD)"],
+        symptoms: ["পায়ের বুড়ো আঙুল, হাঁটু বা গোড়ালিতে হঠাৎ তীব্র যন্ত্রণাদায়ক ব্যথা ও লাল হয়ে ফুলে যাওয়া", "পিঠে তীব্র ব্যথা বা প্রস্রাবে রক্ত আসা"],
+        prevention: ["সব ধরণের মাংস, চিংড়ি, ডাল ও চিনিযুক্ত খাবার সম্পূর্ণ পরিহার করুন", "বিপুল পরিমাণ পানি পান করুন"],
+        consult: "⚠️ অবিলম্বে চিকিৎসকের শরণাপন্ন হোন এবং ইউরিক অ্যাসিড কমানোর ওষুধ (যেমন অ্যালোপিউরিনল) নিয়ে আলোচনা করুন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका सीरम यूरिक एसिड स्तर सामान्य संदर्भ सीमा के भीतर है। प्यूरिन चयापचय और गुर्दे की निकासी बेहतर ढंग से काम कर रही है।",
+        factors: ["संतुलित प्यूरीन सेवन", "स्वस्थ गुर्दे निकासी दर"],
+        symptoms: ["कोई जोड़ों का दर्द या सूजन नहीं"],
+        prevention: ["प्रतिदिन पर्याप्त पानी पीना जारी रखें", "उच्च फ्रुक्टोज कॉर्न सिरप का अधिक सेवन सीमित करें"],
+        consult: "वार्षिक रूप से नियमित स्वास्थ्य जांच कराते रहें।"
+      },
+      low: {
+        desc: "आपका यूरिक एसिड स्तर सामान्य से नीचे है (हाइपोरिसिमिया)। यह आम तौर पर क्षणिक होता है और चिकित्सकीय दृष्टि से चिंताजनक नहीं होता जब तक कि यह दुर्लभ आनुवंशिक विकारों से जुड़ा न हो।",
+        factors: ["कम प्यूरीन शाकाहारी आहार", "अधिक तरल पदार्थ का सेवन या गर्भावस्था", "उच्च खुराक विटामिन सी का उपयोग"],
+        symptoms: ["आम तौर पर स्पर्शोन्मुख"],
+        prevention: ["प्रोटीन और स्वस्थ कार्बोहाइड्रेट सहित संतुलित आहार बनाए रखें"],
+        consult: "किसी तत्काल अनुवर्ती कार्रवाई की आवश्यकता नहीं है. यदि यह बनी रहती है तो अपने डॉक्टर से चर्चा करें।"
+      },
+      high: {
+        desc: "आपका यूरिक एसिड स्तर बढ़ा हुआ है (हाइपरयूरिसीमिया)। आपको गाउट फ्लेयर्स या यूरिक एसिड किडनी स्टोन विकसित होने का अधिक खतरा है।",
+        factors: ["प्यूरीन से भरपूर आहार (लाल मांस, समुद्री भोजन, ऑर्गन मीट)", "बार-बार शराब या मीठा सोडा का सेवन", "हल्का निर्जलीकरण या गुर्दे का निस्पंदन कम होना"],
+        symptoms: ["कई मामलों में लक्षण रहित", "जोड़ों में हल्की अकड़न"],
+        prevention: ["किडनी को साफ़ करने के लिए प्रतिदिन 3 लीटर पानी पियें", "उच्च प्यूरीन वाले खाद्य पदार्थ और बीयर को प्रतिबंधित करें", "कम वसा वाली डेयरी खाएं जो यूरिक एसिड को कम करने में मदद करती है"],
+        consult: "जोड़ों के लक्षणों का मूल्यांकन करने और स्तरों की निगरानी करने के लिए अपने चिकित्सक से परामर्श करें।"
+      },
+      criticalHigh: {
+        desc: "आपका यूरिक एसिड स्तर गंभीर रूप से उच्च है। आप तीव्र गठिया गठिया हमलों और यूरिक एसिड क्रिस्टल्यूरिया (गुर्दे की पथरी) के उच्च जोखिम में हैं।",
+        factors: ["उच्च यूरिक एसिड के लिए आनुवंशिक प्रवृत्ति", "क्रोनिक किडनी रोग (सीकेडी)", "उच्च आहार प्यूरीन भार"],
+        symptoms: ["जोड़ों में गंभीर, अचानक दर्द, लालिमा और सूजन (पैर का अंगूठा, घुटना, टखना)", "गुर्दे में पथरी होने पर पीठ दर्द या पेशाब में खून आना"],
+        prevention: ["सभी शराब, लाल मांस, शंख और शर्करा युक्त पेय से बचें", "भारी मात्रा में पानी पियें", "अपने चिकित्सक से यूरिक एसिड कम करने वाली थेरेपी (जैसे एलोप्यूरिनॉल) पर चर्चा करें"],
+        consult: "⚠️ अत्यावश्यक: नैदानिक ​​​​मूल्यांकन की तलाश करें, खासकर यदि गंभीर संयुक्त सूजन या गुर्दे की शूल का अनुभव हो।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-uric-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "mgdl"; // mgdl, umoll
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const label = document.getElementById("inputLabel");
+    const unitText = currentUnit === "mgdl" ? " (mg/dL)" : " (µmol/L)";
+    label.textContent = translations[currentLang].labelUric + unitText;
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valUric").value = "";
+    document.getElementById("patientGender").value = "male";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits(gender) {
+    let min = 3.5;
+    let max = 7.2;
+    let criticalMax = 10.0;
+
+    if (gender === "female") {
+      min = 2.6;
+      max = 6.0;
+      criticalMax = 8.5;
+    }
+
+    if (currentUnit === "umoll") {
+      return {
+        min: min * 59.48,
+        max: max * 59.48,
+        criticalMax: criticalMax * 59.48
+      };
+    }
+
+    return { min, max, criticalMax };
+  }
+
+  function analyzeUricAcid() {
+    const gender = document.getElementById("patientGender").value;
+    const valUric = parseFloat(document.getElementById("valUric").value);
+
+    if (isNaN(valUric) || valUric <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid Uric Acid value." : "দয়া করে ইউরিক অ্যাসিডের একটি সঠিক মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits(gender);
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valUric < limits.min) {
+      statusKey = "low";
+      badgeKey = "badgeLow";
+    } else if (valUric > limits.max) {
+      if (valUric >= limits.criticalMax) {
+        statusKey = "criticalHigh";
+        badgeKey = "badgeCriticalHigh";
+      } else {
+        statusKey = "high";
+        badgeKey = "badgeHigh";
+      }
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valUric >= limits.min && valUric <= limits.max) {
+      const range = limits.max - limits.min;
+      pointerPct = range > 0 ? 35 + ((valUric - limits.min) / range) * 35 : 50;
+    } else if (valUric < limits.min) {
+      pointerPct = Math.max(5, (valUric / limits.min) * 30);
+    } else {
+      const range = limits.criticalMax - limits.max;
+      pointerPct = range > 0 ? Math.min(95, 70 + ((valUric - limits.max) / range) * 20) : 85;
+    }
+
+    activeReportData = {
+      gender,
+      valUric,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valUric, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resGender").textContent = d.gender === "male" ? translations[currentLang].genderMale : translations[currentLang].genderFemale;
+
+    const unitText = d.unit === "mgdl" ? " mg/dL" : " µmol/L";
+    document.getElementById("resUnitText").textContent = unitText;
+    document.getElementById("resUricVal").textContent = d.valUric.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey === "criticalHigh") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resUricVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Update Ticks values visually
+    document.getElementById("tickLow").textContent = `< ${d.limits.min.toFixed(1)}`;
+    document.getElementById("tickNormalRange").textContent = `${d.limits.min.toFixed(1)} - ${d.limits.max.toFixed(1)}`;
+    document.getElementById("tickHigh").textContent = `${d.limits.criticalMax.toFixed(1)}+`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = uricInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valUric, unit) {
+    const unitText = unit === "mgdl" ? " mg/dL" : " µmol/L";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valUric,
+      unitText,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-uric-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valUric.toFixed(1)}${item.unitText} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const unitText = activeReportData.unit === "mgdl" ? " mg/dL" : " µmol/L";
+    let t = `--- URIC ACID REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Gender: ${activeReportData.gender}\n`;
+    t += `Value: ${activeReportData.valUric.toFixed(1)}${unitText}\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `uric-acid-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

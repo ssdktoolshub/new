@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PT/INR Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate Prothrombin Time (PT) and International Normalized Ratio (INR). Assess coagulation speed and monitor warfarin anticoagulant therapy.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-wrapper-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    
+    @media (max-width: 600px) {
+      .gauge-wrapper-box {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 2.5rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .range-slider-bar {
+      height: 12px;
+      border-radius: 6px;
+      background: linear-gradient(to right, #10b981 0%, #f59e0b 50%, #ef4444 100%);
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">PT/INR Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Interpret Prothrombin Time (PT) and International Normalized Ratio (INR) levels to evaluate coagulation and monitor warfarin therapy.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 PT/INR Coagulation Inputs</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valTherapy" data-translate="labelTherapy">Anticoagulant Therapy (e.g. Warfarin)</label>
+              <select id="valTherapy" onchange="toggleTherapy()">
+                <option value="no" selected data-translate="optTherapyNo">No (Healthy Baseline Reference)</option>
+                <option value="yes" data-translate="optTherapyYes">Yes (Warfarin Therapeutic Target: 2.0 - 3.0)</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valPT" data-translate="labelPT">Prothrombin Time (seconds)</label>
+              <input type="number" step="0.1" id="valPT" placeholder="e.g. 12.0" min="0" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valINR" data-translate="labelINR">INR (Ratio)</label>
+              <input type="number" step="0.01" id="valINR" placeholder="e.g. 1.0" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzePTINR()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze PT/INR</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter PT (sec) and INR values, then click analyze to display coagulation diagnostics.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Coagulation Diagnostic Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelTherapy">Therapy</strong>: <span id="resTherapy">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-wrapper-box">
+            <!-- Gauge 1: PT -->
+            <div class="gauge-container">
+              <div style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:8px;">Prothrombin Time (PT)</div>
+              <div class="val-large" id="resPTVal">-</div>
+              <div style="font-size:0.8rem; color:var(--muted); margin-bottom:12px;">sec</div>
+              <div class="status-label" id="resPTLabel">-</div>
+              
+              <div class="range-slider-bar">
+                <div class="range-pointer" id="ptPointer" style="left: 50%;"></div>
+              </div>
+              
+              <div class="range-ticks">
+                <span id="ptTickLow">Normal: 11s</span>
+                <span id="ptTickHigh">Prolonged: &gt;13.5s</span>
+              </div>
+            </div>
+
+            <!-- Gauge 2: INR -->
+            <div class="gauge-container">
+              <div style="font-size:0.75rem; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:8px;">International Normalized Ratio (INR)</div>
+              <div class="val-large" id="resINRVal">-</div>
+              <div style="font-size:0.8rem; color:var(--muted); margin-bottom:12px;">ratio</div>
+              <div class="status-label" id="resINRLabel">-</div>
+              
+              <div class="range-slider-bar">
+                <div class="range-pointer" id="inrPointer" style="left: 50%;"></div>
+              </div>
+              
+              <div class="range-ticks" id="inrTicksContainer">
+                <span id="inrTickLow">Low</span>
+                <span id="inrTickNormal">Normal: 0.8-1.2</span>
+                <span id="inrTickHigh">High</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: PT & INR</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What are PT and INR?</strong><br><span data-translate="eduA1">Prothrombin Time (PT) measures how quickly blood clots via the extrinsic and common pathways. International Normalized Ratio (INR) is a standardized mathematical ratio calculated from PT to account for different laboratory reagents, ensuring consistent interpretation worldwide.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Why are therapeutic INR targets higher?</strong><br><span data-translate="eduA2">For patients taking oral anticoagulants like Warfarin to prevent strokes or blood clots, the target INR is intentionally elevated (commonly between 2.0 and 3.0) to thin the blood slightly, preventing clotting while managing bleeding risks.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "PT/INR Analyzer",
+      toolDesc: "Interpret Prothrombin Time (PT) and International Normalized Ratio (INR) levels to evaluate coagulation and monitor warfarin therapy.",
+      inputsTitle: "🧬 PT/INR Coagulation Inputs",
+      clearBtn: "Reset",
+      labelTherapy: "Anticoagulant Therapy (e.g. Warfarin)",
+      optTherapyNo: "No (Healthy Baseline Reference)",
+      optTherapyYes: "Yes (Warfarin Therapeutic Target: 2.0 - 3.0)",
+      labelPT: "Prothrombin Time (seconds)",
+      labelINR: "INR (Ratio)",
+      btnAnalyze: "Analyze PT/INR",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter PT (sec) and INR values, then click analyze to display coagulation diagnostics.",
+      reportTitle: "🔬 Coagulation Diagnostic Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgePTNormal: "Normal PT",
+      badgePTProlonged: "Prolonged PT (Delayed Clotting)",
+      badgePTSecNormal: "Normal PT",
+      badgeINRNormal: "Normal INR",
+      badgeINRElevated: "Elevated INR",
+      badgeINRLow: "Low INR",
+      badgeINRTherapeutic: "Therapeutic INR Range",
+      badgeINRSubTherapeutic: "Sub-Therapeutic INR (High Clot Risk)",
+      badgeINRSupraTherapeutic: "Supra-Therapeutic INR (High Bleed Risk)",
+      badgeINRCritical: "CRITICAL INR (Extreme Bleeding Danger)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "পিটি/আইএনআর বিশ্লেষক",
+      toolDesc: "রক্ত জমাট বাঁধার গতি পরীক্ষা এবং ওয়ারফারিন থেরাপি তদারকির জন্য প্রথম্বিন টাইম (PT) এবং ইন্টারন্যাশনাল নরমালাইজড রেশিও (INR) বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 পিটি/আইএনআর রক্তের ইনপুটসমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelTherapy: "অ্যান্টিকোয়াগুল্যান্ট বা রক্ত পাতলাকারী ওষুধ গ্রহণ (যেমন: ওয়ারফারিন)",
+      optTherapyNo: "না (স্বাভাবিক বেসলাইন রেফারেন্স)",
+      optTherapyYes: "হ্যাঁ (থেরাপিউটিক টার্গেট রেঞ্জ: ২.০ - ৩.০)",
+      labelPT: "প্রথম্বিন টাইম (সেকেন্ড)",
+      labelINR: "আইএনআর (অনুপাত)",
+      btnAnalyze: "বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "পিটি (সেকেন্ড) এবং আইএনআর মান লিখে বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 রক্ত জমাট ডায়াগনস্টিক রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgePTNormal: "স্বাভাবিক পিটি",
+      badgePTProlonged: "বিলম্বিত পিটি (রক্ত ধীর গতিতে জমাট বাঁধছে)",
+      badgePTSecNormal: "স্বাভাবিক পিটি",
+      badgeINRNormal: "স্বাভাবিক আইএনআর",
+      badgeINRElevated: "উচ্চ আইএনআর",
+      badgeINRLow: "কম আইএনআর",
+      badgeINRTherapeutic: "থেরাপিউটিক আইএনআর রেঞ্জ (কাঙ্ক্ষিত মাত্রা)",
+      badgeINRSubTherapeutic: "সাব-থেরাপিউটিক আইএনআর (রক্ত জমার ঝুঁকি বেশি)",
+      badgeINRSupraTherapeutic: "সুপ্রা-থেরাপিউটিক আইএনআর (অতিরিক্ত রক্তক্ষরণের ঝুঁকি)",
+      badgeINRCritical: "মারাত্মক উচ্চ আইএনআর (তীব্র রক্তক্ষরণের ঝুঁকি)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "पीटी/आईएनआर विश्लेषक",
+      toolDesc: "जमावट का मूल्यांकन करने और वारफारिन थेरेपी की निगरानी करने के लिए प्रोथ्रोम्बिन टाइम (पीटी) और अंतर्राष्ट्रीय सामान्यीकृत अनुपात (आईएनआर) स्तरों की व्याख्या करें।",
+      inputsTitle: "🧬 पीटी/आईएनआर जमावट इनपुट",
+      clearBtn: "रीसेट करें",
+      labelTherapy: "थक्कारोधी थेरेपी (जैसे वारफारिन)",
+      optTherapyNo: "नहीं (स्वस्थ आधारभूत संदर्भ)",
+      optTherapyYes: "हाँ (वार्फ़रिन चिकित्सीय लक्ष्य: 2.0 - 3.0)",
+      labelPT: "प्रोथ्रोम्बिन समय (सेकंड)",
+      labelINR: "INR (अनुपात)",
+      btnAnalyze: "पीटी/आईएनआर का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "पीटी (सेकंड) और आईएनआर मान दर्ज करें, फिर जमावट निदान प्रदर्शित करने के लिए विश्लेषण पर ���्लिक करें।",
+      reportTitle: "🔬 जमावट निदान रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgePTNormal: "सामान्य पीटी",
+      badgePTProlonged: "लंबे समय तक पीटी (विलंबित क्लॉटिंग)",
+      badgePTSecNormal: "सामान्य पीटी",
+      badgeINRNormal: "सामान्य आईएनआर",
+      badgeINRElevated: "बढ़ा हुआ INR",
+      badgeINRLow: "कम आईएनआर",
+      badgeINRTherapeutic: "चिकित्सीय आईएनआर रेंज",
+      badgeINRSubTherapeutic: "उप-चिकित्सीय आईएनआर (उच्च थक्का जोखिम)",
+      badgeINRSupraTherapeutic: "सुप्रा-चिकित्सीय INR (उच्च रक्तस्राव जोखिम)",
+      badgeINRCritical: "गंभीर INR (अत्यधिक रक्तस्राव का खतरा)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Prothrombin Time (PT)?", a: "PT is a test that measures how many seconds it takes for your plasma to clot after adding calcium and tissue factor reagents." },
+      { q: "What is INR?", a: "INR is a standardized index calculated from the PT test, allowing test results from different laboratories to be directly comparable." },
+      { q: "What is a normal INR for someone not on Warfarin?", a: "Typically 0.8 to 1.2 is considered normal for a healthy adult not on blood thinners." },
+      { q: "What is a target therapeutic INR?", a: "For patients on Warfarin for atrial fibrillation or DVT prevention, the target is usually 2.0 to 3.0. For mechanical heart valves, it may be 2.5 to 3.5." },
+      { q: "Why is a high INR dangerous?", a: "An INR > 4.5 dramatically increases the risk of severe spontaneous bleeding (such as gastrointestinal bleeding or hemorrhagic stroke)." }
+    ],
+    bn: [
+      { q: "প্রথম্বিন টাইম (PT) কী?", a: "রক্তের তরল অংশ বা প্লাজমা কত সেকেন্ডে জমাট বাঁধে তা পরিমাপের পরীক্ষা হলো প্রথম্বিন টাইম বা পিটি।" },
+      { q: "আইএনআর (INR) কী?", a: "আইএনআর হলো পিটি মানের আন্তর্জাতিকভাবে সংজ্ঞায়িত অনুপাত যা বিভিন্ন ল্যাবরেটরির পরীক্ষার ফলাফলের তারতম্য দূর করে।" },
+      { q: "ওয়ারফারিন না খেলে স্বাভাবিক আইএনআর কত?", a: "স্বাভাবিক সুস্থ মানুষের ক্ষেত্রে আইএনআর মাত্রা ০.৮ থেকে ১.২ এর মধ্যে থাকে।" },
+      { q: "থেরাপিউটিক বা লক্ষ্যমাত্রা আইএনআর কত?", a: "স্ট্রোক বা রক্ত জমাট প্রতিরোধে যারা ওয়ারফারিন নেন, তাদের কাঙ্ক্ষিত আইএনআর সাধারণত ২.০ থেকে ৩.০ এর মধ্যে হওয়া উচিত।" },
+      { q: "উচ্চ আইএনআর কেন ঝুঁকিপূর্ণ?", a: "আইএনআর মাত্রা ৪.৫ এর বেশি হলে শরীরে অভ্যন্তরীণ রক্তক্ষরণ (যেমন পাকস্থলীতে বা মস্তিষ্কে রক্তক্ষরণ) এর ঝুঁকি মারাত্মকভাবে বৃদ্ধি পায়।" }
+    ],
+    hi: [
+      { q: "प्रोथ्रोम्बिन टाइम (पीटी) क्या है?", a: "पीटी एक परीक्षण है जो मापता है कि कैल्शियम और ऊतक कारक अभिकर्मकों को जोड़ने के बाद आपके प्लाज्मा को जमने में कितने सेकंड लगते हैं।" },
+      { q: "आईएनआर क्या है?", a: "आईएनआर पीटी परीक्षण से गणना किया गया एक मानकीकृत सूचकांक है, जो विभिन्न प्रयोगशालाओं के ��रीक्षण परिणामों को सीधे तुलनीय बनाने की अनुमति देता है।" },
+      { q: "वारफारिन न लेने वाले व्यक्ति के लिए सामान्य INR क्या है?", a: "आमतौर पर 0.8 से 1.2 एक स्वस्थ वयस्क के लिए सामान्य माना जाता है, न कि रक्त को पतला करने वाली दवाओं पर।" },
+      { q: "लक्ष्य चिकित्सीय INR क्या है?", a: "आलिंद फिब्रिलेशन या डीवीटी की रोकथाम के लिए वारफारिन लेने वाले रोगियों के लिए, लक्ष्य आमतौर पर 2.0 से 3.0 है। यांत्रिक हृदय वाल्वों के लिए, यह 2.5 से 3.5 हो सकता है।" },
+      { q: "उच्च INR खतरनाक क्यों है?", a: "INR>4.5 से गंभीर सहज रक्तस्राव (जैसे गैस्ट्रो��ंटेस्टाइनल रक्तस्राव या रक्तस्रावी स्ट्रोक) का खतरा नाटकीय रूप से बढ़ जाता है।" }
+    ]
+  };
+
+  const coagulationInsights = {
+    en: {
+      normal: {
+        desc: "Your coagulation profile is normal. Clotting factor cascades in the extrinsic and common pathways are functional and balanced.",
+        factors: ["Adequate clotting factors production", "Healthy liver synthesis function", "Normal Vitamin K levels"],
+        symptoms: ["No signs of bruising or spontaneous bleeding"],
+        prevention: ["Eat a balanced diet including leafy green vegetables containing Vitamin D/K", "Avoid excessive alcohol intake"],
+        consult: "Continue regular screening as recommended by your physician."
+      },
+      prolonged: {
+        desc: "Your blood is taking longer than normal to clot. This increases the risk of bleeding.",
+        factors: ["Warfarin or other anticoagulant use", "Vitamin K deficiency (needed to synthesize clotting factors)", "Liver disease (cirrhosis, hepatitis)", "Congenital clotting factor deficiency (e.g. Factor VII, II, V, X)"],
+        symptoms: ["Easy bruising (ecchymosis)", "Frequent nosebleeds (epistaxis) or bleeding gums", "Prolonged bleeding from minor cuts"],
+        prevention: ["Use a soft-bristled toothbrush to prevent bleeding gums", "Avoid contact sports or high-impact activities to prevent injury"],
+        consult: "Consult a healthcare provider immediately to determine the root cause, especially if you are not taking blood-thinning medications."
+      },
+      therapeutic: {
+        desc: "Your INR is in the optimal therapeutic target range for anticoagulant therapy. This provides the correct balance of blood thinning to prevent strokes while avoiding hemorrhage.",
+        factors: ["Consistent daily Warfarin dosing", "Stable dietary Vitamin K intake", "Absence of conflicting medication interactions"],
+        symptoms: ["No unusual bleeding or new thrombosis/clots"],
+        prevention: ["Keep your dietary intake of Vitamin K-rich foods (spinach, kale, broccoli) consistent day-to-day", "Avoid starting new medications or supplements without advising your prescriber"],
+        consult: "Repeat blood tests at scheduled intervals to monitor stability."
+      },
+      subtherapeutic: {
+        desc: "Your INR is below the therapeutic target. Your blood is too 'thick', putting you at risk of developing dangerous blood clots.",
+        factors: ["Missed Warfarin doses", "Sudden increase in dietary Vitamin K intake", "Drug interactions that speed up Warfarin metabolism"],
+        symptoms: ["Pain, swelling, or redness in legs (DVT signs)", "Sudden chest pain, cough, or breathlessness (PE signs)"],
+        prevention: ["Double-check your pill organizer to prevent missed doses", "Limit foods containing very high Vitamin K if you recently increased consumption"],
+        consult: "Contact your anticoagulation clinic or doctor immediately for a dosage adjustment."
+      },
+      supratherapeutic: {
+        desc: "Your INR is elevated above your therapeutic target. Your blood is too thin, putting you at an increased risk of clinical bleeding.",
+        factors: ["Accidental extra Warfarin doses", "Decreased dietary Vitamin K intake", "Acute illness, fever, or liver congestion", "Interaction with antibiotics or pain medications"],
+        symptoms: ["Nosebleeds, bleeding gums", "Dark or tea-colored urine", "Black or tarry stools"],
+        prevention: ["Avoid sharp objects, handle kitchen utensils with care", "Do not take aspirin or ibuprofen unless specifically prescribed"],
+        consult: "Contact your doctor or clinic promptly to request a dosage reduction."
+      },
+      critical: {
+        desc: "⚠️ CRITICAL ALERT: Your INR is extremely high, representing an immediate danger of life-threatening spontaneous bleeding.",
+        factors: ["Severe Warfarin overdose", "Critical liver synthetic failure", "Severe toxic drug interactions"],
+        symptoms: ["Blood in vomit or sputum", "Severe back or abdominal pain", "Sudden severe headache or neurological deficits", "Heavy bruising without trauma"],
+        prevention: ["Rest quietly and avoid all physical activity", "Do not take any blood thinners or anti-inflammatory drugs"],
+        consult: "⚠️ Seek emergency medical attention immediately. Reversal agents (Vitamin K1 injection or prothrombin complex concentrate) are often needed."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার রক্ত জমাট প্রক্রিয়া স্বাভাবিক। শরীরে জমাট বাঁধার প্রয়োজনীয় প্রোটিন ও এনজাইমসমূহ সঠিক পরিমাণে কার্যকর আছে।",
+        factors: ["স্বাভাবিক লিভারের কার্যক্ষমতা", "পর্যাপ্ত ভিটামিন কে মাত্রা"],
+        symptoms: ["সহজে রক্তক্ষরণ বা কালশিটে পড়ার লক্ষণ না থাকা"],
+        prevention: ["সবুজ শাকসবজি সমৃদ্ধ সুষম খাবার গ্রহণ করুন"],
+        consult: "বার্ষিক রুটিন স্ক্রীনিং বজায় রাখুন।"
+      },
+      prolonged: {
+        desc: "আপনার রক্ত জমাট বাঁধতে স্বাভাবিকের চেয়ে বেশি সময় নিচ্ছে। এটি রক্তক্ষরণের ঝুঁকি বাড়িয়ে তোলে।",
+        factors: ["রক্ত পাতলা করার ওষুধ গ্রহণ", "ভিটামিন কে এর অভাব", "লিভারের রোগ (যেমন সিরোসিস)", "জন্মগত রক্ত জমাটের ফ্যাক্টরের অভাব"],
+        symptoms: ["ত্বকে সহজেই কালশিটে দাগ পড়া", "দাঁতের মাড়ি বা নাক দিয়ে ঘন ঘন রক্ত পড়া", "কেটে গেলে রক্ত পড়া বন্ধ হতে দেরি হওয়া"],
+        prevention: ["মাড়ি সুরক্ষিত রাখতে নরম ব্রাশ দিয়ে দাঁত মাজুন", "আঘাত এড়াতে ভারী খেলাধুলা থেকে বিরত থাকুন"],
+        consult: "যদি আপনি রক্ত পাতলা করার ওষুধ না খেয়ে থাকেন তবে অবিলম্বে চিকিৎসকের পরামর্শ নিন।"
+      },
+      therapeutic: {
+        desc: "আপনার আইএনআর ওষুধের কাঙ্ক্ষিত সীমায় (Therapeutic Target) আছে। এটি স্ট্রোক বা রক্ত জমাট প্রতিরোধ করতে ও রক্তক্ষরণ এড়াতে সাহায্য করে।",
+        factors: ["নিয়মিত সঠিক মাত্রায় ওয়ারফারিন খাওয়া", "খাদ্যতালিকায় ভিটামিন কে এর স্থিতিশীলতা"],
+        symptoms: ["কোনো অস্বাভাবিক রক্তক্ষরণের চিহ্ন না থাকা"],
+        prevention: ["প্রতিদিন খাবারে সবুজ শাকসবজির (পালং শাক, ব্রকলি) পরিমাণ প্রায় একই রকম রাখুন", "ডাক্তারের পরামর্শ ছাড়া নতুন কোনো ওষুধ খাবেন না"],
+        consult: "নির্ধারিত রুটিন অনুযায়ী পরবর্তী রক্ত পরীক্ষা করান।"
+      },
+      subtherapeutic: {
+        desc: "আপনার আইএনআর কাঙ্ক্ষিত সীমার নিচে। আপনার রক্ত অতিরিক্ত ঘন আছে, যা রক্ত জমাট বেঁধে স্ট্রোক বা হার্ট অ্যাটাকের ঝুঁকি বাড়িয়ে দেয়।",
+        factors: ["ওয়ারফারিনের ডোজ বাদ পড়া", "হঠাৎ খাদ্যতালিকায় অতিরিক্ত ভিটামিন কে যুক্ত খাবার খাওয়া"],
+        symptoms: ["পায়ে ব্যথা, ফোলা বা লাল হওয়া", "হঠাৎ বুকে ব্যথা বা শ্বাসকষ্ট"],
+        prevention: ["ওষুধের ডোজ সঠিক সময়ে নেওয়া নিশ্চিত করুন"],
+        consult: "অবিলম্বে আপনার চিকিৎসকের সাথে ওষুধের ডোজ বাড়ানোর বিষয়ে যোগাযোগ করুন।"
+      },
+      supratherapeutic: {
+        desc: "আপনার আইএনআর কাঙ্ক্ষিত সীমার উপরে। আপনার রক্ত অতিরিক্ত পাতলা হয়ে গেছে, যা অভ্যন্তরীণ বা বাহ্যিক রক্তক্ষরণের ঝুঁকি সৃষ্টি করে।",
+        factors: ["ভুলবশত অতিরিক্ত ওয়ারফারিন খাওয়া", "ভিটামিন কে সমৃদ্ধ খাবার হঠাৎ কমে যাওয়া", "অ্যান্টিবায়োটিকের সাথে ওষুধের বিক্রিয়া"],
+        symptoms: ["নাক বা মাড়ি দিয়ে রক্ত পড়া", "লাল বা চা রঙের প্রস্রাব", "কালো রঙের মল"],
+        prevention: ["আঘাত লাগতে পারে এমন কাজ এড়িয়ে চলুন"],
+        consult: "দ্রুত ডাক্তারের সাথে যোগাযোগ করে সাময়িকভাবে ওষুধের ডোজ হ্রাস করার পরামর্শ নিন।"
+      },
+      critical: {
+        desc: "⚠️ মারাত্মক সতর্কতা: আপনার আইএনআর বিপজ্জনকভাবে বেশি। এটি যেকোনো সময় তীব্র অভ্যন্তরীণ ও প্রাণঘাতী রক্তক্ষরণের ঝুঁকি তৈরি করে।",
+        factors: ["ওয়ারফারিন ওভারডোজ", "লিভারের তীব্র অকার্যকারিতা", "ওষুধের তীব্র পার্শ্বপ্রতিক্রিয়া"],
+        symptoms: ["বমি বা কাশির সাথে রক্ত যাওয়া", "তীব্র পেট বা পিঠের ব্যথা", "হঠাৎ মারাত্মক মাথাব্যথা"],
+        prevention: ["সম্পূর্ণ বিশ্রামে থাকুন এবং যেকোনো আঘাত এড়ান"],
+        consult: "⚠️ অবিলম্বে হাসপাতালের জরুরি বিভাগে যান। রক্ত স্বাভাবিক অবস্থায় ফিরিয়ে আনতে জরুরি চিকিৎসা ও ইনজেকশন প্রয়োজন হতে পারে।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपकी जमावट प्रोफ़ाइल सामान्य है. बाहरी और सामान्य मार्गों में क्लॉटिंग फैक्टर कैस्केड कार्यात्मक और संतुलित हैं।",
+        factors: ["पर्याप्त थक्का जमाने वाले कारकों का उत्पादन", "स्वस्थ यकृत संश्लेषण कार्य", "सामान्य विटामिन K स्तर"],
+        symptoms: ["चोट लगने या सहज रक्तस्राव का कोई संकेत नहीं"],
+        prevention: ["विटामिन डी/के युक्त हरी पत्तेदार सब्जियों सहित संतुलित आहार लें", "अत्यधिक शराब के सेवन से बचें"],
+        consult: "अपने चिकित्सक की सलाह के अनुसार नियमित जांच जारी रखें।"
+      },
+      prolonged: {
+        desc: "आपका रक्त जमने में सामान्य से अधिक समय ले रहा है। इससे रक्तस्राव का खतरा बढ़ जाता है।",
+        factors: ["वारफारिन या अन्य थक्कारोधी उपयोग", "विटामिन K की कमी (थक्का जमाने वाले कारकों को संश्लेषित करने के लिए आवश्यक)", "जिगर की बीमारी (सिरोसिस, हेपेटाइटिस)", "जन्मजात क्लॉटिंग कारक की कमी (जैसे फैक्टर VII, II, V, X)"],
+        symptoms: ["आसान चोट लगना (इकोमोसिस)", "बार-बार नाक से खून आना (एपिस्टेक्सिस) या मसूड़ों से खून आना", "छोटी-मोटी चोट से लंबे समय तक खून बहना"],
+        prevention: ["मसूड़ों से खून आने से रोकने के लिए मुलायम ब्रिसल वाले टूथब्रश का उपयोग करें", "चोट से बचने के लिए संपर्क खेलों या उच्च प्रभाव वाली गतिविधियों से बचें"],
+        consult: "मूल कारण निर्धारित करने के लिए तुरंत स्वास्थ्य सेवा प्रदाता से परामर्श लें, खासकर यदि आप रक्त को पतला करने वाली दवाएं नहीं ले रहे हैं।"
+      },
+      therapeutic: {
+        desc: "आपका आईएनआर एंटीकोआगुलेंट थेरेपी के लिए इष्टतम चिकित्सीय लक्ष्य सीमा में है। यह रक्तस्राव से बचने के साथ-साथ स्ट्रोक को रोकने के लिए रक्त को पतला करने का सही संतुलन प्रदान करता है।",
+        factors: ["लगातार दैनिक वारफारिन खुराक", "स्थिर आहार विटामिन K का सेवन", "परस्पर विरोधी दवा अंतःक्रियाओं का अभाव"],
+        symptoms: ["कोई असामान्य रक्तस्राव या नया घनास्त्रता/थक्का नहीं"],
+        prevention: ["अपने आहार में प्रतिदिन विटामिन के युक्त खाद���य पदार्थ (पालक, केल, ब्रोकोली) का सेवन नियमित रखें।", "अपने चिकित्सक को सलाह दिए बिना नई दवाएं या पूरक शुरू करने से बचें"],
+        consult: "स्थिरता की निगरानी के लिए निर्धारित अंतराल पर रक्त परीक्षण दोहराएं।"
+      },
+      subtherapeutic: {
+        desc: "आपका INR चिकित्सीय लक्ष्य से कम है। आपका रक्त बहुत 'गाढ़ा' है, जिससे आपको खतरनाक रक्त के थक्के बनने का खतरा है।",
+        factors: ["वारफारिन की खुराक छूट गई", "आहार में विटामिन K के सेवन में अचानक वृद्धि", "ड्रग इंटरेक्शन जो वारफारिन चयापचय को तेज करता है"],
+        symptoms: ["पैरों में दर्द, सूजन या लाली (डीवीटी संकेत)", "अचानक सीने में दर्द, खांसी, या सांस फूलना (पीई संकेत)"],
+        prevention: ["छूटी हुई खुराक को रोकने के लिए अपने गोली आयोजक की दोबारा जांच करें", "यदि आपने हाल ही में बहुत अधिक विटामिन K युक्त खाद्य पदार्थों का सेवन बढ़ाया है तो इसे सीमित करें"],
+        consult: "खुराक समायोजन के लिए तुरंत अपने एंटीकोआग्यूलेशन क्लिनिक या डॉक्टर से संपर्क करें।"
+      },
+      supratherapeutic: {
+        desc: "आपका INR आपके चिकित्सीय लक्ष्य से ऊपर उठा हुआ है। आपका रक्त बहुत पतला है, जिससे आपको नैदानिक ​​रक्तस्राव का खतरा बढ़ जाता है।",
+        factors: ["आकस्मिक अतिरिक्त वारफारिन खुराक", "आहार में विटामिन K का सेवन कम होना", "तीव्र बीमारी, बुखार, या यकृत में जमाव", "एंटीबायोटिक्स या दर्द निवारक दवाओं के साथ परस्पर क्रिया"],
+        symptoms: ["नाक से खून आना, मसूड़ों से खून आना", "गहरे या चाय के रंग का पेशाब", "काला या टेरी मल"],
+        prevention: ["नुकीली वस्तुओं से बचें, रसोई के बर्तनों को सावधानी से संभालें", "जब तक विशेष रूप से निर्धारित न किया गया हो एस्पिरिन या इबुप्रोफेन न लें"],
+        consult: "खुराक में कमी का अनुरोध करने के लिए तुरंत अपने डॉक्टर या क्लिनिक से संपर्क करें।"
+      },
+      critical: {
+        desc: "⚠️ गंभीर चेतावनी: आपका आईएनआर बेहद ऊंचा है, जो जीवन के लिए खतरनाक सहज रक्तस्राव के तत्काल खतरे का प्रतिनिधित्व करता है।",
+        factors: ["गंभीर वारफारिन ओवरडोज़", "गंभीर यकृत कृत्रिम विफलता", "गंभीर विषाक्त दवा अंतःक्रिया"],
+        symptoms: ["उल्टी या थूक में खून आना", "गंभीर पीठ या पेट दर्द", "अचानक गंभीर सिरदर्द या तंत्रिका संबंधी कमी", "बिना किसी आघात के भारी चोट लगना"],
+        prevention: ["चुपचाप आराम करें और सभी शारीरिक गतिविधियों से बचें", "कोई भी रक्त पतला करने वाली या सूजन रोधी ��वाएं न लें"],
+        consult: "⚠️ तुरंत आपातकालीन चिकित्सा सहायता लें। रिवर्सल एजेंट (विटामिन K1 इंजेक्शन या प्रोथ्रोम्बिन कॉम्प्लेक्स कॉन्संट्रेट) की अक्सर आवश्यकता होती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-ptinr-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    toggleTherapy(); // Updates labels/ticks according to language
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function toggleTherapy() {
+    const isTherapy = document.getElementById("valTherapy").value === "yes";
+    const inrTicks = document.getElementById("inrTicksContainer");
+    
+    if (isTherapy) {
+      inrTicks.innerHTML = `
+        <span style="color: var(--high-color);">&lt; 2.0 (Sub)</span>
+        <span style="color: var(--normal-color);">2.0 - 3.0 (Target)</span>
+        <span style="color: var(--critical-color);">&gt; 3.0 (High)</span>
+      `;
+    } else {
+      inrTicks.innerHTML = `
+        <span style="color: var(--high-color);">&lt; 0.8</span>
+        <span style="color: var(--normal-color);">0.8 - 1.2</span>
+        <span style="color: var(--critical-color);">&gt; 1.2</span>
+      `;
+    }
+  }
+
+  function resetForm() {
+    document.getElementById("valPT").value = "";
+    document.getElementById("valINR").value = "";
+    document.getElementById("valTherapy").value = "no";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    toggleTherapy();
+  }
+
+  function analyzePTINR() {
+    const valPT = parseFloat(document.getElementById("valPT").value);
+    const valINR = parseFloat(document.getElementById("valINR").value);
+    const isTherapy = document.getElementById("valTherapy").value === "yes";
+
+    if (isNaN(valPT) || valPT <= 0 || isNaN(valINR) || valINR <= 0) {
+      alert(currentLang === "en" ? "Please enter valid positive numbers for PT and INR." : "দয়া করে পিটি এবং আইএনআর এর সঠিক ধনাত্মক মান লিখুন।");
+      return;
+    }
+
+    // PT assessment: Normal range 11 - 13.5s, Prolonged > 13.5s
+    let ptStatus = "normal";
+    let ptLabelKey = "badgePTNormal";
+    if (valPT > 13.5) {
+      ptStatus = "prolonged";
+      ptLabelKey = "badgePTProlonged";
+    }
+
+    // INR assessment
+    let inrStatus = "normal";
+    let inrLabelKey = "badgeINRNormal";
+
+    if (isTherapy) {
+      if (valINR < 2.0) {
+        inrStatus = "subtherapeutic";
+        inrLabelKey = "badgeINRSubTherapeutic";
+      } else if (valINR >= 2.0 && valINR <= 3.0) {
+        inrStatus = "therapeutic";
+        inrLabelKey = "badgeINRTherapeutic";
+      } else if (valINR > 3.0 && valINR <= 4.5) {
+        inrStatus = "supratherapeutic";
+        inrLabelKey = "badgeINRSupraTherapeutic";
+      } else {
+        inrStatus = "critical";
+        inrLabelKey = "badgeINRCritical";
+      }
+    } else {
+      if (valINR < 0.8) {
+        inrStatus = "low";
+        inrLabelKey = "badgeINRLow";
+      } else if (valINR >= 0.8 && valINR <= 1.2) {
+        inrStatus = "normal";
+        inrLabelKey = "badgeINRNormal";
+      } else if (valINR > 1.2 && valINR <= 4.5) {
+        inrStatus = "elevated";
+        inrLabelKey = "badgeINRElevated";
+      } else {
+        inrStatus = "critical";
+        inrLabelKey = "badgeINRCritical";
+      }
+    }
+
+    // Map PT pointer (5% - 95% scaling)
+    let ptPointerPct = 50;
+    if (valPT <= 11) {
+      ptPointerPct = Math.max(5, (valPT / 11) * 35);
+    } else if (valPT <= 13.5) {
+      ptPointerPct = 35 + ((valPT - 11) / 2.5) * 30;
+    } else {
+      ptPointerPct = Math.min(95, 65 + ((valPT - 13.5) / 10) * 30);
+    }
+
+    // Map INR pointer (5% - 95% scaling)
+    let inrPointerPct = 50;
+    if (isTherapy) {
+      if (valINR < 2.0) {
+        inrPointerPct = Math.max(5, (valINR / 2.0) * 33);
+      } else if (valINR <= 3.0) {
+        inrPointerPct = 33 + (valINR - 2.0) * 33;
+      } else {
+        inrPointerPct = Math.min(95, 66 + ((valINR - 3.0) / 3.0) * 29);
+      }
+    } else {
+      if (valINR < 0.8) {
+        inrPointerPct = Math.max(5, (valINR / 0.8) * 33);
+      } else if (valINR <= 1.2) {
+        inrPointerPct = 33 + ((valINR - 0.8) / 0.4) * 33;
+      } else {
+        inrPointerPct = Math.min(95, 66 + ((valINR - 1.2) / 2.0) * 29);
+      }
+    }
+
+    activeReportData = {
+      valPT,
+      valINR,
+      isTherapy,
+      ptStatus,
+      ptLabelKey,
+      inrStatus,
+      inrLabelKey,
+      ptPointerPct,
+      inrPointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(ptLabelKey, inrLabelKey, valPT, valINR);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resTherapy").textContent = d.isTherapy ? (currentLang === "en" ? "On Anticoagulant" : "ওষুধ নিচ্ছেন") : (currentLang === "en" ? "None (Baseline)" : "ওষুধ ছাড়া (স্বাভাবিক)");
+
+    // PT Display
+    document.getElementById("resPTVal").textContent = d.valPT.toFixed(1);
+    const ptLabel = document.getElementById("resPTLabel");
+    ptLabel.textContent = translations[currentLang][d.ptLabelKey];
+    let ptColorClass = d.ptStatus === "normal" ? "normal" : "critical";
+    ptLabel.style.color = `var(--${ptColorClass}-color)`;
+    document.getElementById("resPTVal").style.color = `var(--${ptColorClass}-color)`;
+    document.getElementById("ptPointer").style.left = `${d.ptPointerPct}%`;
+    document.getElementById("ptPointer").style.borderColor = `var(--${ptColorClass}-color)`;
+
+    // INR Display
+    document.getElementById("resINRVal").textContent = d.valINR.toFixed(2);
+    const inrLabel = document.getElementById("resINRLabel");
+    inrLabel.textContent = translations[currentLang][d.inrLabelKey];
+    
+    let inrColorClass = "normal";
+    if (["low", "subtherapeutic", "elevated", "supratherapeutic"].includes(d.inrStatus)) inrColorClass = "high";
+    else if (d.inrStatus === "critical") inrColorClass = "critical";
+    
+    inrLabel.style.color = `var(--${inrColorClass}-color)`;
+    document.getElementById("resINRVal").style.color = `var(--${inrColorClass}-color)`;
+    document.getElementById("inrPointer").style.left = `${d.inrPointerPct}%`;
+    document.getElementById("inrPointer").style.borderColor = `var(--${inrColorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    // Determine target insight details
+    // We map: normal/low -> normal, prolonged -> prolonged (for baseline)
+    // For therapy: therapeutic -> therapeutic, subtherapeutic -> subtherapeutic, supratherapeutic -> supratherapeutic, critical -> critical
+    let searchKey = d.inrStatus;
+    if (!d.isTherapy) {
+      if (d.ptStatus === "prolonged" || d.inrStatus === "elevated") {
+        searchKey = "prolonged";
+      } else {
+        searchKey = "normal";
+      }
+    }
+
+    const details = coagulationInsights[currentLang][searchKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${inrColorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(ptLabelKey, inrLabelKey, valPT, valINR) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      ptLabelKey,
+      inrLabelKey,
+      valPT,
+      valINR,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-ptinr-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const ptText = translations[currentLang][item.ptLabelKey] || item.ptLabelKey;
+      const inrText = translations[currentLang][item.inrLabelKey] || item.inrLabelKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>PT: ${item.valPT.toFixed(1)}s (${ptText}) | INR: ${item.valINR.toFixed(2)} (${inrText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const ptText = translations[currentLang][activeReportData.ptLabelKey];
+    const inrText = translations[currentLang][activeReportData.inrLabelKey];
+    let t = `--- PT/INR COAGULATION REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Therapy Status: ${activeReportData.isTherapy ? "On Warfarin" : "None"}\n`;
+    t += `PT Value: ${activeReportData.valPT.toFixed(1)} seconds (${ptText})\n`;
+    t += `INR Value: ${activeReportData.valINR.toFixed(2)} (${inrText})\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `ptinr-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

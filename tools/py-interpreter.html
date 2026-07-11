@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Python WebAssembly Interpreter &bull; Dev Tools - SSDK TOOLS HUB</title>
+  <meta name="description" content="Write, edit, and execute Python code 100% client-side inside the browser using WebAssembly. Load NumPy, Pandas, SymPy packages offline.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <!-- Load Pyodide WebAssembly engine -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+  <style>
+    .editor-section {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+    }
+    @media (max-width: 900px) {
+      .editor-section {
+        grid-template-columns: 1fr;
+      }
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+    }
+    .input-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .input-group select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .console-out {
+      background: #11081a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      min-height: 250px;
+      max-height: 380px;
+      overflow-y: auto;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      color: #00ff66;
+    }
+    .console-out.error {
+      color: #ff4d4d;
+    }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Python WebAssembly Interpreter</h1>
+  <p class="page-sub">Write and run Python scripts securely on your computer. Load science packages (NumPy, SymPy) directly in the browser.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    
+    <div class="controls-grid">
+      <div class="input-group">
+        <label for="templateSelector">Select Code Template</label>
+        <select id="templateSelector" onchange="loadTemplate()">
+          <option value="hello">👋 Hello World</option>
+          <option value="fibonacci">🔢 Fibonacci Sequence Generator</option>
+          <option value="numpy">📐 NumPy Matrices (Requires package)</option>
+          <option value="sympy">🔬 SymPy Algebra & Calculus (Requires package)</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="packageSelector">Load Python Packages</label>
+        <select id="packageSelector" onchange="loadPythonPackage()">
+          <option value="none" selected>None (Standard Library Only)</option>
+          <option value="numpy">🔢 NumPy (Math & Matrices)</option>
+          <option value="pandas">📊 Pandas (Data Wrangling)</option>
+          <option value="sympy">🔬 SymPy (Symbolic Algebra)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="editor-section">
+      <!-- Left: Editor input -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Python Script Editor</h4>
+        <textarea id="codeEditor" rows="14" placeholder="Write python script here..." style="font-family: monospace; font-size: 0.85rem; line-height: 1.4; tab-size: 4; -moz-tab-size: 4;"></textarea>
+      </div>
+      
+      <!-- Right: Output terminal console -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Execution Console</h4>
+        <div id="consoleOutput" class="console-out">Loading Python execution engine...</div>
+      </div>
+    </div>
+
+    <div class="tool-control" style="margin-top: 18px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnRun" disabled style="background: var(--grad2);">⌛ Loading Engine...</button>
+      <button class="btn ghost" id="btnCopy">📋 Copy Output</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear Editor</button>
+    </div>
+    
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; text-align: center; display: none;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Pyodide Integration:</strong> Leverages Pyodide (Python compiled to WebAssembly) to run full execution environments client-side.</li>
+      <li><strong>0% Server Workload:</strong> Heavy calculations run directly in the client browser, reducing server traffic and keeping operations offline.</li>
+      <li><strong>Scientific Stack:</strong> Install full scientific Python modules like NumPy, Pandas, or SymPy with single click requests.</li>
+      <li><strong>Standard Libs Included:</strong> Works out-of-the-box with standard libraries like <code>math</code>, <code>random</code>, <code>json</code>, and <code>datetime</code>.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-list content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-item">
+      <div class="faq-q">Does Python run on a backend server?<span>＋</span></div>
+      <div class="faq-a">No. Standard setups require hosting a backend service. This tool loads Python directly into WebAssembly (WASM), processing code inside your browser thread. This guarantees absolute data privacy and keeps server load at zero.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Can I import third-party packages?<span>＋</span></div>
+      <div class="faq-a">Yes. By choosing a package in the dropdown, the browser automatically fetches and installs the compiled WebAssembly package wrapper, allowing standard imports (e.g. <code>import numpy as np</code>) to execute correctly.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+  
+  let pyodideInstance = null;
+  const loadedPackages = new Set();
+
+  const codeTemplates = {
+    hello: `print("Hello, SSDK Tools Hub!")
+name = "Swarnava Das"
+print(f"Welcome back, {name}!")
+
+# The last line evaluated is returned as output
+"Ready to compile!"`,
+
+    fibonacci: `def fibonacci(n):
+    seq = [0, 1]
+    while len(seq) < n:
+        seq.append(seq[-1] + seq[-2])
+    return seq
+
+print("Generating first 12 Fibonacci numbers:")
+fib_seq = fibonacci(12)
+print(fib_seq)
+`,
+
+    numpy: `# Loading NumPy matrix calculations (make sure NumPy package is selected and loaded)
+import numpy as np
+
+# Let's multiply matrices
+a = np.array([[2, 4], [6, 8]])
+b = np.array([[1, 3], [5, 7]])
+
+print("Matrix A:")
+print(a)
+print("\\nMatrix B:")
+print(b)
+
+product = np.dot(a, b)
+print("\\nProduct (A * B):")
+print(product)
+`,
+
+    sympy: `# Solve algebraic equations (make sure SymPy package is loaded)
+import sympy as sp
+
+x = sp.Symbol('x')
+y = sp.Symbol('y')
+
+# Find integral of x^3
+expression = x**3
+result = sp.integrate(expression, x)
+print(f"Integral of x^3 w.r.t x is: {result}")
+
+# Solve equation: x^2 - 7x + 12 = 0
+roots = sp.solve(x**2 - 7*x + 12, x)
+print(f"Roots of x^2 - 7x + 12 = 0 are: {roots}")
+`
+  };
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  // Load selected python templates
+  window.loadTemplate = () => {
+    const key = $('templateSelector').value;
+    $('codeEditor').value = codeTemplates[key];
+    showStatus(`Loaded "${key}" code template.`);
+  };
+
+  // Initialize Pyodide WASM Engine
+  async function initPyodide() {
+    try {
+      pyodideInstance = await loadPyodide();
+      
+      // Inject stdout capture pipes inside Python
+      await pyodideInstance.runPythonAsync(`
+        import sys
+        import io
+        sys.stdout = io.StringIO()
+        sys.stderr = io.StringIO()
+      `);
+
+      $('consoleOutput').textContent = ">>> Python Engine loaded successfully. Ready to run scripts!";
+      $('consoleOutput').classList.remove('error');
+      $('btnRun').disabled = false;
+      $('btnRun').textContent = "🐍 Run Code";
+      
+      // Load first template code
+      loadTemplate();
+    } catch (err) {
+      $('consoleOutput').textContent = "Failed downloading Python binaries.\nError details:\n" + err.message;
+      $('consoleOutput').classList.add('error');
+      showStatus("❌ Failed initializing Python WebAssembly runtime.", true);
+    }
+  }
+
+  // Handle dynamic package loading requests
+  window.loadPythonPackage = async () => {
+    if (!pyodideInstance) return;
+    const pkg = $('packageSelector').value;
+    if (pkg === 'none' || loadedPackages.has(pkg)) return;
+
+    $('btnRun').disabled = true;
+    $('btnRun').textContent = `⌛ Loading ${pkg.toUpperCase()}...`;
+    showStatus(`Installing and loading package: ${pkg}...`);
+
+    try {
+      await pyodideInstance.loadPackage(pkg);
+      loadedPackages.add(pkg);
+      showStatus(`✅ Package "${pkg.toUpperCase()}" loaded successfully!`);
+    } catch (err) {
+      showStatus(`❌ Failed loading package "${pkg}": ` + err.message, true);
+    } finally {
+      $('btnRun').disabled = false;
+      $('btnRun').textContent = "🐍 Run Code";
+    }
+  };
+
+  initPyodide();
+
+  // Execute Editor scripts
+  $('btnRun').onclick = async () => {
+    if (!pyodideInstance) return;
+
+    const code = $('codeEditor').value.trim();
+    if (!code) {
+      showStatus("Editor is empty. Enter some Python scripts.", true);
+      return;
+    }
+
+    showStatus("Compiling script...");
+    $('consoleOutput').textContent = "Running...";
+    $('consoleOutput').classList.remove('error');
+
+    try {
+      // Clear output buffers
+      await pyodideInstance.runPythonAsync(`
+        sys.stdout.seek(0)
+        sys.stdout.truncate(0)
+        sys.stderr.seek(0)
+        sys.stderr.truncate(0)
+      `);
+
+      // Execute Python
+      const evaluated = await pyodideInstance.runPythonAsync(code);
+
+      // Collect outputs
+      const stdout = pyodideInstance.runPython(`sys.stdout.getvalue()`);
+      const stderr = pyodideInstance.runPython(`sys.stderr.getvalue()`);
+
+      let finalOutput = "";
+      if (stdout) finalOutput += stdout;
+      if (stderr) finalOutput += "ERROR LOGS:\n" + stderr;
+      if (evaluated !== undefined) finalOutput += `\n>>> [Result]: ${evaluated}`;
+
+      if (stderr) {
+        $('consoleOutput').classList.add('error');
+      }
+
+      $('consoleOutput').textContent = finalOutput || ">>> Execution finished (no output returned).";
+      showStatus("✅ Execution finished.");
+    } catch (err) {
+      $('consoleOutput').textContent = err.message;
+      $('consoleOutput').classList.add('error');
+      showStatus("❌ Script crashed.", true);
+    }
+  };
+
+  $('btnCopy').onclick = () => {
+    const text = $('consoleOutput').textContent;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      showStatus("📋 Console output copied to clipboard!");
+    });
+  };
+
+  $('btnClear').onclick = () => {
+    $('codeEditor').value = "";
+    $('consoleOutput').textContent = ">>> Console cleared.";
+    $('consoleOutput').classList.remove('error');
+    showStatus("Editor cleared.");
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

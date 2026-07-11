@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Total Protein Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate serum Total Protein levels online. Check for liver/kidney disease, chronic infections, multiple myeloma, or hydration status.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--low-color) 0%, 
+        var(--normal-color) 45%, 
+        var(--high-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Total Protein Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze serum Total Protein levels to evaluate liver, kidney, inflammatory, or hydration patterns.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Serum Protein Levels</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="gdcl" selected>g/dL</option>
+                <option value="gl">g/L</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valTotal" id="inputLabel" data-translate="labelTotalProt">Total Protein</label>
+              <input type="number" step="0.01" id="valTotal" placeholder="e.g. 7.2" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeProtein()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Total Protein</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your Total Protein level and click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Serum Protein Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Serum Total Protein</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resProtVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">g/dL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--low-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">-</span>
+              <span id="tickHigh" style="color: var(--high-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Total Protein</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Total Protein?</strong><br><span data-translate="eduA1">Total Protein measures the cumulative amount of protein in your blood, primarily representing Albumin and Globulins. It is a key indicator of nutritional status, liver synthetic capacity, and renal retention.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What does an abnormal Total Protein indicate?</strong><br><span data-translate="eduA2">- **Low levels**: Can suggest malabsorption, liver failure (inability to synthesize proteins), or kidney disease (nephrotic syndrome leaking proteins).<br>- **High levels**: Often caused by severe dehydration concentrating the blood, or chronic inflammatory diseases/multiple myeloma producing excessive antibodies (globulins).</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Total Protein Analyzer",
+      toolDesc: "Analyze serum Total Protein levels to evaluate liver, kidney, inflammatory, or hydration patterns.",
+      inputsTitle: "🧬 Serum Protein Levels",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      labelTotalProt: "Total Protein",
+      btnAnalyze: "Analyze Total Protein",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your Total Protein level and click the analyze button to display medical summaries.",
+      reportTitle: "🔬 Serum Protein Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Total Protein",
+      badgeLow: "Low Total Protein (Hypoproteinemia)",
+      badgeHigh: "Elevated Total Protein (Hyperproteinemia)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "টোটাল প্রোটিন বিশ্লেষক",
+      toolDesc: "রক্তের টোটাল প্রোটিনের মাত্রা বিশ্লেষণ করে লিভার, কিডনি, ক্রনিক প্রদাহ ও ডিহাইড্রেশন বা পানিশূন্যতা পরীক্ষা করুন।",
+      inputsTitle: "🧬 প্রোটিন পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelTotalProt: "টোটাল প্রোটিন",
+      btnAnalyze: "প্রোটিন বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "প্রোটিনের মান লিখুন এবং বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 সিরাম প্রোটিন ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক টোটাল প্রোটিন",
+      badgeLow: "কম টোটাল প্রোটিন (হাইপোপ্রোটিনেমিয়া)",
+      badgeHigh: "উচ্চ টোটাল প্রোটিন (হাইপারপ্রোটিনেমিয়া)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "कुल प्रोटीन विश्लेषक",
+      toolDesc: "लीवर, किडनी, सूजन, या जलयोजन पैटर्न का मूल्यांकन करने के लिए सीरम कुल प्रोटीन स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬 सीरम प्रोटीन स्तर",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      labelTotalProt: "कुल प्रोटीन",
+      btnAnalyze: "कुल प्रोटीन का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना कुल प्रोटीन स्तर दर्ज करें और चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 सीरम प्रोटीन डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य कुल प्रोटीन",
+      badgeLow: "कम कुल प्रोटीन (हाइपोप्रोटीनीमिया)",
+      badgeHigh: "उन्नत कुल प्रोटीन (हाइपरप्रोटीनीमिया)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Total Protein?", a: "It is the sum of all proteins in serum, primarily composed of Albumin and Globulins." },
+      { q: "What is a normal serum Total Protein range?", a: "Normally: 6.0 - 8.3 g/dL (or 60 - 83 g/L)." },
+      { q: "What causes low Total Protein?", a: "Liver disease (causing reduced albumin synthesis), kidney disease (nephrotic leakage), malabsorption, or severe malnutrition." },
+      { q: "What causes high Total Protein?", a: "Dehydration, chronic active infections, autoimmune diseases, or plasma cell disorders (Multiple Myeloma)." },
+      { q: "How are g/dL and g/L converted?", a: "Multiply g/dL by 10 to get g/L. Divide g/L by 10 to get g/dL." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "টোটাল প্রোটিন কী?", a: "এটি রক্তে অবস্থিত সকল প্রোটিনের সমষ্টি, যা মূলত অ্যালবুমিন ও গ্লোবুলিনের দ্বারা গঠিত।" },
+      { q: "টোটাল প্রোটিনের স্বাভাবিক মাত্রা কত?", a: "স্বাভাবিক মাত্রা: ৬.০ - ৮.৩ g/dL (বা ৬০ - ৮৩ g/L)।" },
+      { q: "টোটাল প্রোটিন কমে যাওয়ার কারণ কী?", a: "লিভারের রোগ (কম সংশ্লেষণ), কিডনি দিয়ে প্রোটিন ঝরে যাওয়া, অপুষ্টি বা হজমে সমস্যা।" },
+      { q: "টোটাল প্রোটিন বাড়ার কারণ কী?", a: "পানিশূন্যতা, ক্রনিক ইনফেকশন, অটোইমিউন রোগ বা প্লাজমা কোষের রোগ (মাল্টিপল মাইলোমা)।" },
+      { q: "g/dL এবং g/L কীভাবে রূপান্তর করা হয়?", a: "g/dL কে ১০ দিয়ে গুণ করলে g/L পাওয়া যায়। g/L কে ১০ দিয়ে ভাগ করলে g/dL পাওয়া যায়।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "कुल प्रोटीन क्या है?", a: "यह सीरम में सभी प्रोटीनों का योग है, जो मुख्य रूप से एल्बुमिन और ग्लोब्युलिन से बना है।" },
+      { q: "सामान्य सीरम कुल प्रोटीन रेंज क्या है?", a: "सामान्यतः: 6.0 - 8.3 ग्राम/डीएल (या 60 - 83 ग्राम/लीटर)।" },
+      { q: "कुल प्रोटीन कम होने का क्या कारण है?", a: "जिगर की बीमारी (एल्ब्यूमिन संश्लेषण में कमी के कारण), गुर्दे की बीमारी (नेफ्रोटिक रिसाव), कुअवशोषण, या गंभीर कुपोषण।" },
+      { q: "उच्च कुल प्रोटीन का क्या कारण है?", a: "निर्जलीकरण, क्रोनिक सक्रिय संक्रमण, ऑटोइम्यून रोग, या प्लाज्मा सेल विक���र (मल्टीपल मायलोमा)।" },
+      { q: "जी/डीएल और जी/एल को कैसे परिवर्तित किया जाता है?", a: "जी/एल प्राप्त करने के लिए जी/डीएल को 10 से गुणा करें। g/dL प्राप्त करने के लिए g/L को 10 से विभाजित करें।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const proteinInsights = {
+    en: {
+      normal: {
+        desc: "Your total protein level is within the normal reference range. This suggests healthy liver synthesis, active renal protein retention, and overall balanced nutritional status.",
+        factors: ["Balanced dietary protein intake", "Healthy liver and kidney functions", "Proper fluid balance"],
+        symptoms: ["No clinical signs of edema or severe dehydration"],
+        prevention: ["Continue eating a balanced protein diet", "Maintain optimal hydration levels daily"],
+        consult: "Confirm with annual metabolic panels."
+      },
+      low: {
+        desc: "Your total protein is low (hypoproteinemia). This typically points to dietary deficiencies, decreased liver synthesis capacity, or loss of protein via kidneys.",
+        factors: ["Liver cirrhosis or chronic hepatitis", "Nephrotic syndrome or protein-losing enteropathy", "Malnutrition, malabsorption, or low-protein diets"],
+        symptoms: ["Edema (swelling in ankles, legs, or face)", "Fatigue, muscle weakness"],
+        prevention: ["Increase consumption of high-biological-value protein (eggs, dairy, poultry)", "Avoid excessive sodium to manage swelling"],
+        consult: "Consult your doctor to evaluate liver and kidney function and check for protein in urine."
+      },
+      high: {
+        desc: "Your total protein is elevated (hyperproteinemia). The most common cause is dehydration concentrating the blood. However, it can also suggest chronic inflammatory states or plasma cell disorders.",
+        factors: ["Severe dehydration", "Chronic infections or autoimmune conditions (rheumatoid arthritis, lupus)", "Multiple Myeloma (plasma cell proliferation producing high globulins)"],
+        symptoms: ["Thirst, dry mouth", "Fatigue, bone pain or joint stiffness if related to chronic inflammatory/myeloid disorders"],
+        prevention: ["Drink 8 to 10 glasses of water immediately", "Avoid smoking and pro-inflammatory food sources"],
+        consult: "⚠️ Recommended to seek medical evaluation. A Serum Protein Electrophoresis (SPEP) is often indicated to rule out monoclonal protein spikes."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার টোটাল প্রোটিনের মাত্রা স্বাভাবিক রয়েছে। এটি সুস্থ লিভার, কিডনির স্বাভাবিক কার্যকারিতা এবং সুষম পুষ্টির অবস্থা নির্দেশ করে।",
+        factors: ["পর্যাপ্ত প্রোটিন সমৃদ্ধ খাবার", "সুস্থ যকৃত ও বৃক্কের কার্যক্ষমতা"],
+        symptoms: ["পা ফোলা বা তীব্র পানিশূন্যতার লক্ষণ না থাকা"],
+        prevention: ["সুষম প্রোটিন ডায়েট বজায় রাখুন", "পর্যাপ্ত পানি পান করুন"],
+        consult: "বার্ষিক রুটিন চেকআপ করান।"
+      },
+      low: {
+        desc: "আপনার টোটাল প্রোটিন কম (হাইপোপ্রোটিনেমিয়া)। এটি অপুষ্টি, যকৃতের রোগ বা কিডনি দিয়ে অতিরিক্ত প্রোটিন ঝরে যাওয়ার কারণে হতে পারে।",
+        factors: ["লিভার সিরোসিস বা দীর্ঘস্থায়ী লিভারের প্রদাহ", "নেফ্রোটিক সিন্ড্রোম (কিডনির প্রোটিন ক্ষয়)", "অপুষ্টি বা প্রোটিনের অভাব"],
+        symptoms: ["পা, গোড়ালি বা মুখ ফুলে যাওয়া (এডিমা)", "ক্লান্তি ও পেশী দুর্বলতা"],
+        prevention: ["প্রোটিন সমৃদ্ধ খাবার (ডিম, দুধ, মুরগি, ডাল) ডায়েটে বাড়ান", "অতিরিক্ত লবণ পরিহার করুন"],
+        consult: "কিডনি ও লিভারের অবস্থা পরীক্ষা করতে ডাক্তারের পরামর্শ নিন।"
+      },
+      high: {
+        desc: "আপনার টোটাল প্রোটিন বেশি (হাইপারপ্রোটিনেমিয়া)। পানিশূন্যতা এর প্রধান কারণ হলেও এটি দীর্ঘস্থায়ী প্রদাহ বা রক্তের ক্যান্সারের (মাইলোমা) ইঙ্গিত হতে পারে।",
+        factors: ["তীব্র পানিশূন্যতা বা ডিহাইড্রেশন", "অটোইমিউন রোগ বা ক্রনিক ইনফেকশন", "মাল্টিপল মাইলোমা (রক্তের ক্যান্সার)"],
+        symptoms: ["অতিরিক্ত তৃষ্ণা ও মুখ শুকিয়ে যাওয়া", "জয়েন্ট বা হাড়ে দীর্ঘস্থায়ী ব্যথা ও ক্লান্তি"],
+        prevention: ["অবিলম্বে পর্যাপ্ত পানি বা ওরস্যালাইন পান করুন"],
+        consult: "⚠️ চিকিৎসকের পরামর্শ নিয়ে সিরাম প্রোটিন ইলেকট্রোফোরেসিস (SPEP) টেস্ট করান।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका कुल प्रोटीन स्तर सामान्य संदर्भ सीमा के भीतर है। यह स्वस्थ यकृत संश्लेषण, सक्रिय वृक्क प्रोटीन प्रतिधारण और समग्र संतुलित पोषण स्थिति का सुझाव देता है।",
+        factors: ["संतुलित आहार प्रोटीन का सेवन", "स्वस्थ यकृत और गुर्दे कार्य करते हैं", "उचित द्रव संतुलन"],
+        symptoms: ["एडिमा या गंभीर निर्जलीकरण का कोई नैदानिक लक्षण नहीं"],
+        prevention: ["संतुलित प्रोटीन आहार लेना जारी रखें", "प्रतिदिन इष्टतम जलयोजन स्तर बनाए रखें"],
+        consult: "वार्षिक मेटाबॉलिक पैनल से पुष्टि ���रें।"
+      },
+      low: {
+        desc: "आपका कुल प्रोटीन कम है (हाइपोप्रोटीनीमिया)। यह आम तौर पर आहार संबंधी कमियों, यकृत संश्लेषण क्षमता में कमी, या गुर्दे के माध्यम से प्रोटीन की हानि की ओर इशारा करता है।",
+        factors: ["लिवर सिरोसिस या क्रोनिक हेपेटाइटिस", "नेफ्रोटिक सिंड्रोम या प्रोटीन खोने वाली एंटरोपैथी", "कुपोषण, कुअवशोषण, या कम प्रोटीन वाला आहार"],
+        symptoms: ["एडेमा (टखनों, पैरों या चेहरे में सूजन)", "थकान, मांसपेशियों में कमजोरी"],
+        prevention: ["उच्च-जैविक-मूल्य वाले प्रोटीन (अंडे, डे���री, पोल्ट्री) की खपत बढ़ाएँ", "सूजन को प्रबंधित करने के लिए अत्यधिक सोडियम से बचें"],
+        consult: "लिवर और किडनी की कार्यप्रणाली का मूल्यांकन करने और मूत्र में प्रोटीन की जांच के लिए अपने डॉक्टर से परामर्श लें।"
+      },
+      high: {
+        desc: "आपका कुल प्रोटीन बढ़ा हुआ है (हाइपरप्रोटीनीमिया)। सबसे आम कारण रक्त का केंद्रित निर्जलीकरण है। हालाँकि, यह पुरानी सूजन की स्थिति या प्लाज्मा सेल विकारों का भी सुझाव दे सकता है।",
+        factors: ["गंभीर निर्जलीकरण", "क्रोनिक संक्रमण या ऑटोइम्यून स्थितियां (संधिशोथ, ल्यूपस)", "मल्टीपल मायलोमा (प्लाज्मा कोशिका प्रसार जो उच्च ग्लोब्युलिन का उत्पादन करता है)"],
+        symptoms: ["प्यास, मुँह सूखना", "थकान, हड्डी में दर्द या जोड़ों में अकड़न यदि पुरानी सूजन/माइलॉइड विकारों से संबंधित है"],
+        prevention: ["तुरंत 8 से 10 गिलास पानी पियें", "धूम्रपान और सूजन-रोधी खाद्य स्रोतों से बचें"],
+        consult: "⚠️ चिकित्सीय मूल्यांकन लेने की अनुशंसा की जाती है। मोनोक्लोनल प्रोटीन स्पाइक्स को दूर करने के लिए अक्सर सीरम प्रोटीन इलेक्ट्रोफोरेसिस (एसपीईपी) का संकेत दिया जाता है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-protein-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "gdcl"; // gdcl, gl
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const label = document.getElementById("inputLabel");
+    const unitText = currentUnit === "gdcl" ? " (g/dL)" : " (g/L)";
+    label.textContent = translations[currentLang].labelTotalProt + unitText;
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valTotal").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits() {
+    let min = 6.0;
+    let max = 8.3;
+
+    if (currentUnit === "gl") {
+      min = 60;
+      max = 83;
+    }
+    return { min, max };
+  }
+
+  function analyzeProtein() {
+    const valProt = parseFloat(document.getElementById("valTotal").value);
+
+    if (isNaN(valProt) || valProt <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid Total Protein value." : "দয়া করে প্রোটিনের সঠিক মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits();
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valProt < limits.min) {
+      statusKey = "low";
+      badgeKey = "badgeLow";
+    } else if (valProt > limits.max) {
+      statusKey = "high";
+      badgeKey = "badgeHigh";
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valProt >= limits.min && valProt <= limits.max) {
+      const range = limits.max - limits.min;
+      pointerPct = range > 0 ? 30 + ((valProt - limits.min) / range) * 40 : 50;
+    } else if (valProt < limits.min) {
+      pointerPct = Math.max(5, (valProt / limits.min) * 25);
+    } else {
+      pointerPct = Math.min(95, 75 + ((valProt - limits.max) / (limits.max * 0.5)) * 20);
+    }
+
+    activeReportData = {
+      valProt,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valProt, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+
+    const unitText = d.unit === "gdcl" ? " g/dL" : " g/L";
+    document.getElementById("resUnitText").textContent = unitText;
+    document.getElementById("resProtVal").textContent = d.valProt.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resProtVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = `< ${d.limits.min.toFixed(1)}`;
+    document.getElementById("tickNormalRange").textContent = `${d.limits.min.toFixed(1)} - ${d.limits.max.toFixed(1)}`;
+    document.getElementById("tickHigh").textContent = `${d.limits.max.toFixed(1)}+`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = proteinInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valProt, unit) {
+    const unitText = unit === "gdcl" ? " g/dL" : " g/L";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valProt,
+      unitText,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-protein-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valProt.toFixed(1)}${item.unitText} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const unitText = activeReportData.unit === "gdcl" ? " g/dL" : " g/L";
+    let t = `--- SERUM TOTAL PROTEIN REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Value: ${activeReportData.valProt.toFixed(1)}${unitText}\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `total-protein-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

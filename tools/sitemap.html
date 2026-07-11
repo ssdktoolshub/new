@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XML Sitemap Generator &bull; Free Search SEO Tools - SSDK TOOLS HUB</title>
+  <meta name="description" content="Generate XML sitemaps for your website. Define priority, change frequency, input your page URLs, and download sitemap.xml instantly.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 14px;
+    }
+    .input-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .input-group input, .input-group select, .input-group textarea {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      transition: border 0.3s;
+    }
+    .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+      border-color: var(--accent);
+    }
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 600px) {
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .chk-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .chk-container input {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Sitemap Generator</h1>
+  <p class="page-sub">Generate standard-compliant XML sitemaps to assist search engine crawlers in mapping your website content.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
+      
+      <!-- Left Column: Inputs -->
+      <div>
+        <h4 style="margin-bottom: 12px;">Sitemap Configurations</h4>
+        
+        <div class="input-group">
+          <label for="baseUrl">Base Website URL</label>
+          <input type="url" id="baseUrl" placeholder="e.g. https://mywebsite.com" value="https://">
+        </div>
+
+        <div class="input-row">
+          <div class="input-group">
+            <label for="changeFreq">Change Frequency</label>
+            <select id="changeFreq">
+              <option value="daily">Daily</option>
+              <option value="weekly" selected>Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="hourly">Hourly</option>
+              <option value="yearly">Yearly</option>
+              <option value="always">Always</option>
+              <option value="never">Never</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="defaultPriority">Default Priority (0.0 to 1.0)</label>
+            <select id="defaultPriority">
+              <option value="1.0">1.0 (Homepage / Primary)</option>
+              <option value="0.8" selected>0.8 (Secondary links)</option>
+              <option value="0.5">0.5 (Utility / General pages)</option>
+              <option value="0.3">0.3 (Archives / Legacy)</option>
+            </select>
+          </div>
+        </div>
+
+        <label class="chk-container">
+          <input type="checkbox" id="includeLastmod" checked>
+          <span>Include current date as Last Modified (<code>&lt;lastmod&gt;</code>)</span>
+        </label>
+
+        <div class="input-group">
+          <label for="pagesInput">Individual Page Paths (One per line)</label>
+          <textarea id="pagesInput" rows="6" placeholder="e.g.&#10;/&#10;/about&#10;/contact&#10;/blog&#10;/pricing"></textarea>
+        </div>
+      </div>
+
+      <!-- Right Column: Outputs -->
+      <div>
+        <h4 style="margin-bottom: 12px;">Generated XML Sitemap</h4>
+        <textarea id="xmlOutput" readonly style="height: 310px; font-family: monospace; font-size: 0.8rem; padding: 12px; resize: none; width: 100%; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); line-height: 1.45; white-space: pre; overflow-x: auto;"></textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+          <button class="btn" id="btnGenerate" style="flex: 1.2;">⚙️ Compile Sitemap</button>
+          <button class="btn ghost" id="btnCopy" style="flex: 1;">📋 Copy XML</button>
+          <button class="btn ghost" id="btnDownload" style="flex: 1;">⬇️ Download</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b; margin: 0 auto; display: block;">🗑 Reset Fields</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>XML Compliance:</strong> Generates sitemaps fully compatible with W3C XML specifications and major search protocols.</li>
+      <li><strong>Path Auto-assembly:</strong> Resolves relative paths automatically against your declared Base URL.</li>
+      <li><strong>Dynamic Lastmod Tagging:</strong> Resolves and attaches the current date dynamically to enhance page index recency.</li>
+    </ul>
+  </div>
+
+  <!-- How to upload Section -->
+  <div class="content-card">
+    <h3>Where to place your sitemap.xml</h3>
+    <p>Upload the downloaded <code>sitemap.xml</code> file directly to the **root directory** of your website structure so search engines can access it via:</p>
+    <div style="background: var(--bg2); padding: 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border); color: var(--accent); display: inline-block; margin-top: 8px;">
+      https://yoursite.com/sitemap.xml
+    </div>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">What is an XML Sitemap?<span>＋</span></div>
+        <div class="faq-a">An XML sitemap is a file containing a list of all your website's primary URLs. It acts as a roadmap for search engines, telling crawlers which pages are available, when they were last modified, and their crawl priority.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Does a sitemap guarantee that all my pages will be indexed?<span>＋</span></div>
+        <div class="faq-a">No. Sitemap submission informs search engine spiders of your site structure, making discovery much easier. However, whether a page actually gets indexed is determined by search engine algorithms based on content value, authority, and SEO design.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  // Set default page paths placeholder value
+  $('pagesInput').value = "/\n/about\n/contact\n/services\n/blog";
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  $('btnGenerate').onclick = () => {
+    let baseUrl = $('baseUrl').value.trim();
+    const changeFreq = $('changeFreq').value;
+    const priority = $('defaultPriority').value;
+    const lastmodCheck = $('includeLastmod').checked;
+    const pathsText = $('pagesInput').value.trim();
+
+    if (!baseUrl || baseUrl === 'https://' || baseUrl === 'http://') {
+      showStatus('Please enter a valid base website URL.', true);
+      return;
+    }
+
+    if (!baseUrl.endsWith('/')) {
+      baseUrl += '/';
+    }
+
+    showStatus('Compiling XML sitemap...');
+
+    const paths = pathsText.split('\n').map(p => p.trim()).filter(p => p.length > 0);
+    const currentDate = new Date().toISOString().split('T')[0];
+
+    let xml = [];
+    xml.push('<?xml version="1.0" encoding="UTF-8"?>');
+    xml.push('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">');
+
+    paths.forEach(p => {
+      // Normalize path to prevent double slashes
+      let cleanPath = p;
+      if (cleanPath.startsWith('/')) {
+        cleanPath = cleanPath.substring(1);
+      }
+      
+      const fullUrl = baseUrl + cleanPath;
+      
+      xml.push('  <url>');
+      xml.push(`    <loc>${escapeXml(fullUrl)}</loc>`);
+      
+      if (lastmodCheck) {
+        xml.push(`    <lastmod>${currentDate}</lastmod>`);
+      }
+      
+      xml.push(`    <changefreq>${changeFreq}</changefreq>`);
+      xml.push(`    <priority>${priority}</priority>`);
+      xml.push('  </url>');
+    });
+
+    xml.push('</urlset>');
+
+    $('xmlOutput').value = xml.join('\n');
+    showStatus('✅ XML sitemap compiled successfully!');
+  };
+
+  function escapeXml(unsafe) {
+    return unsafe.replace(/[<>&'"]/g, function (c) {
+      switch (c) {
+        case '<': return '&lt;';
+        case '>': return '&gt;';
+        case '&': return '&amp;';
+        case '\'': return '&apos;';
+        case '"': return '&quot;';
+      }
+    });
+  }
+
+  $('btnCopy').onclick = () => {
+    const code = $('xmlOutput').value;
+    if (!code) {
+      showStatus('Please compile the sitemap first.', true);
+      return;
+    }
+    navigator.clipboard.writeText(code).then(() => {
+      showStatus('📋 XML sitemap copied to clipboard!');
+    });
+  };
+
+  $('btnDownload').onclick = () => {
+    const code = $('xmlOutput').value;
+    if (!code) {
+      showStatus('Please compile the sitemap first.', true);
+      return;
+    }
+    const blob = new Blob([code], { type: 'application/xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'sitemap.xml';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showStatus('✅ sitemap.xml file downloaded successfully!');
+  };
+
+  $('btnClear').onclick = () => {
+    $('baseUrl').value = 'https://';
+    $('changeFreq').value = 'weekly';
+    $('defaultPriority').value = '0.8';
+    $('includeLastmod').checked = true;
+    $('pagesInput').value = "/\n/about\n/contact\n/services\n/blog";
+    $('xmlOutput').value = '';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Compile initial setup
+  $('btnGenerate').click();
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

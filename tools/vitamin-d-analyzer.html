@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitamin D Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze Vitamin D (25-hydroxyvitamin D) levels online. Evaluate deficiency, sufficiency, normal range, and toxicity with detailed clinical insights.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+
+  <!-- html2canvas for PNG export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) { .lab-grid { grid-template-columns: 1fr; } }
+
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255,255,255,0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+
+    .input-wrapper { display: flex; flex-direction: column; gap: 4px; }
+    .input-wrapper label { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+    .input-wrapper input,
+    .input-wrapper select {
+      padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg3); color: var(--text); outline: none;
+      font-size: 0.9rem; transition: all 0.25s;
+    }
+    .input-wrapper input:focus,
+    .input-wrapper select:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--glow); }
+
+    .lang-toggle-container { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+    .lang-btn {
+      background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+      padding: 6px 14px; border-radius: 20px; cursor: pointer;
+      font-size: 0.8rem; font-weight: 700; transition: all 0.3s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 10px var(--glow); }
+
+    .results-display {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px; min-height: 400px;
+    }
+
+    .results-placeholder { text-align: center; padding: 80px 20px; color: var(--muted); }
+    .results-placeholder .icon { font-size: 3.5rem; margin-bottom: 12px; opacity: 0.5; display: block; }
+
+    .report-card { display: flex; flex-direction: column; gap: 16px; }
+
+    .patient-summary {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px;
+      display: flex; justify-content: space-between; font-size: 0.85rem;
+    }
+    .patient-summary span strong { color: var(--accent); }
+
+    .gauge-container {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; text-align: center; position: relative;
+    }
+    .val-large { font-size: 3.2rem; font-weight: 900; line-height: 1.1; margin-bottom: 4px; }
+    .status-label { font-weight: 800; font-size: 1.1rem; text-transform: uppercase; margin-bottom: 16px; }
+
+    .range-slider-bar {
+      height: 16px; border-radius: 8px;
+      background: linear-gradient(to right,
+        var(--critical-color) 0%,
+        var(--high-color) 20%,
+        var(--normal-color) 50%,
+        var(--critical-color) 100%
+      );
+      position: relative; margin-bottom: 10px;
+    }
+    .range-pointer {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #fff; border: 3px solid var(--bg1);
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+    .range-ticks { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); font-weight: 700; }
+
+    .insight-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-top: 14px;
+    }
+    .insight-card h5 { font-size: 0.95rem; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .insight-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+    .insight-card ul { margin-left: 18px; font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+
+    .history-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 16px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: var(--bg3); border-radius: 6px;
+      font-size: 0.75rem; border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245,158,11,0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px; padding: 14px; margin-top: 16px;
+      font-size: 0.8rem; color: #fbbf24; line-height: 1.5;
+    }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding-top: 0 !important; }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon { display: none !important; }
+      .results-display { border: none !important; background: #fff !important; color: #000 !important; min-height: auto !important; padding: 0 !important; }
+      .gauge-container, .insight-card { border: 1px solid #ddd !important; background: #fff !important; color: #000 !important; }
+      .lab-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumb -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Vitamin D Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze Vitamin D (25-hydroxyvitamin D) levels to assess bone health, calcium absorption, and immune status.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Tool Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">☀️ Vitamin D Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="ngml" selected>ng/mL</option>
+                <option value="nmoll">nmol/L</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label for="valVitD" id="inputLabel" data-translate="labelVitD">Vitamin D Value (ng/mL)</label>
+              <input type="number" step="0.1" id="valVitD" placeholder="e.g. 35.2" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info note -->
+        <div style="font-size:0.78rem; color:var(--muted); padding:8px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:14px; line-height:1.5;">
+          <strong style="color:var(--text);">ℹ️ Note:</strong> <span data-translate="unitNote">1 ng/mL = 2.496 nmol/L. Reference ranges: Deficient &lt; 20, Insufficient 20–29, Normal 30–100, Toxic &gt; 100 ng/mL.</span>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width:100%; justify-content:center;" onclick="analyzeVitD()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Vitamin D</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">☀️</span>
+          <h4 data-translate="placeholderTitle">Analysis Pending</h4>
+          <p data-translate="placeholderDesc">Enter your Vitamin D level and click Analyze to display bone health assessments.</p>
+        </div>
+
+        <div class="report-card" id="reportCardSec" style="display:none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Vitamin D Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" title="Copy" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" title="Print" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" title="Save Image" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: 25-Hydroxyvitamin D [25(OH)D]</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resVitDVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">ng/mL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left:50%;"></div>
+            </div>
+            <div class="range-ticks">
+              <span id="tickDeficient" style="color:var(--critical-color);">&lt; 20 Deficient</span>
+              <span id="tickInsufficient" style="color:var(--high-color);">20 – 29</span>
+              <span id="tickNormal" style="color:var(--normal-color);">30 – 100 Normal</span>
+              <span id="tickToxic" style="color:var(--critical-color);">&gt; 100 Toxic</span>
+            </div>
+          </div>
+
+          <!-- Dynamic insight section -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Vitamin D</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What does 25-hydroxyvitamin D measure?</strong><br><span data-translate="eduA1">Vitamin D is measured in labs as 25-hydroxyvitamin D [25(OH)D]. It is the best indicator of overall Vitamin D status since it reflects resources built up from sun exposure, diet, and supplements. Active Vitamin D (1,25-dihydroxyvitamin D) is not a good indicator of reserves.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What are the main roles of Vitamin D?</strong><br><span data-translate="eduA2">Vitamin D's main function is to promote calcium absorption in the gut, ensuring proper bone mineralization and growth. It is also critical for neuromuscular function, immune response modulation, and reduction of systemic inflammation.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">How is Vitamin D toxicity defined?</strong><br><span data-translate="eduA3">Vitamin D toxicity (hypervitaminosis D) occurs at levels exceeding 100 ng/mL (often >150 ng/mL) and is almost exclusively caused by mega-doses of supplements, not sun exposure. It leads to hypercalcemia, causing kidney damage and calcium buildup in cardiovascular tissue.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Vitamin D Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQ Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Medical Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for Vitamin D evaluation and treatment decisions.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical &amp; Lab Tools",
+      toolTitle: "Vitamin D Analyzer",
+      toolDesc: "Analyze Vitamin D (25-hydroxyvitamin D) levels to assess bone health, calcium absorption, and immune status.",
+      inputsTitle: "☀️ Vitamin D Parameters",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      labelVitD: "Vitamin D Value",
+      unitNote: "1 ng/mL = 2.496 nmol/L. Reference ranges: Deficient < 20, Insufficient 20–29, Normal 30–100, Toxic > 100 ng/mL.",
+      btnAnalyze: "Analyze Vitamin D",
+      placeholderTitle: "Analysis Pending",
+      placeholderDesc: "Enter your Vitamin D level and click Analyze to display bone health assessments.",
+      reportTitle: "🔬 Vitamin D Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Vitamin D Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for Vitamin D evaluation and treatment decisions.",
+      titleEdu: "📚 Clinical Pathology Notes: Vitamin D",
+      eduQ1: "What does 25-hydroxyvitamin D measure?",
+      eduA1: "Vitamin D is measured in labs as 25-hydroxyvitamin D [25(OH)D]. It is the best indicator of overall Vitamin D status since it reflects resources built up from sun exposure, diet, and supplements. Active Vitamin D (1,25-dihydroxyvitamin D) is not a good indicator of reserves.",
+      eduQ2: "What are the main roles of Vitamin D?",
+      eduA2: "Vitamin D's main function is to promote calcium absorption in the gut, ensuring proper bone mineralization and growth. It is also critical for neuromuscular function, immune response modulation, and reduction of systemic inflammation.",
+      eduQ3: "How is Vitamin D toxicity defined?",
+      eduA3: "Vitamin D toxicity (hypervitaminosis D) occurs at levels exceeding 100 ng/mL (often >150 ng/mL) and is almost exclusively caused by mega-doses of supplements, not sun exposure. It leads to hypercalcemia, causing kidney damage and calcium buildup in cardiovascular tissue.",
+      badgeDeficient: "Deficient (< 20 ng/mL)",
+      badgeInsufficient: "Insufficient (20 - 29 ng/mL)",
+      badgeNormal: "Optimal / Sufficient (30 - 100 ng/mL)",
+      badgeToxic: "Toxic (> 100 ng/mL)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Management Tips",
+      titleConsult: "When to See a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ভিটামিন ডি বিশ্লেষক",
+      toolDesc: "হাড়ের সুস্থতা, ক্যালসিয়াম শোষণ এবং রোগ প্রতিরোধ ক্ষমতা মূল্যায়নে ভিটামিন ডি (25-hydroxyvitamin D) মাত্রা বিশ্লেষণ করুন।",
+      inputsTitle: "☀️ ভিটামিন ডি ইনপুট",
+      clearBtn: "মুছুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelVitD: "ভিটামিন ডি মান",
+      unitNote: "১ ng/mL = ২.৪৯৬ nmol/L। রেফারেন্স পরিসীমা: ঘাটতি < ২০, অপর্যাপ্ত ২০-২৯, স্বাভাবিক ৩০-১০০, বিষাক্ততা > ১০০ ng/mL।",
+      btnAnalyze: "ভিটামিন ডি বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ অমীমাংসিত",
+      placeholderDesc: "আপনার ভিটামিন ডি এর মান লিখুন এবং হাড়ের সুস্থতার মাত্রা দেখতে বিশ্লেষণ বোতামটি চাপুন।",
+      reportTitle: "🔬 ভিটামিন ডি রিপোর্ট বিশ্লেষণ",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক ভিটামিন ডি বিশ্লেষণ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড নেই।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য অবশ্যই ডাক্তারের পরামর্শ নিন।",
+      titleEdu: "📚 ক্লিনিক্যাল নোটস: ভিটামিন ডি",
+      eduQ1: "ভিটামিন ডি পরীক্ষা দ্বারা কী মাপা হয়?",
+      eduA1: "ল্যাবে ভিটামিন ডি মূলত 25-hydroxyvitamin D [25(OH)D] হিসেবে মাপা হয়। এটি শরীরের সামগ্রিক ভিটামিন ডি স্তরের সবচেয়ে নির্ভরযোগ্য সূচক যা সূর্যালোক, খাদ্য ও সাপ্লিমেন্ট থেকে পাওয়া পরিমাণের প্রতিনিধিত্ব করে।",
+      eduQ2: "ভিটামিন ডি এর প্রধান কাজগুলো কী?",
+      eduA2: "ভিটামিন ডি এর মূল কাজ হলো অন্ত্রে ক্যালসিয়াম শোষণে সহায়তা করা যা হাড়ের সুস্থ খনিজকরণ ও গঠনে সাহায্য করে। এটি রোগ প্রতিরোধ ক্ষমতা বাড়াতেও ভূমিকা রাখে।",
+      eduQ3: "ভিটামিন ডি এর অতিরিক্ত বিষাক্ততা কীভাবে ব্যাখ্যা করা হয়?",
+      eduA3: "রক্তে ভিটামিন ডি এর মাত্রা ১০০ ng/mL ছাড়িয়ে গেলে একে বিষাক্ততা বলা হয়। এটি মূলত চিকিৎসকের পরামর্শ ছাড়া উচ্চ মাত্রার সাপ্লিমেন্ট খাওয়ার কারণে ঘটে। এতে রক্তে ক্যালসিয়াম মাত্রা বেড়ে কিডনির ক্ষতি হয়।",
+      badgeDeficient: "ঘাটতি / ঘাটতি রয়েছে (< ২০ ng/mL)",
+      badgeInsufficient: "অপর্যাপ্ত / অপূর্ণতা (২০ - ২৯ ng/mL)",
+      badgeNormal: "স্বাভাবিক / পর্যাপ্ত (৩০ - ১০০ ng/mL)",
+      badgeToxic: "অতিরিক্ত ক্ষতিকারক / বিষাক্ত (> ১০০ ng/mL)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "ব্যবস্থাপনা পরামর্শ",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "विटामिन डी विश्लेषक",
+      toolDesc: "हड्डियों के स्वास्थ्य, कैल्शियम अवशोषण और प्रतिरक्षा स्थिति का आकलन करने के लिए विटामिन डी (25-हाइड्रॉक्सीविटामिन डी) के स्तर का विश्लेषण करें।",
+      inputsTitle: "☀️ विटामिन डी पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      labelVitD: "विटामिन डी का मूल्य",
+      unitNote: "1 एनजी/एमएल = 2.496 एनएमओएल/एल। संदर्भ श्रेणियाँ: कमी <20, अपर्याप्त 20-29, सामान्य 30-100, विषाक्त > 100 एनजी/एमएल।",
+      btnAnalyze: "विटामिन डी का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण लंबित",
+      placeholderDesc: "अपना विटामिन डी स्तर दर्ज करें और हड्डी स्वास्थ्य आकलन प्रदर्शित करने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬विटामिन डी डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया विटामिन डी व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। विटामिन डी मूल्यांकन और उपचार निर्णयों के लिए हमेशा एक योग्य चिकित्सक से परामर्श लें।",
+      titleEdu: "📚 क्लिनिकल पैथोलॉजी नोट्स: विटामिन डी",
+      eduQ1: "25-हाइड्रॉक्सीविटामिन डी क्या मापता है?",
+      eduA1: "प्रयोगशालाओं में विटामिन डी को 25-हाइड्रॉक्सीविटामिन डी [25(ओएच)डी] के रूप में मापा जाता है। यह समग्र विटामिन डी स्थिति का सबसे अच्छा संकेतक है क्योंकि यह सूर्य के संपर्क, आहार और पूरक आहार से निर्मित संसाधनों को दर्शाता है। सक्रिय विटामिन डी (1,25-डायहाइड्रॉक्सीविटामिन डी) भंडार का अच्छा संकेतक नहीं है।",
+      eduQ2: "विटामिन डी की मुख्य भूमिकाएँ क्या हैं?",
+      eduA2: "विटामिन डी का मुख्य कार्य आंत में कैल्शियम अवशोषण को बढ़ावा देना, हड्डियों के उचित खनिजकरण और विकास को सुनिश्चित करना है। यह न्यूरोमस्कुलर फ़ंक्शन, प्रतिरक्षा प्रतिक्रिया मॉड्यूलेशन और प्रणालीगत सूजन को कम करने के लिए भी महत्वपूर्ण है।",
+      eduQ3: "विटामिन डी विषाक्तता को कैसे परिभाषित किया जाता है?",
+      eduA3: "विटामिन डी विषाक्तता (हाइपरविटामिनोसिस डी) 100 एनजी/एमएल (अक्सर> 150 एनजी/एमएल) से अधि��� के स्तर पर होती है और लगभग विशेष रूप से पूरक की बड़ी खुराक के कारण होती है, न कि सूरज के संपर्क में आने से। इससे हाइपरकैल्सीमिया हो जाता है, जिससे किडनी खराब हो जाती है और हृदय के ऊतकों में कैल्शियम जमा हो जाता है।",
+      badgeDeficient: "कमी (<20 एनजी/एमएल)",
+      badgeInsufficient: "अपर्याप्त (20 - 29 एनजी/एमएल)",
+      badgeNormal: "इष्टतम / पर्याप्त (30 - 100 एनजी/एमएल)",
+      badgeToxic: "विषाक्त (> 100 एनजी/एमएल)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "प्रबंधन युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is the recommended daily intake of Vitamin D?", a: "For adults, 600 to 800 IU daily is typically recommended, though higher doses may be needed under medical supervision for deficiencies." },
+      { q: "Can sun exposure cause Vitamin D toxicity?", a: "No, the body naturally limits synthesis under the skin. Toxicity is only associated with oral supplement overdosing." },
+      { q: "What are good dietary sources of Vitamin D?", a: "Fatty fish (salmon, tuna), fortified dairy products, egg yolks, and mushrooms exposed to UV light." },
+      { q: "How do I convert Vitamin D units?", a: "To convert ng/mL to nmol/L, multiply by 2.496. To convert nmol/L to ng/mL, divide by 2.496." }
+    ],
+    bn: [
+      { q: "প্রতিদিন কতটুকু ভিটামিন ডি প্রয়োজন?", a: "সাধারণত প্রাপ্তবয়স্কদের জন্য প্রতিদিন ৬০০ থেকে ৮০০ আইইউ (IU) ভিটামিন ডি প্রয়োজন। তবে ঘাটতি থাকলে ডাক্তার উচ্চ ডোজের পরামর্শ দিতে পারেন।" },
+      { q: "সূর্যালোকের কারণে কি ভিটামিন ডি এর বিষাক্ততা হতে পারে?", a: "না, সূর্যের আলো থেকে শরীর অতিরিক্ত ভিটামিন ডি তৈরি করে না। অতিরিক্ত মাত্রায় সাপ্লিমেন্ট গ্রহণের কারণেই কেবল বিষাক্ততা দেখা দিতে পারে।" },
+      { q: "ভিটামিন ডি এর প্রধান খাদ্য উৎসগুলো কী কী?", a: "তৈলাক্ত মাছ (স্যামন, টুনা), ভিটামিন ডি সমৃদ্ধ দুধ ও দুগ্ধজাত খাবার, ডিমের কুসুম এবং মাশরুম।" },
+      { q: "ভিটামিন ডি এর একক কীভাবে পরিবর্তন করব?", a: "ng/mL-কে ২.৪৯৬ দ্বারা গুণ করলে nmol/L পাওয়া যায়। পক্ষান্তরে, nmol/L-কে ২.৪৯৬ দ্বারা ভাগ করলে ng/mL পাওয়া যায়।" }
+    ],
+    hi: [
+      { q: "विटामिन डी का अनुशंसित दैनिक सेवन क्या है?", a: "वयस्कों के लिए, आमतौर पर प्रतिदिन 600 से 800 आईयू की सिफारिश की जाती है, हालांकि कमियों के लिए चिकित्सकीय देखरेख में उच्च खुराक की आवश्यकता हो सकती है।" },
+      { q: "क्या सूर्य के संपर्क में आने से विटामिन डी विषाक्तता हो सकती है?", a: "नहीं, शरीर स्वाभाविक रूप से त्वचा के नीचे संश्लेषण को सीमित करता है। विषाक्तता केवल मौखिक पूरक की अधिक मात्रा से जुड़ी है।" },
+      { q: "विटामिन डी के अच्छे आहार स्रोत क्या हैं?", a: "वसायुक्त मछली (सैल्मन, टूना), फोर्टिफाइड डेयरी उत्पाद, अंडे की जर्दी और मशरूम यूवी प्रकाश के संपर्क में।" },
+      { q: "मैं विटामिन डी इकाइयों को कैसे परिवर्तित करूं?", a: "ng/mL को nmol/L में बदलने के लिए, 2.496 से गुणा करें। nmol/L को ng/mL में बदलने के लिए, 2.496 से विभाजित करें।" }
+    ]
+  };
+
+  const insights = {
+    en: {
+      deficient: {
+        desc: "Your Vitamin D level is critically low (< 20 ng/mL). This severe deficiency impairs calcium absorption and bone mineralization, increasing the risk of osteomalacia or osteoporosis.",
+        factors: ["Inadequate sunlight exposure", "Low dietary intake of Vitamin D", "Malabsorption syndromes (celiac, Crohn's)", "Obesity (Vitamin D is fat-soluble and sequestered in fat tissue)", "Liver or kidney dysfunction impairing conversion"],
+        symptoms: ["Chronic bone pain, joint aches", "Muscle weakness or cramps", "Frequent infections / weakened immunity", "Fatigue and general malaise", "Fragility fractures over time"],
+        prevention: ["Get 15–20 minutes of midday sun exposure daily (safely)", "Consume fortified foods and fatty fish", "Initiate physician-directed Vitamin D3 supplementation (often 50,000 IU weekly for 8 weeks)"],
+        consult: "Consult your doctor. They will likely prescribe therapeutic doses of Vitamin D3 alongside calcium monitoring."
+      },
+      insufficient: {
+        desc: "Your Vitamin D level is insufficient (20 – 29 ng/mL). While not critically deficient, this level is suboptimal for optimal bone and muscle function.",
+        factors: ["Minimal outdoor activity", "Suboptimal diet", "Seasonal drops during winter months"],
+        symptoms: ["Mild fatigue", "Vague musculoskeletal discomfort", "Subclinical reduction in bone density"],
+        prevention: ["Increase moderate outdoor activity in sunlight", "Incorporate eggs, fortified milk, and fish into diet", "Consider a daily maintenance supplement of 1,000–2,000 IU"],
+        consult: "Discuss with your physician to see if low-dose supplementation is appropriate."
+      },
+      normal: {
+        desc: "Your Vitamin D level is in the optimal reference range (30 – 100 ng/mL). This supports strong bone metabolism, calcium equilibrium, and general immune wellness.",
+        factors: ["Adequate solar synthesis", "Healthy dietary intake or successful maintenance therapy"],
+        symptoms: ["No Vitamin D deficiency symptoms expected."],
+        prevention: ["Maintain current dietary habits", "Enjoy moderate, safe sun exposure", "Perform regular yearly follow-up tests"],
+        consult: "No clinical action required. If on high-dose therapy, maintain checking to avoid toxic levels."
+      },
+      toxic: {
+        desc: "Your Vitamin D level is critically high (> 100 ng/mL). This raises the risk of Vitamin D toxicity (hypervitaminosis D), which can lead to dangerously elevated calcium in the blood.",
+        factors: ["Excessive intake of high-dose Vitamin D supplements", "Inadvertent double dosing"],
+        symptoms: ["Nausea, vomiting, poor appetite", "Frequent urination and extreme thirst", "Muscle weakness, confusion", "Kidney stones or acute kidney injury"],
+        prevention: ["⚠️ Stop all Vitamin D supplements immediately", "Maintain high oral hydration", "Avoid high calcium foods until levels stabilize"],
+        consult: "⚠️ URGENT: Consult a physician. Blood calcium and kidney function tests are required immediately to prevent soft-tissue calcification."
+      }
+    },
+    bn: {
+      deficient: {
+        desc: "আপনার ভিটামিন ডি এর স্তর অত্যন্ত কম (< ২০ ng/mL)। এই তীব্র ঘাটতি শরীরে ক্যালসিয়াম শোষণ ও হাড়ের খনিজকরণ প্রক্রিয়াকে ব্যাহত করে, যা অস্টিওপোরোসিসের ঝুঁকি বাড়িয়ে তোলে।",
+        factors: ["পর্যাপ্ত সূর্যালোক না পাওয়া", "ভিটামিন ডি সমৃদ্ধ খাবারের অভাব", "হজম ও শোষণের সমস্যা (যেমন সিলিয়াক রোগ)", "স্থূলতা (মেদ কলার কারণে ভিটামিন ডি আটকা পড়া)", "কিডনি বা লিভারের দীর্ঘস্থায়ী রোগ"],
+        symptoms: ["দীর্ঘস্থায়ী হাড় ও জোড়ে ব্যথা", "পেশীর দুর্বলতা বা অবশ ভাব", "ঘন ঘন রোগাক্রান্ত হওয়া (রোগ প্রতিরোধ ক্ষমতা হ্রাস)", "অবসাদ ও সার্বিক ক্লান্তি", "সহজেই হাড় ভেঙে যাওয়ার প্রবণতা"],
+        prevention: ["সপ্তাহে কয়েক দিন অন্তত ১৫-২০ মিনিট দুপুরের হালকা রোদে থাকুন", "ডিম, তৈলাক্ত মাছ ও দুগ্ধজাত খাবার বেশি খান", "চিকিৎসকের পরামর্শে উচ্চ মাত্রার ভিটামিন ডি৩ (যেমন সপ্তাহে ৫০,০০০ IU) গ্রহণ করুন"],
+        consult: "অনতিবিলম্বে চিকিৎসকের পরামর্শ নিন। তিনি আপনাকে ক্যালসিয়াম ও ভিটামিন ডি৩ ওষুধের ডোজ নির্ধারণ করে দেবেন।"
+      },
+      insufficient: {
+        desc: "আপনার ভিটামিন ডি এর স্তর অপর্যাপ্ত (২০ – ২৯ ng/mL)। এটি তীব্র ঘাটতি না হলেও হাড়ের সুস্থতার জন্য পর্যাপ্ত নয়।",
+        factors: ["দিনের অধিকাংশ সময় ঘরের ভেতরে কাটানো", "সুষম খাদ্যাভ্যাসের অভাব", "শীতকালে পর্যাপ্ত রোদ না পাওয়া"],
+        symptoms: ["হালকা ক্লান্তি", "পেশী ও হাঁটুতে মৃদু অস্বস্তি বা ব্যথা", "হাড়ের ঘনত্ব ধীরে ধীরে হ্রাস পাওয়া"],
+        prevention: ["রোদে ঘোরাঘুরি ও হালকা ব্যায়াম করুন", "ভিটামিন ডি সমৃদ্ধ খাবার নিয়মিত খাদ্যতালিকায় রাখুন", "প্রতিদিন ১,০০০–২,০০০ IU রক্ষণাবেক্ষণ সাপ্লিমেন্ট গ্রহণের কথা বিবেচনা করতে পারেন"],
+        consult: "একটি সাধারণ পরামর্শের জন্য আপনার পারিবারিক ডাক্তারের সাথে কথা বলুন।"
+      },
+      normal: {
+        desc: "আপনার ভিটামিন ডি এর স্তর আদর্শ সীমার মধ্যে রয়েছে (৩০ – ১০০ ng/mL)। এটি হাড়ের মজবুত গঠন, ক্যালসিয়ামের ভারসাম্য ও রোগ প্রতিরোধ ক্ষমতা নিশ্চিত করে।",
+        factors: ["পর্যাপ্ত সূর্যালোক এবং পুষ্টিকর খাবার গ্রহণ", "সাপ্লিমেন্ট সেবনের সন্তোষজনক ফলাফল"],
+        symptoms: ["ভিটামিন ডি জনিত কোনো সমস্যা বা লক্ষণ নেই।"],
+        prevention: ["বর্তমান সুষম খাদ্যাভ্যাস বজায় রাখুন", "নিয়মিত রোদে হাঁটাহাঁটি করুন", "প্রতি বছর রুটিন চেকআপ করান"],
+        consult: "কোনো চিকিৎসার প্রয়োজন নেই। স্বাভাবিক জীবনযাত্রা বজায় রাখুন।"
+      },
+      toxic: {
+        desc: "আপনার ভিটামিন ডি এর স্তর অতিরিক্ত (> ১০০ ng/mL)। এটি ভিটামিন ডি বিষাক্ততা নির্দেশ করে, যা রক্তে ক্যালসিয়াম বৃদ্ধি করে বিপজ্জনক পরিস্থিতি তৈরি করতে পারে।",
+        factors: ["চিকিৎসকের পরামর্শ ছাড়া উচ্চ মাত্রার ভিটামিন ডি সাপ্লিমেন্ট নিয়মিত গ্রহণ করা", "ভুল ডোজে ওষুধ খাওয়া"],
+        symptoms: ["বমি বমি ভাব, ক্ষুধা মন্দা", "ঘন ঘন প্রস্রাব হওয়া ও অতিরিক্ত তৃষ্ণা পাওয়া", "পেশীর দুর্বলতা ও মানসিক বিভ্রান্তি", "কিডনিতে পাথর বা কিডনি বিকল হওয়া"],
+        prevention: ["⚠️ অবিলম্বে সমস্ত ভিটামিন ডি ওষুধ বন্ধ করুন", "প্রচুর পরিমাণে পানি পান করুন", "ক্যালসিয়াম সমৃদ্ধ খাবার আপাতত এড়িয়ে চলুন"],
+        consult: "⚠️ জরুরি: অবিলম্বে ডাক্তারের পরামর্শ নিন। রক্তে ক্যালসিয়াম ও কিডনির কার্যকারিতা পরীক্ষা করা জরুরি।"
+      }
+    },
+    hi: {
+      deficient: {
+        desc: "आपका विटामिन डी स्तर गंभीर रूप से कम है (<20 एनजी/एमएल)। यह गंभीर कमी कैल्शियम अवशोषण और अस्थि खनिजकरण को बाधित करती है, जिससे ऑस्टियोमलेशिया या ऑस्टियोपोरोसिस का खतरा बढ़ जाता है।",
+        factors: ["अपर्याप्त धूप का संपर्क", "आहार में विटामिन डी का कम सेवन", "कुअवशोषण सिंड्रोम (सीलिएक, क्रोहन)", "मोटापा (विटामिन डी वसा में घुलनशील है और वसा ऊतकों में जमा होता है)", "जिगर या गुर्दे की शिथिलता से रूपांतरण ख़राब हो रहा है"],
+        symptoms: ["पुरानी हड्डी का दर्द, जोड़ों का दर्द", "मांसपेशियों में कमजोरी या ऐंठन", "बार-बार संक्रमण / कमजोर प्रतिरक्षा", "थकान और सामान्य अस्वस्थता", "समय के साथ नाजुकता भंग हो जाती है"],
+        prevention: ["प्रतिदिन 15-20 मिनट दोपहर की धूप में रहें (सुरक्षित रू��� से)", "गरिष्ठ भोजन और वसायुक्त मछली का सेवन करें", "चिकित्सक-निर्देशित विटामिन डी3 अनुपूरण शुरू करें (अक्सर 8 सप्ताह के लिए 50,000 आईयू साप्ताहिक)"],
+        consult: "अपने डॉक्टर से सलाह लें. वे संभवतः कैल्शियम की निगरानी के साथ-साथ विटामिन डी3 की चिकित��सीय खुराक भी लिखेंगे।"
+      },
+      insufficient: {
+        desc: "आपका विटामिन डी स्तर अपर्याप्त है (20 - 29 एनजी/एमएल)। हालांकि गंभीर रूप से कमी नहीं है, यह स्तर इष्टतम हड्डी और मांसपेशियों के कार्य के लिए उप-इष्टतम है।",
+        factors: ["न्यूनतम बाहरी गतिविधि", "उपोष्ण���टिबंधीय आहार", "सर्दियों के महीनों के दौरान मौसमी बूँदें"],
+        symptoms: ["हल्की थकान", "अस्पष्ट मस्कुलोस्केलेटल असुविधा", "अस्थि घनत्व में उपनैदानिक कमी"],
+        prevention: ["धूप में मध्यम बाहरी गतिविधि बढ़ाएँ", "आहार में अंडे, फोर्टिफाइड दूध और मछली शामिल करें", "1,000-2,000 आईयू के दैनिक रखरखाव पूरक पर विचार ��रें"],
+        consult: "यह देखने के लिए अपने चिकित्सक से चर्चा करें कि कम खुराक वाला अनुपूरण उचित है या नहीं।"
+      },
+      normal: {
+        desc: "आपका विटामिन डी स्तर इष्टतम संदर्भ सीमा (30 - 100 एनजी/एमएल) में है। यह मजबूत हड्डी चयापचय, कैल्शियम संतुलन और सामान्य प्रतिरक्षा कल्याण का समर्थन करता है।",
+        factors: ["पर्याप्त सौर संश्लेषण", "स्वस्थ आहार का सेवन या सफल रखरखाव चिकित्सा"],
+        symptoms: ["विटामिन डी की कमी के कोई लक्षण अपेक्षित नहीं हैं।"],
+        prevention: ["वर्तमान आहार संबंधी आदतें बनाए रखें", "मध्यम, सुरक्षित धूप का आनंद लें", "नियमित वार्षिक अनुवर्ती परीक्षण करें"],
+        consult: "किसी चिकित्सीय कार्रवाई की आवश्यकता नहीं है. यदि उच्च खुराक वाली चिकित्सा चल रही है, तो विषाक्त स्तर से बचने के लिए जांच कराते रहें।"
+      },
+      toxic: {
+        desc: "आपका विटामिन डी स्तर गंभीर र���प से उच्च (> 100 एनजी/एमएल) है। इससे विटामिन डी विषाक्तता (हाइपरविटामिनोसिस डी) का खतरा बढ़ जाता है, जिससे रक्त में कैल्शियम खतरनाक रूप से बढ़ सकता है।",
+        factors: ["उच्च खुराक वाले विटामिन डी की खुराक का अत्यधिक सेवन", "अनजाने में दोहरी खुराक"],
+        symptoms: ["मतली, उल्टी, भूख कम लगना", "बार-बार पेशाब आना और अत्यधिक प्यास लगना", "मांसपेशियों में कमजोरी, भ्रम", "गुर्दे की पथरी या तीव्र गुर्दे की चोट"],
+        prevention: ["⚠️ सभी विटामिन डी अनुपूरक तुरंत बंद कर दें", "उच्च मौखिक जलयोजन बनाए रखें", "स्तर स्थिर होने तक उच्च कैल्शियम वाले खाद्य पदार्थों से बचें"],
+        consult: "⚠️ अत्यावश्यक: किसी च��कित्सक से परामर्श लें। नरम-ऊतक कैल्सीफिकेशन को रोकने के लिए रक्त कैल्शियम और किडनी फ़ंक्शन परीक्षण तुरंत आवश्यक हैं।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-vitd-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "ngml";
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    const btn = document.getElementById("langToggleBtn");
+    if (btn) btn.innerHTML = lang === "bn" ? '🇬🇧 <span>English</span>' : '🇧🇩 <span>Bengali</span>';
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    if (activeReportData) updateReportDisplay();
+  }
+
+  function toggleLanguage() { setLanguage(currentLang === "en" ? "bn" : "en"); }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const label = document.getElementById("inputLabel");
+    const unit = currentUnit === "ngml" ? "ng/mL" : "nmol/L";
+    label.textContent = (currentLang === "en" ? "Vitamin D Value" : "ভিটামিন ডি মান") + " (" + unit + ")";
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach(faq => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `<div class="faq-q">${faq.q}<span>＋</span></div><div class="faq-a">${faq.a}</div>`;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "300px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valVitD").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function getStatusFromVitD(valNgMl) {
+    if (valNgMl < 20) return { key: "deficient", badge: "badgeDeficient", color: "critical" };
+    if (valNgMl < 30) return { key: "insufficient", badge: "badgeInsufficient", color: "high" };
+    if (valNgMl <= 100) return { key: "normal", badge: "badgeNormal", color: "normal" };
+    return { key: "toxic", badge: "badgeToxic", color: "critical" };
+  }
+
+  function calcPointer(valNgMl) {
+    if (valNgMl <= 0) return 5;
+    if (valNgMl < 20) return 5 + (valNgMl / 20) * 25; // 5-30
+    if (valNgMl < 30) return 30 + ((valNgMl - 20) / 10) * 20; // 30-50
+    if (valNgMl <= 100) return 50 + ((valNgMl - 30) / 70) * 30; // 50-80
+    return Math.min(95, 80 + ((valNgMl - 100) / 100) * 15); // 80-95
+  }
+
+  function analyzeVitD() {
+    const rawVal = parseFloat(document.getElementById("valVitD").value);
+    if (isNaN(rawVal) || rawVal < 0) {
+      alert(currentLang === "en" ? "Please enter a valid Vitamin D value." : "দয়া করে সঠিক ভিটামিন ডি মান লিখুন।");
+      return;
+    }
+
+    let valNgMl = rawVal;
+    let valNmolL = rawVal;
+
+    if (currentUnit === "nmoll") {
+      valNgMl = rawVal / 2.496;
+    } else {
+      valNmolL = rawVal * 2.496;
+    }
+
+    const status = getStatusFromVitD(valNgMl);
+    const pointerPct = calcPointer(valNgMl);
+
+    activeReportData = {
+      rawVal, valNgMl, valNmolL, status, pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+    addToHistory(status.badge, rawVal, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitStr = d.unit === "ngml" ? "ng/mL" : "nmol/L";
+
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resUnitText").textContent = unitStr;
+    document.getElementById("resVitDVal").textContent = d.rawVal.toFixed(1);
+
+    const colorVar = `var(--${d.status.color}-color)`;
+    document.getElementById("resVitDVal").style.color = colorVar;
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.status.badge];
+    statusLabel.style.color = colorVar;
+
+    const ptr = document.getElementById("rangePointer");
+    ptr.style.left = `${d.pointerPct}%`;
+    ptr.style.borderColor = colorVar;
+
+    // Ticks reference
+    if (d.unit === "nmoll") {
+      document.getElementById("tickDeficient").textContent = "< 49.9 Deficient";
+      document.getElementById("tickInsufficient").textContent = "49.9 – 72.4";
+      document.getElementById("tickNormal").textContent = "74.9 – 249.6 Normal";
+      document.getElementById("tickToxic").textContent = "> 249.6 Toxic";
+    } else {
+      document.getElementById("tickDeficient").textContent = "< 20 Deficient";
+      document.getElementById("tickInsufficient").textContent = "20 – 29";
+      document.getElementById("tickNormal").textContent = "30 – 100 Normal";
+      document.getElementById("tickToxic").textContent = "> 100 Toxic";
+    }
+
+    // Render insight
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+    const details = insights[currentLang][d.status.key];
+    if (!details) return;
+
+    const card = document.createElement("div");
+    card.className = "insight-card";
+    card.style.borderLeft = `4px solid ${colorVar}`;
+
+    const causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+    const symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+    const tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+    card.innerHTML = `
+      <h5>${translations[currentLang].titleInterpretation}</h5>
+      <p>${details.desc}</p>
+      <div style="font-size: 0.8rem; margin: 10px 0; color: var(--accent);">
+        <strong>Converted Values:</strong> ${d.valNgMl.toFixed(1)} ng/mL (${d.valNmolL.toFixed(1)} nmol/L)
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+          <ul>${causesList}</ul>
+        </div>
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+          <ul>${symptomsList}</ul>
+        </div>
+      </div>
+      <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:10px;">
+        <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+        <ul>${tipsList}</ul>
+      </div>
+      <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+        <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+      </div>
+    `;
+    insightSection.appendChild(card);
+  }
+
+  function addToHistory(badgeKey, val, unit) {
+    const unitStr = unit === "ngml" ? " ng/mL" : " nmol/L";
+    const item = { date: new Date().toLocaleDateString(), badgeKey, val, unitStr, id: Date.now() };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-vitd-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `<span>📅 ${item.date}</span><strong>${item.val.toFixed(1)}${item.unitStr} — ${statusText}</strong>`;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() { window.print(); }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitStr = d.unit === "ngml" ? " ng/mL" : " nmol/L";
+    let t = `--- VITAMIN D ANALYSIS REPORT ---\n`;
+    t += `Date: ${d.date}\n`;
+    t += `Vitamin D Value: ${d.rawVal.toFixed(1)}${unitStr}\n`;
+    t += `Values in both units: ${d.valNgMl.toFixed(1)} ng/mL / ${d.valNmolL.toFixed(1)} nmol/L\n`;
+    t += `Assessment: ${translations[currentLang][d.status.badge]}\n`;
+    t += `Reference Range: 30 – 100 ng/mL (Normal)\n`;
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, { backgroundColor: "#0a0e17", scale: 2 }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `vitamin-d-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => { setLanguage(currentLang); });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

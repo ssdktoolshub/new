@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Word Counter &amp; Text Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Free online Word Counter &amp; Text Analyzer — count words/characters, track writing goals, find &amp; replace, highlight text, rephrase sentences, and export in multiple formats.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    /* ── Stat Grid ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 1100px) { .stat-grid { grid-template-columns: repeat(5, 1fr); } }
+    @media (max-width: 640px)  { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
+
+    .stat-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 6px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+    .stat-box:hover { border-color: var(--accent); box-shadow: 0 0 10px var(--glow, rgba(99,102,241,.35)); }
+    .stat-num { color: var(--accent); font-size: 1.35rem; font-weight: 800; margin-bottom: 2px; line-height: 1; }
+    .stat-label { font-size: 0.62rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+
+    /* ── Casing Buttons ── */
+    .casing-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .casing-btn {
+      padding: 6px 12px; border: 1px solid var(--border);
+      background: var(--bg2); color: var(--text);
+      border-radius: 6px; font-size: 0.75rem; font-weight: 700;
+      cursor: pointer; transition: 0.25s;
+    }
+    .casing-btn:hover { border-color: var(--accent); background: var(--card2, var(--bg3)); }
+
+    /* ── Main Workspace ── */
+    .workspace { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 20px; align-items: start; }
+    @media (max-width: 860px) { .workspace { grid-template-columns: 1fr; } }
+
+    /* ── Textarea Wrapper (for highlight overlay) ── */
+    .textarea-wrap { position: relative; }
+    .highlight-layer {
+      position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      padding: 12px; border-radius: 10px;
+      font: inherit; font-size: inherit; line-height: inherit;
+      white-space: pre-wrap; word-wrap: break-word;
+      overflow: hidden; pointer-events: none;
+      color: transparent; border: 1px solid transparent;
+      background: transparent; z-index: 1;
+    }
+    #wordInput { position: relative; z-index: 2; background: transparent; caret-color: var(--text); }
+    .hl-short  { background: rgba(255,182,68,.28); border-radius: 3px; }
+    .hl-long   { background: rgba(99,220,255,.22); border-radius: 3px; }
+    .hl-key    { background: rgba(99,102,241,.38); border-radius: 3px; }
+
+    /* ── Right panel ── */
+    .right-panel {
+      background: var(--bg3); border: 1px dashed var(--border);
+      border-radius: 12px; padding: 18px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    /* ── Density Table ── */
+    .density-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; text-align: left; margin-top: 8px; }
+    .density-table th, .density-table td { padding: 7px 9px; border-bottom: 1px solid var(--border); }
+    .density-table th { color: var(--accent); font-weight: 800; text-transform: uppercase; font-size: 0.67rem; }
+
+    /* ── Section divider ── */
+    .panel-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+    /* ── Find & Replace ── */
+    .fnr-panel { margin-top: 8px; display: none; flex-direction: column; gap: 8px; }
+    .fnr-panel.open { display: flex; }
+    .fnr-row { display: flex; gap: 8px; }
+    .fnr-input {
+      flex: 1; padding: 7px 10px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--bg2);
+      color: var(--text); font-size: 0.82rem; outline: none;
+    }
+    .fnr-input:focus { border-color: var(--accent); }
+    .fnr-badge { font-size: 0.75rem; color: var(--accent); font-weight: 700; }
+
+    /* ── Goal Tracker ── */
+    .goal-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;
+    }
+    .goal-input {
+      width: 90px; padding: 6px 10px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--bg3);
+      color: var(--text); font-size: 0.82rem; outline: none;
+    }
+    .goal-input:focus { border-color: var(--accent); }
+    .goal-bar-wrap { flex: 1; min-width: 120px; height: 10px; background: var(--bg3); border-radius: 999px; overflow: hidden; }
+    .goal-bar { height: 100%; width: 0%; border-radius: 999px; transition: width 0.4s ease, background 0.4s ease; background: #ef4444; }
+    .goal-badge { font-size: 0.8rem; font-weight: 700; white-space: nowrap; }
+
+    /* ── Highlight toggle btn ── */
+    .hl-toggle {
+      padding: 5px 12px; font-size: 0.75rem; font-weight: 700;
+      border: 1px solid var(--accent); border-radius: 6px;
+      background: transparent; color: var(--accent); cursor: pointer; transition: 0.2s;
+    }
+    .hl-toggle.active { background: var(--accent); color: #fff; }
+
+    /* ── Rephrase Panel ── */
+    .rephrase-section h4 { margin-bottom: 6px; }
+    .rephrase-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
+    .rephrase-item {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 10px; font-size: 0.78rem;
+    }
+    .rephrase-orig { color: var(--muted); margin-bottom: 3px; font-style: italic; }
+    .rephrase-sugg { color: var(--text); }
+    .rephrase-apply {
+      margin-top: 5px; padding: 3px 8px; font-size: 0.7rem; font-weight: 700;
+      border: 1px solid var(--border); background: var(--bg3); color: var(--accent);
+      border-radius: 5px; cursor: pointer; transition: 0.2s;
+    }
+    .rephrase-apply:hover { border-color: var(--accent); background: var(--bg2); }
+
+    /* ── Export buttons ── */
+    .export-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    /* ── Tool controls ── */
+    .tool-control { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+
+    /* ── Status message ── */
+    #statusMsg { margin-top: 10px; font-weight: 700; font-size: 0.88rem; display: none; }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Word Counter &amp; Text Analyzer</h1>
+  <p class="page-sub">Analyze copy statistics, track writing goals, highlight patterns, find &amp; replace, rephrase sentences, and export in multiple formats.</p>
+
+  <!-- ═══════════════════════ TOOL PLAYGROUND ═══════════════════════ -->
+  <div class="content-card tool-playground">
+
+    <!-- ── 9-Box Stat Grid ── -->
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-num" id="statWords">0</div><div class="stat-label">Words</div></div>
+      <div class="stat-box"><div class="stat-num" id="statCharsSpaces">0</div><div class="stat-label">Chars (All)</div></div>
+      <div class="stat-box"><div class="stat-num" id="statCharsNoSpaces">0</div><div class="stat-label">Chars (No Sp)</div></div>
+      <div class="stat-box"><div class="stat-num" id="statSentences">0</div><div class="stat-label">Sentences</div></div>
+      <div class="stat-box"><div class="stat-num" id="statParagraphs">0</div><div class="stat-label">Paragraphs</div></div>
+      <div class="stat-box"><div class="stat-num" id="statReadTime">0s</div><div class="stat-label">Read Time</div></div>
+      <div class="stat-box"><div class="stat-num" id="statUnique">0</div><div class="stat-label">Unique Words</div></div>
+      <div class="stat-box"><div class="stat-num" id="statAvgLen">0.0</div><div class="stat-label">Avg Word Len</div></div>
+      <div class="stat-box"><div class="stat-num" id="statSpeakTime">0s</div><div class="stat-label">Speak Time</div></div>
+    </div>
+
+    <!-- ── Goal Tracker ── -->
+    <div class="goal-row">
+      <label style="font-size:0.8rem;font-weight:700;white-space:nowrap;">🎯 Word Goal:</label>
+      <input class="goal-input" type="number" id="goalTarget" placeholder="e.g. 500" min="1" value="">
+      <div class="goal-bar-wrap"><div class="goal-bar" id="goalBar"></div></div>
+      <span class="goal-badge" id="goalBadge" style="color:var(--muted);">Set a target</span>
+    </div>
+
+    <!-- ── Main Workspace ── -->
+    <div class="workspace">
+
+      <!-- Left Column -->
+      <div>
+        <!-- Casing Buttons -->
+        <div class="casing-buttons">
+          <button class="casing-btn" id="btnCaseUpper">UPPERCASE</button>
+          <button class="casing-btn" id="btnCaseLower">lowercase</button>
+          <button class="casing-btn" id="btnCaseTitle">Title Case</button>
+          <button class="casing-btn" id="btnCaseSentence">Sentence case</button>
+          <button class="casing-btn" id="btnCaseSlugify">slugify-text</button>
+          <button class="hl-toggle" id="btnHighlight">💡 Enable Highlight</button>
+        </div>
+
+        <!-- Textarea + Highlight Overlay -->
+        <div class="textarea-wrap">
+          <div class="highlight-layer" id="hlLayer" aria-hidden="true"></div>
+          <textarea id="wordInput" placeholder="Start typing or paste your content here for instant analysis..." style="min-height:280px;width:100%;box-sizing:border-box;"></textarea>
+        </div>
+
+        <!-- Find & Replace Panel -->
+        <div style="margin-top:12px;">
+          <button class="casing-btn" id="btnToggleFnR" style="border-color:var(--accent);color:var(--accent);">🔍 Find &amp; Replace</button>
+          <div class="fnr-panel" id="fnrPanel">
+            <div class="fnr-row">
+              <input class="fnr-input" id="fnrFind" placeholder="Find…">
+              <input class="fnr-input" id="fnrReplace" placeholder="Replace with…">
+              <button class="casing-btn" id="btnReplaceAll" style="border-color:var(--accent);color:var(--accent);white-space:nowrap;">Replace All</button>
+            </div>
+            <span class="fnr-badge" id="fnrResult"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column -->
+      <div class="right-panel">
+
+        <!-- Keyword Density -->
+        <div>
+          <h4 style="margin-bottom:4px;">Top Keyword Density</h4>
+          <p style="font-size:0.73rem;color:var(--muted);margin-bottom:6px;">Excludes common stop-words.</p>
+          <div id="densityContainer">
+            <p style="color:var(--muted);font-size:0.8rem;font-style:italic;padding:16px 0;text-align:center;">Density data will render here…</p>
+          </div>
+        </div>
+
+        <hr class="panel-divider">
+
+        <!-- Audio Read-Aloud -->
+        <div>
+          <h4 style="margin-bottom:8px;">Audio Read-Aloud</h4>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="toggle" id="btnSpeakPlay" style="padding:8px 12px;font-size:0.78rem;">▶ Speak</button>
+            <button class="toggle" id="btnSpeakPause" style="padding:8px 12px;font-size:0.78rem;display:none;">⏸ Pause</button>
+            <button class="toggle" id="btnSpeakStop" style="padding:8px 12px;font-size:0.78rem;display:none;">⏹ Stop</button>
+            <span id="speechStatus" style="font-size:0.73rem;color:var(--muted);font-weight:600;">Reader Idle</span>
+          </div>
+        </div>
+
+        <hr class="panel-divider">
+
+        <!-- Rephrase Suggestions -->
+        <div class="rephrase-section">
+          <h4>Rephrase Suggestions</h4>
+          <p style="font-size:0.72rem;color:var(--muted);margin-bottom:6px;">Click to apply a rephrased version of any sentence.</p>
+          <div class="rephrase-list" id="rephraseList">
+            <p style="color:var(--muted);font-size:0.78rem;font-style:italic;text-align:center;padding:10px 0;">Type text to see suggestions…</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Export Options ── -->
+    <div style="margin-top:16px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+      <h4 style="font-size:0.82rem;margin-bottom:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;">Export &amp; Copy Options</h4>
+      <div class="export-row">
+        <button class="btn ghost" id="btnCopyMd" style="font-size:0.78rem;padding:7px 13px;">📝 Copy as Markdown</button>
+        <button class="btn ghost" id="btnCopyJson" style="font-size:0.78rem;padding:7px 13px;">📊 Copy Stats JSON</button>
+        <button class="btn ghost" id="btnDownloadMd" style="font-size:0.78rem;padding:7px 13px;">⬇️ Download .md</button>
+      </div>
+    </div>
+
+    <!-- ── Action Controls ── -->
+    <div class="tool-control">
+      <button class="btn" id="btnCopy">📋 Copy Content</button>
+      <button class="btn ghost" id="btnDownload" style="background:var(--card2,var(--bg3));">⬇️ Download .txt</button>
+      <button class="btn ghost" id="btnClear" style="border-color:#ff6b6b;color:#ff6b6b;">🗑 Clear Workspace</button>
+    </div>
+    <p id="statusMsg"></p>
+
+  </div><!-- /tool-playground -->
+
+  <!-- Features -->
+  <div class="content-card">
+    <h3>What's New &amp; Advanced Features</h3>
+    <ul>
+      <li><strong>9 Live Stat Boxes:</strong> Words, characters, sentences, paragraphs, read time, unique words, avg word length, and speaking time all update in real time.</li>
+      <li><strong>Writing Goal Tracker:</strong> Set a target word count and watch the animated progress bar turn green as you approach your goal.</li>
+      <li><strong>Text Highlighter:</strong> Visual overlay colors short words (amber), long words (cyan), and top keywords (purple) without disrupting editing.</li>
+      <li><strong>Find &amp; Replace:</strong> Instantly replace all occurrences with a live count of substitutions made.</li>
+      <li><strong>Rephrase Suggestions:</strong> AI-free sentence rephrasing using synonym swaps and structural reversal for plagiarism-safe variation.</li>
+      <li><strong>Multi-format Export:</strong> Download or copy as plain text, Markdown, or structured JSON stats.</li>
+      <li><strong>Density Analytics:</strong> Auto-extracts top repeating keywords excluding stop-words.</li>
+      <li><strong>TTS Audio Synthesis:</strong> Playback drafts aloud using the browser's built-in SpeechSynthesis engine.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">What are SEO keyword stop-words?<span>＋</span></div>
+        <div class="faq-a">Stop-words are high-frequency grammatical linkers like "the", "and", "in", "is". Our density analyzer filters these out so you see actual topic keywords.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Does the reader work offline?<span>＋</span></div>
+        <div class="faq-a">Yes. Text-to-Speech uses the browser's built-in SpeechSynthesis engine (Windows, macOS, Android, iOS) — no internet needed.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How does the highlighter work without breaking editing?<span>＋</span></div>
+        <div class="faq-a">An invisible overlay mirrors your textarea content. Colored spans appear behind the text so your cursor and selection stay fully normal.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Is rephrase AI-powered?<span>＋</span></div>
+        <div class="faq-a">No — it's 100% client-side. Suggestions use a built-in synonym map (50+ common words) and structural reversal — no data ever leaves your browser.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   WORD COUNTER & TEXT ANALYZER — Full Feature Script
+   ═══════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const input = $('wordInput');
+
+/* ── Synonym Map (50+ common words) ── */
+const SYNONYMS = {
+  good:'great', great:'excellent', bad:'poor', big:'large', small:'tiny',
+  fast:'quick', slow:'gradual', hard:'difficult', easy:'simple', old:'ancient',
+  new:'modern', happy:'joyful', sad:'unhappy', beautiful:'gorgeous', ugly:'unpleasant',
+  smart:'intelligent', stupid:'foolish', rich:'wealthy', poor:'impoverished', strong:'powerful',
+  weak:'feeble', important:'crucial', interesting:'fascinating', boring:'dull', funny:'humorous',
+  serious:'grave', angry:'furious', calm:'peaceful', loud:'noisy', quiet:'silent',
+  hot:'scorching', cold:'freezing', clean:'spotless', dirty:'filthy', bright:'radiant',
+  dark:'gloomy', long:'lengthy', short:'brief', wide:'broad', narrow:'slim',
+  high:'elevated', low:'minimal', many:'numerous', few:'scarce', always:'invariably',
+  never:'seldom', often:'frequently', rarely:'seldom', quickly:'swiftly', slowly:'gradually',
+  very:'extremely', really:'truly', also:'additionally', but:'however', and:'plus',
+  show:'display', use:'utilize', make:'create', get:'obtain', need:'require',
+  want:'desire', think:'believe', know:'understand', say:'state', see:'observe'
+};
+
+const STOP_WORDS = new Set([
+  'the','a','an','and','or','but','in','on','at','to','for','of','is','are',
+  'was','were','with','as','by','it','this','that','these','those','i','you',
+  'he','she','we','they','me','him','her','us','them','my','your','his','their',
+  'our','be','been','have','has','had','do','does','did','will','would','shall',
+  'should','can','could','may','might','must','not','no','so','if','its','into',
+  'from','about','up','out','then','than','when','what','how','all','more','just'
+]);
+
+/* ── Speech ── */
+let synth = window.speechSynthesis;
+let utterance = null;
+
+/* ── State ── */
+let highlightActive = false;
+let topKeywords = [];
+
+/* ══════════════════════════ ANALYZE TEXT ══════════════════════════ */
+function analyzeText() {
+  const val = input.value;
+
+  const charsAll     = val.length;
+  const charsNoSp    = val.replace(/\s/g, '').length;
+  const wordsArr     = val.trim().split(/\s+/).filter(w => w.length > 0);
+  const totalWords   = wordsArr.length;
+  const sentences    = val.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+  const paragraphs   = val.split(/\n+/).filter(p => p.trim().length > 0).length;
+
+  // Read time (200 wpm)
+  const readSecs = Math.round((totalWords / 200) * 60);
+  const readTime = fmtTime(readSecs);
+
+  // Unique words
+  const unique = new Set(wordsArr.map(w => w.toLowerCase().replace(/[^a-z0-9]/g, ''))).size;
+
+  // Avg word length
+  const totalWordChars = wordsArr.reduce((s, w) => s + w.replace(/[^a-z0-9]/gi, '').length, 0);
+  const avgLen = totalWords > 0 ? (totalWordChars / totalWords).toFixed(1) : '0.0';
+
+  // Speak time (130 wpm)
+  const speakSecs = Math.round((totalWords / 130) * 60);
+  const speakTime = fmtTime(speakSecs);
+
+  // Update stat boxes
+  $('statWords').textContent          = totalWords;
+  $('statCharsSpaces').textContent    = charsAll;
+  $('statCharsNoSpaces').textContent  = charsNoSp;
+  $('statSentences').textContent      = sentences;
+  $('statParagraphs').textContent     = paragraphs;
+  $('statReadTime').textContent       = readTime;
+  $('statUnique').textContent         = unique;
+  $('statAvgLen').textContent         = avgLen;
+  $('statSpeakTime').textContent      = speakTime;
+
+  // Goal tracker
+  updateGoal(totalWords);
+
+  // Keyword density
+  topKeywords = calculateDensity(wordsArr, totalWords);
+
+  // Highlight overlay
+  if (highlightActive) renderHighlight(val, topKeywords);
+
+  // Rephrase suggestions
+  updateRephrase(val);
+}
+
+function fmtTime(secs) {
+  if (secs <= 0) return '0s';
+  if (secs < 60) return secs + 's';
+  return Math.floor(secs / 60) + 'm ' + (secs % 60) + 's';
+}
+
+/* ══════════════════════════ GOAL TRACKER ══════════════════════════ */
+function updateGoal(wordCount) {
+  const target = parseInt($('goalTarget').value) || 0;
+  const bar    = $('goalBar');
+  const badge  = $('goalBadge');
+
+  if (!target) {
+    bar.style.width = '0%';
+    badge.textContent = 'Set a target';
+    badge.style.color = 'var(--muted)';
+    return;
+  }
+
+  const pct = Math.min((wordCount / target) * 100, 100);
+  bar.style.width = pct + '%';
+
+  if (pct < 25) {
+    bar.style.background = '#ef4444';
+  } else if (pct < 75) {
+    bar.style.background = '#f97316';
+  } else {
+    bar.style.background = '#22c55e';
+  }
+
+  if (wordCount >= target) {
+    badge.textContent = '✅ Goal Reached!';
+    badge.style.color = '#22c55e';
+  } else {
+    badge.textContent = wordCount + ' / ' + target + ' words (' + Math.round(pct) + '%)';
+    badge.style.color = 'var(--text)';
+  }
+}
+
+/* ══════════════════════════ KEYWORD DENSITY ══════════════════════════ */
+function calculateDensity(wordsArr, totalWords) {
+  const container = $('densityContainer');
+  if (totalWords === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:0.8rem;font-style:italic;padding:16px 0;text-align:center;">Density data will render here…</p>';
+    return [];
+  }
+
+  const freqMap = {};
+  wordsArr.forEach(word => {
+    const clean = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (clean.length > 1 && !STOP_WORDS.has(clean)) {
+      freqMap[clean] = (freqMap[clean] || 0) + 1;
+    }
+  });
+
+  const sorted = Object.keys(freqMap)
+    .map(w => ({ word: w, count: freqMap[w], percent: ((freqMap[w] / totalWords) * 100).toFixed(1) }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
+
+  if (sorted.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:0.8rem;font-style:italic;padding:16px 0;text-align:center;">No significant keywords found yet.</p>';
+    return [];
+  }
+
+  let html = `<table class="density-table"><thead><tr>
+    <th>Keyword</th><th style="text-align:center;">Count</th><th style="text-align:right;">Density</th>
+  </tr></thead><tbody>`;
+  sorted.forEach(r => {
+    html += `<tr>
+      <td><strong style="color:var(--text)">${escHtml(r.word)}</strong></td>
+      <td style="text-align:center;">${r.count}</td>
+      <td style="text-align:right;color:var(--accent);font-weight:700;">${r.percent}%</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+
+  return sorted.map(r => r.word);
+}
+
+/* ══════════════════════════ TEXT HIGHLIGHTER ══════════════════════════ */
+$('btnHighlight').onclick = () => {
+  highlightActive = !highlightActive;
+  const btn = $('btnHighlight');
+  btn.classList.toggle('active', highlightActive);
+  btn.textContent = highlightActive ? '💡 Disable Highlight' : '💡 Enable Highlight';
+
+  const layer = $('hlLayer');
+  if (highlightActive) {
+    layer.style.display = 'block';
+    renderHighlight(input.value, topKeywords);
+  } else {
+    layer.style.display = 'none';
+    layer.innerHTML = '';
+  }
+};
+
+function renderHighlight(text, keywords) {
+  const layer = $('hlLayer');
+  const keySet = new Set(keywords.map(k => k.toLowerCase()));
+
+  // Split by word boundaries preserving spaces
+  const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const highlighted = escaped.replace(/(\S+)/g, (match) => {
+    const clean = match.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (keySet.has(clean)) return `<mark class="hl-key">${match}</mark>`;
+    if (clean.length > 8)  return `<mark class="hl-long">${match}</mark>`;
+    if (clean.length > 0 && clean.length < 4) return `<mark class="hl-short">${match}</mark>`;
+    return match;
+  });
+
+  layer.innerHTML = highlighted;
+
+  // Sync scroll
+  layer.scrollTop = input.scrollTop;
+}
+
+input.addEventListener('scroll', () => {
+  if (highlightActive) $('hlLayer').scrollTop = input.scrollTop;
+});
+
+/* ══════════════════════════ FIND & REPLACE ══════════════════════════ */
+$('btnToggleFnR').onclick = () => {
+  const panel = $('fnrPanel');
+  panel.classList.toggle('open');
+  $('btnToggleFnR').style.background = panel.classList.contains('open') ? 'var(--accent)' : '';
+  $('btnToggleFnR').style.color = panel.classList.contains('open') ? '#fff' : 'var(--accent)';
+};
+
+$('btnReplaceAll').onclick = () => {
+  const find    = $('fnrFind').value;
+  const replace = $('fnrReplace').value;
+  const result  = $('fnrResult');
+
+  if (!find) { result.textContent = 'Enter a search term.'; return; }
+
+  const escaped = find.replace(/[.*+?^${}()|[\]\\]/g, '\\
+/* ═══════════════════════════════════════════════════════════════
+   WORD COUNTER & TEXT ANALYZER — Full Feature Script
+   ═══════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const input = $('wordInput');
+
+/* ── Synonym Map (50+ common words) ── */
+const SYNONYMS = {
+  good:'great', great:'excellent', bad:'poor', big:'large', small:'tiny',
+  fast:'quick', slow:'gradual', hard:'difficult', easy:'simple', old:'ancient',
+  new:'modern', happy:'joyful', sad:'unhappy', beautiful:'gorgeous', ugly:'unpleasant',
+  smart:'intelligent', stupid:'foolish', rich:'wealthy', poor:'impoverished', strong:'powerful',
+  weak:'feeble', important:'crucial', interesting:'fascinating', boring:'dull', funny:'humorous',
+  serious:'grave', angry:'furious', calm:'peaceful', loud:'noisy', quiet:'silent',
+  hot:'scorching', cold:'freezing', clean:'spotless', dirty:'filthy', bright:'radiant',
+  dark:'gloomy', long:'lengthy', short:'brief', wide:'broad', narrow:'slim',
+  high:'elevated', low:'minimal', many:'numerous', few:'scarce', always:'invariably',
+  never:'seldom', often:'frequently', rarely:'seldom', quickly:'swiftly', slowly:'gradually',
+  very:'extremely', really:'truly', also:'additionally', but:'however', and:'plus',
+  show:'display', use:'utilize', make:'create', get:'obtain', need:'require',
+  want:'desire', think:'believe', know:'understand', say:'state', see:'observe'
+};
+
+const STOP_WORDS = new Set([
+  'the','a','an','and','or','but','in','on','at','to','for','of','is','are',
+  'was','were','with','as','by','it','this','that','these','those','i','you',
+  'he','she','we','they','me','him','her','us','them','my','your','his','their',
+  'our','be','been','have','has','had','do','does','did','will','would','shall',
+  'should','can','could','may','might','must','not','no','so','if','its','into',
+  'from','about','up','out','then','than','when','what','how','all','more','just'
+]);
+
+/* ── Speech ── */
+let synth = window.speechSynthesis;
+let utterance = null;
+
+/* ── State ── */
+let highlightActive = false;
+let topKeywords = [];
+
+/* ══════════════════════════ ANALYZE TEXT ══════════════════════════ */
+function analyzeText() {
+  const val = input.value;
+
+  const charsAll     = val.length;
+  const charsNoSp    = val.replace(/\s/g, '').length;
+  const wordsArr     = val.trim().split(/\s+/).filter(w => w.length > 0);
+  const totalWords   = wordsArr.length;
+  const sentences    = val.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+  const paragraphs   = val.split(/\n+/).filter(p => p.trim().length > 0).length;
+
+  // Read time (200 wpm)
+  const readSecs = Math.round((totalWords / 200) * 60);
+  const readTime = fmtTime(readSecs);
+
+  // Unique words
+  const unique = new Set(wordsArr.map(w => w.toLowerCase().replace(/[^a-z0-9]/g, ''))).size;
+
+  // Avg word length
+  const totalWordChars = wordsArr.reduce((s, w) => s + w.replace(/[^a-z0-9]/gi, '').length, 0);
+  const avgLen = totalWords > 0 ? (totalWordChars / totalWords).toFixed(1) : '0.0';
+
+  // Speak time (130 wpm)
+  const speakSecs = Math.round((totalWords / 130) * 60);
+  const speakTime = fmtTime(speakSecs);
+
+  // Update stat boxes
+  $('statWords').textContent          = totalWords;
+  $('statCharsSpaces').textContent    = charsAll;
+  $('statCharsNoSpaces').textContent  = charsNoSp;
+  $('statSentences').textContent      = sentences;
+  $('statParagraphs').textContent     = paragraphs;
+  $('statReadTime').textContent       = readTime;
+  $('statUnique').textContent         = unique;
+  $('statAvgLen').textContent         = avgLen;
+  $('statSpeakTime').textContent      = speakTime;
+
+  // Goal tracker
+  updateGoal(totalWords);
+
+  // Keyword density
+  topKeywords = calculateDensity(wordsArr, totalWords);
+
+  // Highlight overlay
+  if (highlightActive) renderHighlight(val, topKeywords);
+
+  // Rephrase suggestions
+  updateRephrase(val);
+}
+
+function fmtTime(secs) {
+  if (secs <= 0) return '0s';
+  if (secs < 60) return secs + 's';
+  return Math.floor(secs / 60) + 'm ' + (secs % 60) + 's';
+}
+
+/* ══════════════════════════ GOAL TRACKER ══════════════════════════ */
+function updateGoal(wordCount) {
+  const target = parseInt($('goalTarget').value) || 0;
+  const bar    = $('goalBar');
+  const badge  = $('goalBadge');
+
+  if (!target) {
+    bar.style.width = '0%';
+    badge.textContent = 'Set a target';
+    badge.style.color = 'var(--muted)';
+    return;
+  }
+
+  const pct = Math.min((wordCount / target) * 100, 100);
+  bar.style.width = pct + '%';
+
+  if (pct < 25) {
+    bar.style.background = '#ef4444';
+  } else if (pct < 75) {
+    bar.style.background = '#f97316';
+  } else {
+    bar.style.background = '#22c55e';
+  }
+
+  if (wordCount >= target) {
+    badge.textContent = '✅ Goal Reached!';
+    badge.style.color = '#22c55e';
+  } else {
+    badge.textContent = wordCount + ' / ' + target + ' words (' + Math.round(pct) + '%)';
+    badge.style.color = 'var(--text)';
+  }
+}
+
+/* ══════════════════════════ KEYWORD DENSITY ══════════════════════════ */
+function calculateDensity(wordsArr, totalWords) {
+  const container = $('densityContainer');
+  if (totalWords === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:0.8rem;font-style:italic;padding:16px 0;text-align:center;">Density data will render here…</p>';
+    return [];
+  }
+
+  const freqMap = {};
+  wordsArr.forEach(word => {
+    const clean = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (clean.length > 1 && !STOP_WORDS.has(clean)) {
+      freqMap[clean] = (freqMap[clean] || 0) + 1;
+    }
+  });
+
+  const sorted = Object.keys(freqMap)
+    .map(w => ({ word: w, count: freqMap[w], percent: ((freqMap[w] / totalWords) * 100).toFixed(1) }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6);
+
+  if (sorted.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:0.8rem;font-style:italic;padding:16px 0;text-align:center;">No significant keywords found yet.</p>';
+    return [];
+  }
+
+  let html = `<table class="density-table"><thead><tr>
+    <th>Keyword</th><th style="text-align:center;">Count</th><th style="text-align:right;">Density</th>
+  </tr></thead><tbody>`;
+  sorted.forEach(r => {
+    html += `<tr>
+      <td><strong style="color:var(--text)">${escHtml(r.word)}</strong></td>
+      <td style="text-align:center;">${r.count}</td>
+      <td style="text-align:right;color:var(--accent);font-weight:700;">${r.percent}%</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+
+  return sorted.map(r => r.word);
+}
+
+/* ══════════════════════════ TEXT HIGHLIGHTER ══════════════════════════ */
+$('btnHighlight').onclick = () => {
+  highlightActive = !highlightActive;
+  const btn = $('btnHighlight');
+  btn.classList.toggle('active', highlightActive);
+  btn.textContent = highlightActive ? '💡 Disable Highlight' : '💡 Enable Highlight';
+
+  const layer = $('hlLayer');
+  if (highlightActive) {
+    layer.style.display = 'block';
+    renderHighlight(input.value, topKeywords);
+  } else {
+    layer.style.display = 'none';
+    layer.innerHTML = '';
+  }
+};
+
+function renderHighlight(text, keywords) {
+  const layer = $('hlLayer');
+  const keySet = new Set(keywords.map(k => k.toLowerCase()));
+
+  // Split by word boundaries preserving spaces
+  const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const highlighted = escaped.replace(/(\S+)/g, (match) => {
+    const clean = match.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (keySet.has(clean)) return `<mark class="hl-key">${match}</mark>`;
+    if (clean.length > 8)  return `<mark class="hl-long">${match}</mark>`;
+    if (clean.length > 0 && clean.length < 4) return `<mark class="hl-short">${match}</mark>`;
+    return match;
+  });
+
+  layer.innerHTML = highlighted;
+
+  // Sync scroll
+  layer.scrollTop = input.scrollTop;
+}
+
+input.addEventListener('scroll', () => {
+  if (highlightActive) $('hlLayer').scrollTop = input.scrollTop;
+});
+
+/* ══════════════════════════ FIND & REPLACE ══════════════════════════ */
+$('btnToggleFnR').onclick = () => {
+  const panel = $('fnrPanel');
+  panel.classList.toggle('open');
+  $('btnToggleFnR').style.background = panel.classList.contains('open') ? 'var(--accent)' : '';
+  $('btnToggleFnR').style.color = panel.classList.contains('open') ? '#fff' : 'var(--accent)';
+};
+
+$('btnReplaceAll').onclick = () => {
+  const find    = $('fnrFind').value;
+  const replace = $('fnrReplace').value;
+  const result  = $('fnrResult');
+
+  if (!find) { result.textContent = 'Enter a search term.'; return; }
+
+  const escaped = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex   = new RegExp(escaped, 'gi');
+  const matches = (input.value.match(regex) || []).length;
+
+  if (matches === 0) {
+    result.textContent = 'No matches found.';
+    result.style.color = 'var(--muted)';
+    return;
+  }
+
+  input.value = input.value.replace(regex, replace);
+  result.textContent = `✅ Replaced ${matches} occurrence${matches > 1 ? 's' : ''}.`;
+  result.style.color = 'var(--accent)';
+  analyzeText();
+};
+
+/* ══════════════════════════ REPHRASE SUGGESTIONS ══════════════════════════ */
+function updateRephrase(text) {
+  const container = $('rephraseList');
+  const sentences = text.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length > 0 && s.split(/\s+/).length > 2);
+
+  if (sentences.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:0.78rem;font-style:italic;text-align:center;padding:10px 0;">Type text to see suggestions…</p>';
+    return;
+  }
+
+  const toShow = sentences.slice(0, 5);
+  let html = '';
+  toShow.forEach((sent, idx) => {
+    const suggestion = rephraseSentence(sent);
+    const origEsc = escHtml(sent.length > 80 ? sent.slice(0, 80) + '…' : sent);
+    const suggEsc = escHtml(suggestion);
+    html += `<div class="rephrase-item">
+      <div class="rephrase-orig">Original: ${origEsc}</div>
+      <div class="rephrase-sugg">💬 ${suggEsc}</div>
+      <button class="rephrase-apply" data-orig="${escAttr(sent)}" data-sugg="${escAttr(suggestion)}">Apply</button>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+
+  container.querySelectorAll('.rephrase-apply').forEach(btn => {
+    btn.onclick = () => {
+      const orig = btn.getAttribute('data-orig');
+      const sugg = btn.getAttribute('data-sugg');
+      // Replace first occurrence in textarea
+      input.value = input.value.replace(orig, sugg);
+      analyzeText();
+      showStatus('✏️ Sentence rephrased and applied!');
+    };
+  });
+}
+
+function rephraseSentence(sentence) {
+  // Strategy 1: swap synonyms
+  const words = sentence.split(/\s+/);
+  let swapped = false;
+  const swappedWords = words.map(w => {
+    const punct = w.match(/[^a-zA-Z0-9]*$/)?.[0] || '';
+    const core  = w.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    if (!swapped && SYNONYMS[core]) {
+      swapped = true;
+      const syn = SYNONYMS[core];
+      // preserve capitalization
+      const repl = w[0] === w[0].toUpperCase() ? syn.charAt(0).toUpperCase() + syn.slice(1) : syn;
+      return repl + punct;
+    }
+    return w;
+  });
+
+  if (swapped) return swappedWords.join(' ');
+
+  // Strategy 2: reverse word order (keep punctuation at end)
+  const lastChar = sentence.slice(-1);
+  const hasPunct = /[.!?]/.test(lastChar);
+  const core = hasPunct ? sentence.slice(0, -1) : sentence;
+  const reversed = core.split(/\s+/).reverse().join(' ');
+  const capitalized = reversed.charAt(0).toUpperCase() + reversed.slice(1);
+  return capitalized + (hasPunct ? lastChar : '');
+}
+
+/* ══════════════════════════ EXPORT OPTIONS ══════════════════════════ */
+$('btnCopyMd').onclick = () => {
+  const text = input.value;
+  if (!text) { showStatus('No content to export.', true); return; }
+  const md = text.split(/\n+/).filter(p => p.trim()).map(p => p.trim()).join('\n\n');
+  navigator.clipboard.writeText(md).then(() => showStatus('📝 Copied as Markdown!'));
+};
+
+$('btnCopyJson').onclick = () => {
+  const val       = input.value;
+  const wordsArr  = val.trim().split(/\s+/).filter(w => w.length > 0);
+  const totalWords = wordsArr.length;
+  const secs      = Math.round((totalWords / 200) * 60);
+  const speakSecs = Math.round((totalWords / 130) * 60);
+  const unique    = new Set(wordsArr.map(w => w.toLowerCase().replace(/[^a-z0-9]/g, ''))).size;
+  const avgLen    = totalWords > 0 ? parseFloat((wordsArr.reduce((s,w)=>s+w.replace(/[^a-z0-9]/gi,'').length,0)/totalWords).toFixed(1)) : 0;
+
+  const obj = {
+    words:       totalWords,
+    chars:       val.length,
+    charsNoSpaces: val.replace(/\s/g,'').length,
+    sentences:   val.split(/[.!?]+/).filter(s => s.trim()).length,
+    paragraphs:  val.split(/\n+/).filter(p => p.trim()).length,
+    uniqueWords: unique,
+    avgWordLength: avgLen,
+    readTime:    fmtTime(secs),
+    speakTime:   fmtTime(speakSecs)
+  };
+
+  navigator.clipboard.writeText(JSON.stringify(obj, null, 2)).then(() => showStatus('📊 Stats JSON copied!'));
+};
+
+$('btnDownloadMd').onclick = () => {
+  const text = input.value;
+  if (!text) { showStatus('No content to download.', true); return; }
+  const md   = text.split(/\n+/).filter(p => p.trim()).map(p => p.trim()).join('\n\n');
+  triggerDownload(md, 'ssdk-draft.md', 'text/markdown');
+  showStatus('⬇️ Downloaded as ssdk-draft.md!');
+};
+
+/* ══════════════════════════ EXISTING ACTIONS ══════════════════════════ */
+$('btnCopy').onclick = () => {
+  const text = input.value;
+  if (!text) { showStatus('No content to copy.', true); return; }
+  navigator.clipboard.writeText(text).then(() => showStatus('📋 Text copied to clipboard!'));
+};
+
+$('btnDownload').onclick = () => {
+  const text = input.value;
+  if (!text) return;
+  triggerDownload(text, 'ssdk-word-count-draft.txt', 'text/plain');
+  showStatus('⬇️ Downloaded as ssdk-word-count-draft.txt!');
+};
+
+$('btnClear').onclick = () => {
+  if (synth.speaking) synth.cancel();
+  input.value = '';
+  analyzeText();
+  updateSpeechUI('ended');
+  $('statusMsg').style.display = 'none';
+  $('hlLayer').innerHTML = '';
+};
+
+function triggerDownload(content, filename, type) {
+  const blob = new Blob([content], { type: type + ';charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  URL.revokeObjectURL(url); document.body.removeChild(a);
+}
+
+/* ══════════════════════════ CASING ══════════════════════════ */
+$('btnCaseUpper').onclick = () => { input.value = input.value.toUpperCase(); analyzeText(); showStatus('Converted to UPPERCASE'); };
+$('btnCaseLower').onclick = () => { input.value = input.value.toLowerCase(); analyzeText(); showStatus('Converted to lowercase'); };
+$('btnCaseTitle').onclick = () => {
+  input.value = input.value.toLowerCase().replace(/(^|\s)\S/g, l => l.toUpperCase());
+  analyzeText(); showStatus('Converted to Title Case');
+};
+$('btnCaseSentence').onclick = () => {
+  input.value = input.value.toLowerCase().replace(/(^\s*|[.!?]\s+)([a-z])/g, (m, g1, g2) => g1 + g2.toUpperCase());
+  analyzeText(); showStatus('Converted to Sentence case');
+};
+$('btnCaseSlugify').onclick = () => {
+  input.value = input.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  analyzeText(); showStatus('Converted to slug format');
+};
+
+/* ══════════════════════════ SPEECH ══════════════════════════ */
+$('btnSpeakPlay').onclick = () => {
+  const text = input.value.trim();
+  if (!text) { alert('Please enter some text to speak.'); return; }
+  if (synth.speaking) {
+    if (synth.paused) { synth.resume(); updateSpeechUI('speaking'); }
+    return;
+  }
+  utterance = new SpeechSynthesisUtterance(text);
+  utterance.onend = () => updateSpeechUI('ended');
+  utterance.onerror = () => updateSpeechUI('ended');
+  synth.speak(utterance);
+  updateSpeechUI('speaking');
+};
+$('btnSpeakPause').onclick = () => { if (synth.speaking && !synth.paused) { synth.pause(); updateSpeechUI('paused'); } };
+$('btnSpeakStop').onclick  = () => { if (synth.speaking) { synth.cancel(); updateSpeechUI('ended'); } };
+
+function updateSpeechUI(state) {
+  if (state === 'speaking') {
+    $('btnSpeakPause').style.display = 'inline-flex';
+    $('btnSpeakStop').style.display  = 'inline-flex';
+    $('btnSpeakPlay').style.display  = 'none';
+    $('speechStatus').textContent = '🔊 Reading…';
+    $('speechStatus').style.color = 'var(--accent)';
+  } else if (state === 'paused') {
+    $('btnSpeakPlay').style.display  = 'inline-flex';
+    $('btnSpeakPause').style.display = 'none';
+    $('speechStatus').textContent = '⏸ Paused';
+    $('speechStatus').style.color = 'var(--muted)';
+  } else {
+    $('btnSpeakPlay').style.display  = 'inline-flex';
+    $('btnSpeakPause').style.display = 'none';
+    $('btnSpeakStop').style.display  = 'none';
+    $('speechStatus').textContent = 'Reader Idle';
+    $('speechStatus').style.color = 'var(--muted)';
+  }
+}
+
+/* ══════════════════════════ STATUS MSG ══════════════════════════ */
+let statusTimer = null;
+function showStatus(text, isError = false) {
+  const el = $('statusMsg');
+  el.style.display = 'block';
+  el.textContent   = text;
+  el.style.color   = isError ? '#ff6b6b' : 'var(--accent)';
+  clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+
+/* ══════════════════════════ HELPERS ══════════════════════════ */
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  return s.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ══════════════════════════ LISTENERS ══════════════════════════ */
+input.addEventListener('input', analyzeText);
+$('goalTarget').addEventListener('input', () => updateGoal(parseInt($('statWords').textContent) || 0));
+
+// FAQ Accordion
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.onclick = () => q.parentElement.classList.toggle('open');
+});
+
+// Init
+analyzeText();
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+');
+  const regex   = new RegExp(escaped, 'gi');
+  const matches = (input.value.match(regex) || []).length;
+
+  if (matches === 0) {
+    result.textContent = 'No matches found.';
+    result.style.color = 'var(--muted)';
+    return;
+  }
+
+  input.value = input.value.replace(regex, replace);
+  result.textContent = `✅ Replaced ${matches} occurrence${matches > 1 ? 's' : ''}.`;
+  result.style.color = 'var(--accent)';
+  analyzeText();
+};
+
+/* ══════════════════════════ REPHRASE SUGGESTIONS ══════════════════════════ */
+function updateRephrase(text) {
+  const container = $('rephraseList');
+  const sentences = text.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(s => s.length > 0 && s.split(/\s+/).length > 2);
+
+  if (sentences.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:0.78rem;font-style:italic;text-align:center;padding:10px 0;">Type text to see suggestions…</p>';
+    return;
+  }
+
+  const toShow = sentences.slice(0, 5);
+  let html = '';
+  toShow.forEach((sent, idx) => {
+    const suggestion = rephraseSentence(sent);
+    const origEsc = escHtml(sent.length > 80 ? sent.slice(0, 80) + '…' : sent);
+    const suggEsc = escHtml(suggestion);
+    html += `<div class="rephrase-item">
+      <div class="rephrase-orig">Original: ${origEsc}</div>
+      <div class="rephrase-sugg">💬 ${suggEsc}</div>
+      <button class="rephrase-apply" data-orig="${escAttr(sent)}" data-sugg="${escAttr(suggestion)}">Apply</button>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+
+  container.querySelectorAll('.rephrase-apply').forEach(btn => {
+    btn.onclick = () => {
+      const orig = btn.getAttribute('data-orig');
+      const sugg = btn.getAttribute('data-sugg');
+      // Replace first occurrence in textarea
+      input.value = input.value.replace(orig, sugg);
+      analyzeText();
+      showStatus('✏️ Sentence rephrased and applied!');
+    };
+  });
+}
+
+function rephraseSentence(sentence) {
+  // Strategy 1: swap synonyms
+  const words = sentence.split(/\s+/);
+  let swapped = false;
+  const swappedWords = words.map(w => {
+    const punct = w.match(/[^a-zA-Z0-9]*$/)?.[0] || '';
+    const core  = w.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    if (!swapped && SYNONYMS[core]) {
+      swapped = true;
+      const syn = SYNONYMS[core];
+      // preserve capitalization
+      const repl = w[0] === w[0].toUpperCase() ? syn.charAt(0).toUpperCase() + syn.slice(1) : syn;
+      return repl + punct;
+    }
+    return w;
+  });
+
+  if (swapped) return swappedWords.join(' ');
+
+  // Strategy 2: reverse word order (keep punctuation at end)
+  const lastChar = sentence.slice(-1);
+  const hasPunct = /[.!?]/.test(lastChar);
+  const core = hasPunct ? sentence.slice(0, -1) : sentence;
+  const reversed = core.split(/\s+/).reverse().join(' ');
+  const capitalized = reversed.charAt(0).toUpperCase() + reversed.slice(1);
+  return capitalized + (hasPunct ? lastChar : '');
+}
+
+/* ══════════════════════════ EXPORT OPTIONS ══════════════════════════ */
+$('btnCopyMd').onclick = () => {
+  const text = input.value;
+  if (!text) { showStatus('No content to export.', true); return; }
+  const md = text.split(/\n+/).filter(p => p.trim()).map(p => p.trim()).join('\n\n');
+  navigator.clipboard.writeText(md).then(() => showStatus('📝 Copied as Markdown!'));
+};
+
+$('btnCopyJson').onclick = () => {
+  const val       = input.value;
+  const wordsArr  = val.trim().split(/\s+/).filter(w => w.length > 0);
+  const totalWords = wordsArr.length;
+  const secs      = Math.round((totalWords / 200) * 60);
+  const speakSecs = Math.round((totalWords / 130) * 60);
+  const unique    = new Set(wordsArr.map(w => w.toLowerCase().replace(/[^a-z0-9]/g, ''))).size;
+  const avgLen    = totalWords > 0 ? parseFloat((wordsArr.reduce((s,w)=>s+w.replace(/[^a-z0-9]/gi,'').length,0)/totalWords).toFixed(1)) : 0;
+
+  const obj = {
+    words:       totalWords,
+    chars:       val.length,
+    charsNoSpaces: val.replace(/\s/g,'').length,
+    sentences:   val.split(/[.!?]+/).filter(s => s.trim()).length,
+    paragraphs:  val.split(/\n+/).filter(p => p.trim()).length,
+    uniqueWords: unique,
+    avgWordLength: avgLen,
+    readTime:    fmtTime(secs),
+    speakTime:   fmtTime(speakSecs)
+  };
+
+  navigator.clipboard.writeText(JSON.stringify(obj, null, 2)).then(() => showStatus('📊 Stats JSON copied!'));
+};
+
+$('btnDownloadMd').onclick = () => {
+  const text = input.value;
+  if (!text) { showStatus('No content to download.', true); return; }
+  const md   = text.split(/\n+/).filter(p => p.trim()).map(p => p.trim()).join('\n\n');
+  triggerDownload(md, 'ssdk-draft.md', 'text/markdown');
+  showStatus('⬇️ Downloaded as ssdk-draft.md!');
+};
+
+/* ══════════════════════════ EXISTING ACTIONS ══════════════════════════ */
+$('btnCopy').onclick = () => {
+  const text = input.value;
+  if (!text) { showStatus('No content to copy.', true); return; }
+  navigator.clipboard.writeText(text).then(() => showStatus('📋 Text copied to clipboard!'));
+};
+
+$('btnDownload').onclick = () => {
+  const text = input.value;
+  if (!text) return;
+  triggerDownload(text, 'ssdk-word-count-draft.txt', 'text/plain');
+  showStatus('⬇️ Downloaded as ssdk-word-count-draft.txt!');
+};
+
+$('btnClear').onclick = () => {
+  if (synth.speaking) synth.cancel();
+  input.value = '';
+  analyzeText();
+  updateSpeechUI('ended');
+  $('statusMsg').style.display = 'none';
+  $('hlLayer').innerHTML = '';
+};
+
+function triggerDownload(content, filename, type) {
+  const blob = new Blob([content], { type: type + ';charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  URL.revokeObjectURL(url); document.body.removeChild(a);
+}
+
+/* ══════════════════════════ CASING ══════════════════════════ */
+$('btnCaseUpper').onclick = () => { input.value = input.value.toUpperCase(); analyzeText(); showStatus('Converted to UPPERCASE'); };
+$('btnCaseLower').onclick = () => { input.value = input.value.toLowerCase(); analyzeText(); showStatus('Converted to lowercase'); };
+$('btnCaseTitle').onclick = () => {
+  input.value = input.value.toLowerCase().replace(/(^|\s)\S/g, l => l.toUpperCase());
+  analyzeText(); showStatus('Converted to Title Case');
+};
+$('btnCaseSentence').onclick = () => {
+  input.value = input.value.toLowerCase().replace(/(^\s*|[.!?]\s+)([a-z])/g, (m, g1, g2) => g1 + g2.toUpperCase());
+  analyzeText(); showStatus('Converted to Sentence case');
+};
+$('btnCaseSlugify').onclick = () => {
+  input.value = input.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  analyzeText(); showStatus('Converted to slug format');
+};
+
+/* ══════════════════════════ SPEECH ══════════════════════════ */
+$('btnSpeakPlay').onclick = () => {
+  const text = input.value.trim();
+  if (!text) { alert('Please enter some text to speak.'); return; }
+  if (synth.speaking) {
+    if (synth.paused) { synth.resume(); updateSpeechUI('speaking'); }
+    return;
+  }
+  utterance = new SpeechSynthesisUtterance(text);
+  utterance.onend = () => updateSpeechUI('ended');
+  utterance.onerror = () => updateSpeechUI('ended');
+  synth.speak(utterance);
+  updateSpeechUI('speaking');
+};
+$('btnSpeakPause').onclick = () => { if (synth.speaking && !synth.paused) { synth.pause(); updateSpeechUI('paused'); } };
+$('btnSpeakStop').onclick  = () => { if (synth.speaking) { synth.cancel(); updateSpeechUI('ended'); } };
+
+function updateSpeechUI(state) {
+  if (state === 'speaking') {
+    $('btnSpeakPause').style.display = 'inline-flex';
+    $('btnSpeakStop').style.display  = 'inline-flex';
+    $('btnSpeakPlay').style.display  = 'none';
+    $('speechStatus').textContent = '🔊 Reading…';
+    $('speechStatus').style.color = 'var(--accent)';
+  } else if (state === 'paused') {
+    $('btnSpeakPlay').style.display  = 'inline-flex';
+    $('btnSpeakPause').style.display = 'none';
+    $('speechStatus').textContent = '⏸ Paused';
+    $('speechStatus').style.color = 'var(--muted)';
+  } else {
+    $('btnSpeakPlay').style.display  = 'inline-flex';
+    $('btnSpeakPause').style.display = 'none';
+    $('btnSpeakStop').style.display  = 'none';
+    $('speechStatus').textContent = 'Reader Idle';
+    $('speechStatus').style.color = 'var(--muted)';
+  }
+}
+
+/* ══════════════════════════ STATUS MSG ══════════════════════════ */
+let statusTimer = null;
+function showStatus(text, isError = false) {
+  const el = $('statusMsg');
+  el.style.display = 'block';
+  el.textContent   = text;
+  el.style.color   = isError ? '#ff6b6b' : 'var(--accent)';
+  clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+
+/* ══════════════════════════ HELPERS ══════════════════════════ */
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  return s.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* ══════════════════════════ LISTENERS ══════════════════════════ */
+input.addEventListener('input', analyzeText);
+$('goalTarget').addEventListener('input', () => updateGoal(parseInt($('statWords').textContent) || 0));
+
+// FAQ Accordion
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.onclick = () => q.parentElement.classList.toggle('open');
+});
+
+// Init
+analyzeText();
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

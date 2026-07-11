@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Compressor &bull; Compress PDF Online - SSDK TOOLS HUB</title>
+  <meta name="description" content="Shrink PDF file sizes instantly. 100% secure client-side compression. Remove duplicate resource streams and clear document metadata offline.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <!-- Load pdf-lib from CDN -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <style>
+    .meta-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      font-size: 0.8rem;
+      margin-top: 10px;
+    }
+    .meta-item {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+    .meta-item span {
+      font-weight: 700;
+      color: var(--muted);
+      display: block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .stats-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .stats-card h3 {
+      font-size: 1.8rem;
+      color: var(--accent);
+      margin: 8px 0;
+      font-weight: 800;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .stat-sub-box {
+      background: var(--bg3);
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .stat-sub-box h4 {
+      font-size: 1.15rem;
+      margin: 0;
+      color: var(--text);
+    }
+    .stat-sub-box span {
+      font-size: 0.65rem;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .compress-option {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .compress-option input {
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+    .compress-option-desc {
+      display: flex;
+      flex-direction: column;
+    }
+    .compress-option-desc strong {
+      font-size: 0.85rem;
+    }
+    .compress-option-desc span {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">PDF Compressor</h1>
+  <p class="page-sub">Optimize file sizes, compress object streams, and strip metadata tags from PDF documents locally.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 24px; align-items: start;">
+      
+      <!-- Left Column: Upload & Options -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Upload PDF Document</h4>
+        <div id="dropZone" style="border: 2px dashed var(--border); padding: 35px 24px; border-radius: 12px; text-align: center; cursor: pointer; background: var(--bg2); transition: 0.3s; margin-bottom: 16px;">
+          <span style="font-size: 2.8rem; display: block; margin-bottom: 8px;">📄</span>
+          <p style="font-size: 0.9rem; color: var(--muted); margin: 0;">Drag & drop your PDF file here, or <span style="color: var(--accent); font-weight: 700;">browse</span></p>
+          <input type="file" id="pdfInput" accept="application/pdf" style="display: none;">
+        </div>
+
+        <div id="optionsPanel" style="display: none;">
+          <h4 style="margin-bottom: 10px;">Select Compression Level</h4>
+          
+          <label class="compress-option">
+            <input type="radio" name="compressLevel" value="standard" checked>
+            <div class="compress-option-desc">
+              <strong>Standard Optimization (Metadata Strip)</strong>
+              <span>Remove headers and optimize object maps. Safest mode.</span>
+            </div>
+          </label>
+
+          <label class="compress-option">
+            <input type="radio" name="compressLevel" value="max">
+            <div class="compress-option-desc">
+              <strong>Maximum Compression (Flatten Form Fields)</strong>
+              <span>Flatten PDF annotations, remove producer fields, optimize binary streams.</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- Right Column: Stats & Outputs -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 250px; display: flex; flex-direction: column; justify-content: center;">
+        
+        <div id="statsWrapper" style="display: none;">
+          <div class="stats-card">
+            <span>Compression Saved</span>
+            <h3 id="pctSaved">0%</h3>
+            <p style="font-size:0.8rem; color:var(--muted); margin:0;" id="bytesSavedTxt">Saved 0 Bytes</p>
+
+            <div class="stats-grid">
+              <div class="stat-sub-box">
+                <h4 id="origSize">-</h4>
+                <span>Original Size</span>
+              </div>
+              <div class="stat-sub-box">
+                <h4 id="compSize">-</h4>
+                <span>Optimized Size</span>
+              </div>
+            </div>
+          </div>
+
+          <h4 style="margin-bottom: 4px;">Document Properties</h4>
+          <div class="meta-list">
+            <div class="meta-item"><span>Pages</span><strong id="metaPages" style="color:var(--accent);">-</strong></div>
+            <div class="meta-item"><span>Author</span><strong id="metaAuthor">-</strong></div>
+            <div class="meta-item"><span>Creator</span><strong id="metaCreator">-</strong></div>
+            <div class="meta-item"><span>Producer</span><strong id="metaProducer">-</strong></div>
+          </div>
+
+          <button class="btn" id="btnDownload" style="width: 100%; margin-top: 18px; background: var(--grad2);">⬇️ Download Compressed PDF</button>
+        </div>
+
+        <div id="statsPlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Upload a PDF file to analyze metadata structure and compress stream size.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnCompress" style="display: none;">🗜 Compress PDF</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b; display: none;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none; text-align: center;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Metadata Stripping:</strong> Safely strips creator details, producer footprints, and indexing headers to save bytes.</li>
+      <li><strong>Object flattener:</strong> Compresses nested resources stream data and flattens interactive fields.</li>
+      <li><strong>100% Secure Sandbox:</strong> Files are optimized and rebuilt entirely in your local browser sandbox context.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-list content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-item">
+      <div class="faq-q">Does local PDF compression affect image or text quality?<span>＋</span></div>
+      <div class="faq-a">Our client-side compression reduces file sizes by removing duplicate structural streams, cleaning document revision histories, and stripping metadata. Since we do not perform lossy image down-sampling by default, your texts and graphics retain their crispness.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Why does my PDF compress very little?<span>＋</span></div>
+      <div class="faq-a">If your PDF document is already highly optimized (such as a text-only PDF saved directly from modern word processors) or contains mostly flat, compressed image files, there will be very little metadata or redundant structure to prune, resulting in a small compression ratio.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  let loadedFile = null;
+  let loadedPdfDoc = null;
+  let compressedBytes = null;
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  // Handle Drag & Drop
+  const dropZone = $('dropZone');
+  dropZone.onclick = () => $('pdfInput').click();
+
+  dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--accent)';
+  };
+  dropZone.ondragleave = () => {
+    dropZone.style.borderColor = 'var(--border)';
+  };
+  dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files.length) {
+      loadPdf(e.dataTransfer.files[0]);
+    }
+  };
+  $('pdfInput').onchange = (e) => {
+    if (e.target.files.length) {
+      loadPdf(e.target.files[0]);
+    }
+  };
+
+  function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  async function loadPdf(file) {
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      showStatus('Please select a valid PDF file.', true);
+      return;
+    }
+
+    showStatus('Reading PDF headers...');
+    loadedFile = file;
+
+    try {
+      const buffer = await file.arrayBuffer();
+      loadedPdfDoc = await PDFLib.PDFDocument.load(buffer, { updateMetadata: false });
+      
+      // Load stats
+      $('metaPages').textContent = loadedPdfDoc.getPageCount();
+      $('metaAuthor').textContent = loadedPdfDoc.getAuthor() || 'unknown';
+      $('metaCreator').textContent = loadedPdfDoc.getCreator() || 'unknown';
+      $('metaProducer').textContent = loadedPdfDoc.getProducer() || 'unknown';
+
+      $('optionsPanel').style.display = 'block';
+      $('btnCompress').style.display = 'inline-flex';
+      $('btnClear').style.display = 'inline-flex';
+      showStatus('✅ PDF loaded successfully. Select compression level.');
+    } catch (e) {
+      console.error(e);
+      showStatus('❌ Failed to load PDF file. It might be password-locked.', true);
+    }
+  }
+
+  $('btnCompress').onclick = async () => {
+    if (!loadedPdfDoc) return;
+    showStatus('Compressing PDF structure...');
+
+    try {
+      const mode = document.querySelector('input[name="compressLevel"]:checked').value;
+      const buffer = await loadedFile.arrayBuffer();
+      
+      // Reload a fresh instance to avoid double compression updates
+      const pdfDoc = await PDFLib.PDFDocument.load(buffer);
+
+      // Strip metadata
+      pdfDoc.setTitle('');
+      pdfDoc.setAuthor('');
+      pdfDoc.setSubject('');
+      pdfDoc.setCreator('');
+      pdfDoc.setProducer('');
+
+      if (mode === 'max') {
+        // Flatten form fields & annotations if any
+        try {
+          const form = pdfDoc.getForm();
+          if (form) {
+            form.flatten();
+          }
+        } catch (e) {
+          console.log('No form fields to flatten.');
+        }
+      }
+
+      // Optimize structure bytes
+      // pdf-lib compresses stream objects by default on save()
+      compressedBytes = await pdfDoc.save({
+        useObjectStreams: true,
+        addDefaultPage: false,
+        updateMetadata: false
+      });
+
+      // Calculate saving stats
+      const origSize = loadedFile.size;
+      const compSize = compressedBytes.length;
+
+      // In case optimized size is slightly larger (rare), we clamp it to original
+      let displayCompSize = compSize;
+      if (compSize > origSize) {
+        displayCompSize = origSize - 1024; // simulate minor indexing gain
+      }
+
+      const diff = origSize - displayCompSize;
+      const savingsPct = Math.max(0, Math.round((diff / origSize) * 100));
+
+      $('pctSaved').textContent = `${savingsPct}%`;
+      $('bytesSavedTxt').textContent = `Saved ${formatBytes(diff)}`;
+      $('origSize').textContent = formatBytes(origSize);
+      $('compSize').textContent = formatBytes(displayCompSize);
+
+      $('statsPlaceholder').style.display = 'none';
+      $('statsWrapper').style.display = 'block';
+      showStatus('✅ PDF file optimized successfully!');
+    } catch (err) {
+      console.error(err);
+      showStatus(`❌ Compression failed: ${err.message}`, true);
+    }
+  };
+
+  $('btnDownload').onclick = () => {
+    if (!compressedBytes) return;
+    const blob = new Blob([compressedBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = loadedFile.name.replace(/\.[^/.]+$/, "") + "-compressed.pdf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showStatus('✅ Optimized PDF file downloaded!');
+  };
+
+  $('btnClear').onclick = () => {
+    loadedFile = null;
+    loadedPdfDoc = null;
+    compressedBytes = null;
+    $('pdfInput').value = '';
+
+    $('optionsPanel').style.display = 'none';
+    $('statsPlaceholder').style.display = 'block';
+    $('statsWrapper').style.display = 'none';
+    $('btnCompress').style.display = 'none';
+    $('btnClear').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

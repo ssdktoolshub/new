@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TSH Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze Thyroid Stimulating Hormone (TSH) levels online. Evaluate thyroid function, detect hypothyroidism and hyperthyroidism with clinical insights.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+
+  <!-- html2canvas for PNG export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color:    #3b82f6;
+      --high-color:   #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) { .lab-grid { grid-template-columns: 1fr; } }
+
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255,255,255,0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+
+    .input-wrapper { display: flex; flex-direction: column; gap: 4px; }
+    .input-wrapper label { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+    .input-wrapper input,
+    .input-wrapper select {
+      padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg3); color: var(--text); outline: none;
+      font-size: 0.9rem; transition: all 0.25s;
+    }
+    .input-wrapper input:focus,
+    .input-wrapper select:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--glow); }
+
+    .lang-toggle-container { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+    .lang-btn {
+      background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+      padding: 6px 14px; border-radius: 20px; cursor: pointer;
+      font-size: 0.8rem; font-weight: 700; transition: all 0.3s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 10px var(--glow); }
+
+    .results-display {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px; min-height: 400px;
+    }
+
+    .results-placeholder { text-align: center; padding: 80px 20px; color: var(--muted); }
+    .results-placeholder .icon { font-size: 3.5rem; margin-bottom: 12px; opacity: 0.5; display: block; }
+
+    .report-card { display: flex; flex-direction: column; gap: 16px; }
+
+    .patient-summary {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px;
+      display: flex; justify-content: space-between; font-size: 0.85rem;
+    }
+    .patient-summary span strong { color: var(--accent); }
+
+    .gauge-container {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; text-align: center; position: relative;
+    }
+    .val-large { font-size: 3.2rem; font-weight: 900; line-height: 1.1; margin-bottom: 4px; }
+    .status-label { font-weight: 800; font-size: 1.1rem; text-transform: uppercase; margin-bottom: 16px; }
+
+    .range-slider-bar {
+      height: 16px; border-radius: 8px;
+      background: linear-gradient(to right,
+        var(--low-color) 0%,
+        var(--normal-color) 35%,
+        var(--high-color) 70%,
+        var(--critical-color) 100%
+      );
+      position: relative; margin-bottom: 10px;
+    }
+    .range-pointer {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #fff; border: 3px solid var(--bg1);
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+    .range-ticks { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); font-weight: 700; }
+
+    .insight-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-top: 14px;
+    }
+    .insight-card h5 { font-size: 0.95rem; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .insight-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+    .insight-card ul { margin-left: 18px; font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+
+    .history-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 16px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: var(--bg3); border-radius: 6px;
+      font-size: 0.75rem; border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245,158,11,0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px; padding: 14px; margin-top: 16px;
+      font-size: 0.8rem; color: #fbbf24; line-height: 1.5;
+    }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding-top: 0 !important; }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon { display: none !important; }
+      .results-display { border: none !important; background: #fff !important; color: #000 !important; min-height: auto !important; padding: 0 !important; }
+      .gauge-container, .insight-card { border: 1px solid #ddd !important; background: #fff !important; color: #000 !important; }
+      .lab-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumb -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">TSH Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze Thyroid Stimulating Hormone (TSH) levels to evaluate thyroid function and screen for hypothyroidism or hyperthyroidism.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Tool Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🦋 TSH Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="miul" selected>mIU/L</option>
+                <option value="uiuml">µIU/mL</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label for="valTSH" id="inputLabel" data-translate="labelTSH">TSH Value (mIU/L)</label>
+              <input type="number" step="0.01" id="valTSH" placeholder="e.g. 2.5" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info note -->
+        <div style="font-size:0.78rem; color:var(--muted); padding:8px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:14px; line-height:1.5;">
+          <strong style="color:var(--text);">ℹ️ Note:</strong> <span data-translate="unitNote">mIU/L and µIU/mL are equivalent units — no conversion needed.</span>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width:100%; justify-content:center;" onclick="analyzeTSH()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze TSH</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🦋</span>
+          <h4 data-translate="placeholderTitle">Thyroid Analysis Pending</h4>
+          <p data-translate="placeholderDesc">Enter your TSH level and click Analyze to display thyroid function diagnostic summaries.</p>
+        </div>
+
+        <div class="report-card" id="reportCardSec" style="display:none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Thyroid Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" title="Copy" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" title="Print" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" title="Save Image" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: TSH (Thyroid Stimulating Hormone)</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resTSHVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">mIU/L</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left:50%;"></div>
+            </div>
+            <div class="range-ticks">
+              <span id="tickLow" style="color:var(--low-color);">&lt; 0.4</span>
+              <span id="tickNormalRange" style="color:var(--normal-color);">0.4 – 4.0</span>
+              <span id="tickHighBorder" style="color:var(--high-color);">4.0 – 10.0</span>
+              <span id="tickCritical" style="color:var(--critical-color);">&gt; 10.0</span>
+            </div>
+          </div>
+
+          <!-- Dynamic insight section -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: TSH</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is TSH?</strong><br><span data-translate="eduA1">TSH (Thyroid Stimulating Hormone) is produced by the pituitary gland and regulates the thyroid gland. It instructs the thyroid to produce T3 and T4 hormones. TSH is the most sensitive first-line test for thyroid dysfunction.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">How does TSH reflect thyroid function?</strong><br><span data-translate="eduA2">High TSH indicates the pituitary is working harder because the thyroid is underactive (Hypothyroidism). Low TSH indicates the thyroid is overactive, suppressing pituitary output (Hyperthyroidism). TSH operates via a negative feedback loop with T3/T4.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What is Subclinical vs Overt Hypothyroidism?</strong><br><span data-translate="eduA3">Subclinical Hypothyroidism: TSH 4.0–10.0 with normal fT4 — mild dysfunction, may not need treatment. Overt Hypothyroidism: TSH &gt; 10.0 with low fT4 — significant thyroid failure requiring thyroid hormone replacement therapy.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent TSH Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQ Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Medical Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for thyroid evaluation and treatment decisions.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical &amp; Lab Tools",
+      toolTitle: "TSH Analyzer",
+      toolDesc: "Analyze Thyroid Stimulating Hormone (TSH) levels to evaluate thyroid function and screen for hypothyroidism or hyperthyroidism.",
+      inputsTitle: "🦋 TSH Parameters",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      labelTSH: "TSH Value (mIU/L)",
+      unitNote: "mIU/L and µIU/mL are equivalent units — no conversion needed.",
+      btnAnalyze: "Analyze TSH",
+      placeholderTitle: "Thyroid Analysis Pending",
+      placeholderDesc: "Enter your TSH level and click Analyze to display thyroid function diagnostic summaries.",
+      reportTitle: "🔬 Thyroid Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent TSH Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for thyroid evaluation and treatment decisions.",
+      titleEdu: "📚 Clinical Pathology Notes: TSH",
+      eduQ1: "What is TSH?",
+      eduA1: "TSH (Thyroid Stimulating Hormone) is produced by the pituitary gland and regulates the thyroid gland. It instructs the thyroid to produce T3 and T4 hormones. TSH is the most sensitive first-line test for thyroid dysfunction.",
+      eduQ2: "How does TSH reflect thyroid function?",
+      eduA2: "High TSH indicates the pituitary is working harder because the thyroid is underactive (Hypothyroidism). Low TSH indicates the thyroid is overactive, suppressing pituitary output (Hyperthyroidism). TSH operates via a negative feedback loop with T3/T4.",
+      eduQ3: "What is Subclinical vs Overt Hypothyroidism?",
+      eduA3: "Subclinical Hypothyroidism: TSH 4.0–10.0 with normal fT4 — mild dysfunction, may not need treatment. Overt Hypothyroidism: TSH > 10.0 with low fT4 — significant thyroid failure requiring thyroid hormone replacement therapy.",
+      badgeLow: "Low TSH — Hyperthyroidism Risk",
+      badgeNormal: "Normal TSH — Euthyroid",
+      badgeHighBorderline: "Subclinical Hypothyroidism (TSH 4–10)",
+      badgeCriticalHigh: "Overt Hypothyroidism — Critical (TSH > 10)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Management Tips",
+      titleConsult: "When to See a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "TSH বিশ্লেষক",
+      toolDesc: "থাইরয়েড স্টিমুলেটিং হরমোন (TSH) মাত্রা বিশ্লেষণ করে থাইরয়েড গ্রন্থির কার্যকারিতা মূল্যায়ন করুন।",
+      inputsTitle: "🦋 TSH ইনপুট",
+      clearBtn: "মুছুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelTSH: "TSH মান (mIU/L)",
+      unitNote: "mIU/L এবং µIU/mL একই একক — কোনো রূপান্তরের প্রয়োজন নেই।",
+      btnAnalyze: "TSH বিশ্লেষণ করুন",
+      placeholderTitle: "থাইরয়েড বিশ্লেষণ অমীমাংসিত",
+      placeholderDesc: "TSH মান লিখুন এবং বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 থাইরয়েড ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক TSH রিপোর্টসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড নেই।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য অবশ্যই ডাক্তারের পরামর্শ নিন।",
+      titleEdu: "📚 ক্লিনিক্যাল নোটস: TSH",
+      eduQ1: "TSH কী?",
+      eduA1: "TSH (থাইরয়েড স্টিমুলেটিং হরমোন) পিটুইটারি গ্রন্থি থেকে নিঃসৃত হয় এবং থাইরয়েড গ্রন্থিকে T3 ও T4 হরমোন তৈরি করতে নির্দেশ দেয়। এটি থাইরয়েডের অবস্থা মূল্যায়নের সবচেয়ে সংবেদনশীল প্রথম-সারির পরীক্ষা।",
+      eduQ2: "TSH কীভাবে থাইরয়েডের কার্যক্ষমতা নির্দেশ করে?",
+      eduA2: "উচ্চ TSH মানে থাইরয়েড কম কাজ করছে (হাইপোথাইরয়েডিজম)। কম TSH মানে থাইরয়েড বেশি সক্রিয় (হাইপারথাইরয়েডিজম)। TSH নেগেটিভ ফিডব্যাক লুপের মাধ্যমে T3/T4 এর সাথে কাজ করে।",
+      eduQ3: "সাবক্লিনিক্যাল ও ওভার্ট হাইপোথাইরয়েডিজমের পার্থক্য কী?",
+      eduA3: "সাবক্লিনিক্যাল: TSH ৪–১০ কিন্তু fT4 স্বাভাবিক — হালকা সমস্যা। ওভার্ট: TSH > ১০ ও fT4 কম — থাইরয়েড হরমোন প্রতিস্থাপন থেরাপি প্রয়োজন।",
+      badgeLow: "কম TSH — হাইপারথাইরয়েডিজমের ঝুঁকি",
+      badgeNormal: "স্বাভাবিক TSH — সুস্থ থাইরয়েড",
+      badgeHighBorderline: "সাবক্লিনিক্যাল হাইপোথাইরয়েডিজম (TSH ৪–১০)",
+      badgeCriticalHigh: "ওভার্ট হাইপোথাইরয়েডিজম — জরুরি (TSH > ১০)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "ব্যবস্থাপনা পরামর্শ",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "टीएसएच विश्लेषक",
+      toolDesc: "थायराइड फ़ंक्शन का मूल्यांकन करने और हाइपोथायरायडिज्म या हाइपरथायरायडिज्म की जांच करने के लिए थायराइड उत्तेजक हार्मोन (टीएसएच) के स्तर का विश्लेषण करें।",
+      inputsTitle: "🦋 टीएसएच पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      labelTSH: "टीएसएच मान (एमआईयू/एल)",
+      unitNote: "mIU/L और µIU/mL समतुल्य इकाइयाँ हैं - किसी रूपांतरण की आवश्यकता नहीं है।",
+      btnAnalyze: "टीएसएच का विश्लेषण करें",
+      placeholderTitle: "थायराइड विश्लेषण लंबित",
+      placeholderDesc: "अपना टीएसएच स्तर दर्ज करें और थायरॉयड फ़ंक्शन डायग्नोस्टिक सारांश प्रदर्शित करने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬थायराइड डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया टीएसएच रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। थायरॉयड मूल्यांकन और उपचार निर्णयों के लिए हमेशा एक योग्य चिकित्सक से परामर्श लें।",
+      titleEdu: "📚 क्लिनिकल पैथोलॉजी नोट्स: टीएसएच",
+      eduQ1: "टीएसएच क्या है?",
+      eduA1: "टीएसएच (थायराइड स्टिमुलेटिंग हार्मोन) पिट्यूटरी ग्रंथि द्वारा निर्मित होता है और थायरॉयड ग्रंथि को नियंत्रित करता है। यह थायरॉइड को T3 और T4 हार्मोन का उत्पादन करने का निर्देश देता है। टीएसएच थायरॉइड डिसफंक्शन के लिए सबसे संवेदनशील प्रथम-पंक्ति परीक्षण है।",
+      eduQ2: "टीएसएच थायराइड फ़ंक्शन को कैसे दर्शाता है?",
+      eduA2: "उच्च टीएसएच इंगित करता है कि पिट्यूटरी अधिक मेहनत कर रही है क्योंकि थायरॉयड कम सक्रिय है (हाइपोथायरायडिज्म)। कम टीएसएच इं���ित करता है कि थायरॉयड अति सक्रिय है, पिट्यूटरी आउटपुट (हाइपरथायरायडिज्म) को दबा रहा है। TSH T3/T4 के साथ एक नकारात्मक फीडबैक लूप के माध्यम से संचालित होता है।",
+      eduQ3: "सबक्लिनिकल बनाम प्रत्यक्ष हाइपोथायरायडिज्म क्या है?",
+      eduA3: "सबक्लिनिकल हाइपोथायरायडिज्म: सामान्य एफटी4 के साथ टीएसएच 4.0-10.0 - हल्की शिथिलता, उपचार की आवश्यकता नहीं ���ो सकती है। प्रत्यक्ष हाइपोथायरायडिज्म: टीएसएच > 10.0 कम एफटी4 के साथ - महत्वपूर्ण थायराइड विफलता के लिए थायराइड हार्मोन रिप्लेसमेंट थेरेपी की आवश्यकता होती है।",
+      badgeLow: "कम टीएसएच - हाइपरथायरायडिज्म जोखिम",
+      badgeNormal: "सामान्य टीएसएच - यूथायरॉइड",
+      badgeHighBorderline: "उपनैदानिक हाइपोथायरायडिज्म (टीएसएच 4-10)",
+      badgeCriticalHigh: "प्रत्यक्ष हाइपोथायरायडिज्म - गंभीर (टीएसएच > 10)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "प्रबंधन युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is the normal TSH range?", a: "Normal TSH: 0.4 – 4.0 mIU/L. This can vary slightly by lab and by trimester in pregnancy." },
+      { q: "What does high TSH mean?", a: "High TSH (>4.0) indicates the pituitary is trying to stimulate an underactive thyroid (Hypothyroidism). TSH >10 is considered Overt Hypothyroidism." },
+      { q: "What does low TSH mean?", a: "Low TSH (<0.4) means the thyroid is overactive, producing too much T3/T4, suppressing pituitary output — a sign of Hyperthyroidism." },
+      { q: "What causes Hypothyroidism?", a: "Common causes include Hashimoto's thyroiditis (autoimmune), iodine deficiency, previous thyroid surgery, radiation therapy, or certain medications like amiodarone or lithium." },
+      { q: "What causes Hyperthyroidism?", a: "Common causes include Graves' disease (autoimmune), toxic multinodular goiter, toxic thyroid adenoma, or excessive iodine intake." },
+      { q: "Is TSH alone enough for diagnosis?", a: "TSH is the best initial screening test. However, fT3 and fT4 are also needed for a complete picture, especially when TSH is abnormal." }
+    ],
+    bn: [
+      { q: "TSH এর স্বাভাবিক মাত্রা কত?", a: "স্বাভাবিক TSH: ০.৪ থেকে ৪.০ mIU/L। গর্ভাবস্থায় এই মাত্রা সামান্য ভিন্ন হতে পারে।" },
+      { q: "উচ্চ TSH কী নির্দেশ করে?", a: "উচ্চ TSH (>৪.০) মানে থাইরয়েড কম কাজ করছে (হাইপোথাইরয়েডিজম)। TSH >১০ হলে এটি ওভার্ট হাইপোথাইরয়েডিজম।" },
+      { q: "কম TSH কী বোঝায়?", a: "কম TSH (<০.৪) মানে থাইরয়েড অতিরিক্ত সক্রিয় (হাইপারথাইরয়েডিজম) এবং পিটুইটারিকে দমিয়ে রাখছে।" },
+      { q: "হাইপোথাইরয়েডিজমের কারণ কী?", a: "হাশিমোটো থাইরয়েডাইটিস (অটোইমিউন), আয়োডিনের অভাব, থাইরয়েড সার্জারি, বিকিরণ থেরাপি বা কিছু ওষুধ (অ্যামিওডেরোন, লিথিয়াম) প্রধান কারণ।" },
+      { q: "হাইপারথাইরয়েডিজমের কারণ কী?", a: "গ্রেভস রোগ (অটোইমিউন), টক্সিক মাল্টিনোডুলার গলগণ্ড, থাইরয়েড অ্যাডেনোমা বা অতিরিক্ত আয়োডিন গ্রহণ।" },
+      { q: "শুধু TSH দিয়ে কি রোগ নির্ণয় করা যায়?", a: "TSH প্রথম-সারির পরীক্ষা, তবে পূর্ণ মূল্যায়নে fT3 ও fT4 ও পরীক্ষা করা প্রয়োজন।" }
+    ],
+    hi: [
+      { q: "सामान्य TSH रेंज क्या है?", a: "सामान्य टीएसएच: 0.4 - 4.0 एमआईयू/एल। यह गर्भावस्था में प्रयोगशाला और तिमाही के अनुसार थोड़ा भिन्न हो सकता है।" },
+      { q: "उच्च टीएसएच का क्या मतलब है?", a: "उच्च टीएसएच (>4.0) इंगित करता है कि पिट्यूटरी एक निष्क्रिय थायरॉयड (हाइपोथायरायडिज्म) को उत्तेजित करने की कोशिश कर रहा है। टीएसएच >10 को प्रत्यक्ष हाइपोथायरायडिज्म माना जाता है।" },
+      { q: "कम TSH का क्या मतलब है?", a: "कम टीएसएच (<0.4) का मतलब है कि थायरॉयड अति सक्रिय है, बहुत अधिक टी3/टी4 का उत्पादन कर रहा है, पिट्यूटरी आउटपुट को दबा रहा है - हाइपरथायरायडिज्म का संकेत।" },
+      { q: "हाइपोथायरायडिज्म का क्या कारण है?", a: "सामान्य कारणों में हाशिमोटो थायरॉयडिटिस (ऑटोइम्यून), आयोडीन की कमी, पिछली थायरॉयड सर्जरी, विकिरण चिकित्सा, या अमियोडेरोन या लिथियम जैसी कुछ दवाएं शामिल हैं।" },
+      { q: "हाइपरथायरायडिज्म का क्या कारण है?", a: "सामान्य कारणों में ग्रेव्स रोग (ऑटोइम्यून), विषाक्त बहुकोशिकीय गण्डमाला, विषाक्त थायरॉयड एडेनोमा, या अत्यधिक आयोडीन का सेवन शामिल हैं।" },
+      { q: "क्या केवल टीएसएच ही निदान के लिए पर्याप्त है?", a: "टीएसएच सबसे अच्छा प्रारंभिक स्क्रीनिंग टेस्ट है। हालाँकि, पूरी तस्वीर के लिए fT3 और fT4 की भी आवश्यकता होती है, खासकर जब TSH असामान्य हो।" }
+    ]
+  };
+
+  const tshInsights = {
+    en: {
+      low: {
+        desc: "Your TSH is below the normal range, suggesting the thyroid gland may be overactive (Hyperthyroidism). The pituitary has reduced its TSH output because excess thyroid hormones are circulating.",
+        factors: ["Graves' disease (autoimmune antibodies stimulating thyroid)", "Toxic multinodular goiter", "Excess thyroid hormone supplementation", "Thyroiditis (inflammation causing hormone leak)"],
+        symptoms: ["Rapid heartbeat (palpitations), tremors", "Unintentional weight loss", "Heat intolerance, sweating", "Anxiety, irritability, insomnia", "Muscle weakness, frequent bowel movements"],
+        prevention: ["Avoid excess iodine (seaweed, supplements)", "Manage stress; practice mindfulness", "Follow up with antithyroid medication if prescribed", "Regular thyroid monitoring every 3–6 months"],
+        consult: "Consult an endocrinologist. Further tests (fT3, fT4, TSH receptor antibodies) and antithyroid therapy or radioiodine treatment may be indicated."
+      },
+      normal: {
+        desc: "Your TSH level is within the optimal reference range, indicating normal thyroid function (Euthyroid state). The pituitary-thyroid axis is in healthy balance.",
+        factors: ["Healthy thyroid gland with adequate iodine intake", "Normal pituitary gland function"],
+        symptoms: ["No significant thyroid-related symptoms expected"],
+        prevention: ["Maintain adequate iodine via diet (iodized salt, seafood)", "Avoid excessive stress", "Annual thyroid function screening if family history present", "Stay physically active"],
+        consult: "Continue regular health check-ups annually. No immediate thyroid intervention needed."
+      },
+      highBorderline: {
+        desc: "Your TSH is mildly elevated (Subclinical Hypothyroidism). The thyroid gland is producing slightly less hormone than needed, and the pituitary is compensating with higher TSH output. fT4 levels are usually still normal at this stage.",
+        factors: ["Early Hashimoto's thyroiditis", "Mild iodine deficiency", "Recovery phase after thyroiditis", "Certain medications (lithium, amiodarone)"],
+        symptoms: ["Fatigue and mild weight gain", "Mild cold intolerance", "Slightly dry skin or hair", "Difficulty concentrating"],
+        prevention: ["Ensure adequate dietary iodine", "Repeat TSH in 3–6 months", "Monitor for progression to overt hypothyroidism", "Discuss selenium supplementation with your doctor"],
+        consult: "Consult your doctor for repeat testing and to assess whether thyroid hormone replacement therapy (levothyroxine) is needed, especially if symptomatic or pregnant."
+      },
+      criticalHigh: {
+        desc: "Your TSH is critically elevated (Overt Hypothyroidism). The thyroid gland is severely underactive, with grossly insufficient T3/T4 production. This requires prompt medical treatment.",
+        factors: ["Hashimoto's thyroiditis (advanced autoimmune destruction)", "Thyroid gland removal or ablation", "Severe iodine deficiency", "Pituitary adenoma with TSH-secreting tumor (rare)"],
+        symptoms: ["Extreme fatigue and weakness", "Significant weight gain, puffy face and swelling", "Severe cold intolerance", "Constipation, slowed heart rate (bradycardia)", "Depression, memory problems, slowed reflexes", "In extreme cases: Myxedema coma (life-threatening)"],
+        prevention: ["Do not stop thyroid medication without medical guidance", "Ensure adequate iodine intake", "Watch for worsening symptoms"],
+        consult: "⚠️ URGENT: See an endocrinologist immediately. Thyroid hormone replacement (levothyroxine) is required. Myxedema coma is a medical emergency if untreated."
+      }
+    },
+    bn: {
+      low: {
+        desc: "আপনার TSH স্বাভাবিকের নিচে, যা হাইপারথাইরয়েডিজমের ইঙ্গিত দেয়। থাইরয়েড গ্রন্থি অতিরিক্ত সক্রিয় হওয়ায় পিটুইটারি TSH কমিয়ে দিচ্ছে।",
+        factors: ["গ্রেভস রোগ (অটোইমিউন অ্যান্টিবডি)", "টক্সিক মাল্টিনোডুলার গলগণ্ড", "অতিরিক্ত থাইরয়েড হরমোন সেবন", "থাইরয়েডাইটিস (প্রদাহ)"],
+        symptoms: ["দ্রুত হৃদস্পন্দন ও কাঁপুনি", "অনিচ্ছাকৃত ওজন হ্রাস", "গরম অসহনীয় লাগা, অতিরিক্ত ঘাম", "উদ্বেগ, অনিদ্রা, বিরক্তিভাব", "পেশী দুর্বলতা, ঘন ঘন পায়খানা"],
+        prevention: ["অতিরিক্ত আয়োডিন (সামুদ্রিক শৈবাল) এড়িয়ে চলুন", "মানসিক চাপ নিয়ন্ত্রণ করুন", "নির্ধারিত অ্যান্টিথাইরয়েড ওষুধ নিয়মিত সেবন করুন", "প্রতি ৩–৬ মাসে থাইরয়েড পরীক্ষা করুন"],
+        consult: "একজন এন্ডোক্রিনোলজিস্টের সাথে পরামর্শ করুন। fT3, fT4 ও TSH রিসেপ্টর অ্যান্টিবডি পরীক্ষা প্রয়োজন।"
+      },
+      normal: {
+        desc: "আপনার TSH স্বাভাবিক সীমার মধ্যে রয়েছে, যা সুস্থ থাইরয়েড কার্যক্ষমতা নির্দেশ করে (ইউথাইরয়েড অবস্থা)।",
+        factors: ["সুস্থ থাইরয়েড গ্রন্থি", "পর্যাপ্ত আয়োডিন গ্রহণ", "স্বাভাবিক পিটুইটারি কার্যক্ষমতা"],
+        symptoms: ["থাইরয়েড সম্পর্কিত কোনো লক্ষণ নেই"],
+        prevention: ["আয়োডিনযুক্ত লবণ ও সামুদ্রিক খাবার খান", "মানসিক চাপ নিয়ন্ত্রণে রাখুন", "পারিবারিক ইতিহাস থাকলে বার্ষিক থাইরয়েড পরীক্ষা করুন"],
+        consult: "প্রতি বছর রুটিন স্বাস্থ্য পরীক্ষা করান। তাৎক্ষণিক থাইরয়েড চিকিৎসার প্রয়োজন নেই।"
+      },
+      highBorderline: {
+        desc: "আপনার TSH সামান্য বেশি (সাবক্লিনিক্যাল হাইপোথাইরয়েডিজম)। থাইরয়েড গ্রন্থি সামান্য কম হরমোন তৈরি করছে, তবে fT4 এখনো স্বাভাবিক থাকতে পারে।",
+        factors: ["হাশিমোটো থাইরয়েডাইটিসের প্রাথমিক পর্যায়", "হালকা আয়োডিনের অভাব", "থাইরয়েডাইটিস সেরে ওঠার পর্যায়", "কিছু ওষুধ (লিথিয়াম, অ্যামিওডেরোন)"],
+        symptoms: ["ক্লান্তি ও হালকা ওজন বৃদ্ধি", "সামান্য ঠান্ডা সহ্য না হওয়া", "শুষ্ক ত্বক বা চুল পড়া", "মনোযোগে সমস্যা"],
+        prevention: ["খাদ্যে পর্যাপ্ত আয়োডিন নিশ্চিত করুন", "৩–৬ মাস পর TSH পুনরায় পরীক্ষা করুন", "সেলেনিয়াম সাপ্লিমেন্ট সম্পর্কে ডাক্তারের পরামর্শ নিন"],
+        consult: "থাইরয়েড হরমোন রিপ্লেসমেন্ট (লেভোথাইরক্সিন) প্রয়োজন কিনা তা মূল্যায়নের জন্য ডাক্তারের কাছে যান, বিশেষত গর্ভাবস্থায়।"
+      },
+      criticalHigh: {
+        desc: "আপনার TSH মারাত্মক বেশি (ওভার্ট হাইপোথাইরয়েডিজম)। থাইরয়েড গ্রন্থি অত্যন্ত কম কাজ করছে এবং অবিলম্বে চিকিৎসা প্রয়োজন।",
+        factors: ["হাশিমোটো থাইরয়েডাইটিস (উন্নত স্তর)", "থাইরয়েড অপসারণ বা অ্যাবলেশন", "তীব্র আয়োডিনের অভাব", "পিটুইটারি অ্যাডেনোমা (বিরল)"],
+        symptoms: ["চরম ক্লান্তি ও দুর্বলতা", "উল্লেখযোগ্য ওজন বৃদ্ধি, মুখ ও হাত ফুলে যাওয়া", "তীব্র ঠান্ডা সহ্য না হওয়া", "কোষ্ঠকাঠিন্য, ধীর হৃদস্পন্দন", "বিষণ্নতা, স্মৃতিশক্তির সমস্যা", "চরম ক্ষেত্রে: মিক্সিডিমা কোমা (জীবন-বিপদজনক)"],
+        prevention: ["চিকিৎসকের পরামর্শ ছাড়া থাইরয়েড ওষুধ বন্ধ করবেন না", "পর্যাপ্ত আয়োডিন গ্রহণ নিশ্চিত করুন"],
+        consult: "⚠️ জরুরি: অবিলম্বে এন্ডোক্রিনোলজিস্টের কাছে যান। লেভোথাইরক্সিন থেরাপি প্রয়োজন। মিক্সিডিমা কোমা একটি মেডিকেল ইমার্জেন্সি।"
+      }
+    },
+    hi: {
+      low: {
+        desc: "आपका टीएसएच सामान्य सीमा से नीचे है, जिससे पता चलता है कि थायरॉयड ग्रंथि अति सक्रिय हो सकती है (हाइपरथायरायडिज्म)। पिट्यूटरी ने अपना टीएसएच आउटपुट कम कर दिया है क्योंकि अतिरिक्त थायराइड हार्मोन प्रसारित हो रहे हैं।",
+        factors: ["ग्रेव्स रोग (ऑटोइम्यून एंटीबॉडीज़ थायरॉइड को उत्तेजित करती हैं)", "���िषैला बहुकोशिकीय गण्डमाला", "अतिरिक्त थायराइड हार्मोन अनुपूरण", "थायरॉयडिटिस (हार्मोन रिसाव के कारण होने वाली सूजन)"],
+        symptoms: ["तेज़ दिल की धड़कन (धड़कन), कंपकंपी", "अनजाने में वजन कम होना", "गर्मी असहिष्णुता, पसीना आना", "चिंता, चिड़चिड़ापन, अनिद्रा", "मांसपेशियों में कमजोरी, बार-बार मल त्यागना"],
+        prevention: ["अतिरिक्त आयोडीन (समुद्री शैवाल, पूरक) से बचें", "तनाव का प्रबंधन करें; सचेतनता का अभ्यास करें", "यदि निर्धारित हो तो एंटीथायरॉइड दवा का पालन करें", "हर 3-6 महीने में नियमित थायराइड की निगरानी"],
+        consult: "किसी एंडोक्रिनोलॉजिस्ट से सलाह लें। आगे के परीक्षण (एफटी3, एफटी4, टीए��एच रिसेप्टर एंटीबॉडी) और एंटीथायरॉइड थेरेपी या रेडियोआयोडीन उपचार का संकेत दिया जा सकता है।"
+      },
+      normal: {
+        desc: "आपका टीएसएच स्तर इष्टतम संदर्भ सीमा के भीतर है, जो सामान्य थायरॉइड फ़ंक्शन (यूथायरॉइड अवस्था) को दर्शाता है। पिट्यूटरी-थायराइड अक्ष स्वस्थ संतुलन में है।",
+        factors: ["पर्याप्त आयोडीन सेवन से स्��स्थ थायरॉयड ग्रंथि", "सामान्य पिट्यूटरी ग्रंथि कार्य"],
+        symptoms: ["थायराइड से संबंधित कोई महत्वपूर्ण लक्षण अपेक्षित नहीं है"],
+        prevention: ["आहार के माध्यम से पर्याप्त आयोडीन बनाए रखें (आयोडीन युक्त नमक, समुद्री भोजन)", "अत्यधिक तनाव से बचें", "यदि पारिवारिक इतिहास मौजूद हो तो वार्षिक थायराइड फ़ंक्शन स्क्रीनिंग", "शारीरिक रूप से सक्रिय रहें"],
+        consult: "प्रतिवर्ष नियमित स्वास्थ्य जांच जारी रखें। तत्काल थायराइड हस्तक्षेप की आवश्यकता नहीं है।"
+      },
+      highBorderline: {
+        desc: "आपका टीएसएच हल्का बढ़ा हुआ है (सबक्लिनिकल हाइपोथायरायडिज्म)। थायरॉयड ग्रंथि आवश्यकता से थोड़ा कम हार्मोन का उत्पादन कर रही है, और पिट्यूटरी उच्च टीएसएच आउटपुट के साथ क्षतिपूर्ति कर रही है। इस स्तर पर fT4 का स्तर आमतौर पर अभी भी सामान्य है।",
+        factors: ["प्रारंभिक हाशिमोटो का थायरॉयडिटिस", "हल्की आयोडीन की कमी", "थायरॉयडिटिस के बाद पुनर्प्राप्ति चरण", "कुछ दवाएँ (लिथियम, एमियोडेरोन)"],
+        symptoms: ["थकान और हल्का वजन बढ़ना", "हल्की ठंड असहिष्णुता", "थोड़ी सूखी त्वचा या बाल", "ध्यान केंद्रित करने में कठिनाई"],
+        prevention: ["पर्याप्त आहार आयोडीन सुनिश्चित करें", "टीएसएच को 3-6 महीने में दोहराएं", "स्पष्ट हाइपोथायरायडिज्म की प्रगति की निगरानी करें", "अपने डॉक्टर से सेलेनियम अनुपूरण पर चर्चा करें"],
+        consult: "बार-बार परीक्षण के लिए और यह आकलन करने के लिए अपने चिकित्सक से परामर्श करें कि क्या थायराइड हार्मोन रिप्लेसमेंट थेरेपी (लेवोथायरोक्सिन) की आवश्यकता है, खासकर यदि लक्षण हों या गर्भवती हों।"
+      },
+      criticalHigh: {
+        desc: "आपका टीएसएच गंभीर रूप से बढ़ा हुआ है (प्रकट हाइपोथायरायडिज्म)। थायरॉयड ग्रंथि गंभीर रूप से कम सक्रिय है, जिसमें टी3/टी4 का उत्पादन बेहद अपर्याप्त है। इसके लिए शीघ्र चिकित्सा उपचार की आवश्यकता होती है।",
+        factors: ["हाशिमोटो का थायरॉयडिटिस (उन्नत ऑटोइम्यून विनाश)", "थायरॉयड ग्रंथि को हटाना या हटाना", "गंभीर आयोडीन की कमी", "टीएसएच-स्रावित ट्यूमर के साथ पिट्यूटरी एडेनोमा (दुर्लभ)"],
+        symptoms: ["अत्यधिक थकान और कमजोरी", "महत्वपूर्ण वजन बढ़ना, चेहरा फूला हुआ और सूजन", "गंभीर ठंड असहिष्णुता", "कब्ज, धीमी हृदय गति (ब्रैडीकार्डिया)", "अवसाद, स्मृति समस्याएं, धीमी प्रतिक्रिया", "चरम मामलों में: मायक्सेडेमा कोमा (जीवन के लिए खतरा)"],
+        prevention: ["चिकित्सीय मार्गदर्शन के बिना थायराइड की दवा बंद न करें", "पर्याप्त आयोडीन का सेवन सुनिश्चित करें", "बिगड़ते लक्षणों पर नजर रखें"],
+        consult: "⚠️ अत्यावश्यक: तुरंत किसी एंडोक्राइनोलॉजिस्ट से मिलें। थायराइड हार्मोन प्रतिस्थापन (लेवोथायरोक्सिन) की आवश्यकता होती है। यदि उपचार न किया जाए तो मायक्सेडेमा कोमा एक चिकित्सीय आपात स्थिति है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-tsh-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "miul";
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    const btn = document.getElementById("langToggleBtn");
+    if (btn) btn.innerHTML = lang === "bn" ? '🇬🇧 <span>English</span>' : '🇧🇩 <span>Bengali</span>';
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    if (activeReportData) updateReportDisplay();
+  }
+
+  function toggleLanguage() { setLanguage(currentLang === "en" ? "bn" : "en"); }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const label = document.getElementById("inputLabel");
+    const unit = currentUnit === "miul" ? "mIU/L" : "µIU/mL";
+    label.textContent = (translations[currentLang].labelTSH || "TSH Value") + " (" + unit + ")";
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach(faq => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `<div class="faq-q">${faq.q}<span>＋</span></div><div class="faq-a">${faq.a}</div>`;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "300px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valTSH").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function getStatusFromTSH(val) {
+    if (val < 0.4) return { key: "low", badge: "badgeLow", color: "low" };
+    if (val <= 4.0) return { key: "normal", badge: "badgeNormal", color: "normal" };
+    if (val <= 10.0) return { key: "highBorderline", badge: "badgeHighBorderline", color: "high" };
+    return { key: "criticalHigh", badge: "badgeCriticalHigh", color: "critical" };
+  }
+
+  function calcPointer(val) {
+    // Map: 0 to 0.4 = 5-15%, 0.4-4.0 = 15-45%, 4.0-10.0 = 45-70%, 10.0-30 = 70-95%
+    if (val <= 0) return 5;
+    if (val < 0.4) return 5 + (val / 0.4) * 10;
+    if (val <= 4.0) return 15 + ((val - 0.4) / 3.6) * 30;
+    if (val <= 10.0) return 45 + ((val - 4.0) / 6.0) * 25;
+    return Math.min(95, 70 + ((val - 10.0) / 20.0) * 25);
+  }
+
+  function analyzeTSH() {
+    const val = parseFloat(document.getElementById("valTSH").value);
+    if (isNaN(val) || val < 0) {
+      alert(currentLang === "en" ? "Please enter a valid TSH value." : "দয়া করে সঠিক TSH মান লিখুন।");
+      return;
+    }
+
+    const status = getStatusFromTSH(val);
+    const pointerPct = calcPointer(val);
+
+    activeReportData = {
+      val, status, pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+    addToHistory(status.badge, val, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitStr = d.unit === "miul" ? "mIU/L" : "µIU/mL";
+
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resUnitText").textContent = unitStr;
+    document.getElementById("resTSHVal").textContent = d.val.toFixed(2);
+
+    const colorVar = `var(--${d.status.color}-color)`;
+    document.getElementById("resTSHVal").style.color = colorVar;
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.status.badge];
+    statusLabel.style.color = colorVar;
+
+    const ptr = document.getElementById("rangePointer");
+    ptr.style.left = `${d.pointerPct}%`;
+    ptr.style.borderColor = colorVar;
+
+    // Render insight
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+    const details = tshInsights[currentLang][d.status.key];
+    if (!details) return;
+
+    const card = document.createElement("div");
+    card.className = "insight-card";
+    card.style.borderLeft = `4px solid ${colorVar}`;
+
+    const causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+    const symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+    const tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+    card.innerHTML = `
+      <h5>${translations[currentLang].titleInterpretation}</h5>
+      <p>${details.desc}</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+          <ul>${causesList}</ul>
+        </div>
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+          <ul>${symptomsList}</ul>
+        </div>
+      </div>
+      <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:10px;">
+        <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+        <ul>${tipsList}</ul>
+      </div>
+      <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+        <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+      </div>
+    `;
+    insightSection.appendChild(card);
+  }
+
+  function addToHistory(badgeKey, val, unit) {
+    const unitStr = unit === "miul" ? " mIU/L" : " µIU/mL";
+    const item = { date: new Date().toLocaleDateString(), badgeKey, val, unitStr, id: Date.now() };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-tsh-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `<span>📅 ${item.date}</span><strong>${item.val.toFixed(2)}${item.unitStr} — ${statusText}</strong>`;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() { window.print(); }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitStr = d.unit === "miul" ? " mIU/L" : " µIU/mL";
+    let t = `--- TSH ANALYSIS REPORT ---\n`;
+    t += `Date: ${d.date}\n`;
+    t += `TSH Value: ${d.val.toFixed(2)}${unitStr}\n`;
+    t += `Assessment: ${translations[currentLang][d.status.badge]}\n`;
+    t += `Reference Range: 0.4 – 4.0 mIU/L (Normal)\n`;
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, { backgroundColor: "#0a0e17", scale: 2 }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `tsh-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => { setLanguage(currentLang); });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

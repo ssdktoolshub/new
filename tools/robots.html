@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robots.txt Generator &bull; Crawler Access Rules - SSDK TOOLS HUB</title>
+  <meta name="description" content="Design custom robots.txt files instantly. Control crawler permissions for Google, Bing, Yahoo, add disallow lists, and link sitemaps.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .rules-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .rules-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 12px;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .setting-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .setting-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .setting-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .setting-group input, .setting-group select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      transition: border 0.3s;
+    }
+    .setting-group input:focus, .setting-group select:focus {
+      border-color: var(--accent);
+    }
+    .rule-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg3);
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .rule-item select, .rule-item input {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-size: 0.8rem;
+    }
+    .rule-item select {
+      width: 130px;
+    }
+    .rule-item input {
+      flex: 1;
+      min-width: 140px;
+    }
+    .btn-rule-del {
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0 4px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Robots.txt Generator</h1>
+  <p class="page-sub">Create optimized search robot instructions files to manage crawling indexing paths on search engines.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; align-items: start;">
+      
+      <!-- Left Column: Settings -->
+      <div>
+        <div class="rules-card">
+          <h3>Crawler Directives</h3>
+          
+          <div class="setting-row">
+            <div class="setting-group">
+              <label for="defaultRule">Default Behavior (All Bots)</label>
+              <select id="defaultRule" onchange="generateRobots()">
+                <option value="allow">Allow All Bots (Recommended)</option>
+                <option value="disallow">Disallow All Bots</option>
+              </select>
+            </div>
+            
+            <div class="setting-group">
+              <label for="sitemapUrl">Sitemap URL (Optional)</label>
+              <input type="url" id="sitemapUrl" placeholder="e.g. https://mysite.com/sitemap.xml" oninput="generateRobots()">
+            </div>
+          </div>
+        </div>
+
+        <div class="rules-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="margin: 0; border: none; padding: 0;">Custom Paths Directives</h3>
+            <button class="preset-btn" style="padding: 4px 10px; border-color: var(--accent); color: var(--accent);" onclick="addCustomRule()">+ Add Path</button>
+          </div>
+          
+          <div id="customRulesList"></div>
+          <div id="noRulesPlaceholder" style="text-align: center; color: var(--muted); font-size: 0.8rem; padding: 20px 0;">
+            No custom path rules declared yet. Click '+ Add Path' to restrict directories.
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Outputs -->
+      <div style="position: sticky; top: 80px;">
+        <h4 style="margin-bottom: 12px;">Generated Robots.txt</h4>
+        <textarea id="robotsOutput" readonly style="height: 300px; font-family: monospace; font-size: 0.85rem; padding: 12px; resize: none; width: 100%; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); line-height: 1.4; white-space: pre; overflow-x: auto;"></textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+          <button class="btn" id="btnCopy" style="flex: 1;">📋 Copy Robots.txt</button>
+          <button class="btn ghost" id="btnDownload" style="flex: 1;">⬇️ Download File</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b; margin: 0 auto; display: block;">🗑 Reset All Settings</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Custom Bot Restrictions:</strong> Declare explicit instructions targeting specific web crawlers (e.g. Googlebot, Bingbot).</li>
+      <li><strong>Path Controls:</strong> Block search engine index scanners from reading administrative portals, temp directories, or sensitive files.</li>
+      <li><strong>Sitemap Attachment:</strong> Directly append sitemap pointers at the bottom of the file structure to streamline crawler mapping.</li>
+    </ul>
+  </div>
+
+  <!-- How to upload Section -->
+  <div class="content-card">
+    <h3>Where to place your Robots.txt</h3>
+    <p>Upload the downloaded <code>robots.txt</code> file directly to the **root directory** of your domain hosting system. It must be accessible at the exact path:</p>
+    <div style="background: var(--bg2); padding: 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; border: 1px solid var(--border); color: var(--accent); display: inline-block; margin-top: 8px;">
+      https://yoursite.com/robots.txt
+    </div>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">What is a Robots.txt file?<span>＋</span></div>
+        <div class="faq-a">A robots.txt file is a text file webmasters create to instruct web robots (typically search engine crawlers) how to crawl pages on their website. It is part of the Robots Exclusion Protocol (REP).</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Does robots.txt hide pages from the general public?<span>＋</span></div>
+        <div class="faq-a">No. Robots.txt is purely a set of instructions for search crawlers. It does not enforce password protection or restrict users from directly opening a URL in their web browsers. To secure pages, you must use authentication or server protection methods.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  let customRules = [];
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  function addCustomRule() {
+    customRules.push({
+      ua: '*',
+      type: 'disallow',
+      path: '/admin/'
+    });
+    $('noRulesPlaceholder').style.display = 'none';
+    renderCustomRules();
+    generateRobots();
+  }
+
+  function renderCustomRules() {
+    const list = $('customRulesList');
+    list.innerHTML = '';
+    
+    if (customRules.length === 0) {
+      $('noRulesPlaceholder').style.display = 'block';
+      return;
+    } else {
+      $('noRulesPlaceholder').style.display = 'none';
+    }
+
+    customRules.forEach((rule, index) => {
+      const div = document.createElement('div');
+      div.className = 'rule-item';
+      
+      // User Agent Select
+      const selectUA = document.createElement('select');
+      selectUA.innerHTML = `
+        <option value="*">All Bots (*)</option>
+        <option value="Googlebot">Googlebot</option>
+        <option value="Bingbot">Bingbot</option>
+        <option value="Slurp">Yahoo Slurp</option>
+        <option value="Yandex">Yandex Bot</option>
+        <option value="Baiduspider">Baidu Spider</option>
+        <option value="ia_archiver">Alexa Archiver</option>
+      `;
+      selectUA.value = rule.ua;
+      selectUA.onchange = (e) => {
+        customRules[index].ua = e.target.value;
+        generateRobots();
+      };
+      
+      // Directive Select
+      const selectType = document.createElement('select');
+      selectType.innerHTML = `
+        <option value="disallow">Disallow</option>
+        <option value="allow">Allow</option>
+      `;
+      selectType.value = rule.type;
+      selectType.onchange = (e) => {
+        customRules[index].type = e.target.value;
+        generateRobots();
+      };
+      
+      // Path Input
+      const inputPath = document.createElement('input');
+      inputPath.type = 'text';
+      inputPath.value = rule.path;
+      inputPath.placeholder = '/path-to-restrict/';
+      inputPath.oninput = (e) => {
+        customRules[index].path = e.target.value.trim();
+        generateRobots();
+      };
+      
+      // Delete button
+      const delBtn = document.createElement('button');
+      delBtn.className = 'btn-rule-del';
+      delBtn.innerHTML = '🗑';
+      delBtn.title = 'Delete Rule';
+      delBtn.onclick = () => {
+        customRules.splice(index, 1);
+        renderCustomRules();
+        generateRobots();
+      };
+      
+      div.appendChild(selectUA);
+      div.appendChild(selectType);
+      div.appendChild(inputPath);
+      div.appendChild(delBtn);
+      
+      list.appendChild(div);
+    });
+  }
+
+  function generateRobots() {
+    let output = [];
+    output.push('# robots.txt generated by SSDK TOOLS HUB');
+    output.push('# For more details visit: https://ssdk-tools-hub.vercel.app');
+    output.push('');
+
+    const defaultRule = $('defaultRule').value;
+    const sitemapUrl = $('sitemapUrl').value.trim();
+
+    // Default global agent rule
+    output.push('User-agent: *');
+    if (defaultRule === 'disallow') {
+      output.push('Disallow: /');
+    } else {
+      output.push('Disallow:');
+    }
+
+    // Append custom rules grouped by user-agent
+    if (customRules.length > 0) {
+      // Group by user agent
+      const grouped = {};
+      customRules.forEach(r => {
+        if (!r.path) return;
+        if (!grouped[r.ua]) grouped[r.ua] = [];
+        grouped[r.ua].push(`${r.type === 'allow' ? 'Allow' : 'Disallow'}: ${r.path}`);
+      });
+
+      // Render custom groups
+      Object.keys(grouped).forEach(ua => {
+        if (ua === '*' && defaultRule === 'allow') {
+          // just append to the default block
+          grouped[ua].forEach(ruleStr => output.push(ruleStr));
+        } else {
+          output.push('');
+          output.push(`User-agent: ${ua}`);
+          grouped[ua].forEach(ruleStr => output.push(ruleStr));
+        }
+      });
+    }
+
+    // Append sitemap
+    if (sitemapUrl) {
+      output.push('');
+      output.push(`Sitemap: ${sitemapUrl}`);
+    }
+
+    $('robotsOutput').value = output.join('\n');
+  }
+
+  $('btnCopy').onclick = () => {
+    const code = $('robotsOutput').value;
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => {
+      showStatus('📋 Robots.txt rules copied to clipboard!');
+    });
+  };
+
+  $('btnDownload').onclick = () => {
+    const code = $('robotsOutput').value;
+    if (!code) return;
+    const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'robots.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showStatus('✅ Robots.txt file downloaded successfully!');
+  };
+
+  $('btnClear').onclick = () => {
+    customRules = [];
+    $('defaultRule').value = 'allow';
+    $('sitemapUrl').value = '';
+    renderCustomRules();
+    generateRobots();
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Initial render
+  generateRobots();
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

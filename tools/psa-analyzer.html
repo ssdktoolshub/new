@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PSA Analyzer (Prostate-Specific Antigen) &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate Prostate-Specific Antigen (PSA) levels. Compare with age-specific reference ranges to assess prostate health with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--normal-color) 0%, 
+        var(--high-color) 45%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">PSA Analyzer (Prostate-Specific Antigen)</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze Prostate-Specific Antigen (PSA) levels with age-adjusted reference ranges to evaluate prostate health status.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 PSA Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valAge" data-translate="labelAge">Patient Age Range</label>
+              <select id="valAge" onchange="ageChanged()">
+                <option value="under50" selected data-translate="ageU50">Under 50 Years</option>
+                <option value="50to59" data-translate="age50_59">50 to 59 Years</option>
+                <option value="60to69" data-translate="age60_69">60 to 69 Years</option>
+                <option value="70plus" data-translate="age70plus">70 Years & Older</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valPSA" id="inputLabel" data-translate="labelPSA">PSA Level (ng/mL)</label>
+              <input type="number" step="0.01" id="valPSA" placeholder="e.g. 2.1" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzePSA()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze PSA</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your PSA level and select age range, then click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 PSA Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelAgeDisplay">Age Group</strong>: <span id="resAgeText">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resPSAVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">ng/mL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--normal-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--high-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: PSA</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is PSA?</strong><br><span data-translate="eduA1">Prostate-Specific Antigen (PSA) is a glycoprotein enzyme secreted by the epithelial cells of the prostate gland. It liquefies semen in the seminal coagulum and is present in small quantities in the serum of healthy men.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Why does PSA increase with age?</strong><br><span data-translate="eduA2">Prostate volume increases as men age (Benign Prostatic Hyperplasia), which naturally leads to higher PSA synthesis and leakage into the blood stream. Age-specific reference ranges prevent overdiagnosis and unnecessary biopsies in older men.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "PSA Analyzer (Prostate-Specific Antigen)",
+      toolDesc: "Analyze Prostate-Specific Antigen (PSA) levels with age-adjusted reference ranges to evaluate prostate health status.",
+      inputsTitle: "🧬 PSA Parameters",
+      clearBtn: "Reset",
+      labelAge: "Patient Age Range",
+      labelPSA: "PSA Level",
+      btnAnalyze: "Analyze PSA",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your PSA level and select age range, then click the analyze button to display medical summaries.",
+      reportTitle: "🔬 PSA Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelAgeDisplay: "Age Group",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      ageU50: "Under 50 Years",
+      age50_59: "50 to 59 Years",
+      age60_69: "60 to 69 Years",
+      age70plus: "70 Years & Older",
+      badgeNormal: "Normal PSA (Healthy range for age)",
+      badgeElevated: "Borderline Elevated (Gray Zone)",
+      badgeHigh: "Significantly Elevated Risk (>10 ng/mL)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Prostate Wellness Tips",
+      titleConsult: "Clinical Recommendation"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "পিএসএ বিশ্লেষক",
+      toolDesc: "প্রোস্টেটের স্বাস্থ্য মূল্যায়ন করার জন্য বয়স অনুযায়ী প্রোস্টেট-স্পেসিফিক অ্যান্টিজেন (PSA) স্তরের সঠিক বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 পিএসএ পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelAge: "রোগীর বয়স সীমা",
+      labelPSA: "পিএসএ লেভেল",
+      btnAnalyze: "পিএসএ বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "পিএসএ মাত্রা লিখুন এবং বয়স নির্বাচন করে বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 পিএসএ ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelAgeDisplay: "বয়স সীমা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      ageU50: "৫০ বছরের নিচে",
+      age50_59: "৫০ থেকে ৫৯ বছর",
+      age60_69: "৬০ থেকে ৬৯ বছর",
+      age70plus: "৭০ বছর বা তার বেশি",
+      badgeNormal: "স্বাভাবিক পিএসএ (বয়স অনুযায়ী স্বাস্থ্যকর)",
+      badgeElevated: "সীমান্তবর্তী বর্ধিত (গ্রে জোন)",
+      badgeHigh: "উচ্চমাত্রার বর্ধিত ঝুঁকি (>১০ ng/mL)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "প্রোস্টেট সুস্থতার টিপস",
+      titleConsult: "ক্লিনিক্যাল নির্দেশনা"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "पीएसए विश्लेषक (प्रोस्टेट-विशिष्ट एंटीजन)",
+      toolDesc: "प्रोस्टेट स्वास्थ्य स्थिति का मूल्यांकन करने के लिए आयु-समायोजित संदर्भ सीमाओं के साथ प्रोस्टेट-विशिष्ट एंटीजन (पीएसए) स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬 पीएसए पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelAge: "रोगी की आयु सीमा",
+      labelPSA: "पीएसए स्तर",
+      btnAnalyze: "पीएसए का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना पीएसए स्तर दर्ज करें और आयु सीमा चुनें, फिर चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 पीएसए डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelAgeDisplay: "आयु समूह",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाल��� प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      ageU50: "50 वर्ष से कम",
+      age50_59: "50 से 59 वर्ष",
+      age60_69: "60 से 69 वर्ष",
+      age70plus: "70 वर्ष और अधिक उम्र",
+      badgeNormal: "सामान्य पीएसए (उम्र के लिए स्वस्थ सीमा)",
+      badgeElevated: "सीमा रेखा ऊंचा (ग्रे जोन)",
+      badgeHigh: "उल्लेखनीय रूप से बढ़ा हुआ जोखिम (>10 एनजी/एमएल)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "प्रोस्टेट कल्याण युक्तियाँ",
+      titleConsult: "नैदानिक ​​सिफ़ारिश"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is a normal PSA level by age?", a: "PSA reference limits are age-dependent: <50y: <=2.5 ng/mL; 50-59y: <=3.5 ng/mL; 60-69y: <=4.5 ng/mL; 70+y: <=6.5 ng/mL." },
+      { q: "What is the 'PSA Gray Zone'?", a: "A PSA level between 4.0 and 10.0 ng/mL is often called the Gray Zone. In this range, elevated PSA could be caused by BPH, infection, or early prostate cancer. Further testing like free-to-total PSA ratios is helpful." },
+      { q: "Can non-cancerous conditions raise PSA?", a: "Yes, Benign Prostatic Hyperplasia (BPH), prostatitis (prostate infection), urinary tract infections, recent ejaculation, or physical pressure (e.g. bicycle riding) can raise PSA temporarily." },
+      { q: "How is a high PSA investigated?", a: "If PSA is significantly elevated (especially >10 ng/mL), a urologist will recommend clinical exams (digital rectal exam), imaging (multiparametric MRI), or a prostate biopsy." },
+      { q: "What precautions should be taken before a PSA test?", a: "Avoid ejaculation, strenuous exercise, and bicycle riding for 48 hours prior to blood collection, as these can artificially inflate PSA levels." }
+    ],
+    bn: [
+      { q: "বয়স অনুযায়ী স্বাভাবিক পিএসএ (PSA) স্তর কত?", a: "পিএসএ-র স্বাভাবিক সীমা বয়সের সাথে বাড়ে: ৫০ বছরের নিচে: <=২.৫ ng/mL; ৫০-৫৯ বছর: <=৩.৫ ng/mL; ৬০-৬৯ বছর: <=৪.৫ ng/mL; ৭০+ বছর: <=৬.৫ ng/mL।" },
+      { q: "পিএসএ 'গ্রে জোন' (Gray Zone) কী?", a: "৪.০ থেকে ১০.০ ng/mL মাত্রাকে গ্রে জোন বলা হয়। এই সীমায় পিএসএ বৃদ্ধির কারণ প্রোস্টেট বৃদ্ধি (BPH), প্রদাহ বা প্রোস্টেট ক্যান্সারের প্রাথমিক সংকেত হতে পারে।" },
+      { q: "ক্যান্সার ছাড়াও কি পিএসএ বৃদ্ধি পেতে পারে?", a: "হ্যাঁ, প্রোস্টেট বৃদ্ধি (BPH), প্রোস্টেটের প্রদাহ (Prostatitis), মূত্রনালীর ইনফেকশন, পরীক্ষার আগে সহবাস বা অতিরিক্ত সাইকেল চালানোর কারণে পিএসএ সাময়িকভাবে বৃদ্ধি পেতে পারে।" },
+      { q: "পিএসএ মাত্রা অনেক বেশি হলে কীভাবে পরীক্ষা করা হয়?", a: "পিএসএ মাত্রা ১০ ng/mL এর বেশি হলে ইউরোলজিস্ট সাধারণত ডিআরই (DRE), প্রোস্টেট এমআরআই বা বায়োপসি করানোর পরামর্শ দেন।" },
+      { q: "পিএসএ পরীক্ষার আগে কী কী সতর্কতা অবলম্বন করা উচিত?", a: "পরীক্ষার ৪৮ ঘণ্টা আগে সহবাস, তীব্র ব্যায়াম ও সাইকেল চালানো এড়ানো উচিত, কারণ এগুলো সাময়িকভাবে রক্তে পিএসএ-র মাত্রা বাড়িয়ে দিতে পারে।" }
+    ],
+    hi: [
+      { q: "उम्र के हिसाब से सामान्य पीएसए स्तर क्या है?", a: "पीएसए संदर्भ सीमाएँ आयु-निर्भर हैं: <50 वर्ष: <=2.5 एनजी/एमएल; 50-59 वर्ष: <=3.5 एनजी/एमएल; 60-69 वर्ष: <=4.5 एनजी/एमएल; 70+वाई: <=6.5 एनजी/एमएल।" },
+      { q: "'पीएसए ग्रे जोन' क्या है?", a: "4.0 और 10.0 एनजी/एमएल के बीच पीएसए स्तर को अक्सर ग्रे जोन कहा जाता है। इस श्रेणी में, ऊंचा पीएसए बीपीएच, संक्रमण या प्रारंभिक प्रोस्टेट कैंसर के कारण हो सकता है। फ्री-टू-टोटल पीएसए अनुपात जैसे अतिरिक्त परीक्षण सहायक होते हैं।" },
+      { q: "क्या गैर-कैंसरयुक्त स्थितियाँ पीएसए बढ़ा सकती हैं?", a: "हां, सौम्य प्रोस्टेटिक हाइपरप्लासिया (बीपीएच), प्रोस्टेटाइटिस (प्रोस्टेट संक्रमण), मूत्र पथ के संक्रमण, हाल ही में स्खलन, या शारीरिक दबाव (जैसे साइकिल चलाना) पीएसए को अस्थायी रूप से बढ़ा सकता है।" },
+      { q: "उच्च पीएसए की जांच कैसे की जाती है?", a: "यदि पीएसए काफी बढ़ा हुआ है (विशेष रूप से >10 एनजी/एमएल), तो एक मूत्र रोग विशेषज्ञ नैदानिक ​​​​परीक्षा (डिजिटल रेक्टल परीक्षा), इमेजिंग (मल्टीपैरामीट्रिक एमआरआई), या प्रोस्टेट बायोप्सी की सिफारिश करेगा।" },
+      { q: "पीएसए परीक्षण से पहले क्या सावधानियां बरतनी चाहिए?", a: "रक्त संग्रह से 48 घंटे पहले स्खलन, ज़ोरदार व्यायाम और साइकिल चलाने से बचें, क्योंकि ये कृत्रि��� रूप से पीएसए स्तर को बढ़ा सकते हैं।" }
+    ]
+  };
+
+  const psaInsights = {
+    en: {
+      normal: {
+        desc: "Your PSA level is normal for your age range. This indicates a low probability of significant active prostate pathology.",
+        factors: ["Healthy prostate size for age", "No active urinary/prostatic infection"],
+        symptoms: ["No urination difficulty or normal flow"],
+        prevention: ["Eat a diet rich in lycopene (cooked tomatoes) and cruciferous vegetables", "Maintain regular checkups"],
+        consult: "Continue screening annually or as suggested by your physician."
+      },
+      elevated: {
+        desc: "Your PSA level is borderline elevated (within the Gray Zone). While this raises suspicion of prostate changes, it is very frequently caused by non-cancerous conditions like benign hyperplasia (BPH) or infection.",
+        factors: ["Benign Prostatic Hyperplasia (BPH)", "Prostatitis (prostate inflammation)", "Recent urinary catheterization or UTI", "Recent ejaculation or bike riding"],
+        symptoms: ["Weak urine stream", "Frequent urination (especially at night)", "Urgency to urinate", "Pain during urination"],
+        prevention: ["Avoid caffeine and alcohol which irritate the bladder", "Discuss a Free PSA percentage test with your doctor"],
+        consult: "We advise consulting a urologist to run clinical exams and rule out urinary tract infections or prostate inflammation."
+      },
+      high: {
+        desc: "Your PSA level is significantly elevated (>10 ng/mL). Clinically, this indicates a higher probability of prostate pathology, including prostate cancer, and requires specialized diagnostics.",
+        factors: ["Prostate cancer", "Severe acute prostatitis", "Acute urinary retention"],
+        symptoms: ["Frequent and painful urination", "Blood in urine or semen", "Pelvic or lower back discomfort", "Difficulty starting urination"],
+        prevention: ["Avoid strenuous activities", "Adhere strictly to medical investigation paths"],
+        consult: "Consult a urologist immediately. They may order a multiparametric MRI of the prostate or schedule a biopsy."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার পিএসএ মাত্রা আপনার বয়স অনুযায়ী স্বাভাবিক সীমার মধ্যেই রয়েছে। এটি প্রোস্টেটের সুস্থতা নির্দেশ করে।",
+        factors: ["বয়স অনুযায়ী প্রোস্টেটের স্বাভাবিক আয়তন", "কোনো সক্রিয় ইনফেকশন না থাকা"],
+        symptoms: ["মূত্রত্যাগে কোনো সমস্যা না থাকা"],
+        prevention: ["লাইকোপিন সমৃদ্ধ খাবার (যেমন পাকা টমেটো) এবং ব্রোকলি খান", "সুস্থ জীবনযাপন বজায় রাখুন"],
+        consult: "চিকিৎসকের পরামর্শ অনুযায়ী বছরে একবার রুটিন পরীক্ষা করান।"
+      },
+      elevated: {
+        desc: "আপনার পিএসএ মাত্রা কিছুটা বর্ধিত (গ্রে জোনের মধ্যে)। এটি প্রোস্টেট ক্যান্সারের জন্য কিছুটা ঝুঁকিপূর্ণ হলেও বেশিরভাগ ক্ষেত্রেই প্রোস্টেট বড় হওয়া (BPH) বা সাধারণ ইনফেকশনের কারণে হয়ে থাকে।",
+        factors: ["প্রোস্টেট বড় হওয়া (BPH)", "প্রোস্টেটের প্রদাহ (Prostatitis)", "মূত্রনালীর ইনফেকশন", "পরীক্ষার পূর্বে সহবাস বা সাইকেল চালানো"],
+        symptoms: ["মূত্রের দুর্বল ধারা", "ঘন ঘন প্রস্রাবের বেগ (বিশেষ করে রাতে)", "প্রস্রাবে জ্বালাপোড়া"],
+        prevention: ["কফি এবং অ্যালকোহল পরিহার করুন", "ফ্রি-টু-টোটাল পিএসএ পরীক্ষা নিয়ে ডাক্তারের সাথে আলোচনা করুন"],
+        consult: "ইউরোলজিস্টের সাথে পরামর্শ করুন যাতে শারীরিক পরীক্ষার মাধ্যমে ইনফেকশন বা প্রোস্টেটের সঠিক সমস্যা চিহ্নিত করা যায়।"
+      },
+      high: {
+        desc: "আপনার পিএসএ মাত্রা বেশ উচ্চ (>১০ ng/mL)। এটি প্রোস্টেটের গুরুতর জটিলতা বা প্রোস্টেট ক্যান্সারের তীব্র ঝুঁকি নির্দেশ করে। দ্রুত বিশেষজ্ঞ পরীক্ষা আবশ্যক।",
+        factors: ["প্রোস্টেট ক্যান্সার", "তীব্র প্রোস্টেটের প্রদাহ", "প্রস্রাব সম্পূর্ণ আটকে যাওয়া"],
+        symptoms: ["মূত্রে বা বীর্যে রক্ত দেখা যাওয়া", "তলপেট বা কোমর ব্যথা", "প্রস্রাব শুরু করতে সমস্যা হওয়া"],
+        prevention: ["তীব্র শারীরিক পরিশ্রম থেকে বিরত থাকুন", "ইউরোলজিস্টের পরামর্শ দ্রুত গ্রহণ করুন"],
+        consult: "অবিলম্বে ইউরোলজিস্টের শরণাপন্ন হোন। তিনি এমআরআই (MRI) বা বায়োপসি (Biopsy) করার নির্দেশ দিতে পারেন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपकी आयु सीमा के लिए आपका पीएसए स्तर सामान्य है। यह महत्वपूर्ण सक्रिय प्रोस्टेट विकृति की कम संभावना को इंगित करता है।",
+        factors: ["उम्र के अनुसार स्वस्थ प्रोस्टेट का आकार", "कोई सक्रिय मूत्र/प्रोस्टेटिक संक्रमण नहीं"],
+        symptoms: ["पेशाब करने में कोई कठि���ाई या सामान्य प्रवाह नहीं"],
+        prevention: ["लाइकोपीन (पके हुए टमाटर) और क्रूसिफेरस सब्जियों से भरपूर आहार लें", "नियमित जांच कराते रहें"],
+        consult: "सालाना या अपने चिकित्सक के सुझाव के अनुसार स्क्रीनिंग जारी रखें।"
+      },
+      elevated: {
+        desc: "आपका पीएसए स्तर सीमा रेखा से ऊंचा है (ग्रे जोन के भीतर)। हालांकि इससे प्रोस्टेट में बदलाव का संदेह पैदा होता है, यह अक्सर सौम्य हाइपरप्लासिया (बीपीएच) या संक्रमण जैसी गैर-कैंसर संबंधी स्थितियों के कारण होता है।",
+        factors: ["सौम्य प्रोस्टेटिक हाइपरप्लासिया (बीपीएच)", "प्रोस्टेटाइटिस (प्रोस्टेट सूजन)", "हाल ही में मूत्र कैथीटेराइजेशन या यूटीआई", "हाल ही में स्खलन या बाइक की सवारी"],
+        symptoms: ["मूत्र की धारा कमजोर होना", "बार-बार पेशाब आना (विशेषकर रात में)", "पेशाब करने की तीव्र इच्छा", "पेशाब के दौरान दर्द होना"],
+        prevention: ["कैफीन और अल्कोहल से बचें जो मूत्राशय में जलन पैदा करते हैं", "अपने डॉक्टर से निःशुल्क पीएसए प्रतिशत परीक्षण पर चर्चा करें"],
+        consult: "हम क्लिनिकल पर��क्षण कराने और मूत्र पथ के संक्रमण या प्रोस्टेट सूजन को दूर करने के लिए किसी मूत्र रोग विशेषज्ञ से परामर्श करने की सलाह देते हैं।"
+      },
+      high: {
+        desc: "आपका पीएसए स्तर काफी ऊंचा (>10 एनजी/एमएल) है। चिकित्सकीय रूप से, यह प्रोस्टेट कैंसर सहित प्रोस्टेट विकृति की उच्च संभावना को इंगित करता है, और विशेष निदान की आवश्यकता होती है।",
+        factors: ["प्रोस्टेट कैंसर", "गंभीर तीव्र प्रोस्टेटाइटिस", "तीव्र मूत्र प्रतिधारण"],
+        symptoms: ["बार-बार और दर्दनाक पेशाब आना", "मूत्र या वीर्य में रक्त", "पेल्विक ���ा पीठ के निचले हिस्से में तकलीफ", "पेशाब शुरू करने में कठिनाई होना"],
+        prevention: ["ज़ोरदार गतिविधियों से बचें", "चिकित्सा जांच पथों का सख्ती से पालन करें"],
+        consult: "तुरंत किसी यूरोलॉजिस्ट से सलाह लें। वे प्रोस्टेट के मल्टीपैरामीट्रिक एमआरआई का आदेश दे सकते हैं या बायोप्सी शेड्यूल कर सकते हैं।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-psa-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function ageChanged() {
+    if (activeReportData) resetForm();
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valPSA").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getAgeLimits(ageKey) {
+    switch (ageKey) {
+      case "under50": return 2.5;
+      case "50to59": return 3.5;
+      case "60to69": return 4.5;
+      case "70plus": return 6.5;
+      default: return 4.0;
+    }
+  }
+
+  function analyzePSA() {
+    const valPSA = parseFloat(document.getElementById("valPSA").value);
+    const ageKey = document.getElementById("valAge").value;
+
+    if (isNaN(valPSA) || valPSA < 0) {
+      alert(currentLang === "en" ? "Please enter a valid PSA value." : "দয়া করে পিএসএ এর সঠিক মান লিখুন।");
+      return;
+    }
+
+    const normalLimit = getAgeLimits(ageKey);
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valPSA > normalLimit && valPSA <= 10.0) {
+      statusKey = "elevated";
+      badgeKey = "badgeElevated";
+    } else if (valPSA > 10.0) {
+      statusKey = "high";
+      badgeKey = "badgeHigh";
+    }
+
+    // Gauge pointer calculation
+    let pointerPct = 10;
+    if (valPSA <= normalLimit) {
+      pointerPct = Math.max(5, (valPSA / normalLimit) * 40);
+    } else if (valPSA <= 10.0) {
+      pointerPct = 40 + ((valPSA - normalLimit) / (10.0 - normalLimit)) * 35;
+    } else {
+      pointerPct = Math.min(95, 75 + ((valPSA - 10.0) / 20.0) * 20);
+    }
+
+    activeReportData = {
+      valPSA,
+      ageKey,
+      normalLimit,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valPSA, ageKey);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resPSAVal").textContent = d.valPSA.toFixed(2);
+    
+    const ageOptions = {
+      under50: translations[currentLang].ageU50,
+      "50to59": translations[currentLang].age50_59,
+      "60to69": translations[currentLang].age60_69,
+      "70plus": translations[currentLang].age70plus
+    };
+    document.getElementById("resAgeText").textContent = ageOptions[d.ageKey];
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "elevated") colorClass = "high";
+    else if (d.statusKey === "high") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resPSAVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = `0 - ${d.normalLimit} (Normal)`;
+    document.getElementById("tickNormalRange").textContent = `${d.normalLimit} - 10 (Gray Zone)`;
+    document.getElementById("tickHigh").textContent = "10.0+ (Elevated)";
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = psaInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valPSA, ageKey) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valPSA,
+      ageKey,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-psa-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      const shortAge = item.ageKey === "under50" ? "<50" : (item.ageKey === "50to59" ? "50-59" : (item.ageKey === "60to69" ? "60-69" : "70+"));
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valPSA.toFixed(2)} ng/mL [Age: ${shortAge}] (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const ageOptions = {
+      under50: translations[currentLang].ageU50,
+      "50to59": translations[currentLang].age50_59,
+      "60to69": translations[currentLang].age60_69,
+      "70plus": translations[currentLang].age70plus
+    };
+    let t = `--- PROSTATE-SPECIFIC ANTIGEN (PSA) REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Age Group: ${ageOptions[activeReportData.ageKey]}\n`;
+    t += `PSA Value: ${activeReportData.valPSA.toFixed(2)} ng/mL\n`;
+    t += `Reference Limit (Age-specific): ${activeReportData.normalLimit} ng/mL\n`;
+    t += `Clinical Status: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `psa-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

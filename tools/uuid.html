@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UUID / GUID Generator &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Free online UUID / GUID Generator. Generate v1, v4, and v5 UUIDs locally in your browser with custom prefix/suffix, separators, duplicate detection, and SQL snippet export.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="../assets/js/theme.js"></script>
+
+  <style>
+    /* ── Layout ── */
+    .uuid-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 820px) {
+      .uuid-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Form helpers ── */
+    .field-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .field-group { margin-bottom: 14px; }
+    .ctrl {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      font-family: inherit;
+      transition: border-color 0.2s;
+      box-sizing: border-box;
+    }
+    .ctrl:focus { border-color: var(--accent); }
+    select.ctrl { cursor: pointer; }
+
+    .inline-row { display: flex; gap: 10px; }
+    .inline-row .ctrl { flex: 1; }
+
+    /* ── Checkbox toggles ── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      margin-bottom: 8px;
+    }
+    .toggle-row input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .toggle-row span {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    /* ── V5 namespace panel ── */
+    #v5Panel { display: none; margin-top: 4px; }
+
+    /* ── Quick-copy row ── */
+    #quickRow {
+      display: none;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    #quickUUID {
+      font-family: monospace;
+      font-size: 0.95rem;
+      color: var(--accent);
+      word-break: break-all;
+      flex: 1;
+      min-width: 200px;
+    }
+    .quick-btns { display: flex; gap: 8px; flex-shrink: 0; }
+
+    /* ── Stats panel ── */
+    #statsPanel {
+      display: none;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    #statsPanel .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px 16px;
+    }
+    @media (max-width: 480px) {
+      #statsPanel .stat-grid { grid-template-columns: 1fr; }
+    }
+    .stat-item strong { color: var(--text); }
+
+    /* ── Output textarea ── */
+    #uuidOutput {
+      min-height: 200px;
+      font-family: monospace;
+      font-size: 0.83rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      color: var(--text);
+      resize: vertical;
+      overflow-y: auto;
+      width: 100%;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+    #uuidOutput:focus { outline: none; border-color: var(--accent); }
+
+    /* ── Duplicate badge ── */
+    #dupBadge {
+      display: none;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .dup-none { background: #1e7e4233; color: #4ade80; border: 1px solid #4ade8066; }
+    .dup-found { background: #7f1d1d55; color: #f87171; border: 1px solid #f8717166; }
+
+    /* ── SQL panel ── */
+    #sqlPanel { display: none; margin-top: 12px; }
+    #sqlOutput {
+      font-family: monospace;
+      font-size: 0.8rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      color: #93c5fd;
+      min-height: 100px;
+      resize: vertical;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    #sqlTableName {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      box-sizing: border-box;
+    }
+    #sqlTableName:focus { outline: none; border-color: var(--accent); }
+
+    /* ── Results output panel ── */
+    .result-panel {
+      background: var(--bg3);
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .result-panel h4 { margin: 0 0 6px; }
+
+    /* ── Action bar ── */
+    .action-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .action-bar .btn { flex: 1; justify-content: center; min-width: 110px; }
+
+    /* ── Control bar ── */
+    .tool-control {
+      margin-top: 20px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    /* ── Status msg ── */
+    #statusMsg {
+      display: none;
+      font-weight: bold;
+      font-size: 0.88rem;
+      margin-top: 10px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+    }
+
+    /* ── Info card ── */
+    .info-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-top: 0; }
+    .info-card ul { margin: 8px 0 0; padding-left: 18px; }
+    .info-card li { margin-bottom: 6px; font-size: 0.87rem; color: var(--muted); line-height: 1.5; }
+    .info-card li strong { color: var(--text); }
+
+    /* ── btn-sm util ── */
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      border-radius: 7px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      transition: background 0.2s, color 0.2s;
+      white-space: nowrap;
+    }
+    .btn-sm:hover { background: var(--accent); color: #fff; }
+    .btn-sm.solid { background: var(--accent); color: #fff; }
+    .btn-sm.solid:hover { opacity: 0.85; }
+
+    /* ── Version badge on quick row ── */
+    .ver-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--accent);
+      color: #fff;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">UUID Generator</h1>
+  <p class="page-sub">Generate RFC 4122 compliant v1, v4, and v5 UUIDs — locally, instantly, no server needed.</p>
+
+  <!-- ══ Main Tool Card ══ -->
+  <div class="content-card tool-playground">
+    <div class="uuid-grid">
+
+      <!-- ── LEFT: Settings ── -->
+      <div>
+        <h4 style="margin-bottom:14px;">Generator Settings</h4>
+
+        <!-- UUID Version -->
+        <div class="field-group">
+          <label class="field-label" for="uuidVersion">UUID Version</label>
+          <select id="uuidVersion" class="ctrl">
+            <option value="v4" selected>v4 — Random (crypto-secure)</option>
+            <option value="v1">v1 — Timestamp-based (simulated)</option>
+            <option value="v5">v5 — Namespace + Name (SHA-1)</option>
+          </select>
+        </div>
+
+        <!-- v5 Options (hidden unless v5 selected) -->
+        <div id="v5Panel" class="field-group">
+          <label class="field-label" for="v5Namespace">v5 Namespace</label>
+          <select id="v5Namespace" class="ctrl" style="margin-bottom:8px;">
+            <option value="6ba7b810-9dad-11d1-80b4-00c04fd430c8">DNS</option>
+            <option value="6ba7b811-9dad-11d1-80b4-00c04fd430c8">URL</option>
+            <option value="6ba7b812-9dad-11d1-80b4-00c04fd430c8">OID</option>
+            <option value="6ba7b814-9dad-11d1-80b4-00c04fd430c8">X500</option>
+          </select>
+          <label class="field-label" for="v5Name">Name (string to hash)</label>
+          <input id="v5Name" type="text" class="ctrl" placeholder="e.g. example.com" value="example.com">
+          <p style="font-size:0.75rem;color:var(--muted);margin-top:4px;">⚠️ v5 always produces the same UUID for the same namespace+name pair.</p>
+        </div>
+
+        <!-- Quantity -->
+        <div class="field-group">
+          <label class="field-label" for="genQty">Quantity to Generate (1–1000)</label>
+          <input type="number" id="genQty" class="ctrl" min="1" max="1000" value="5">
+        </div>
+
+        <!-- Casing -->
+        <div class="field-group">
+          <label class="field-label" for="selectCase">Casing</label>
+          <select id="selectCase" class="ctrl">
+            <option value="lower" selected>lowercase (standard)</option>
+            <option value="upper">UPPERCASE</option>
+          </select>
+        </div>
+
+        <!-- Separator -->
+        <div class="field-group">
+          <label class="field-label" for="selectSep">Output Separator</label>
+          <select id="selectSep" class="ctrl">
+            <option value="newline" selected>Newline (default)</option>
+            <option value="comma">Comma  ,</option>
+            <option value="semicolon">Semicolon  ;</option>
+            <option value="pipe">Pipe  |</option>
+            <option value="tab">Tab  ⇥</option>
+          </select>
+        </div>
+
+        <!-- Prefix / Suffix -->
+        <div class="field-group">
+          <label class="field-label">Prefix / Suffix</label>
+          <div class="inline-row">
+            <input id="prefixInput" type="text" class="ctrl" placeholder="Prefix (e.g. user-)">
+            <input id="suffixInput" type="text" class="ctrl" placeholder="Suffix (e.g. -prod)">
+          </div>
+        </div>
+
+        <!-- Checkboxes -->
+        <label class="toggle-row">
+          <input type="checkbox" id="checkHyphens" checked>
+          <span>Include Hyphens</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="checkBraces">
+          <span>Wrap in Braces { … }</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="checkDupes">
+          <span>Highlight Duplicates</span>
+        </label>
+        <label class="toggle-row" style="margin-top:4px;">
+          <input type="checkbox" id="checkSQL">
+          <span>Show SQL INSERT Snippet</span>
+        </label>
+      </div>
+
+      <!-- ── RIGHT: Output ── -->
+      <div class="result-panel">
+
+        <!-- Quick-copy single row -->
+        <div id="quickRow">
+          <span class="ver-badge" id="quickVerBadge">v4</span>
+          <span id="quickUUID">—</span>
+          <div class="quick-btns">
+            <button class="btn-sm solid" id="btnRegen" title="Generate one new UUID">🔄 Regen</button>
+            <button class="btn-sm" id="btnQuickCopy" title="Copy this UUID">📋 Copy</button>
+          </div>
+        </div>
+
+        <!-- Stats panel -->
+        <div id="statsPanel">
+          <div style="font-weight:700;font-size:0.82rem;margin-bottom:8px;color:var(--text);">📊 Generation Stats</div>
+          <div class="stat-grid">
+            <div class="stat-item">Count: <strong id="statCount">—</strong></div>
+            <div class="stat-item">Version: <strong id="statVersion">—</strong></div>
+            <div class="stat-item">Timestamp: <strong id="statTime">—</strong></div>
+            <div class="stat-item">Total chars: <strong id="statChars">—</strong></div>
+          </div>
+        </div>
+
+        <!-- Output area header -->
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <h4 style="margin:0;">Output Result</h4>
+          <span id="dupBadge"></span>
+        </div>
+
+        <textarea id="uuidOutput" readonly placeholder="Generated UUIDs will appear here…"></textarea>
+
+        <!-- Action buttons -->
+        <div class="action-bar" id="outputActions" style="display:none;">
+          <button class="btn" id="btnCopy">📋 Copy All</button>
+          <button class="btn ghost" id="btnDownload" style="background:var(--bg2);">⬇️ Download .txt</button>
+        </div>
+
+        <!-- SQL Snippet Panel -->
+        <div id="sqlPanel">
+          <label class="field-label" style="margin-bottom:4px;">SQL Table Name</label>
+          <input id="sqlTableName" type="text" placeholder="your_table" value="your_table">
+          <textarea id="sqlOutput" readonly placeholder="SQL snippet will appear here…"></textarea>
+          <div style="margin-top:6px;">
+            <button class="btn-sm" id="btnCopySQL">📋 Copy SQL</button>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /grid -->
+
+    <!-- ── Control bar ── -->
+    <div class="tool-control">
+      <button class="btn" id="btnGen">⚡ Generate UUIDs</button>
+      <button class="btn ghost" id="btnClear" style="border-color:#ff6b6b;color:#ff6b6b;">🗑 Clear</button>
+    </div>
+    <div id="statusMsg"></div>
+  </div><!-- /tool card -->
+
+  <!-- ── Info card ── -->
+  <div class="content-card info-card">
+    <h3>UUID Version Reference</h3>
+    <ul>
+      <li><strong>v1 (Timestamp-based):</strong> Embeds the current timestamp into the UUID structure. Simulated here in the browser — time bits are derived from <code>Date.now()</code> with random clock sequence and node ID.</li>
+      <li><strong>v4 (Random):</strong> Entirely randomly generated using <code>crypto.getRandomValues()</code>. Practically zero collision probability. The recommended default.</li>
+      <li><strong>v5 (Name-based SHA-1):</strong> Deterministic — the same namespace + name always produces the same UUID. Uses SHA-1 hashing via CryptoJS. Useful for reproducible IDs.</li>
+      <li><strong>Prefix / Suffix:</strong> Prepend or append custom strings (e.g. <code>user-</code> / <code>-prod</code>) to every UUID in the output.</li>
+      <li><strong>SQL Snippet:</strong> Wraps all UUIDs into a ready-to-run <code>INSERT INTO … VALUES …</code> statement.</li>
+    </ul>
+  </div>
+
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+/* ─────────────────────────────────────────────
+   Utility
+───────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+
+let lastGeneratedList = [];  // raw (unformatted) 32-char strings + formatted list
+let lastFormattedList  = [];
+
+function showStatus(text, isError = false, duration = 2200) {
+  const el = $('statusMsg');
+  el.style.display = 'block';
+  el.textContent   = text;
+  el.style.color   = isError ? '#f87171' : 'var(--accent)';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.display = 'none'; }, duration);
+}
+
+/* ─────────────────────────────────────────────
+   UUID Generators
+───────────────────────────────────────────── */
+
+// v4 — crypto random
+function generateV4Raw() {
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  b[6] = (b[6] & 0x0f) | 0x40; // version 4
+  b[8] = (b[8] & 0x3f) | 0x80; // variant RFC 4122
+  return b;
+}
+
+// v1 — timestamp simulated
+function generateV1Raw() {
+  // 100-ns intervals since Oct 15, 1582
+  const GREGORIAN_OFFSET = 122192928000000000n;
+  const now = BigInt(Date.now()) * 10000n + GREGORIAN_OFFSET;
+
+  // Split timestamp fields
+  const timeLow  = Number(now & 0xFFFFFFFFn);
+  const timeMid  = Number((now >> 32n) & 0xFFFFn);
+  const timeHigh = Number((now >> 48n) & 0x0FFFn) | 0x1000; // version 1
+
+  // Clock sequence (random)
+  const clockSeq = (Math.random() * 0x3fff | 0) | 0x8000; // variant
+
+  // Node (random 48-bit, multicast bit set)
+  const nodeBytes = new Uint8Array(6);
+  crypto.getRandomValues(nodeBytes);
+  nodeBytes[0] |= 0x01; // multicast
+
+  const b = new Uint8Array(16);
+  // time_low (32 bits)
+  b[0] = (timeLow >>> 24) & 0xff;
+  b[1] = (timeLow >>> 16) & 0xff;
+  b[2] = (timeLow >>>  8) & 0xff;
+  b[3] =  timeLow         & 0xff;
+  // time_mid (16 bits)
+  b[4] = (timeMid >>> 8) & 0xff;
+  b[5] =  timeMid        & 0xff;
+  // time_hi_and_version (16 bits)
+  b[6] = (timeHigh >>> 8) & 0xff;
+  b[7] =  timeHigh        & 0xff;
+  // clock_seq
+  b[8] = (clockSeq >>> 8) & 0xff;
+  b[9] =  clockSeq        & 0xff;
+  // node
+  b[10] = nodeBytes[0]; b[11] = nodeBytes[1];
+  b[12] = nodeBytes[2]; b[13] = nodeBytes[3];
+  b[14] = nodeBytes[4]; b[15] = nodeBytes[5];
+  return b;
+}
+
+// v5 — SHA-1 name-based (CryptoJS)
+function uuidStrToBytes(uuidStr) {
+  const hex = uuidStr.replace(/-/g, '');
+  const b = new Uint8Array(16);
+  for (let i = 0; i < 16; i++) b[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return b;
+}
+
+function generateV5Raw(namespaceUUID, name) {
+  const nsBytes  = uuidStrToBytes(namespaceUUID);
+  const nameBytes = new TextEncoder().encode(name);
+
+  // Build a WordArray from nsBytes + nameBytes for CryptoJS
+  const combined = new Uint8Array(nsBytes.length + nameBytes.length);
+  combined.set(nsBytes, 0);
+  combined.set(nameBytes, nsBytes.length);
+
+  const wordArray = CryptoJS.lib.WordArray.create(combined);
+  const shaHex    = CryptoJS.SHA1(wordArray).toString(CryptoJS.enc.Hex);
+
+  // Take first 16 bytes of SHA-1
+  const b = new Uint8Array(16);
+  for (let i = 0; i < 16; i++) b[i] = parseInt(shaHex.substr(i * 2, 2), 16);
+
+  b[6] = (b[6] & 0x0f) | 0x50; // version 5
+  b[8] = (b[8] & 0x3f) | 0x80; // variant
+  return b;
+}
+
+// Convert bytes → 32-char hex string
+function bytesToHex(b) {
+  return Array.from(b).map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+/* ─────────────────────────────────────────────
+   Formatting
+───────────────────────────────────────────── */
+function formatUUID(raw32, { uppercase, hyphens, braces, prefix, suffix }) {
+  let s = raw32;
+  if (hyphens) {
+    s = s.slice(0,8) + '-' + s.slice(8,12) + '-' +
+        s.slice(12,16) + '-' + s.slice(16,20) + '-' + s.slice(20);
+  }
+  s = uppercase ? s.toUpperCase() : s.toLowerCase();
+  if (braces) s = '{' + s + '}';
+  return prefix + s + suffix;
+}
+
+function separatorChar(val) {
+  switch (val) {
+    case 'comma':     return ',';
+    case 'semicolon': return ';';
+    case 'pipe':      return '|';
+    case 'tab':       return '\t';
+    default:          return '\n';
+  }
+}
+
+/* ─────────────────────────────────────────────
+   Core Generate
+───────────────────────────────────────────── */
+function doGenerate() {
+  const version   = $('uuidVersion').value;
+  const namespace = $('v5Namespace').value;
+  const v5name    = $('v5Name').value.trim();
+  let   qty       = Math.max(1, Math.min(1000, parseInt($('genQty').value) || 1));
+  const uppercase = $('selectCase').value === 'upper';
+  const hyphens   = $('checkHyphens').checked;
+  const braces    = $('checkBraces').checked;
+  const prefix    = $('prefixInput').value;
+  const suffix    = $('suffixInput').value;
+  const sep       = separatorChar($('selectSep').value);
+
+  // v5: name is required
+  if (version === 'v5' && v5name === '') {
+    showStatus('⚠️ Enter a name for v5 UUID generation.', true);
+    return;
+  }
+
+  const opts      = { uppercase, hyphens, braces, prefix, suffix };
+  const rawList   = [];
+  const formatted = [];
+
+  for (let i = 0; i < qty; i++) {
+    let bytes;
+    if      (version === 'v4') bytes = generateV4Raw();
+    else if (version === 'v1') bytes = generateV1Raw();
+    else /* v5 */              bytes = generateV5Raw(namespace, v5name);
+    const raw = bytesToHex(bytes);
+    rawList.push(raw);
+    formatted.push(formatUUID(raw, opts));
+  }
+
+  lastGeneratedList = rawList;
+  lastFormattedList = formatted;
+
+  // Update output textarea
+  $('uuidOutput').value = formatted.join(sep);
+
+  // Quick-copy row — show first UUID
+  updateQuickRow(formatted[0], version);
+
+  // Stats
+  updateStats(qty, version, formatted.join(sep).length);
+
+  // Duplicates
+  if ($('checkDupes').checked) checkDuplicates(rawList);
+  else hideDupBadge();
+
+  // SQL
+  if ($('checkSQL').checked) updateSQL();
+
+  $('outputActions').style.display = 'flex';
+  $('statsPanel').style.display    = 'block';
+  $('quickRow').style.display      = 'flex';
+
+  showStatus(`✅ Generated ${qty} UUID${qty > 1 ? 's' : ''} (${version.toUpperCase()})!`);
+}
+
+/* ─────────────────────────────────────────────
+   Quick-copy row
+───────────────────────────────────────────── */
+function updateQuickRow(uuid, version) {
+  $('quickUUID').textContent    = uuid;
+  $('quickVerBadge').textContent = version.toUpperCase();
+}
+
+/* ─────────────────────────────────────────────
+   Stats
+───────────────────────────────────────────── */
+function updateStats(count, version, chars) {
+  $('statCount').textContent   = count.toLocaleString();
+  $('statVersion').textContent = version.toUpperCase();
+  $('statChars').textContent   = chars.toLocaleString();
+  const now = new Date();
+  $('statTime').textContent    = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+/* ─────────────────────────────────────────────
+   Duplicate Checker
+───────────────────────────────────────────── */
+function checkDuplicates(rawList) {
+  const seen = new Set();
+  let   dupeCount = 0;
+  rawList.forEach(r => {
+    if (seen.has(r)) dupeCount++;
+    else seen.add(r);
+  });
+  const badge = $('dupBadge');
+  badge.style.display = 'inline-block';
+  if (dupeCount === 0) {
+    badge.textContent = '✓ No Duplicates';
+    badge.className = 'dup-none';
+    badge.style.cssText = 'display:inline-block;font-size:0.75rem;font-weight:700;padding:3px 10px;border-radius:20px;background:#14532d44;color:#4ade80;border:1px solid #4ade8055;';
+  } else {
+    badge.textContent = `⚠️ ${dupeCount} Duplicate${dupeCount > 1 ? 's' : ''}`;
+    badge.className = 'dup-found';
+    badge.style.cssText = 'display:inline-block;font-size:0.75rem;font-weight:700;padding:3px 10px;border-radius:20px;background:#7f1d1d44;color:#f87171;border:1px solid #f8717155;';
+  }
+}
+
+function hideDupBadge() {
+  const badge = $('dupBadge');
+  badge.style.display = 'none';
+  badge.textContent = '';
+}
+
+/* ─────────────────────────────────────────────
+   SQL INSERT
+───────────────────────────────────────────── */
+function updateSQL() {
+  if (lastFormattedList.length === 0) return;
+  const table  = $('sqlTableName').value.trim() || 'your_table';
+  const values = lastFormattedList.map(u => `('${u}')`).join(',\n       ');
+  $('sqlOutput').value = `INSERT INTO ${table} (id)\nVALUES ${values};`;
+  $('sqlPanel').style.display = 'block';
+}
+
+/* ─────────────────────────────────────────────
+   Event Wiring
+───────────────────────────────────────────── */
+
+// Version selector → toggle v5 panel
+$('uuidVersion').onchange = () => {
+  $('v5Panel').style.display = $('uuidVersion').value === 'v5' ? 'block' : 'none';
+};
+
+// Generate button
+$('btnGen').onclick = doGenerate;
+
+// Regen single
+$('btnRegen').onclick = () => {
+  const version   = $('uuidVersion').value;
+  const namespace = $('v5Namespace').value;
+  const v5name    = $('v5Name').value.trim();
+  const uppercase = $('selectCase').value === 'upper';
+  const hyphens   = $('checkHyphens').checked;
+  const braces    = $('checkBraces').checked;
+  const prefix    = $('prefixInput').value;
+  const suffix    = $('suffixInput').value;
+
+  if (version === 'v5' && v5name === '') {
+    showStatus('⚠️ Enter a name for v5.', true); return;
+  }
+
+  let bytes;
+  if      (version === 'v4') bytes = generateV4Raw();
+  else if (version === 'v1') bytes = generateV1Raw();
+  else                       bytes = generateV5Raw(namespace, v5name);
+
+  const fmt = formatUUID(bytesToHex(bytes), { uppercase, hyphens, braces, prefix, suffix });
+  updateQuickRow(fmt, version);
+  showStatus('🔄 Single UUID regenerated!');
+};
+
+// Quick copy
+$('btnQuickCopy').onclick = () => {
+  const t = $('quickUUID').textContent;
+  if (!t || t === '—') return;
+  navigator.clipboard.writeText(t).then(() => showStatus('📋 UUID copied!'));
+};
+
+// Copy All
+$('btnCopy').onclick = () => {
+  const t = $('uuidOutput').value;
+  if (!t) return;
+  navigator.clipboard.writeText(t).then(() => showStatus('📋 All UUIDs copied to clipboard!'));
+};
+
+// Download
+$('btnDownload').onclick = () => {
+  const t = $('uuidOutput').value;
+  if (!t) return;
+  const blob = new Blob([t], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'ssdk-uuids.txt';
+  document.body.appendChild(a); a.click();
+  URL.revokeObjectURL(url); document.body.removeChild(a);
+  showStatus('⬇️ Saved as ssdk-uuids.txt!');
+};
+
+// Copy SQL
+$('btnCopySQL').onclick = () => {
+  const t = $('sqlOutput').value;
+  if (!t) return;
+  navigator.clipboard.writeText(t).then(() => showStatus('📋 SQL snippet copied!'));
+};
+
+// SQL toggle
+$('checkSQL').onchange = () => {
+  if ($('checkSQL').checked && lastFormattedList.length > 0) updateSQL();
+  else $('sqlPanel').style.display = 'none';
+};
+
+// SQL table name live-update
+$('sqlTableName').oninput = () => { if ($('checkSQL').checked) updateSQL(); };
+
+// Clear button
+$('btnClear').onclick = () => {
+  $('uuidOutput').value  = '';
+  $('sqlOutput').value   = '';
+  $('quickUUID').textContent = '—';
+  $('genQty').value      = 5;
+  $('selectCase').value  = 'lower';
+  $('selectSep').value   = 'newline';
+  $('uuidVersion').value = 'v4';
+  $('checkHyphens').checked = true;
+  $('checkBraces').checked  = false;
+  $('checkDupes').checked   = false;
+  $('checkSQL').checked     = false;
+  $('prefixInput').value    = '';
+  $('suffixInput').value    = '';
+  $('v5Panel').style.display    = 'none';
+  $('sqlPanel').style.display   = 'none';
+  $('statsPanel').style.display = 'none';
+  $('quickRow').style.display   = 'none';
+  $('outputActions').style.display = 'none';
+  $('statusMsg').style.display  = 'none';
+  lastGeneratedList = [];
+  lastFormattedList = [];
+  hideDupBadge();
+};
+
+// FAQ accordion (in case inherited from global)
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.onclick = () => q.parentElement.classList.toggle('open');
+});
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

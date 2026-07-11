@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Percentage Calculator &bull; Quick Math Formulas - SSDK TOOLS HUB</title>
+  <meta name="description" content="Calculate percentages, ratios, increases/decreases, and additions/subtractions instantly with our multi-card live percentage calculator.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .percent-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 768px) {
+      .percent-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .calc-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .calc-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+    .calc-card h3 {
+      font-size: 1.05rem;
+      margin-bottom: 12px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .formula-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 14px;
+    }
+    .formula-row input {
+      width: 80px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      text-align: center;
+      transition: border 0.3s;
+    }
+    .formula-row input:focus {
+      border-color: var(--accent);
+    }
+    .result-row {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent);
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.15);
+      border: 1px dashed var(--border);
+      display: inline-block;
+    }
+    .result-row span {
+      color: var(--text);
+      font-weight: 400;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Percentage Calculator</h1>
+  <p class="page-sub">Perform common percentage equations instantly with real-time live input calculations.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="percent-grid">
+      
+      <!-- Card 1: Find percentage of value -->
+      <div class="calc-card">
+        <h3>What is X% of Y?</h3>
+        <div class="formula-row">
+          <span>What is</span>
+          <input type="number" id="c1_x" placeholder="X" oninput="calc1()">
+          <span>% of</span>
+          <input type="number" id="c1_y" placeholder="Y" oninput="calc1()">
+          <span>?</span>
+        </div>
+        <div class="result-row">
+          <span>Result:</span> <strong id="c1_res">-</strong>
+        </div>
+      </div>
+
+      <!-- Card 2: Find percentage ratio -->
+      <div class="calc-card">
+        <h3>X is what % of Y?</h3>
+        <div class="formula-row">
+          <input type="number" id="c2_x" placeholder="X" oninput="calc2()">
+          <span>is what % of</span>
+          <input type="number" id="c2_y" placeholder="Y" oninput="calc2()">
+          <span>?</span>
+        </div>
+        <div class="result-row">
+          <span>Result:</span> <strong id="c2_res">-</strong>
+        </div>
+      </div>
+
+      <!-- Card 3: Percentage Increase / Decrease -->
+      <div class="calc-card">
+        <h3>Percentage Change (Increase/Decrease)</h3>
+        <div class="formula-row">
+          <span>From</span>
+          <input type="number" id="c3_x" placeholder="X" oninput="calc3()">
+          <span>to</span>
+          <input type="number" id="c3_y" placeholder="Y" oninput="calc3()">
+          <span>?</span>
+        </div>
+        <div class="result-row">
+          <span>Result:</span> <strong id="c3_res">-</strong>
+        </div>
+      </div>
+
+      <!-- Card 4: Add / Subtract Percentage -->
+      <div class="calc-card">
+        <h3>Add or Subtract Percentage</h3>
+        <div class="formula-row">
+          <select id="c4_op" style="padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); outline: none;" onchange="calc4()">
+            <option value="add">Add</option>
+            <option value="sub">Subtract</option>
+          </select>
+          <input type="number" id="c4_x" placeholder="X" oninput="calc4()">
+          <span>% to/from</span>
+          <input type="number" id="c4_y" placeholder="Y" oninput="calc4()">
+        </div>
+        <div class="result-row">
+          <span>Result:</span> <strong id="c4_res">-</strong>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b; margin: 0 auto; display: block;">🗑 Clear All Inputs</button>
+    </div>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Interactive Live Feedback:</strong> No "Calculate" button needed. Math yields immediate results as values are typed.</li>
+      <li><strong>Robust Formulas:</strong> Handles percentage fractions, large values, and negative inputs seamlessly.</li>
+      <li><strong>Standard Casing layouts:</strong> Four dedicated calculators cover 95% of day-to-day percentage scenarios.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">How is percentage change calculated?<span>＋</span></div>
+        <div class="faq-a">To calculate the percentage change between two values, subtract the original value (X) from the new value (Y). Then divide that result by the original value (X) and multiply by 100. If the output is positive, it represents an increase; if negative, a decrease.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What does percentage mean?<span>＋</span></div>
+        <div class="faq-a">Percentage means "per hundred" (out of 100). For example, 25% represents 25 parts out of 100, which can also be written as the fraction 25/100 or the decimal 0.25.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function formatNum(n) {
+    if (isNaN(n) || !isFinite(n)) return '-';
+    // Round to max 4 decimal places
+    return parseFloat(n.toFixed(4)).toLocaleString(undefined, { maximumFractionDigits: 4 });
+  }
+
+  // Calc 1: X% of Y
+  function calc1() {
+    const x = parseFloat($('c1_x').value);
+    const y = parseFloat($('c1_y').value);
+    if (isNaN(x) || isNaN(y)) {
+      $('c1_res').textContent = '-';
+      return;
+    }
+    const res = (x / 100) * y;
+    $('c1_res').textContent = formatNum(res);
+  }
+
+  // Calc 2: X is what % of Y
+  function calc2() {
+    const x = parseFloat($('c2_x').value);
+    const y = parseFloat($('c2_y').value);
+    if (isNaN(x) || isNaN(y) || y === 0) {
+      $('c2_res').textContent = '-';
+      return;
+    }
+    const res = (x / y) * 100;
+    $('c2_res').textContent = formatNum(res) + '%';
+  }
+
+  // Calc 3: Percentage change from X to Y
+  function calc3() {
+    const x = parseFloat($('c3_x').value);
+    const y = parseFloat($('c3_y').value);
+    if (isNaN(x) || isNaN(y) || x === 0) {
+      $('c3_res').textContent = '-';
+      return;
+    }
+    const res = ((y - x) / x) * 100;
+    const sign = res >= 0 ? '+' : '';
+    const word = res >= 0 ? 'Increase' : 'Decrease';
+    $('c3_res').textContent = `${sign}${formatNum(res)}% (${word})`;
+  }
+
+  // Calc 4: Add / Subtract X% to/from Y
+  function calc4() {
+    const op = $('c4_op').value;
+    const x = parseFloat($('c4_x').value);
+    const y = parseFloat($('c4_y').value);
+    if (isNaN(x) || isNaN(y)) {
+      $('c4_res').textContent = '-';
+      return;
+    }
+    const pctVal = (x / 100) * y;
+    const res = op === 'add' ? y + pctVal : y - pctVal;
+    $('c4_res').textContent = formatNum(res);
+  }
+
+  $('btnClear').onclick = () => {
+    const inputs = document.querySelectorAll('.formula-row input');
+    inputs.forEach(i => i.value = '');
+    const results = document.querySelectorAll('.result-row strong');
+    results.forEach(r => r.textContent = '-');
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

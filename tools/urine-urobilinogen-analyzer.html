@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Urine Urobilinogen Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate urine urobilinogen levels online. Assess hemolysis, hepatic function, and biliary tract patency with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--critical-color) 0%, 
+        var(--normal-color) 35%, 
+        var(--high-color) 70%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Urine Urobilinogen Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze urine urobilinogen levels to evaluate hemolysis, liver function, and biliary patency.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Urobilinogen Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valGrade" data-translate="labelGrade">Urine Urobilinogen Grade</label>
+              <select id="valGrade" onchange="analyzeUrobilinogen()">
+                <option value="" disabled selected data-translate="selectGradePlaceholder">Select Grade...</option>
+                <option value="normal">Normal/Trace (0.1-1.0 EU/dL)</option>
+                <option value="twoplus">2+ (Elevated)</option>
+                <option value="fourplus">4+ (Elevated)</option>
+                <option value="eightplus">8+ (Elevated)</option>
+                <option value="absent">Absent</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeUrobilinogen()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Urobilinogen</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Select your urine urobilinogen grade and click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Urine Urobilinogen Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Urine Urobilinogen</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resText">Grade</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickAbsent" style="color: var(--critical-color);">Absent</span>
+              <span id="tickNormal" style="color: var(--normal-color);">Normal (0.1-1.0)</span>
+              <span id="tickHigh" style="color: var(--high-color);">Elevated (2+)</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Urobilinogen</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Urobilinogen?</strong><br><span data-translate="eduA1">Urobilinogen is a colorless byproduct of bilirubin reduction. It is formed in the intestines by bacterial action on bilirubin. Most of it is excreted in feces, but a small amount is reabsorbed and excreted in urine.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is the clinical significance of Urine Urobilinogen?</strong><br><span data-translate="eduA2">Elevated urine urobilinogen indicates excess bilirubin production (like hemolysis) or hepatic inability to clear normal reabsorbed urobilinogen. An absent level indicates that no bilirubin is reaching the gut, usually signifying a complete biliary tract blockage.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Urine Urobilinogen Analyzer",
+      toolDesc: "Analyze urine urobilinogen levels to evaluate hemolysis, liver function, and biliary patency.",
+      inputsTitle: "🧬 Urobilinogen Parameters",
+      clearBtn: "Reset",
+      labelGrade: "Urine Urobilinogen Grade",
+      selectGradePlaceholder: "Select Grade...",
+      btnAnalyze: "Analyze Urobilinogen",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Select your urine urobilinogen grade and click the analyze button to display medical summaries.",
+      reportTitle: "🔬 Urine Urobilinogen Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal (Expected Physiological Level)",
+      badgeElevated: "Elevated (Suggests Hemolysis or Hepatic Disease)",
+      badgeAbsent: "Absent (Suggests Complete Bile Duct Obstruction)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor",
+      titleEdu: "📚 Clinical Pathology Notes: Urobilinogen",
+      eduQ1: "What is Urobilinogen?",
+      eduA1: "Urobilinogen is a colorless byproduct of bilirubin reduction. It is formed in the intestines by bacterial action on bilirubin. Most of it is excreted in feces, but a small amount is reabsorbed and excreted in urine.",
+      eduQ2: "What is the clinical significance of Urine Urobilinogen?",
+      eduA2: "Elevated urine urobilinogen indicates excess bilirubin production (like hemolysis) or hepatic inability to clear normal reabsorbed urobilinogen. An absent level indicates that no bilirubin is reaching the gut, usually signifying a complete biliary tract blockage."
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "প্রস্রাব ইউরোবিলিনোজেন বিশ্লেষক",
+      toolDesc: "হেমোলাইসিস, যকৃতের কার্যকারিতা এবং পিত্তনালীর ব্লকেজ মূল্যায়ন করতে প্রস্রাবের ইউরোবিলিনোজেনের মাত্রা বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 ইউরোবিলিনোজেন পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelGrade: "ইউরোবিলিনোজেন গ্রেড",
+      selectGradePlaceholder: "গ্রেড নির্বাচন করুন...",
+      btnAnalyze: "ইউরোবিলিনোজেন বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "ইউরোবিলিনোজেন গ্রেড নির্বাচন করুন এবং বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 প্রস্রাব ইউরোবিলিনোজেন ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক (প্রত্যাশিত শারীরবৃত্তীয় স্তর)",
+      badgeElevated: "অতিরিক্ত (হেমোলাইসিস বা যকৃতের রোগের ইঙ্গিত)",
+      badgeAbsent: "অনুপস্থিত (সম্পূর্ণ পিত্তনালীর ব্লকেজ নির্দেশক)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন",
+      titleEdu: "📚 ক্লিনিক্যাল প্যাথলজি নোট: ইউরোবিলিনোজেন",
+      eduQ1: "ইউরোবিলিনোজেন কী?",
+      eduA1: "ইউরোবিলিনোজেন হলো বিলিরুবিন হ্রাসের ফলে তৈরি একটি বর্ণহীন উপজাত পদার্থ। এটি অন্ত্রে ব্যাকটেরিয়ার ক্রিয়াকলাপের মাধ্যমে তৈরি হয়। এর সিংহভাগ মলের সাথে নিষ্কাশিত হয়, তবে একটি ছোট অংশ পুনরায় শোষিত হয়ে প্রস্রাবের মাধ্যমে নির্গত হয়।",
+      eduQ2: "প্রস্রাবে ইউরোবিলিনোজেনের ক্লিনিক্যাল গুরুত্ব কী?",
+      eduA2: "প্রস্রাবে অতিরিক্ত ইউরোবিলিনোজেন অতিরিক্ত লোহিত রক্তকণিকা ধ্বংস (হেমোলাইসিস) বা লিভারের স্বাভাবিক শোষিত ইউরোবিলিনোজেন দূর করার অক্ষমতা নির্দেশ করে। এটি সম্পূর্ণ অনুপস্থিত থাকা মানে কোনো বিলিরুবিন অন্ত্রে পৌঁছাচ্ছে না, যা পিত্তনালীতে ব্লকেজের লক্ষণ হতে পারে।"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "मूत्र यूरोबिलिनोजेन विश्लेषक",
+      toolDesc: "हेमोलिसिस, यकृत समारोह और पित्त धैर्य का मूल्यांकन करने के लिए मूत्र यूरोबिलिनोजेन स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬 यूरोबिलिनोजेन पैराम��टर्स",
+      clearBtn: "रीसेट करें",
+      labelGrade: "मूत्र यूरोबिलिनोजेन ग्रेड",
+      selectGradePlaceholder: "ग्रेड चुनें...",
+      btnAnalyze: "यूरोबिलिनोजेन का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपने मूत्र यूरोबिलिनोजेन ग्रेड का चयन करें और चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 मूत्र यूरोबिलिनोजेन डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्��श्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य (अपेक्षित शारीरिक स्तर)",
+      badgeElevated: "ऊंचा (हेमोलिसिस या हेपेटिक रोग का सुझाव देता है)",
+      badgeAbsent: "अनुपस्थित (पित्त वाहिनी में पूर्ण रुकावट का संकेत)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है",
+      titleEdu: "📚 क्लिनिकल पैथोलॉजी नोट्स: यूरोबिलिनोजेन",
+      eduQ1: "यूरोबिलिनोजेन क्या है?",
+      eduA1: "यूरोबिलिनोजेन बिलीरुबिन कमी का एक रंगहीन उपोत्पाद है। यह आंतों में बिलीरुबिन पर बैक्टीरिया की क्रिया से बनता है। इसका अधिकांश भाग मल में उत्सर्जित हो जाता है, लेकिन थोड़ी मात्रा पुनः अवशोषित होकर मूत्र में उत्सर्जित हो जाती है।",
+      eduQ2: "मूत्र यूरोबिलिनोजेन का नैदानिक ​​महत्व क्या है?",
+      eduA2: "ऊंचा मूत्र यूरोबिलिनोजेन अतिरिक्त बिलीरुबिन उत्पादन (जैसे हेमोलिसिस) या सामान्य पुन: अवशोषित यूरोबिलिनोजेन को साफ़ करने में हेपेटिक अक्षमता को इंगित करता है। अनुपस्थित स्तर इंगित करता है कि कोई बिलीरुबिन आंत तक नहीं पहुंच रहा है, जो आमतौर पर पित्त पथ में पूर्ण रुकावट का संकेत देता है।"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is urobilinogen?", a: "Urobilinogen is formed from the breakdown of bilirubin by intestinal bacteria. A small amount naturally returns to the blood and is excreted in urine." },
+      { q: "What does Normal or Trace mean?", a: "A result of 0.1 to 1.0 EU/dL is considered normal and indicates that your liver and bile ducts are functioning correctly." },
+      { q: "What does an Absent result mean?", a: "An absent urobilinogen in urine suggests complete obstruction of the bile duct. Bilirubin cannot enter the intestines, so no urobilinogen is formed." },
+      { q: "What does an Elevated (2+, 4+, 8+) result mean?", a: "High levels suggest either the liver is damaged and can't clear reabsorbed urobilinogen, or there is hemolytic anemia causing excess bilirubin production." },
+      { q: "Can drugs affect urine urobilinogen?", a: "Yes, antibiotics that destroy intestinal bacteria can reduce urine urobilinogen levels, sometimes leading to false absent readings." }
+    ],
+    bn: [
+      { q: "ইউরোবিলিনোজেন কী?", a: "অন্ত্রের ব্যাকটেরিয়া দ্বারা বিলিরুবিন ভেঙে ইউরোবিলিনোজেন তৈরি হয়। এর একটি সামান্য অংশ প্রাকৃতিকভাবে রক্তে ফিরে আসে এবং প্রস্রাবের মাধ্যমে নিষ্কাশিত হয়।" },
+      { q: "স্বাভাবিক বা ট্রেস (Normal or Trace) বলতে কী বোঝায়?", a: "০.১ থেকে ১.০ EU/dL মাত্রা স্বাভাবিক ধরা হয়, যা যকৃত ও পিত্তনালীর সঠিক কার্যকারিতা প্রদর্শন করে।" },
+      { q: "অনুপস্থিত (Absent) ফলাফলের অর্থ কী?", a: "অনুপস্থিত ইউরোবিলিনোজেন পিত্তনালীর সম্পূর্ণ ব্লকেজ নির্দেশ করে। পিত্ত অন্ত্রে পৌঁছাতে না পারলে ইউরোবিলিনোজেন তৈরি হতে পারে না।" },
+      { q: "অতিরিক্ত (2+, 4+, 8+) ফলাফলের অর্থ কী?", a: "উচ্চ মাত্রা ইঙ্গিত করে যে যকৃত ক্ষতিগ্রস্থ বা অতিরিক্ত লোহিত রক্তকণিকা ভাঙার ফলে ল্যাবে বেশি মান পাওয়া যাচ্ছে।" },
+      { q: "ওষুধ কি প্রস্রাবের ইউরোবিলিনোজেনকে প্রভাবিত করতে পারে?", a: "হ্যাঁ, অন্ত্রের ব্যাক্টেরিয়া ধ্বংসকারী শক্তিশালী অ্যান্টিবায়োটিক ব্যবহারের ফলে প্রস্রাবে ইউরোবিলিনোজেনের মাত্রা সাময়িকভাবে শূন্য হতে পারে।" }
+    ],
+    hi: [
+      { q: "यूरोबिलिनोजेन क्या है?", a: "यूरोबिलिनोजेन आंतों के बैक्टीरिया द्वारा बिलीरुबिन के टूटने से बनता है। थोड़ी सी मात्रा स्वाभाविक रूप से रक्त में लौट आती है और मूत्र में उत्सर्जित हो जाती है।" },
+      { q: "नॉर्मल या ट्रेस का क्या मतलब है?", a: "0.1 स�� 1.0 ईयू/डीएल का परिणाम सामान्य माना जाता है और यह दर्शाता है कि आपका यकृत और पित्त नलिकाएं सही ढंग से काम कर रहे हैं।" },
+      { q: "अनुपस्थित परिणाम का क्या अर्थ है?", a: "मूत्र में यूरोबिलिनोजेन की अनुपस्थिति पित्त नली में पूर्ण रुकावट का संकेत देती है। बिलीरुबिन आंतों में प्रवेश नहीं कर सकता, इसलिए यूरोबिलिनोजेन नहीं बनता है।" },
+      { q: "उन्नत (2+, 4+, 8+) परिणाम का क्या मतलब है?", a: "उच्च स्तर से पता चलता है कि या तो लीवर क्षतिग्रस्त है और पुन: अवशोषित यूरोबिलिनोजेन को साफ़ नहीं कर सकता है, या हेमोलिटिक एनीमिया है जो अतिरिक्त बिलीरुबिन उत्पादन का कारण बनता है।" },
+      { q: "क्या दवाएं मूत्र यूरोबिलिनोजेन को प्रभावित कर सकती हैं?", a: "हाँ, एंटीबायोटिक्स जो आंतों के बैक्टीरिया को नष्ट करते हैं, मूत्र में यूरोबिलिनोजेन के स्तर को कम कर सकते हैं, जिससे कभी-कभी गलत अनुपस्थित रीडिंग हो जाती है।" }
+    ]
+  };
+
+  const clinicalInsights = {
+    en: {
+      normal: {
+        desc: "Expected physiological level. A small amount of urobilinogen in urine is normal and indicates normal hemoglobin breakdown and biliary excretion.",
+        factors: ["Healthy liver function", "Normal red blood cell lifespan", "Patent bile ducts"],
+        symptoms: ["No jaundice", "Normal urine color"],
+        prevention: ["Maintain balanced diet", "Stay hydrated"],
+        consult: "Routine follow-up only. No action needed."
+      },
+      elevated: {
+        desc: "Elevated levels of urobilinogen (>1.0 EU/dL) in urine can occur when there is excessive breakdown of red blood cells (hemolysis) or liver disease (hepatitis, cirrhosis) that prevents the liver from clearing urobilinogen.",
+        factors: ["Hemolytic anemia", "Malaria or other hemolytic conditions", "Liver cirrhosis or acute hepatitis", "Congestive heart failure"],
+        symptoms: ["Dark or tea-colored urine", "Jaundice (yellowing of skin/eyes)", "Fatigue and weakness"],
+        prevention: ["Avoid hepatotoxic substances (alcohol, certain medications)", "Consult physician for hemolytic profiling"],
+        consult: "Consult a primary care physician or gastroenterologist/hepatologist for liver function tests and complete blood count."
+      },
+      absent: {
+        desc: "Urobilinogen is completely absent in the urine. This is a critical indicator suggesting that bile is not reaching the duodenum, which prevents intestinal bacteria from converting bilirubin into urobilinogen. This points towards complete biliary obstruction.",
+        factors: ["Complete bile duct obstruction (e.g., gallstones, biliary stricture, pancreatic head tumor)", "Severe cholestasis", "Broad-spectrum antibiotic therapy suppressing gut flora"],
+        symptoms: ["Clay-colored or pale stools", "Severe jaundice", "Itchy skin (pruritus)", "Dark urine"],
+        prevention: ["Do not ignore pale stools or severe yellowing of eyes", "Seek emergency medical diagnostics"],
+        consult: "Urgent medical evaluation by a gastroenterologist or surgeon is required to investigate bile duct patency."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "স্বাভাবিক শারীরিক স্তর। প্রস্রাবে সামান্য পরিমাণে ইউরোবিলিনোজেন থাকা স্বাভাবিক এবং এটি স্বাভাবিক হিমোগ্লোবিন ভাঙন ও পিত্ত নিঃসরণ নির্দেশ করে।",
+        factors: ["সুস্থ লিভারের কার্যকারিতা", "লোহিত রক্তকণিকার স্বাভাবিক আয়ুষ্কাল", "উন্মুক্ত পিত্তনালী"],
+        symptoms: ["জন্ডিস না থাকা", "প্রস্রাবের স্বাভাবিক রঙ"],
+        prevention: ["ভারসাম্যপূর্ণ খাবার খান", "পর্যাপ্ত পানি পান করুন"],
+        consult: "শুধুমাত্র নিয়মিত রুটিন পরীক্ষা। কোনো বিশেষ ব্যবস্থার প্রয়োজন নেই।"
+      },
+      elevated: {
+        desc: "প্রস্রাবে অতিরিক্ত মাত্রায় ইউরোবিলিনোজেন (>১.০ EU/dL) পাওয়া গেলে তা অতিরিক্ত লোহিত রক্তকণিকা ভাঙা (হেমোলাইসিস) অথবা লিভারের রোগ (হেপাটাইটিস, সিরোসিস) নির্দেশ করতে পারে যা লিভারকে রক্ত সংবহন থেকে ইউরোবিলিনোজেন অপসারণ করতে বাধা দেয়।",
+        factors: ["হেমোলাইটিক অ্যানিমিয়া", "ম্যালেরিয়া বা অন্যান্য রক্তকণিকা ধ্বংসকারী অবস্থা", "লিভার সিরোসিস বা তীব্র হেপাটাইটিস", "কনজেস্টিভ হার্ট ফেইলিউর"],
+        symptoms: ["গাঢ় বা চা-রঙা প্রস্রাব", "জন্ডিস (ত্বক বা চোখ হলুদ হওয়া)", "ক্লান্তি এবং দুর্বলতা"],
+        prevention: ["লিভারের জন্য ক্ষতিকারক উপাদান (অ্যালকোহল, নির্দিষ্ট কিছু ওষুধ) এড়িয়ে চলুন", "রক্ত পরীক্ষার জন্য ডাক্তারের পরামর্শ নিন"],
+        consult: "লিভারের কার্যকারিতা এবং রক্তের সম্পূর্ণ পরীক্ষার (CBC) জন্য অবিলম্বে একজন গ্যাস্ট্রোএন্টারোলজিস্ট/হেপাটোলজিস্টের পরামর্শ নিন।"
+      },
+      absent: {
+        desc: "প্রস্রাবে ইউরোবিলিনোজেন সম্পূর্ণ অনুপস্থিত। এটি একটি জটিল অবস্থা যা নির্দেশ করে যে পিত্ত ক্ষুদ্রান্ত্রে পৌঁছাচ্ছে না, যার ফলে অন্ত্রের ব্যাকটেরিয়া বিলিরুবিনকে ইউরোবিলিনোজেনে রূপান্তর করতে পারছে না। এটি সম্পূর্ণ পিত্তনালী বাধা নির্দেশ করে।",
+        factors: ["সম্পূর্ণ পিত্তনালী ব্লকেজ (যেমন: পিত্তপাথর, বিলিয়ারি স্ট্রিকচার, অগ্ন্যাশয়ের টিউমার)", "মারাত্মক কোলেস্ট্যাসিস", "অন্ত্রের ব্যাক্টেরিয়া ধ্বংসকারী ব্রড-স্পেকট্রাম অ্যান্টিবায়োটিক ব্যবহার"],
+        symptoms: ["হালকা বা মাটির রঙের পায়খানা", "তীব্র জন্ডিস", "ত্বক চুলকানি (প্রুরিটাস)", "গাঢ় প্রস্রাব"],
+        prevention: ["মল ফ্যাকাসে হওয়া বা চোখের তীব্র হলুদ ভাবকে অবহেলা করবেন না", "জরুরি ল্যাব পরীক্ষার ব্যবস্থা করুন"],
+        consult: "পিত্তনালীর বাধা পরীক্ষা করতে অবিলম্বে একজন গ্যাস্ট্রোএন্টারোলজিস্ট বা সার্জনের জরুরি পরামর্শ ও মূল্যায়ন প্রয়োজন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "अपेक्षित शारीरिक स्तर. मूत्र में यूरोबिलिनोजेन की थोड़ी मात्रा सामान्य है और सामान्य हीमोग्लोबिन टूटने और पित्त उत्सर्जन का संकेत देती है।",
+        factors: ["स्वस्थ जिगर समारोह", "सामान्य लाल रक्त कोशिका जीवनकाल", "पेटेंट पित्त नलिकाएं"],
+        symptoms: ["पीलिया नहीं", "मूत्र का सामान्य रंग"],
+        prevention: ["संतुलित आहार बनाए रखें", "हाइड्रेटेड रहें"],
+        consult: "केवल नियमित अनुवर्ती कार्रवाई। ���िसी कार्रवाई की आवश्यकता नहीं."
+      },
+      elevated: {
+        desc: "मूत्र में यूरोबिलिनोजेन का ऊंचा स्तर (>1.0 ईयू/डीएल) तब हो सकता है जब लाल रक्त कोशिकाओं (हेमोलिसिस) या यकृत रोग (हेपेटाइटिस, सिरोसिस) का अत्यधिक टूटना होता है जो यकृत को यूरोबिलिनोजेन को साफ़ करने से रोकता है।",
+        factors: ["हेमोलिटिक एनीमिया", "मलेरिया या अन्य हेमोलिटिक स्थितियाँ", "लिवर सिरोसिस या तीव्र हेपेटाइटिस", "कंजेस्टिव हृदय विफलता"],
+        symptoms: ["गहरे या चाय के रंग का पेशाब", "पीलिया (त्वचा/आंखों का पीला पड़ना)", "थकान और कमजोरी"],
+        prevention: ["हेपेटोटॉक्सिक पदार्थों (शराब, कुछ दवाएं) से बचें", "हेमोलिटिक प्रोफाइलिंग के लिए चिकित्सक से परामर्श लें"],
+        consult: "लीवर फ़ंक्शन परीक्षण और संपूर्ण रक्त गणना के लिए प्राथमिक देखभाल चिकित्सक या गैस्ट्रोएंटेरोलॉजिस्ट/हेपेटोलॉजिस्��� से परामर्श लें।"
+      },
+      absent: {
+        desc: "मूत्र में यूरोबिलिनोजेन पूर्णतः अनुपस्थित होता है। यह एक महत्वपूर्ण संकेतक है जो बताता है कि पित्त ग्रहणी तक नहीं पहुंच रहा है, जो आंतों के बैक्टीरिया को बिलीरुबिन को यूरोबिलिनोजेन में परिवर्तित करने से रोकता है। यह पूर्ण पित्त अवरोध की ओर इशारा करता है।",
+        factors: ["संपूर्ण पित्त नली में रुकावट (जैसे, पित्त पथरी, पित्त की सिकुड़न, अग्नाशयी सिर का ट्यूमर)", "गंभीर कोलेस्टेसिस", "ब्रॉड-स्पेक्ट्रम एंटीबायोटिक थेरेपी आंत वनस्पति को दबाती है"],
+        symptoms: ["मिट्टी के रंग का या पीला मल", "गंभीर पीलिया", "खुजली वाली त्वचा (खुजली)", "गहरे रंग का मूत्र"],
+        prevention: ["पीले मल या आंखों का अत्यधिक पीलापन नज़रअंदाज न करें", "आपातकालीन चिकित्सा निदान की तलाश करें"],
+        consult: "पित्त नली की धैर्यता की जांच के ��िए गैस्ट्रोएंटेरोलॉजिस्ट या सर्जन द्वारा तत्काल चिकित्सा मूल्यांकन की आवश्यकता होती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-uurobilinogen-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        el.innerHTML = translations[lang][key];
+      }
+    });
+
+    // Translate option list explicitly
+    const select = document.getElementById("valGrade");
+    if (select) {
+      select.options[0].text = translations[lang].selectGradePlaceholder;
+    }
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valGrade").selectedIndex = 0;
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function analyzeUrobilinogen() {
+    const grade = document.getElementById("valGrade").value;
+
+    if (!grade) {
+      alert(currentLang === "en" ? "Please select a grade." : "দয়া করে একটি গ্রেড নির্বাচন করুন।");
+      return;
+    }
+
+    let statusKey = "normal";
+    let badgeKey = "badgeNormal";
+    let pointerPct = 35;
+    let valString = "";
+
+    if (grade === "normal") {
+      statusKey = "normal";
+      badgeKey = "badgeNormal";
+      pointerPct = 35;
+      valString = "Normal/Trace (0.1-1.0 EU/dL)";
+    } else if (grade === "twoplus") {
+      statusKey = "elevated";
+      badgeKey = "badgeElevated";
+      pointerPct = 60;
+      valString = "2+ (Elevated)";
+    } else if (grade === "fourplus") {
+      statusKey = "elevated";
+      badgeKey = "badgeElevated";
+      pointerPct = 75;
+      valString = "4+ (Elevated)";
+    } else if (grade === "eightplus") {
+      statusKey = "elevated";
+      badgeKey = "badgeElevated";
+      pointerPct = 90;
+      valString = "8+ (Elevated)";
+    } else if (grade === "absent") {
+      statusKey = "absent";
+      badgeKey = "badgeAbsent";
+      pointerPct = 10;
+      valString = "Absent (0 EU/dL)";
+    }
+
+    activeReportData = {
+      grade,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      valString,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valString);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resVal").textContent = d.grade === "absent" ? "Absent" : d.grade.replace("plus", "+").toUpperCase();
+    document.getElementById("resText").textContent = d.valString;
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "elevated") colorClass = "high";
+    else if (d.statusKey === "absent") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = clinicalInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valString) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valString,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-uurobilinogen-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valString} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- URINE UROBILINOGEN REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Grade: ${activeReportData.valString}\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `urobilinogen-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Splitter &bull; Extract Pages Online - SSDK TOOLS HUB</title>
+  <meta name="description" content="Extract specific page ranges from a PDF or split all pages into separate files. 100% secure client-side splitting with zero uploads.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <!-- Load pdf-lib and JSZip for single-page zipper exports -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 14px;
+    }
+    .input-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .input-group input, .input-group select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      transition: border 0.3s;
+    }
+    .input-group input:focus, .input-group select:focus {
+      border-color: var(--accent);
+    }
+    .option-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 14px;
+    }
+    .option-card h4 {
+      font-size: 0.9rem;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .radio-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .radio-label input {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">PDF Splitter</h1>
+  <p class="page-sub">Split a PDF document into page ranges or extract all pages as individual files locally.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 24px; align-items: start;">
+      
+      <!-- Left Column: Upload -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Upload PDF Document</h4>
+        <div id="dropZone" style="border: 2px dashed var(--border); padding: 35px 24px; border-radius: 12px; text-align: center; cursor: pointer; background: var(--bg2); transition: 0.3s; margin-bottom: 16px;">
+          <span style="font-size: 2.8rem; display: block; margin-bottom: 8px;">📄</span>
+          <p style="font-size: 0.9rem; color: var(--muted); margin: 0;">Drag & drop your PDF file here, or <span style="color: var(--accent); font-weight: 700;">browse</span></p>
+          <input type="file" id="pdfInput" accept="application/pdf" style="display: none;">
+        </div>
+
+        <div id="fileInfoCard" style="display: none; padding: 14px; border-radius: 10px; background: var(--bg3); border: 1px solid var(--border);">
+          <h4 style="margin-bottom: 4px;">Loaded Document</h4>
+          <p id="pdfFileName" style="font-weight: bold; font-size: 0.85rem; word-break: break-all; margin: 4px 0;"></p>
+          <p style="font-size: 0.8rem; color: var(--muted); margin: 0;">
+            Size: <span id="pdfFileSize">-</span> | Pages: <strong id="pdfTotalPages" style="color: var(--accent);">-</strong>
+          </p>
+        </div>
+      </div>
+
+      <!-- Right Column: Settings & Operations -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 220px; display: flex; flex-direction: column; justify-content: center;">
+        
+        <div id="splitControls" style="display: none;">
+          <div class="option-card" style="margin-top: 0;">
+            <h4>Split Operations</h4>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="splitMode" value="range" checked onchange="toggleMode()">
+                <span>Extract selected page range</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="splitMode" value="all" onchange="toggleMode()">
+                <span>Extract all pages into separate PDFs (ZIP)</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="input-group" id="rangeInputGroup" style="margin-top: 14px;">
+            <label for="pagesRange">Page Selection Range (e.g. 1-3, 5, 8-10)</label>
+            <input type="text" id="pagesRange" placeholder="e.g. 1-2, 4">
+          </div>
+        </div>
+
+        <div id="splitPlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Upload a PDF document to configure page extraction settings.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnSplit" style="display: none; background: var(--grad2);">✂️ Split PDF</button>
+      <button class="btn ghost" id="btnClear" style="display: none; border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear File</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Flexible Page Ranges:</strong> Extract individual pages or ranges like <code>1-3, 5</code> simultaneously.</li>
+      <li><strong>ZIP Archive Splitting:</strong> Package all pages into separate single-page PDF files bundled inside a ZIP package.</li>
+      <li><strong>Local Browser Sandbox:</strong> Fully private, executes in your local browser sandbox memory, keeping your documents confidential.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">How do I specify splits?<span>＋</span></div>
+        <div class="faq-a">Enter page numbers separated by commas, or ranges using dashes. For example, entering <code>1-3, 5</code> will extract pages 1, 2, 3, and 5 into your new document.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Can this tool split password-protected PDFs?<span>＋</span></div>
+        <div class="faq-a">No. For security reasons, encrypted or password-protected PDF files must be decrypted before processing. We do not support password cracking to guarantee serverless processing.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  let loadedFile = null;
+  let loadedPdfDoc = null;
+  let loadedPageCount = 0;
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  // Handle Drag & Drop
+  const dropZone = $('dropZone');
+  dropZone.onclick = () => $('pdfInput').click();
+
+  dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--accent)';
+  };
+  dropZone.ondragleave = () => {
+    dropZone.style.borderColor = 'var(--border)';
+  };
+  dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files.length) {
+      loadPdf(e.dataTransfer.files[0]);
+    }
+  };
+  $('pdfInput').onchange = (e) => {
+    if (e.target.files.length) {
+      loadPdf(e.target.files[0]);
+    }
+  };
+
+  function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  async function loadPdf(file) {
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      showStatus('Please select a valid PDF file.', true);
+      return;
+    }
+    
+    showStatus('Loading PDF file...');
+    loadedFile = file;
+
+    try {
+      const buffer = await file.arrayBuffer();
+      loadedPdfDoc = await PDFLib.PDFDocument.load(buffer, { updateMetadata: false });
+      loadedPageCount = loadedPdfDoc.getPageCount();
+
+      $('pdfFileName').textContent = file.name;
+      $('pdfFileSize').textContent = formatBytes(file.size);
+      $('pdfTotalPages').textContent = loadedPageCount;
+
+      $('splitPlaceholder').style.display = 'none';
+      $('splitControls').style.display = 'block';
+      $('fileInfoCard').style.display = 'block';
+
+      $('btnSplit').style.display = 'inline-flex';
+      $('btnClear').style.display = 'inline-flex';
+
+      showStatus('✅ PDF loaded successfully. Choose your split configuration.');
+    } catch (e) {
+      console.error(e);
+      showStatus('❌ Failed to read PDF file. It might be locked or corrupted.', true);
+    }
+  }
+
+  function toggleMode() {
+    const mode = document.querySelector('input[name="splitMode"]:checked').value;
+    if (mode === 'range') {
+      $('rangeInputGroup').style.display = 'flex';
+    } else {
+      $('rangeInputGroup').style.display = 'none';
+    }
+  }
+
+  function parsePageRanges(rangeStr, maxPages) {
+    const pages = new Set();
+    const parts = rangeStr.split(',');
+    
+    for (let part of parts) {
+      part = part.trim();
+      if (!part) continue;
+      
+      if (part.includes('-')) {
+        const bounds = part.split('-');
+        const start = parseInt(bounds[0]);
+        const end = parseInt(bounds[1]);
+        
+        if (isNaN(start) || isNaN(end) || start <= 0 || end <= 0 || start > end) {
+          throw new Error(`Invalid range format: "${part}"`);
+        }
+        if (start > maxPages || end > maxPages) {
+          throw new Error(`Page out of bounds (${maxPages} pages max): "${part}"`);
+        }
+        
+        for (let i = start; i <= end; i++) {
+          pages.add(i - 1); // 0-indexed
+        }
+      } else {
+        const num = parseInt(part);
+        if (isNaN(num) || num <= 0) {
+          throw new Error(`Invalid page number: "${part}"`);
+        }
+        if (num > maxPages) {
+          throw new Error(`Page number exceeds maximum (${maxPages}): "${part}"`);
+        }
+        pages.add(num - 1); // 0-indexed
+      }
+    }
+    
+    return Array.from(pages).sort((a, b) => a - b);
+  }
+
+  $('btnSplit').onclick = async () => {
+    if (!loadedPdfDoc) return;
+    
+    const mode = document.querySelector('input[name="splitMode"]:checked').value;
+    showStatus('Processing PDF split...');
+
+    try {
+      if (mode === 'range') {
+        const rangeText = $('pagesRange').value.trim();
+        if (!rangeText) {
+          showStatus('Please specify page range.', true);
+          return;
+        }
+
+        const indices = parsePageRanges(rangeText, loadedPageCount);
+        if (indices.length === 0) {
+          showStatus('No pages matched the input query.', true);
+          return;
+        }
+
+        const newPdf = await PDFLib.PDFDocument.create();
+        const copiedPages = await newPdf.copyPages(loadedPdfDoc, indices);
+        copiedPages.forEach(p => newPdf.addPage(p));
+
+        const bytes = await newPdf.save();
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'split-pages.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showStatus('✅ Range extracted and downloaded successfully!');
+      } else {
+        // Extract all pages separately and ZIP them
+        if (typeof JSZip === 'undefined') {
+          showStatus('Error: JSZip failed to load. Check your network.', true);
+          return;
+        }
+
+        const zip = new JSZip();
+        const zipName = loadedFile.name.replace(/\.[^/.]+$/, "") + "-split.zip";
+        
+        showStatus('Creating separate PDFs in ZIP queue...');
+        
+        for (let i = 0; i < loadedPageCount; i++) {
+          const singlePagePdf = await PDFLib.PDFDocument.create();
+          const copied = await singlePagePdf.copyPages(loadedPdfDoc, [i]);
+          singlePagePdf.addPage(copied[0]);
+          const bytes = await singlePagePdf.save();
+          zip.file(`page-${i+1}.pdf`, bytes);
+        }
+
+        zip.generateAsync({ type: 'blob' }).then(zipBlob => {
+          const url = URL.createObjectURL(zipBlob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = zipName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showStatus('✅ All pages separated and ZIP downloaded!');
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      showStatus(`❌ Operation failed: ${err.message}`, true);
+    }
+  };
+
+  $('btnClear').onclick = () => {
+    loadedFile = null;
+    loadedPdfDoc = null;
+    loadedPageCount = 0;
+    $('pdfInput').value = '';
+    $('pagesRange').value = '';
+
+    $('splitPlaceholder').style.display = 'block';
+    $('splitControls').style.display = 'none';
+    $('fileInfoCard').style.display = 'none';
+
+    $('btnSplit').style.display = 'none';
+    $('btnClear').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

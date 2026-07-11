@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Urine Routine Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Comprehensive urine routine and microscopy report analysis. Evaluate all urinalysis parameters including pH, protein, glucose, ketones, and blood cells.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root { --normal-color:#10b981; --high-color:#f59e0b; --critical-color:#ef4444; --border-color:#fbbf24; }
+    .lab-grid { display:grid; grid-template-columns:1fr 1.1fr; gap:24px; align-items:start; }
+    @media(max-width:1024px){ .lab-grid{ grid-template-columns:1fr; } }
+    .panel-title-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:8px; }
+    .panel-title-bar h3 { font-size:1.1rem; font-weight:800; }
+    .fields-category { background:rgba(255,255,255,0.01); border:1px solid var(--border); border-radius:12px; padding:18px; margin-bottom:16px; }
+    .fields-category h4 { font-size:0.85rem; font-weight:800; color:var(--accent); margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:6px; }
+    .form-inputs-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .form-inputs-grid.single { grid-template-columns:1fr; }
+    .input-wrapper { display:flex; flex-direction:column; gap:4px; }
+    .input-wrapper label { font-size:0.75rem; font-weight:700; color:var(--muted); }
+    .input-wrapper input, .input-wrapper select { padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg3); color:var(--text); outline:none; font-size:0.85rem; transition:all 0.25s; }
+    .input-wrapper input:focus, .input-wrapper select:focus { border-color:var(--accent); box-shadow:0 0 8px var(--glow); }
+    .lang-toggle-container { display:flex; justify-content:flex-end; margin-bottom:14px; }
+    .lang-btn { background:var(--bg3); border:1px solid var(--border); color:var(--muted); padding:6px 14px; border-radius:20px; cursor:pointer; font-size:0.8rem; font-weight:700; transition:all 0.3s; display:flex; align-items:center; gap:6px; }
+    .results-display { background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:20px; min-height:500px; }
+    .results-placeholder { text-align:center; padding:80px 20px; color:var(--muted); }
+    .results-placeholder .icon { font-size:3.5rem; margin-bottom:12px; opacity:0.5; display:block; }
+    .report-card { display:flex; flex-direction:column; gap:14px; }
+    .overall-badge { padding:16px 20px; border-radius:12px; text-align:center; border:1px solid; }
+    .overall-badge .badge-title { font-size:0.8rem; font-weight:700; color:var(--muted); margin-bottom:6px; }
+    .overall-badge .badge-val { font-size:1.6rem; font-weight:900; }
+    .urinalysis-table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+    .urinalysis-table th, .urinalysis-table td { border:1px solid var(--border); padding:8px 10px; text-align:left; }
+    .urinalysis-table th { background:rgba(255,255,255,0.03); font-weight:700; color:var(--text); }
+    .status-badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:0.7rem; font-weight:800; }
+    .status-normal { background:rgba(16,185,129,0.15); color:var(--normal-color); }
+    .status-abnormal { background:rgba(239,68,68,0.15); color:var(--critical-color); }
+    .status-borderline { background:rgba(245,158,11,0.15); color:var(--high-color); }
+    .insight-card { background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:16px; margin-top:12px; }
+    .insight-card h5 { font-size:0.95rem; font-weight:800; margin-bottom:8px; }
+    .insight-card p, .insight-card li { font-size:0.82rem; color:var(--muted); line-height:1.5; }
+    .insight-card ul { margin-left:18px; margin-top:8px; }
+    .history-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px; margin-top:16px; }
+    .history-item { display:flex; justify-content:space-between; align-items:center; padding:8px 12px; background:var(--bg3); border-radius:6px; font-size:0.75rem; border:1px solid var(--border); margin-bottom:6px; }
+    .medical-disclaimer-box { background:rgba(245,158,11,0.03); border:1px dashed var(--border-color); border-radius:10px; padding:14px; margin-top:16px; font-size:0.8rem; color:#fbbf24; line-height:1.5; }
+    @media print { body{background:#fff!important;color:#000!important;} .bg-fx,nav,footer,.tool-control,.lang-toggle-container,.fields-category,.tool-meta,.faq-section,.history-card,.btn,.btn-icon{display:none!important;} }
+  </style>
+</head>
+<body>
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<main class="page reveal-on-scroll">
+  
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Urine Routine Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Comprehensive urinalysis report evaluation — enter all dipstick and microscopy parameters for a complete clinical summary.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Urinalysis Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <!-- Physical Parameters -->
+        <div class="fields-category">
+          <h4 data-translate="catPhysical">🔍 Physical Characteristics</h4>
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label data-translate="labelColor">Urine Color</label>
+              <select id="fColor">
+                <option value="yellow" selected>Yellow (Normal)</option>
+                <option value="pale">Pale / Colorless</option>
+                <option value="dark_yellow">Dark Yellow</option>
+                <option value="amber">Amber / Orange</option>
+                <option value="red">Red / Pink</option>
+                <option value="brown">Brown / Tea-colored</option>
+                <option value="cloudy">Cloudy / Turbid</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label data-translate="labelTurbidity">Turbidity</label>
+              <select id="fTurbidity">
+                <option value="clear" selected>Clear</option>
+                <option value="slightly">Slightly Turbid</option>
+                <option value="turbid">Turbid</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label data-translate="labelPH">pH</label>
+              <input type="number" id="fPH" step="0.1" min="4" max="9" placeholder="5.0 - 8.0">
+            </div>
+            <div class="input-wrapper">
+              <label data-translate="labelSG">Specific Gravity</label>
+              <input type="number" id="fSG" step="0.001" min="1.000" max="1.040" placeholder="1.005 - 1.030">
+            </div>
+          </div>
+        </div>
+
+        <!-- Chemical Parameters -->
+        <div class="fields-category">
+          <h4 data-translate="catChemical">⚗️ Chemical Parameters</h4>
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label data-translate="labelProtein">Protein</label>
+              <select id="fProtein">
+                <option value="negative" selected>Negative</option>
+                <option value="trace">Trace</option>
+                <option value="1plus">1+</option>
+                <option value="2plus">2+</option>
+                <option value="3plus">3+</option>
+                <option value="4plus">4+</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label data-translate="labelGlucose">Glucose</label>
+              <select id="fGlucose">
+                <option value="negative" selected>Negative</option>
+                <option value="trace">Trace</option>
+                <option value="1plus">1+</option>
+                <option value="2plus">2+</option>
+                <option value="3plus">3+</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label data-translate="labelKetone">Ketones</label>
+              <select id="fKetone">
+                <option value="negative" selected>Negative</option>
+                <option value="trace">Trace</option>
+                <option value="small">Small/1+</option>
+                <option value="moderate">Moderate/2+</option>
+                <option value="large">Large/3+</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label data-translate="labelBilirubin">Bilirubin</label>
+              <select id="fBilirubin">
+                <option value="negative" selected>Negative</option>
+                <option value="trace">Trace/1+</option>
+                <option value="moderate">2+</option>
+                <option value="large">3+</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label data-translate="labelUrobilinogen">Urobilinogen</label>
+              <select id="fUrobilinogen">
+                <option value="normal" selected>Normal (0.1-1.0 EU)</option>
+                <option value="elevated">Elevated (>1.0 EU)</option>
+                <option value="absent">Absent</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label data-translate="labelNitrite">Nitrite</label>
+              <select id="fNitrite">
+                <option value="negative" selected>Negative</option>
+                <option value="positive">Positive</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label data-translate="labelLeukocyte">Leukocyte Esterase</label>
+              <select id="fLeukocyte">
+                <option value="negative" selected>Negative</option>
+                <option value="trace">Trace/Small</option>
+                <option value="moderate">Moderate/2+</option>
+                <option value="large">Large/3+</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label data-translate="labelBlood">Blood (Hematuria)</label>
+              <select id="fBlood">
+                <option value="negative" selected>Negative</option>
+                <option value="trace">Trace/Small</option>
+                <option value="moderate">Moderate</option>
+                <option value="large">Large</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width:100%;justify-content:center;" onclick="analyzeUrine()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Urine Report</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Results Panel -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Urinalysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter all available urinalysis parameters and click Analyze to generate a comprehensive clinical report.</p>
+        </div>
+        <div class="report-card" id="reportCardSec" style="display:none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Urine Routine Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()">📋</button>
+              <button class="btn-icon" onclick="printReport()">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()">🖼️</button>
+            </div>
+          </div>
+
+          <!-- Overall Status Badge -->
+          <div class="overall-badge" id="overallBadge">
+            <div class="badge-title" data-translate="overallStatus">OVERALL URINALYSIS STATUS</div>
+            <div class="badge-val" id="overallBadgeText">-</div>
+          </div>
+
+          <!-- Parameters Table -->
+          <table class="urinalysis-table">
+            <thead>
+              <tr>
+                <th data-translate="thParam">Parameter</th>
+                <th data-translate="thValue">Value</th>
+                <th data-translate="thStatus">Status</th>
+              </tr>
+            </thead>
+            <tbody id="urinalysisTableBody"></tbody>
+          </table>
+
+          <!-- Clinical Insights -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Notes: Urine Routine Analysis</h3>
+    <div style="font-size:0.85rem;line-height:1.6;color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What does a urine routine test include?</strong><br><span data-translate="eduA1">A standard urinalysis includes three components: (1) Physical examination — color, clarity, specific gravity; (2) Chemical dipstick analysis — pH, protein, glucose, ketones, bilirubin, urobilinogen, nitrite, leukocyte esterase, blood; (3) Microscopic examination — RBCs, WBCs, casts, crystals.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">When is a urine routine test ordered?</strong><br><span data-translate="eduA2">Routine UTI screening, diabetes monitoring, kidney disease tracking, preoperative screening, pregnancy evaluation, and general health checkups.</span></p>
+    </div>
+  </section>
+
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div id="historyListContainer"><p style="font-size:0.75rem;color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p></div>
+  </div>
+
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">⚠️ <strong>Medical Disclaimer:</strong> Educational only. Not a substitute for professional medical advice.</div>
+</main>
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+<script>
+const translations = {
+  en: {
+    navHome:"Home", navCat:"Medical & Lab Tools", toolTitle:"Urine Routine Analyzer",
+    toolDesc:"Comprehensive urinalysis report evaluation — enter all dipstick and microscopy parameters for a complete clinical summary.",
+    inputsTitle:"🧬 Urinalysis Parameters", clearBtn:"Reset",
+    catPhysical:"🔍 Physical Characteristics", catChemical:"⚗️ Chemical Parameters",
+    labelColor:"Urine Color", labelTurbidity:"Turbidity", labelPH:"pH", labelSG:"Specific Gravity",
+    labelProtein:"Protein", labelGlucose:"Glucose", labelKetone:"Ketones",
+    labelBilirubin:"Bilirubin", labelUrobilinogen:"Urobilinogen", labelNitrite:"Nitrite",
+    labelLeukocyte:"Leukocyte Esterase", labelBlood:"Blood (Hematuria)",
+    btnAnalyze:"Analyze Urine Report",
+    placeholderTitle:"Urinalysis Report Pending", placeholderDesc:"Enter all available urinalysis parameters and click Analyze to generate a comprehensive clinical report.",
+    reportTitle:"🔬 Urine Routine Report",
+    overallStatus:"OVERALL URINALYSIS STATUS",
+    thParam:"Parameter", thValue:"Value", thStatus:"Status",
+    labelDate:"Date", recentRuns:"Recent Interpretations", noHistory:"No recent runs recorded.",
+    faqTitle:"❓ Frequently Asked Questions",
+    disclaimerText:"⚠️ <strong>Medical Disclaimer:</strong> Educational only. Not a substitute for professional medical advice.",
+    badgeNormal:"✅ Normal Urinalysis", badgeAbnormal:"⚠️ Abnormal Urinalysis", badgeCritical:"🚨 Critically Abnormal Urinalysis"
+  },
+  bn: {
+    navHome:"হোম", navCat:"মেডিকেল ও ল্যাব টুলস", toolTitle:"ইউরিন রুটিন বিশ্লেষক",
+    toolDesc:"সমস্ত ইউরিনালাইসিস প্যারামিটার প্রবেশ করিয়ে একটি সম্পূর্ণ ক্লিনিক্যাল প্রস্রাব বিশ্লেষণ রিপোর্ট তৈরি করুন।",
+    inputsTitle:"🧬 ইউরিনালাইসিস প্যারামিটার", clearBtn:"মুছে ফেলুন",
+    catPhysical:"🔍 শারীরিক বৈশিষ্ট্য", catChemical:"⚗️ রাসায়নিক প্যারামিটার",
+    labelColor:"প্রস্রাবের রঙ", labelTurbidity:"ঘোলাটেপনা", labelPH:"পিএইচ (pH)", labelSG:"আপেক্ষিক গুরুত্ব",
+    labelProtein:"প্রোটিন", labelGlucose:"গ্লুকোজ", labelKetone:"কিটোন",
+    labelBilirubin:"বিলিরুবিন", labelUrobilinogen:"ইউরোবিলিনোজেন", labelNitrite:"নাইট্রাইট",
+    labelLeukocyte:"লিউকোসাইট এস্টারেজ", labelBlood:"রক্ত (হেমাটুরিয়া)",
+    btnAnalyze:"ইউরিন রিপোর্ট বিশ্লেষণ করুন",
+    placeholderTitle:"রিপোর্ট অমীমাংসিত", placeholderDesc:"সকল ইউরিনালাইসিস প্যারামিটার লিখুন এবং বিশ্লেষণ করুন বোতামটি চাপুন।",
+    reportTitle:"🔬 ইউরিন রুটিন রিপোর্ট",
+    overallStatus:"সামগ্রিক ইউরিনালাইসিস অবস্থা",
+    thParam:"প্যারামিটার", thValue:"মান", thStatus:"অবস্থা",
+    labelDate:"তারিখ", recentRuns:"সাম্প্রতিক বিশ্লেষণ", noHistory:"কোনো রেকর্ড পাওয়া যায়নি।",
+    faqTitle:"❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী",
+    disclaimerText:"⚠️ <strong>মেডিকেল সতর্কতা:</strong> শুধুমাত্র শিক্ষামূলক। চিকিৎসার বিকল্প নয়।",
+    badgeNormal:"✅ স্বাভাবিক ইউরিনালাইসিস", badgeAbnormal:"⚠️ অস্বাভাবিক ইউরিনালাইসিস", badgeCritical:"🚨 মারাত্মক অস্বাভাবিক ইউরিনালাইসিস"
+  },
+    hi: {
+    navHome:"घर", navCat:"चिकित्सा एवं प्रयोगशाला उपकरण", toolTitle:"मूत्र नियमित विश्लेषक",
+    toolDesc:"व्यापक यूरिनलिसिस रिपोर्ट मूल्यांकन - संपूर्ण नैदानिक ​​​​सारांश के लिए सभी डिपस्टिक और माइक्रोस्कोपी पैरामीटर दर्ज करें।",
+    inputsTitle:"🧬 यूरिनलिसिस पैरामीटर्स", clearBtn:"रीसेट करें",
+    catPhysical:"🔍भौतिक लक्षण", catChemical:"⚗️ रासायनिक पैरामीटर्स",
+    labelColor:"मूत्र का रंग", labelTurbidity:"मैलापन", labelPH:"पीएच", labelSG:"विशिष्ट गुरुत्व",
+    labelProtein:"प्रोटीन", labelGlucose:"ग्लूकोज", labelKetone:"केटोन्स",
+    labelBilirubin:"बिलीरुबिन", labelUrobilinogen:"यूरोबिलिनोजेन", labelNitrite:"नाइट्राइट",
+    labelLeukocyte:"ल्यूकोसाइट एस्टरेज़", labelBlood:"रक्त (हेमट्यूरिया)",
+    btnAnalyze:"मूत्र रिपोर्ट का विश्लेषण करें",
+    placeholderTitle:"यूरिनलिसिस रिपोर्ट लंबित है", placeholderDesc:"सभी उपलब्ध यूरिनलिसिस पैरामीटर दर्ज करें और एक व्यापक नैदानिक ​​रिपोर्ट तैयार करने के लिए विश्लेषण पर क्लिक करें।",
+    reportTitle:"🔬मूत्र दिनचर्या रिपोर्ट",
+    overallStatus:"समग्र मूत्र विश्लेषण स्थिति",
+    thParam:"पैरामीटर", thValue:"मूल्य", thStatus:"स्थिति",
+    labelDate:"दिनांक", recentRuns:"हालिया व्याख्याएँ", noHistory:"कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+    faqTitle:"❓अक्सर पूछे जाने वाले प्रश्न",
+    disclaimerText:"⚠️ <strong>चिकित्सा अस्वीकरण:</strong> केवल शैक्षिक। पेशेवर चिकित्सा सलाह का विकल्प नहीं।",
+    badgeNormal:"✅ सामान्य मूत्र परीक्षण", badgeAbnormal:"⚠️ असामान्य मूत्र-विश्लेषण", badgeCritical:"🚨 गंभीर रूप से असामान्य मूत्र-विश्लेषण"
+  }
+};
+const faqData = {
+  en:[
+    {q:"What is a urine routine test?",a:"A urinalysis is a basic panel measuring physical, chemical, and microscopic properties of urine."},
+    {q:"Do I need to fast for a urine routine test?",a:"No. However, a mid-stream morning sample is recommended for most accurate results."},
+    {q:"What does blood in urine mean?",a:"Hematuria (blood in urine) can result from UTI, kidney stones, trauma, or more serious conditions like glomerulonephritis or bladder cancer."},
+    {q:"What do WBC casts in urine indicate?",a:"WBC casts indicate pyelonephritis (upper urinary tract infection) or interstitial nephritis."}
+  ],
+  bn:[
+    {q:"ইউরিন রুটিন পরীক্ষা কী?",a:"এটি একটি মৌলিক প্রস্রাব পরীক্ষা যা প্রস্রাবের রং, গন্ধ, পিএইচ, প্রোটিন, সুগার সহ অনেক উপাদান বিশ্লেষণ করে।"},
+    {q:"পরীক্ষার আগে কি না খেয়ে থাকতে হবে?",a:"না, তবে সকালে প্রথম প্রস্রাবের মধ্যবর্তী অংশের নমুনা সবচেয়ে নির্ভুল ফলাফল দেয়।"},
+    {q:"প্রস্রাবে রক্ত মানে কী?",a:"কিডনিতে পাথর, প্রস্রাবে ইনফেকশন, কিডনির প্রদাহ বা মূত্রথলির রোগের কারণে হতে পারে।"}
+  ],
+    hi: [
+    {q:"यूरिन रूटीन टेस्ट क्या है?",a:"यूरिनलिसिस मूत्र के भौतिक, रासायनिक और सूक्ष्म गुणों को मापने वाला एक बुनियादी पैनल है।"},
+    {q:"क्या मुझे मूत्र नियमित परीक्षण के लिए उपवास करने की आवश्यकता है?",a:"नहीं, हालाँकि, सबसे सटीक परिणामों के लिए मध्य-धारा सुबह के नमूने की सिफारिश की जाती है।"},
+    {q:"पेशाब में खून आने का क्या मतलब है?",a:"हेमट्यूरिया (मूत्र में रक्त) यूटीआई, गुर्दे की पथरी, आघात, या ग्लोमेरुलोनेफ्राइटिस या मूत्राशय कैंसर जैसी अधिक गंभीर स्थितियों के परिणामस्वरूप हो सकता है।"},
+    {q:"मूत्र में WBC का निकलना क्या दर्शाता है?",a:"डब्ल्यूबीसी कास्ट पायलोनेफ्राइटिस (ऊपरी मूत्र पथ संक्रमण) या अंतरालीय नेफ्रैटिस का संकेत देते हैं।"}
+  ]
+};
+
+let currentLang = localStorage.getItem("ssdk-lang")||"en";
+let recentHistory = JSON.parse(localStorage.getItem("ssdk-urinefull-history"))||[];
+let activeReportData = null;
+
+function setLanguage(lang){
+  currentLang=lang; localStorage.setItem("ssdk-lang",lang);
+  const btn=document.getElementById("langToggleBtn");
+  if(btn) btn.innerHTML=lang==="bn"?'🇬🇧 <span>English</span>':'🇧🇩 <span>Bengali</span>';
+  document.querySelectorAll("[data-translate]").forEach(el=>{
+    const key=el.getAttribute("data-translate");
+    if(translations[lang]&&translations[lang][key]){
+      if(el.tagName==="INPUT"||el.tagName==="TEXTAREA") el.placeholder=translations[lang][key];
+      else el.innerHTML=translations[lang][key];
+    }
+  });
+  renderFAQs(); renderHistoryDisplay();
+  if(activeReportData) updateReportDisplay();
+}
+function toggleLanguage(){ setLanguage(currentLang==="en"?"bn":"en"); }
+
+function resetForm(){
+  ["fColor","fTurbidity","fProtein","fGlucose","fKetone","fBilirubin","fUrobilinogen","fNitrite","fLeukocyte","fBlood"].forEach(id=>{
+    document.getElementById(id).selectedIndex=0;
+  });
+  document.getElementById("fPH").value="";
+  document.getElementById("fSG").value="";
+  document.getElementById("placeholderSec").style.display="block";
+  document.getElementById("reportCardSec").style.display="none";
+}
+
+function analyzeUrine(){
+  const params = {
+    color: document.getElementById("fColor").value,
+    turbidity: document.getElementById("fTurbidity").value,
+    ph: parseFloat(document.getElementById("fPH").value)||6.0,
+    sg: parseFloat(document.getElementById("fSG").value)||1.015,
+    protein: document.getElementById("fProtein").value,
+    glucose: document.getElementById("fGlucose").value,
+    ketone: document.getElementById("fKetone").value,
+    bilirubin: document.getElementById("fBilirubin").value,
+    urobilinogen: document.getElementById("fUrobilinogen").value,
+    nitrite: document.getElementById("fNitrite").value,
+    leukocyte: document.getElementById("fLeukocyte").value,
+    blood: document.getElementById("fBlood").value
+  };
+
+  // Score abnormalities
+  let abnormalCount = 0;
+  let criticalCount = 0;
+  if(params.color !== "yellow") abnormalCount++;
+  if(params.color === "red" || params.color === "brown") criticalCount++;
+  if(params.turbidity !== "clear") abnormalCount++;
+  if(params.ph < 5.0 || params.ph > 8.0) abnormalCount++;
+  if(params.sg < 1.005 || params.sg > 1.030) abnormalCount++;
+  if(params.protein !== "negative") abnormalCount++;
+  if(params.protein === "3plus" || params.protein === "4plus") criticalCount++;
+  if(params.glucose !== "negative") abnormalCount++;
+  if(params.glucose === "3plus") criticalCount++;
+  if(params.ketone !== "negative") abnormalCount++;
+  if(params.ketone === "large") criticalCount++;
+  if(params.bilirubin !== "negative") abnormalCount++;
+  if(params.bilirubin === "large") criticalCount++;
+  if(params.urobilinogen !== "normal") abnormalCount++;
+  if(params.nitrite === "positive") abnormalCount++;
+  if(params.leukocyte !== "negative") abnormalCount++;
+  if(params.leukocyte === "large") criticalCount++;
+  if(params.blood !== "negative") abnormalCount++;
+  if(params.blood === "large") criticalCount++;
+
+  let overallKey = "badgeNormal";
+  if(criticalCount > 0) overallKey = "badgeCritical";
+  else if(abnormalCount > 2) overallKey = "badgeAbnormal";
+  else if(abnormalCount > 0) overallKey = "badgeAbnormal";
+
+  activeReportData = { params, abnormalCount, criticalCount, overallKey, date:new Date().toLocaleDateString() };
+  updateReportDisplay();
+  document.getElementById("placeholderSec").style.display="none";
+  document.getElementById("reportCardSec").style.display="block";
+  addToHistory(overallKey, abnormalCount);
+}
+
+function getStatusBadge(isNormal, isWarning){
+  if(isNormal) return `<span class="status-badge status-normal">Normal</span>`;
+  if(isWarning) return `<span class="status-badge status-borderline">Borderline</span>`;
+  return `<span class="status-badge status-abnormal">Abnormal</span>`;
+}
+
+function updateReportDisplay(){
+  if(!activeReportData) return;
+  const d = activeReportData;
+  const p = d.params;
+
+  const overallBadge = document.getElementById("overallBadge");
+  const overallText = document.getElementById("overallBadgeText");
+  overallText.textContent = translations[currentLang][d.overallKey];
+
+  const colorClass = d.overallKey==="badgeNormal"?"normal":d.overallKey==="badgeCritical"?"critical":"high";
+  overallBadge.style.background = `rgba(${colorClass==="normal"?"16,185,129":colorClass==="critical"?"239,68,68":"245,158,11"},0.1)`;
+  overallBadge.style.borderColor = `var(--${colorClass}-color)`;
+  overallText.style.color = `var(--${colorClass}-color)`;
+
+  const tbody = document.getElementById("urinalysisTableBody");
+  const rows = [
+    ["Color", p.color.replace("_"," "), p.color==="yellow"],
+    ["Turbidity", p.turbidity, p.turbidity==="clear"],
+    ["pH", p.ph||"N/A", p.ph>=5.0&&p.ph<=8.0],
+    ["Specific Gravity", p.sg||"N/A", p.sg>=1.005&&p.sg<=1.030],
+    ["Protein", p.protein, p.protein==="negative"],
+    ["Glucose", p.glucose, p.glucose==="negative"],
+    ["Ketones", p.ketone, p.ketone==="negative"],
+    ["Bilirubin", p.bilirubin, p.bilirubin==="negative"],
+    ["Urobilinogen", p.urobilinogen, p.urobilinogen==="normal"],
+    ["Nitrite", p.nitrite, p.nitrite==="negative"],
+    ["Leukocyte Esterase", p.leukocyte, p.leukocyte==="negative"],
+    ["Blood/Hematuria", p.blood, p.blood==="negative"]
+  ];
+
+  tbody.innerHTML = rows.map(([name, val, isNormal])=>`
+    <tr>
+      <td><strong>${name}</strong></td>
+      <td>${String(val).toUpperCase()}</td>
+      <td>${getStatusBadge(isNormal, false)}</td>
+    </tr>
+  `).join("");
+
+  const insightSection=document.getElementById("insightSection");
+  insightSection.innerHTML="";
+
+  // Generate summary insights
+  const findings = [];
+  if(p.nitrite==="positive"&&(p.leukocyte==="moderate"||p.leukocyte==="large")) findings.push(currentLang==="en"?"🦠 Combined Nitrite + Leukocyte Esterase positivity strongly indicates a Bacterial UTI":"🦠 নাইট্রাইট ও লিউকোসাইট উভয়ই পজিটিভ — ব্যাকটেরিয়াল ইউটিআই এর শক্তিশালী ইঙ্গিত");
+  if(p.glucose!=="negative"&&p.protein!=="negative") findings.push(currentLang==="en"?"⚠️ Both glucose and protein detected — evaluate for Diabetic Nephropathy":"⚠️ গ্লুকোজ ও প্রোটিন উভয়ই সনাক্ত — ডায়াবেটিক নেফ্রোপ্যাথি মূল্যায়ন করুন");
+  if(p.bilirubin!=="negative"&&p.urobilinogen!=="absent") findings.push(currentLang==="en"?"🟡 Bilirubin positivity suggests hepatic disease or bile duct obstruction":"🟡 বিলিরুবিন পজিটিভ — যকৃতের সমস্যা বা পিত্তনালীতে বাধার ইঙ্গিত");
+  if(p.ketone==="large") findings.push(currentLang==="en"?"⚠️ Large ketonuria — check blood glucose for possible DKA if diabetic":"⚠️ তীব্র কিটোনুরিয়া — ডায়াবেটিক হলে DKA পরীক্ষা করুন");
+  if(p.blood==="large") findings.push(currentLang==="en"?"🩸 Gross hematuria — urgent evaluation for kidney stones, glomerulonephritis, or malignancy":"🩸 গুরুতর হেমাটুরিয়া — কিডনি পাথর বা গ্লোমেরুলোনেফ্রাইটিস জরুরি মূল্যায়ন প্রয়োজন");
+
+  if(d.abnormalCount===0){
+    const card=document.createElement("div"); card.className="insight-card";
+    card.style.borderLeft="4px solid var(--normal-color)";
+    card.innerHTML=`<h5>✅ ${currentLang==="en"?"Normal Urinalysis":"স্বাভাবিক ইউরিনালাইসিস"}</h5><p>${currentLang==="en"?"All urinalysis parameters are within normal reference ranges. No significant renal, metabolic, or infectious indicators detected.":"সকল ইউরিনালাইসিস প্যারামিটার স্বাভাবিক সীমার মধ্যে। কোনো রেনাল, বিপাকীয় বা সংক্রামক লক্ষণ নেই।"}</p>`;
+    insightSection.appendChild(card);
+  } else {
+    if(findings.length>0){
+      const card=document.createElement("div"); card.className="insight-card";
+      card.style.borderLeft=`4px solid var(--${colorClass}-color)`;
+      card.innerHTML=`<h5>📋 ${currentLang==="en"?"Key Clinical Findings":"মূল ক্লিনিক্যাল ফলাফল"}</h5><ul>${findings.map(f=>`<li>${f}</li>`).join("")}</ul>
+      <div style="margin-top:12px;font-size:0.8rem;color:#fbbf24;"><strong>${currentLang==="en"?"Recommendation":"পরামর্শ"}:</strong> ${currentLang==="en"?"Consult your physician for abnormal findings. Repeat testing and additional blood/imaging studies may be needed.":"অস্বাভাবিক ফলাফলের ক্ষেত্রে চিকিৎসকের পরামর্শ নিন। পুনরায় পরীক্ষা ও রক্ত পরীক্ষার প্রয়োজন হতে পারে।"}</div>`;
+      insightSection.appendChild(card);
+    }
+    const summaryCard=document.createElement("div"); summaryCard.className="insight-card";
+    summaryCard.style.borderLeft="4px solid var(--border)";
+    summaryCard.innerHTML=`<h5>📊 ${currentLang==="en"?"Summary":"সারসংক্ষেপ"}</h5><p>${currentLang==="en"?`${d.abnormalCount} abnormal parameter(s) detected. ${d.criticalCount} critical finding(s).`:` ${d.abnormalCount}টি অস্বাভাবিক প্যারামিটার সনাক্ত। ${d.criticalCount}টি গুরুতর ফলাফল।`}</p>`;
+    insightSection.appendChild(summaryCard);
+  }
+}
+
+function addToHistory(overallKey, abnormalCount){
+  const item={date:new Date().toLocaleDateString(),overallKey,abnormalCount,id:Date.now()};
+  recentHistory.unshift(item);
+  if(recentHistory.length>5) recentHistory.pop();
+  localStorage.setItem("ssdk-urinefull-history",JSON.stringify(recentHistory));
+  renderHistoryDisplay();
+}
+function renderHistoryDisplay(){
+  const container=document.getElementById("historyListContainer");
+  if(!container) return; container.innerHTML="";
+  if(recentHistory.length===0){ container.innerHTML=`<p style="font-size:0.75rem;color:var(--muted);">${translations[currentLang].noHistory}</p>`; return; }
+  recentHistory.forEach(item=>{
+    const div=document.createElement("div"); div.className="history-item";
+    const statusText=translations[currentLang][item.overallKey]||item.overallKey;
+    div.innerHTML=`<span>📅 ${item.date}</span><strong>${statusText} (${item.abnormalCount} abnormal)</strong>`;
+    container.appendChild(div);
+  });
+}
+function renderFAQs(){
+  const container=document.getElementById("faqAccordionContainer");
+  if(!container) return; container.innerHTML="";
+  const faqs=faqData[currentLang]||faqData["en"];
+  faqs.forEach(faq=>{
+    const item=document.createElement("div"); item.className="faq-item";
+    item.innerHTML=`<div class="faq-q">${faq.q}<span>＋</span></div><div class="faq-a">${faq.a}</div>`;
+    const q=item.querySelector(".faq-q");
+    q.onclick=()=>{ const isOpen=item.classList.toggle("open"); const a=item.querySelector(".faq-a"); a.style.maxHeight=isOpen?"250px":"0"; a.style.padding=isOpen?"0 22px 16px":"0 22px"; };
+    container.appendChild(item);
+  });
+}
+function printReport(){ window.print(); }
+function copyFormattedResult(){
+  if(!activeReportData) return;
+  const p=activeReportData.params;
+  let t=`--- URINE ROUTINE ANALYSIS REPORT ---\nDate: ${activeReportData.date}\nOverall: ${translations[currentLang][activeReportData.overallKey]}\n\nPARAMETERS:\nColor: ${p.color}\npH: ${p.ph}\nSpecific Gravity: ${p.sg}\nProtein: ${p.protein}\nGlucose: ${p.glucose}\nKetones: ${p.ketone}\nNitrite: ${p.nitrite}\nLeukocyte: ${p.leukocyte}\nBlood: ${p.blood}\n`;
+  navigator.clipboard.writeText(t).then(()=>alert(currentLang==="en"?"Report copied!":"রিপোর্ট কপি হয়েছে!"));
+}
+function captureReportPng(){
+  const target=document.getElementById("resultsPanel"); if(!target) return;
+  html2canvas(target,{backgroundColor:"#0a0e17",scale:2}).then(canvas=>{
+    const link=document.createElement("a"); link.download=`urine-routine-${Date.now()}.png`; link.href=canvas.toDataURL("image/png"); link.click();
+  });
+}
+function toggleFavorite(){ document.getElementById("toolFavBtn").classList.toggle("on"); }
+window.addEventListener("DOMContentLoaded",()=>setLanguage(currentLang));
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

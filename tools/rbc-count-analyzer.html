@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RBC Count Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze your Red Blood Cell (RBC) count online. Check for erythrocytopenia, erythrocytosis, or normal blood health with dynamic reference ranges and bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #ef4444;
+      --critical-color: #7f1d1d;
+      --border-color: #f59e0b;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .rbc-gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .rbc-val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .rbc-status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--critical-color) 0%, 
+        var(--low-color) 25%, 
+        var(--normal-color) 50%, 
+        var(--border-color) 75%, 
+        var(--high-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .rbc-gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">RBC Count Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze your Red Blood Cell (RBC) count. Check for anemia, polycythemia, or standard blood indices dynamically.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🩸 RBC Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">🗑 Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="patientAge" data-translate="labelAge">Age (Years)</label>
+              <input type="number" id="patientAge" min="1" max="120" value="30" required>
+            </div>
+            
+            <div class="input-wrapper">
+              <label for="patientGender" data-translate="labelGender">Gender</label>
+              <select id="patientGender">
+                <option value="male" selected data-translate="genderMale">Male</option>
+                <option value="female" data-translate="genderFemale">Female</option>
+                <option value="pregnant" data-translate="genderPregnant">Pregnant Female</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valRBC" data-translate="labelRBC">RBC Count (10^6/µL or Million/µL)</label>
+              <input type="number" step="0.01" id="valRBC" placeholder="e.g. 4.8" min="0.5" max="15" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeRBC()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze RBC Count</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🩸</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your age, gender, and RBC count value, then click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 RBC Count Diagnostics Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelAge">Age</strong>: <span id="resAge">-</span></span>
+            <span><strong data-translate="labelGender">Gender</strong>: <span id="resGender">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="rbc-gauge-container">
+            <div class="rbc-val-large" id="resRbcVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Million/µL</div>
+            <div class="rbc-status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickCriticalLow" style="color: var(--low-color);">3.0 (Crit)</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">4.7 - 6.1</span>
+              <span id="tickCriticalHigh" style="color: var(--high-color);">7.0 (Crit)</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Red Blood Cells (RBC)</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is an RBC Count?</strong><br><span data-translate="eduA1">An RBC count measures the number of red blood cells in a microliter of blood. Red blood cells are shaped like tiny donuts without holes and are packed with hemoglobin to transport oxygen to cells.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Why is the RBC Count crucial?</strong><br><span data-translate="eduA2">It checks your blood's structural health. If your RBC count is low, you have erythrocytopenia, meaning your body is struggling to distribute oxygen. If it is high, you have erythrocytosis, which may make the blood thick and sluggish.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">How do values change with age and gender?</strong><br><span data-translate="eduA3">Men generally have higher RBC counts than women because testosterone stimulates red cell production. Children have different reference ranges, and pregnant women have lower limits due to blood volume expansion.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "RBC Count Analyzer",
+      toolDesc: "Analyze your Red Blood Cell (RBC) count. Check for anemia, polycythemia, or standard blood indices dynamically.",
+      inputsTitle: "🩸 RBC Parameters",
+      clearBtn: "Reset",
+      labelAge: "Age (Years)",
+      labelGender: "Gender",
+      genderMale: "Male",
+      genderFemale: "Female",
+      genderPregnant: "Pregnant Female",
+      labelRBC: "RBC Count (Million/µL)",
+      btnAnalyze: "Analyze RBC Count",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your age, gender, and RBC count value, then click the analyze button to display medical summaries.",
+      reportTitle: "🔬 RBC Count Diagnostics Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal RBC Count",
+      badgeLow: "Low RBC Count (Erythrocytopenia)",
+      badgeCriticalLow: "CRITICAL SEVERE ERYTHROCYTOPENIA",
+      badgeHigh: "High RBC Count (Erythrocytosis)",
+      badgeCriticalHigh: "CRITICAL SEVERE ERYTHROCYTOSIS",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "লোহিত রক্তকণিকা (RBC) বিশ্লেষক",
+      toolDesc: "আপনার লোহিত রক্তকণিকা (RBC) এর পরিমাণ বিশ্লেষণ করুন। রক্তস্বল্পতা, পলিসাইথেমিয়া বা স্বাভাবিক রক্তকণিকার অনুপাত ইন্টারেক্টিভ সূচকের সাহায্যে পরীক্ষা করুন।",
+      inputsTitle: "🩸 আরবিসি (RBC) এর পরিমাপক সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelAge: "বয়স (বছর)",
+      labelGender: "লিঙ্গ",
+      genderMale: "পুরুষ",
+      genderFemale: "নারী",
+      genderPregnant: "গর্ভবতী নারী",
+      labelRBC: "আরবিসি মান (Million/µL)",
+      btnAnalyze: "আরবিসি বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার বয়স, লিঙ্গ এবং লোহিত রক্তকণিকার মান লিখুন, তারপর বিশ্লেষণ বোতামটি চাপুন রিপোর্টের সামারি দেখতে।",
+      reportTitle: "🔬 আরবিসি কাউন্ট ডায়াগনস্টিক রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক আরবিসি কাউন্ট",
+      badgeLow: "কম আরবিসি কাউন্ট (ইরিথ্রোসাইটোপেনিয়া)",
+      badgeCriticalLow: "মারাত্মক ঝুঁকিপূর্ণ ইরিথ্রোসাইটোপেনিয়া",
+      badgeHigh: "উচ্চ আরবিসি কাউন্ট (ইরিথ্রোসাইটোসিস)",
+      badgeCriticalHigh: "মারাত্মক ঝুঁকিপূর্ণ ইরিথ্রোসাইটোসিস",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "आरबीसी गणना विश्लेषक",
+      toolDesc: "अपनी लाल रक्त कोशिका (आरबीसी) गिनती का विश्लेषण करें। एनीमिया, पॉलीसिथेमिया, या मानक रक्त सूचकांकों की गतिशील रूप से जाँच करें।",
+      inputsTitle: "🩸 आरबीसी पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelAge: "आयु (वर्ष)",
+      labelGender: "लिंग",
+      genderMale: "पुरुष",
+      genderFemale: "स्त्री",
+      genderPregnant: "गर्भवती महिला",
+      labelRBC: "आरबीसी गणना (मिलियन/μL)",
+      btnAnalyze: "आरबीसी गणना का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपनी आयु, लिंग और आरबीसी गणना मान दर्ज करें, फिर चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 आरबीसी काउंट डायग्नोस्टिक्स रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "तारीख",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य आरबीसी गिनती",
+      badgeLow: "कम आरबीसी गणना (एरिथ्रोसाइटोपेनिया)",
+      badgeCriticalLow: "गंभीर गंभीर एरिथ्रोसाइटोपेनिया",
+      badgeHigh: "उच्च आरबीसी गणना (एरिथ्रोसाइटोसिस)",
+      badgeCriticalHigh: "गंभीर गंभीर एरिथ्रोसाइटोसिस",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is a Red Blood Cell (RBC) count?", a: "An RBC count measures the number of red blood cells present per microliter of blood. Red blood cells carry oxygen from the lungs to the rest of the body." },
+      { q: "What are normal RBC ranges?", a: "For adult males: 4.7 - 6.1 million/µL; for adult females: 4.2 - 5.4 million/µL; and for pregnant females: 3.5 - 5.0 million/µL." },
+      { q: "What causes a low RBC count?", a: "Common causes include iron deficiency, Vitamin B12 or folate deficiency, chronic blood loss, kidney disease, or chemotherapy/medications." },
+      { q: "What are symptoms of low RBC count?", a: "Symptoms resemble anemia: fatigue, weakness, pale skin, cold extremities, shortness of breath, or heart palpitations." },
+      { q: "How can I boost my RBC count?", a: "Consume iron-rich foods, folate-rich foods (beans, green vegetables), Vitamin B12 (poultry, eggs, fish), and copper (shellfish, nuts)." },
+      { q: "What causes high RBC count?", a: "High counts (erythrocytosis) are commonly caused by dehydration, heavy smoking, chronic lung disease (COPD), sleep apnea, or Polycythemia Vera." },
+      { q: "What are symptoms of high RBC count?", a: "Symptoms include headaches, dizziness, red or flushed skin, blurred vision, or itching after warm showers." },
+      { q: "Why does dehydration increase RBC count?", a: "Dehydration decreases plasma volume (liquid portion of blood), causing red cells to be highly concentrated in a smaller volume." },
+      { q: "How does pregnancy affect RBC count?", a: "Pregnancy increases blood plasma volume to support the fetus, resulting in hemodilution, making RBC counts appear lower than normal." },
+      { q: "What is the difference between RBC count and Hemoglobin?", a: "RBC count measures the number of red cells. Hemoglobin is the actual protein molecule inside those cells that binds oxygen." },
+      { q: "Can stress increase RBC count?", a: "Acute stress can cause transient increases in red cell counts due to splenic contraction releasing cells into circulation." },
+      { q: "When is a low RBC count critical?", a: "An RBC count under 3.0 million/µL is considered critically low and presents severe fatigue and cardiovascular risks." },
+      { q: "Can chronic kidney disease cause low RBC?", a: "Yes. Healthy kidneys produce erythropoietin (EPO), a hormone that signals the bone marrow to produce RBCs. Kidney disease reduces EPO production." },
+      { q: "Are children's RBC ranges different?", a: "Yes, infant and pediatric normal ranges are slightly different and reflect growth stages and hematological developments." },
+      { q: "Is this tool diagnostic?", a: "No. This tool provides numerical analysis for educational purposes only. You must consult a doctor for a medical diagnosis." }
+    ],
+    bn: [
+      { q: "লোহিত রক্তকণিকা (RBC) গণনা কী?", a: "আরবিসি কাউন্ট হলো রক্তের প্রতি মাইক্রোলিটারে লোহিত রক্তকণিকার সংখ্যা পরিমাপ করা। এই কণিকাগুলো ফুসফুস থেকে সারা শরীরে অক্সিজেন পৌঁছে দেয়।" },
+      { q: "আরবিসি এর স্বাভাবিক মাত্রা কত?", a: "প্রাপ্তবয়স্ক পুরুষের জন্য ৪.৭ - ৬.১ মিলিয়ন/µL; প্রাপ্তবয়স্ক নারীর জন্য ৪.২ - ৫.৪ মিলিয়ন/µL; এবং গর্ভবতী নারীর জন্য ৩.৫ - ৫.০ মিলিয়ন/µL।" },
+      { q: "কম আরবিসি কাউন্টের কারণ কী?", a: "সাধারণ কারণগুলোর মধ্যে রয়েছে আয়রনের ঘাটতি, ভিটামিন বি১২ বা ফোলেটের অভাব, অতিরিক্ত রক্তক্ষরণ, কিডনি সমস্যা বা থেরাপির পার্শ্বপ্রতিক্রিয়া।" },
+      { q: "আরবিসি কম হলে কী লক্ষণ দেখা যায়?", a: "এর লক্ষণগুলো রক্তস্বল্পতার মতো: ক্লান্তি, দুর্বলতা, ফ্যাকাশে ত্বক, হাত-পা ঠান্ডা হয়ে যাওয়া এবং বুক ধড়ফড় করা।" },
+      { q: "আরবিসি কাউন্ট কীভাবে বাড়ানো যায়?", a: "আয়রন সমৃদ্ধ খাবার, ফোলেট (ডাল, সবুজ শাকসবজি), ভিটামিন বি১২ (ডিম, মাছ, মাংস) এবং তামা বা কপার (বাদাম, সামুদ্রিক মাছ) খেয়ে।" },
+      { q: "আরবিসি বৃদ্ধির কারণ কী?", a: "আরবিসি বৃদ্ধির (ইরিথ্রোসাইটোসিস) অন্যতম কারণ হলো পানিশূন্যতা, অতিরিক্ত ধূমপান, লাং ডিজিজ (COPD), স্লিপ অ্যাপনিয়া বা পলিসাইথেমিয়া ভেরা।" },
+      { q: "আরবিসি বেশি হলে কী লক্ষণ দেখা যায়?", a: "মাথাব্যথা, মাথা ঘোরানো, ত্বক লালচে হয়ে যাওয়া, চোখে ঝাপসা দেখা এবং কুসুম গরম পানিতে গোসলের পর শরীর চুলকানো।" },
+      { q: "পানিশূন্যতা কেন আরবিসি বাড়ায়?", a: "পানিশূন্যতার কারণে রক্তের তরল অংশ কমে যায়, যার ফলে রক্তে লোহিত রক্তকণিকার ঘনত্ব সাময়িকভাবে বৃদ্ধি পায়।" },
+      { q: "গর্ভাবস্থায় আরবিসি এর কী পরিবর্তন হয়?", a: "গর্ভাবস্থায় রক্তের প্লাজমা বা তরল অংশ বৃদ্ধি পায়, যা রক্তকে কিছুটা পাতলা করে দেয়। তাই এই সময়ে আরবিসি কাউন্ট কিছুটা কম দেখায়।" },
+      { q: "আরবিসি কাউন্ট ও হিমোগ্লোবিনের মধ্যে পার্থক্য কী?", a: "আরবিসি হলো রক্তের লোহিত কোষের সংখ্যা। আর হিমোগ্লোবিন হলো সেই কোষের ভেতরে থাকা প্রোটিন যা অক্সিজেন বহন করে।" },
+      { q: "মানসিক চাপ কি আরবিসি বাড়াতে পারে?", a: "তীব্র মানসিক চাপের কারণে প্লিহা (Spleen) সংকুচিত হয়ে রক্তে অতিরিক্ত লোহিত কণিকা মুক্ত করতে পারে, যা সাময়িকভাবে আরবিসি বাড়িয়ে দেয়।" },
+      { q: "আরবিসি কত কম হলে তা বিপজ্জনক?", a: "আরবিসি কাউন্ট ৩.০ মিলিয়ন/µL এর নিচে নেমে গেলে তা মারাত্মক ঝুঁকিপূর্ণ অবস্থা হিসেবে ধরা হয় যা হৃদযন্ত্রে চাপ তৈরি করে।" },
+      { q: "কিডনি রোগ কি লোহিত রক্তকণিকা কমাতে পারে?", a: "হ্যাঁ। সুস্থ কিডনি এরিথ্রোপয়েটিন (EPO) হরমোন তৈরি করে, যা অস্থিমজ্জাকে আরবিসি তৈরির সংকেত দেয়। কিডনি ক্ষতিগ্রস্ত হলে এই হরমোন উৎপাদন কমে যায়।" },
+      { q: "শিশুদের আরবিসি স্বাভাবিক মাত্রা কি আলাদা?", a: "হ্যাঁ, শিশুদের বয়স ভেদে লোহিত রক্তকণিকার স্বাভাবিক সীমা বড়দের তুলনায় সামান্য ভিন্ন হতে পারে।" },
+      { q: "এই টুলটি কি ডাক্তারের রোগ নির্ণয়ের সমকক্ষ?", a: "না। এই টুলটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। যেকোনো সিদ্ধান্তের আগে ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "लाल रक्त कोशिका (आरबीसी) गिनती क्या है?", a: "आरबीसी गणना प्रति माइक्रोलीटर रक्त में मौजूद लाल रक्त कोशिकाओं की संख्या को मापती है। लाल रक्त कोशिकाएं फेफड़ों से ऑक्सीजन को शरीर के बाकी हिस्सों तक ले जाती हैं।" },
+      { q: "सामान्य आरबीसी श्रेणियाँ क्या हैं?", a: "वयस्क पुरुषों के लिए: 4.7 - 6.1 मिलियन/µL; वयस्क महिलाओं के लिए: 4.2 - 5.4 मिलियन/µL; और गर्भवती महिलाओं के लिए: 3.5 - 5.0 मिलियन/μL।" },
+      { q: "RBC गिनती कम होने का क्या कारण है?", a: "सामान्य कारणों में आयरन की कमी, विटामिन बी12 या फोलेट की कमी, दीर्घकालिक रक्त हानि, गुर्दे की बीमारी, या कीमोथेरेपी/दवाएँ शामिल हैं।" },
+      { q: "आरबीसी गिनती कम होने के लक्षण क्या हैं?", a: "लक्षण एनीमिया से मिलते जुलते हैं: थकान, कमजोरी, पीली त्वचा, ठंडे हाथ-पैर, सांस लेने में तकलीफ या दिल की धड़कन।" },
+      { q: "मैं अपनी आरबीसी गिनती कैसे बढ़ा सकता हूँ?", a: "आयरन से भरपूर खाद्य पदार्थ, फोलेट से भरपूर खाद्य पदार्थ (बीन्स, हरी सब्जियां), विटामिन बी12 (पोल्ट्री, अंडे, मछली) और कॉपर (शेलफिश, नट्स) का सेवन करें।" },
+      { q: "उच्च RBC गिनती का क्या कारण है?", a: "उच्च गिनती (एरिथ्रोसाइटोसिस) आमतौर पर निर्जलीकरण, भारी धूम्रपान, पुरानी फेफड़ों की बीमारी (सीओपीडी), स्लीप एपनिया ���ा पॉलीसिथेमिया वेरा के कारण होती है।" },
+      { q: "उच्च आरबीसी गिनती के लक्षण क्या हैं?", a: "लक्षणों में सिरदर्द, चक्कर आना, लाल या लाल त्वचा, धुंधली दृष्टि, या गर्म स्नान के बाद खुजली शामिल हैं।" },
+      { q: "निर्जलीकरण से आरबीसी गिनती क्यों बढ़ जाती है?", a: "निर्जलीकरण से प्लाज्मा की मात्रा (रक्त का तरल भाग) कम हो जाती है, जिससे लाल कोशिकाएं कम मात्रा में अत्यधिक केंद्रित हो जाती हैं।" },
+      { q: "गर्भावस्था आरबीसी गिनती को कैसे प्रभावित करती है?", a: "गर्भावस्था में भ्रूण को सहारा देने के लिए रक्त प्लाज्मा की मात्रा बढ़ जाती है, जिसके परिणामस्वरूप हेमोडायल्यूशन होता है, जिससे आरबीसी की संख्या सामान्य से कम दिखाई देती है।" },
+      { q: "RBC काउंट और हीमोग्लोबिन में क्या अंतर है?", a: "आरबीसी गणना लाल कोशिकाओं की संख्या को मापती है। हीमोग्लोबिन उन कोशिकाओं के अंदर वास्तविक प्रोटीन अणु है जो ऑक्सीजन को बांधता है।" },
+      { q: "क्या तनाव से आरबीसी की संख्या बढ़ सकती है?", a: "प्लीहा संकुचन के कारण कोशिकाओं को परिसंचरण में जारी करने के कारण तीव्र तनाव लाल कोशिका गिनती में क्षणिक वृद्धि का कारण बन सकता है।" },
+      { q: "कम RBC गिनती कब महत्वपूर्ण होती है?", a: "3.0 मिलियन/μL से कम आरबीसी गिनती को गंभीर रूप से कम माना जात�� है और यह गंभीर थकान और हृदय संबंधी जोखिम प्रस्तुत करता है।" },
+      { q: "क्या क्रोनिक किडनी रोग के कारण आरबीसी कम हो सकता है?", a: "हाँ। स्वस्थ गुर्दे एरिथ्रोपोइटिन (ईपीओ) का उत्पादन करते हैं, एक हार्मोन जो अस्थि मज्जा को आरबीसी का उत्पादन करने के लिए संकेत देता है। गुर्दे की बीमारी ईपीओ उत्���ादन को कम कर देती है।" },
+      { q: "क्या बच्चों की RBC श्रेणियाँ भिन्न होती हैं?", a: "हाँ, शिशु और बाल चिकित्सा की सामान्य सीमाएँ थोड़ी भिन्न होती हैं और विकास के चरणों और रुधिर संबंधी विकास को दर्शाती हैं।" },
+      { q: "क्या यह उपकरण निदानात्मक है?", a: "नहीं, यह उपकरण केवल शैक्षिक उद्देश्यों के लिए संख्यात्मक विश्लेषण प्रदान करता है। चिकित्सीय निदान के लिए आपको डॉक्टर से परामर्श लेना चाहिए।" }
+    ]
+  };
+
+  const rbcInsights = {
+    en: {
+      normal: {
+        desc: "Your RBC count is completely within the normal range for your demographic profile. This indicates healthy red blood cell production, proper nutritional balance, and efficient oxygen distribution throughout your body. Continue maintaining your healthy habits.",
+        causes: ["Healthy bone marrow function", "Adequate iron, B12, and folate levels", "Optimal hydration status"],
+        symptoms: ["Normal energy levels", "No unexplained dyspnea", "Healthy tissue oxygenation"],
+        prevention: ["Eat a nutrient-dense diet containing iron and vitamins", "Stay hydrated", "Maintain regular cardiovascular exercise"],
+        consult: "Regular annual health screenings are recommended to monitor long-term trends."
+      },
+      low: {
+        desc: "Your RBC count is below the normal limit, indicating Mild to Moderate Erythrocytopenia (low red cells). This reduces your blood's oxygen-carrying capacity, commonly causing fatigue.",
+        causes: ["Iron, Vitamin B12, or Folate deficiency", "Chronic blood loss or heavy bleeding", "Chronic kidney disease (low erythropoietin)", "Chemotherapy or bone marrow suppression"],
+        symptoms: ["Fatigue and physical weakness", "Pale or cool skin", "Dizziness or shortness of breath on exertion", "Rapid or irregular heart rate"],
+        prevention: ["Increase dietary intake of iron, Vitamin B12, and Folate", "Avoid drinking tea or coffee during meals to enhance iron absorption", "Speak to your doctor about testing for vitamin deficiencies"],
+        consult: "Consult your doctor to evaluate the cause of your low RBC count and check your iron, ferritin, and vitamin levels."
+      },
+      criticalLow: {
+        desc: "Your RBC count is critically low (under 3.0 Million/µL). This represents a severe risk of organ hypoxia (lack of oxygen), placing extreme strain on your cardiovascular system.",
+        causes: ["Severe hemorrhage or blood loss", "Hemolytic anemia (destruction of red cells)", "Aplastic anemia or bone marrow disease", "Severe malnutrition"],
+        symptoms: ["Extreme lethargy or fainting", "Shortness of breath even at rest", "Chest pain or racing heartbeat", "Severe dizziness"],
+        prevention: ["Rest immediately and avoid physical exertion", "Do not attempt self-medication"],
+        consult: "⚠️ Seek immediate medical attention or visit an emergency room. A blood transfusion or urgent clinical review is highly likely."
+      },
+      high: {
+        desc: "Your RBC count is higher than standard normal limits, indicating Erythrocytosis. This can make the blood thicker and increase cardiovascular work.",
+        causes: ["Mild to moderate dehydration (very common)", "Heavy smoking or carbon monoxide exposure", "Chronic obstructive pulmonary disease (COPD)", "Living at high altitudes"],
+        symptoms: ["Headaches or lightheadedness", "Flushed or reddish skin tone", "Fatigue or sleepiness", "Itching after hot showers"],
+        prevention: ["Drink plenty of water to expand blood volume", "Quit smoking or limit exposure to tobacco smoke", "Manage sleep apnea or underlying lung conditions"],
+        consult: "Consult a general physician to rule out respiratory issues or check if hematology follow-up is necessary."
+      },
+      criticalHigh: {
+        desc: "Your RBC count is critically high (at or above 7.0 Million/µL). This dramatically increases blood viscosity, raising risks of blood clots and cardiovascular incidents.",
+        causes: ["Polycythemia Vera (bone marrow disease)", "Severe chronic hypoxia", "Extreme dehydration"],
+        symptoms: ["Severe headaches or visual disturbances", "Numbness or tingling in extremities", "Chest discomfort", "Redness in palms and face"],
+        prevention: ["Rehydrate immediately with fluids", "Avoid iron supplements"],
+        consult: "⚠️ Seek urgent medical attention. A therapeutic phlebotomy (clinically removing blood) may be necessary to reduce blood thickness."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার লোহিত রক্তকণিকা (RBC) এর কাউন্ট সম্পূর্ণ স্বাভাবিক সীমার মধ্যে রয়েছে। এটি শরীরের সঠিক রক্তকণিকা গঠন ও চমৎকার অক্সিজেন বিতরণ ব্যবস্থাকে নির্দেশ করে। আপনার স্বাস্থ্যকর জীবনযাত্রা বজায় রাখুন।",
+        causes: ["অস্থিমজ্জার সঠিক কার্যকারিতা", "পর্যাপ্ত আয়রন, ভিটামিন বি১২ ও ফোলেটের মাত্রা", "পর্যাপ্ত পানি পানের অভ্যাস"],
+        symptoms: ["স্বাভাবিক শারীরিক শক্তি", "অতিরিক্ত ক্লান্তি বা হাঁপিয়ে ওঠার অনুপস্থিতি", "ত্বকের স্বাভাবিক রঙ"],
+        prevention: ["আয়রন ও ভিটামিন সমৃদ্ধ পুষ্টিকর খাবার খান", "পর্যাপ্ত পানি পান করুন", "হৃদযন্ত্রের কর্মক্ষমতা বাড়াতে নিয়মিত অ্যারোবিক ব্যায়াম করুন"],
+        consult: "দীর্ঘমেয়াদী রক্তস্বাস্থ্য ট্র্যাক করতে বছরে অন্তত একবার রুটিন ব্লাড স্ক্রীনিং করা ভালো।"
+      },
+      low: {
+        desc: "আপনার আরবিসি কাউন্ট স্বাভাবিকের চেয়ে কম, যা মৃদু থেকে মাঝারি মানের ইরিথ্রোসাইটোপেনিয়া (লোহিত রক্তকণিকার ঘাটতি) নির্দেশ করে। এর ফলে কোষে পর্যাপ্ত অক্সিজেন পৌঁছায় না, যার কারণে ক্লান্তি ও দুর্বলতা অনুভূত হয়।",
+        causes: ["আয়রন, ভিটামিন বি১২ বা ফোলেটের অভাব", "ক্রনিক রক্তক্ষরণ (যেমন মাসিকের সময় অতিরিক্ত রক্তপাত)", "দীর্ঘস্থায়ী কিডনি রোগ", "কেমোথেরাপি বা অস্থিমজ্জার সমস্যা"],
+        symptoms: ["সবসময় ক্লান্তি ও দুর্বলতা অনুভব করা", "ত্বক ফ্যাকাশে বা হলদেটে হয়ে যাওয়া", "মাথা ঘোরানো বা সামান্য পরিশ্রমে শ্বাসকষ্ট", "হৃদস্পন্দন বৃদ্ধি পাওয়া"],
+        prevention: ["আয়রন, ফোলেট ও ভিটামিন বি১২ যুক্ত খাবার খান", "খাবার খাওয়ার সময় চা বা কফি খাওয়া এড়ান", "খাদ্যতালিকায় সবুজ শাকসবজি ও ডাল রাখুন"],
+        consult: "রক্তকণিকা হ্রাসের সঠিক কারণ ও শরীরে আয়রনের সঞ্চয় পরীক্ষা করতে ডাক্তারের পরামর্শ নিন।"
+      },
+      criticalLow: {
+        desc: "আপনার আরবিসি কাউন্ট মারাত্মক কম (৩.০ Million/µL এর নিচে)। এটি শরীরের কোষে তীব্র অক্সিজেনের ঘাটতি তৈরি করে এবং হৃদযন্ত্রের উপর মারাত্মক চাপ ফেলে।",
+        causes: ["তীব্র বা আকস্মিক রক্তক্ষরণ", "লোহিত রক্তকণিকা দ্রুত ভেঙে যাওয়া (হেমোলাইটিক অ্যানিমিয়া)", "অস্থিমজ্জার অকার্যকারিতা", "তীব্র পুষ্টির অভাব"],
+        symptoms: ["তীব্র দুর্বলতা বা অজ্ঞান হয়ে যাওয়া", "বিশ্রামরত অবস্থাতেও শ্বাসকষ্ট", "বুকে ব্যথা বা তীব্র হৃদস্পন্দন", "তীব্র মাথা ঘোরানো"],
+        prevention: ["হৃৎপিণ্ডের উপর চাপ এড়াতে ভারী কাজ করা বন্ধ করুন", "জরুরি ক্লিনিক্যাল প্রটোকল ছাড়া নিজে থেকে কোনো ওষুধ শুরু করবেন না"],
+        consult: "⚠️ অবিলম্বে কোনো হাসপাতালের জরুরি বিভাগে যোগাযোগ করুন। জরুরি রক্ত সঞ্চালন (Blood Transfusion) বা তাৎক্ষণিক চিকিৎসার প্রয়োজন হতে পারে।"
+      },
+      high: {
+        desc: "আপনার আরবিসি কাউন্ট স্বাভাবিক সীমার চেয়ে বেশি (ইরিথ্রোসাইটোসিস)। এর অর্থ আপনার রক্ত স্বাভাবিকের চেয়ে কিছুটা ঘন হতে পারে, যা রক্ত সঞ্চালনে বাধা সৃষ্টি করে।",
+        causes: ["পানিশূন্যতা (খুব সাধারণ কারণ)", "ধূমপান বা কার্বন মনোক্সাইডের প্রভাব", "ফুসফুসের দীর্ঘস্থায়ী রোগ (COPD)", "উচ্চ উচ্চতায় বসবাস"],
+        symptoms: ["মাথাব্যহা বা মাথা ঘোরানো", "ত্বক অতিরিক্ত লালচে দেখাবে", "সবসময় ঘুম ঘুম ভাব", "কুসুম গরম পানিতে গোসলের পর শরীরে চুলকানি"],
+        prevention: ["রক্তের তরলতা ফেরাতে অবিলম্বে পর্যাপ্ত পানি পান করুন", "ধূমপানের অভ্যাস পরিহার করুন", "ঘুমের সমস্যা ও নাক ডাকার সঠিক চিকিৎসা নিন"],
+        consult: "আরবিসি বেশি থাকার সঠিক কারণ নির্ণয় ও ফুসফুসের কার্যকারিতা পরীক্ষা করতে একজন চিকিৎসকের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার আরবিসি কাউন্ট মারাত্মক বেশি (৭.০ Million/µL বা তার বেশি)। এটি রক্তকে অত্যন্ত ঘন করে তোলে, যা রক্তনালীতে রক্ত জমাট বাঁধার (Clotting) ঝুঁকি বহুলাংশে বাড়িয়ে দেয়।",
+        causes: ["পলিসাইথেমিয়া ভেরা (অস্থিমজ্জার রোগ)", "তীব্র ডিহাইড্রেশন", "ফুসফুসের মারাত্মক অক্ষমতা"],
+        symptoms: ["তীব্র মাথাব্যহা বা চোখে ঝাপসা দেখা", "হাত ও পায়ের পাতায় অবশ বা ঝিনঝিন ভাব", "বুকে ব্যথা বা অস্বস্তি", "মুখ ও হাতের তালু অতিরিক্ত লালচে হওয়া"],
+        prevention: ["আয়রন যুক্ত খাবার বা লাল মাংস পরিহার করুন", "প্রচুর তরল খাবার পান করুন"],
+        consult: "⚠️ জরুরি ভিত্তিতে ডাক্তারের সাথে যোগাযোগ করুন। রক্তের ঘনত্ব কমাতে থেরাপিউটিক ফ্লেবোটমি (শরীর থেকে অতিরিক্ত রক্ত বের করা) করার প্রয়োজন হতে পারে।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपकी आरबीसी गिनती आपके जनसांख्यिकीय प्रोफ़ाइल के लिए पूरी तरह से सामान्य सीमा के भीतर है। यह आपके पूरे शरीर में स्वस्थ लाल रक्त कोशिका उत्पादन, उचित पोषण संतुलन और कुशल ऑक्सीजन वितरण को इंगित करता है। अपनी स्वस्थ आदतें बनाए रखें।",
+        causes: ["स्वस्थ अस्थि मज्जा कार्य", "पर्याप्त आयरन, बी12 और फोलेट का स्तर", "इष्टतम जलयोजन स्थिति"],
+        symptoms: ["सामान्य ऊर्जा स्तर", "कोई अस्पष्टीकृत श्वास कष्ट नहीं", "स्वस्थ ऊतक ऑक्सीजनेशन"],
+        prevention: ["आयरन और विटामिन युक्त पोषक तत्वों से भरपूर आहार लें", "हाइड्रेटेड रहें", "नियमित हृदय व्यायाम बनाए रखें"],
+        consult: "दीर्घकालिक रुझानों पर नज़र रखने के लिए नियमित वार्षिक स्वास्थ्य जांच की सिफारिश की जाती है।"
+      },
+      low: {
+        desc: "आपकी आरबीसी गिनती सामान्य सीमा से कम है, जो हल्के से मध्यम एरिथ्रोसाइटोपेनिया (कम लाल कोशिकाओं) का संकेत देती है। इससे आपके रक्त की ऑक्सीजन-वहन क्षमता कम हो जाती है, जिससे आमतौर पर थकान होती है।",
+        causes: ["आयरन, विटामिन बी12, या फोलेट की कमी", "लगातार खून की कमी या भारी रक्तस्रा���", "क्रोनिक किडनी रोग (कम एरिथ्रोपोइटिन)", "कीमोथेरेपी या अस्थि मज्जा दमन"],
+        symptoms: ["थकान और शारीरिक कमजोरी", "पीली या ठंडी त्वचा", "पर��श्रम करने पर चक्कर आना या सांस फूलना", "तेज़ या अनियमित हृदय गति"],
+        prevention: ["आहार में आयरन, विटामिन बी12 और फोलेट का सेवन बढ़ाएँ", "आयरन के अवशोषण को बढ़ाने के लिए भोजन के दौरान चाय या कॉफी पीने से बचें", "विटामिन की कमी के परीक्षण के बारे में अपने डॉक्टर से बात करें"],
+        consult: "अपनी कम आरबीसी गिनती के कारण का मूल्यांकन करने और अपने आयरन, फेरिटिन और विटामिन के ��्तर की जांच करने के लिए अपने डॉक्टर से परामर्श लें।"
+      },
+      criticalLow: {
+        desc: "आपकी आरबीसी गिनती गंभीर रूप से कम है (3.0 मिलियन/µएल से कम)। यह अंग हाइपोक्सिया (ऑक्सीजन की कमी) के गंभीर खतरे को दर्शाता है, जो आपके हृदय प्रणाली पर अत्यधिक दबाव डालता है।",
+        causes: ["गंभीर रक्तस्राव या खून की हानि", "हेमोलिटिक एनीमिया (लाल कोशिकाओं का विनाश)", "अप्लास्टिक एनीमिया या अस्थि मज्जा रोग", "गंभीर कुपोषण"],
+        symptoms: ["अत्यधिक सुस्ती या बेहोशी", "आराम करने पर भी सांस फूलना", "सीने में दर्द या दिल की धड़कन तेज़ होना", "गंभीर चक्कर आना"],
+        prevention: ["तुरंत आराम करें और शारीरिक परिश्रम से बचें", "स्व-दवा का प्रयास न करें"],
+        consult: "⚠️ तत्काल चिकित्सा सहायता लें या आपातकालीन कक्ष में जाएँ। रक्त आधान या तत्काल चिकित्सीय समीक्षा की अत्यधिक संभावना है।"
+      },
+      high: {
+        desc: "आपकी आरबीसी गिनती मानक सामान्य सीमा से अधिक है, जो एरिथ्रोसाइटोसिस का संकेत देती है। इससे रक्त गाढ़ा हो सकता है और हृदय संबंधी कार्य बढ़ सकता है।",
+        causes: ["हल्का से मध्यम निर्जलीकरण (बहुत सामान्य)", "भारी धूम्रपान या कार्बन मोनोऑक्साइड का जोखिम", "क्रॉनिक ऑब्सट्रक्टिव पल्मोनरी डिजीज (सीओपीडी)", "ऊँचे ऊँचे स्थानों पर रहना"],
+        symptoms: ["सिरदर्द या चक्कर आना", "त्वचा का रंग निखरना या लाल होना", "थकान या नींद आना", "गर्म पानी से नहाने के बाद खुजली होना"],
+        prevention: ["रक्त की मात्रा बढ़ाने के लिए खूब पानी पियें", "धूम्रपान छोड़ें या तंबाकू के धुएं के संपर्क में आना सीमित करें", "स्लीप एपनिया या अंतर्निहित फेफड़ों की स्थितियों को प्रबंधित करें"],
+        consult: "श्वसन संबंधी समस्याओं को दूर करने के लिए एक सामान्य चिकित्सक से परामर्श लें या जाँच करें कि क्या हेमेटो���ॉजी फॉलो-अप आवश्यक है।"
+      },
+      criticalHigh: {
+        desc: "आपकी आरबीसी गिनती गंभीर रूप से उच्च (7.0 मिलियन/μL पर या उससे ऊपर) है। इससे रक्त की चिपचिपाहट नाटकीय रूप से बढ़ जाती है, जिससे रक्त के थक्कों और हृदय संबंधी घटनाओं का खतरा बढ़ जाता है।",
+        causes: ["पॉलीसिथेमिया वेरा (अस्थि मज्जा रोग)", "गंभीर क्रोनिक हाइपोक्सिया", "अत्यधिक निर्जलीकरण"],
+        symptoms: ["गंभीर सिरदर्द या दृश्य गड़बड़ी", "हाथ-पैरों में सुन्नता या झुनझुनी", "सीने में बेचैनी", "हथेलियों और चेहरे पर लालिमा"],
+        prevention: ["तरल पदार्थों से तुरंत पुनर्जलीकरण करें", "आयरन सप्लीमेंट से बचें"],
+        consult: "⚠️ तत्काल चिकित्सा सहायता लें। रक्त का गाढ़ापन कम करने के लिए चिकित्सीय फ़्लेबोटॉमी (चिकित्सकीय रूप से रक���त निकालना) आवश्यक हो सकता है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-rbc-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateActiveTicks();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("patientAge").value = "30";
+    document.getElementById("patientGender").value = "male";
+    document.getElementById("valRBC").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits(age, gender) {
+    let limits = { min: 4.7, max: 6.1, criticalMin: 3.0, criticalMax: 7.0 };
+
+    if (age < 12) {
+      limits.min = 4.0; limits.max = 5.2;
+    } else {
+      if (gender === "female") {
+        limits.min = 4.2; limits.max = 5.4;
+      } else if (gender === "pregnant") {
+        limits.min = 3.5; limits.max = 5.0;
+      }
+    }
+    return limits;
+  }
+
+  function updateActiveTicks() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    const limits = getReferenceLimits(age, gender);
+    
+    document.getElementById("tickNormalRange").textContent = `${limits.min} - ${limits.max} (${currentLang === "en" ? "Normal" : "স্বাভাবিক"})`;
+  }
+
+  document.getElementById("patientAge").oninput = updateActiveTicks;
+  document.getElementById("patientGender").onchange = updateActiveTicks;
+
+  function analyzeRBC() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    const valRBC = parseFloat(document.getElementById("valRBC").value);
+
+    if (isNaN(valRBC) || valRBC <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid RBC count value." : "দয়া করে লোহিত রক্তকণিকার একটি সঠিক মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits(age, gender);
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valRBC < limits.min) {
+      if (valRBC <= limits.criticalMin) {
+        statusKey = "criticalLow";
+        badgeKey = "badgeCriticalLow";
+      } else {
+        statusKey = "low";
+        badgeKey = "badgeLow";
+      }
+    } else if (valRBC > limits.max) {
+      if (valRBC >= limits.criticalMax) {
+        statusKey = "criticalHigh";
+        badgeKey = "badgeCriticalHigh";
+      } else {
+        statusKey = "high";
+        badgeKey = "badgeHigh";
+      }
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valRBC >= limits.min && valRBC <= limits.max) {
+      const range = limits.max - limits.min;
+      pointerPct = range > 0 ? 40 + ((valRBC - limits.min) / range) * 20 : 50;
+    } else if (valRBC < limits.min) {
+      const range = limits.min - limits.criticalMin;
+      pointerPct = range > 0 ? Math.max(5, 5 + ((valRBC - limits.criticalMin) / range) * 35) : 20;
+    } else {
+      const range = limits.criticalMax - limits.max;
+      pointerPct = range > 0 ? Math.min(95, 60 + ((valRBC - limits.max) / range) * 35) : 80;
+    }
+
+    activeReportData = {
+      age,
+      gender,
+      date: new Date().toLocaleDateString(),
+      valRBC,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valRBC);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resAge").textContent = d.age;
+    const genderKey = d.gender === "male" ? "genderMale" : d.gender === "female" ? "genderFemale" : "genderPregnant";
+    document.getElementById("resGender").textContent = translations[currentLang][genderKey];
+    document.getElementById("resDate").textContent = d.date;
+
+    document.getElementById("resRbcVal").textContent = d.valRBC.toFixed(2);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey.startsWith("critical")) colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resRbcVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = rbcInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.causes.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valRBC) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valRBC,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-rbc-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valRBC.toFixed(2)} Million/µL (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- RBC COUNT DIAGNOSTIC REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Age: ${activeReportData.age} | Gender: ${activeReportData.gender}\n`;
+    t += `Value: ${activeReportData.valRBC} Million/µL (Ref: ${activeReportData.limits.min}-${activeReportData.limits.max})\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `rbc-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

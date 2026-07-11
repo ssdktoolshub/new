@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regex Tester &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Free online Regex Tester helps you test and validate regular expressions, highlight matched text, and inspect captured groups in real-time.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .regex-inputs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      align-items: center;
+    }
+    .regex-field {
+      flex: 1;
+      position: relative;
+    }
+    .regex-field::before {
+      content: "/";
+      position: absolute;
+      left: 12px;
+      top: 10px;
+      color: var(--muted);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .regex-field input {
+      width: 100%;
+      padding: 10px 10px 10px 24px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-family: monospace;
+      font-size: 1.05rem;
+    }
+    .flags-field {
+      width: 100px;
+      position: relative;
+    }
+    .flags-field::before {
+      content: "/";
+      position: absolute;
+      left: -6px;
+      top: 10px;
+      color: var(--muted);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .flags-field input {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-family: monospace;
+      font-size: 1.05rem;
+      letter-spacing: 2px;
+    }
+    .highlight-overlay {
+      position: relative;
+      min-height: 200px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg2);
+      overflow: auto;
+      font-family: monospace;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      padding: 16px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .highlight-overlay mark {
+      background-color: rgba(239, 35, 60, 0.3);
+      color: var(--text);
+      border-bottom: 2px solid var(--accent);
+      border-radius: 3px;
+    }
+    [data-theme="light"] .highlight-overlay mark {
+      background-color: rgba(2, 132, 199, 0.25);
+      border-bottom-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Regular Expression Tester</h1>
+  <p class="page-sub">Validate regular expressions, highlight matched groups, and inspect capture indexes in real-time.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    
+    <!-- Pattern Input -->
+    <h4 style="margin-bottom: 6px;">Regular Expression</h4>
+    <div class="regex-inputs">
+      <div class="regex-field">
+        <input type="text" id="regexPattern" placeholder="([a-zA-Z0-9]+)" value="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}">
+      </div>
+      <div class="flags-field">
+        <input type="text" id="regexFlags" placeholder="gim" value="g">
+      </div>
+    </div>
+
+    <div class="tool-io" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
+      <!-- Left: Test String -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Test String</h4>
+        <textarea id="regexInputText" placeholder="Enter text to match against the regex pattern here..." style="min-height: 200px;">Contact us at hello@ssdk-tools.com or support@swarnava.in. Reach out anytime!</textarea>
+      </div>
+
+      <!-- Right: Highlighted matches & Groups -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Regex Highlights</h4>
+        <div id="regexHighlightBox" class="highlight-overlay">Match highlights will render here...</div>
+      </div>
+    </div>
+
+    <!-- Match Groups Table -->
+    <div style="margin-top: 20px; background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; display: none;" id="matchTableSec">
+      <h4 style="margin-bottom: 8px;">Captured Matches</h4>
+      <div style="max-height: 180px; overflow-y: auto;">
+        <table class="density-table" style="margin-top: 0;">
+          <thead>
+            <tr>
+              <th>Match</th>
+              <th>Index</th>
+              <th style="text-align: right;">Length</th>
+            </tr>
+          </thead>
+          <tbody id="matchTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnTest">⚡ Run Regex Match</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Features Section -->
+  <div class="content-card">
+    <h3>Regex Flags Details</h3>
+    <ul>
+      <li><strong>g (Global):</strong> Find all matches rather than stopping after the first occurrence.</li>
+      <li><strong>i (Case-insensitive):</strong> Ignore upper/lowercase differences (e.g. `[a-z]` matches `[A-Z]`).</li>
+      <li><strong>m (Multiline):</strong> Treat start `^` and end `$` characters as matching the start/end of each line.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function runRegexMatch() {
+    const pattern = $('regexPattern').value;
+    const flags = $('regexFlags').value;
+    const testText = $('regexInputText').value;
+
+    const highlightBox = $('regexHighlightBox');
+    const tableSec = $('matchTableSec');
+    const tableBody = $('matchTableBody');
+
+    if (!pattern) {
+      highlightBox.textContent = testText;
+      tableSec.style.display = 'none';
+      showStatus('Please enter a regular expression pattern.', true);
+      return;
+    }
+
+    try {
+      // Validate flags
+      if (flags && !/^[gimsuy]*$/.test(flags)) {
+        showStatus('❌ Invalid regular expression flags.', true);
+        return;
+      }
+
+      const regex = new RegExp(pattern, flags);
+      
+      // Determine if global flag is set
+      const isGlobal = flags.includes('g');
+      let matches = [];
+
+      if (isGlobal) {
+        let match;
+        // Prevent infinite loop if pattern matches empty string
+        const lastIndices = new Set();
+        while ((match = regex.exec(testText)) !== null) {
+          if (lastIndices.has(regex.lastIndex)) {
+            regex.lastIndex++;
+            continue;
+          }
+          lastIndices.add(regex.lastIndex);
+          matches.push(match);
+        }
+      } else {
+        const match = regex.exec(testText);
+        if (match) matches.push(match);
+      }
+
+      if (matches.length === 0) {
+        highlightBox.textContent = testText;
+        tableSec.style.display = 'none';
+        showStatus('ℹ️ No matches found.');
+        return;
+      }
+
+      // Build Highlight Overlay HTML
+      let html = "";
+      let lastIndex = 0;
+      
+      matches.forEach(match => {
+        const start = match.index;
+        const matchedText = match[0];
+        
+        // Add preceding text
+        html += escapeHtml(testText.substring(lastIndex, start));
+        // Add highlighted match
+        html += `<mark>${escapeHtml(matchedText)}</mark>`;
+        
+        lastIndex = start + matchedText.length;
+      });
+      // Add trailing text
+      html += escapeHtml(testText.substring(lastIndex));
+      highlightBox.innerHTML = html;
+
+      // Build Matches Table
+      tableBody.innerHTML = "";
+      matches.forEach((match, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${escapeHtml(match[0])}</strong></td>
+          <td>Index ${match.index}</td>
+          <td style="text-align: right; color: var(--accent); font-weight:700;">${match[0].length} chars</td>
+        `;
+        tableBody.appendChild(tr);
+      });
+      tableSec.style.display = 'block';
+
+      showStatus(`✅ Match complete! Found ${matches.length} occurrence${matches.length > 1 ? 's' : ''}.`);
+
+    } catch (e) {
+      highlightBox.textContent = testText;
+      tableSec.style.display = 'none';
+      showStatus('❌ Invalid Regex Pattern: ' + e.message, true);
+    }
+  }
+
+  // Bind inputs for live updates
+  $('regexPattern').oninput = runRegexMatch;
+  $('regexFlags').oninput = runRegexMatch;
+  $('regexInputText').oninput = runRegexMatch;
+  
+  $('btnTest').onclick = runRegexMatch;
+
+  $('btnClear').onclick = () => {
+    $('regexPattern').value = '';
+    $('regexFlags').value = 'g';
+    $('regexInputText').value = '';
+    $('regexHighlightBox').textContent = 'Match highlights will render here...';
+    $('matchTableSec').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Initial match run
+  runRegexMatch();
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

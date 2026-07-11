@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serum Iron Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze serum iron levels online. Evaluate iron deficiency anemia or iron overload (hemochromatosis) with bilingual English/Bengali support, dynamic gauges, and clinical insight cards.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #f59e0b;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .lab-grid { grid-template-columns: 1fr; }
+    }
+
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255,255,255,0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input,
+    .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus,
+    .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong { color: var(--accent); }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right,
+        var(--low-color) 0%,
+        var(--normal-color) 40%,
+        var(--high-color) 75%,
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .insight-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .insight-grid { grid-template-columns: 1fr; }
+    }
+
+    .insight-mini {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .insight-mini h6 {
+      font-size: 0.78rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .insight-mini ul {
+      margin-left: 14px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245,158,11,0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    /* FAQ */
+    .faq-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .faq-question {
+      padding: 14px 16px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg3);
+      transition: background 0.2s;
+    }
+
+    .faq-question:hover { background: rgba(255,255,255,0.05); }
+
+    .faq-answer {
+      padding: 0 16px;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.35s;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .faq-answer.open {
+      max-height: 300px;
+      padding: 12px 16px;
+    }
+
+    .faq-icon { transition: transform 0.3s; font-style: normal; }
+    .faq-icon.open { transform: rotate(180deg); }
+
+    .clinical-note-box {
+      background: rgba(16,185,129,0.05);
+      border: 1px solid rgba(16,185,129,0.25);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 0.82rem;
+      color: #34d399;
+      line-height: 1.55;
+      margin-top: 10px;
+    }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding-top: 0 !important; }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category,
+      .tool-meta, .faq-section, .history-card, .btn, .btn-icon { display: none !important; }
+      .results-display { border: none !important; background: #fff !important; color: #000 !important; min-height: auto !important; padding: 0 !important; }
+      .gauge-container, .insight-card { border: 1px solid #ddd !important; background: #fff !important; color: #000 !important; }
+      .lab-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+
+
+<main class="page reveal-on-scroll">
+  
+
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Serum Iron Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze serum iron levels to evaluate iron deficiency anemia or iron overload (hemochromatosis). Supports µg/dL and µmol/L with gender-specific reference ranges.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🔬 Serum Iron Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">🗑 Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="ironValue" data-translate="labelIron">Serum Iron Value</label>
+              <input type="number" id="ironValue" step="0.01" min="0" placeholder="e.g. 90" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="ironUnit" data-translate="labelUnit">Unit</label>
+              <select id="ironUnit">
+                <option value="ugdl">µg/dL</option>
+                <option value="umoll">µmol/L</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="patientGender" data-translate="labelGender">Gender</label>
+              <select id="patientGender">
+                <option value="male" data-translate="genderMale">Male</option>
+                <option value="female" data-translate="genderFemale">Female</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width:100%; justify-content:center;" onclick="analyzeSerumIron()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Serum Iron Level</span>
+          </button>
+        </div>
+
+        <!-- Educational Notes -->
+        <section class="content-card" style="margin-top:20px;">
+          <h3 data-translate="titleEdu">📚 Clinical Notes: Serum Iron</h3>
+          <div style="display:flex;flex-direction:column;gap:12px;font-size:0.85rem;line-height:1.6;color:var(--muted);">
+            <p><strong style="color:var(--text);" data-translate="eduQ1">What is Serum Iron?</strong><br><span data-translate="eduA1">Serum iron measures the amount of iron circulating bound to transferrin in the blood. It reflects only the transport pool, not total iron stores.</span></p>
+            <p><strong style="color:var(--text);" data-translate="eduQ2">Why test serum iron?</strong><br><span data-translate="eduA2">Serum iron helps diagnose iron deficiency anemia, iron overload disorders like hemochromatosis, and anemia of chronic disease. It must always be interpreted alongside TIBC and ferritin.</span></p>
+            <p><strong style="color:var(--text);" data-translate="eduQ3">When is the best time to test?</strong><br><span data-translate="eduA3">Morning fasting samples yield the most reliable serum iron results, as levels fluctuate significantly throughout the day and are highest in the morning.</span></p>
+          </div>
+          <div class="clinical-note-box" data-translate="clinicalNote">
+            🩺 <strong>Clinical Note:</strong> Serum iron alone is not sufficient; interpret with TIBC and ferritin for a complete iron study profile.
+          </div>
+        </section>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🩸</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your serum iron value, select unit and gender, then click Analyze to view clinical interpretation.</p>
+        </div>
+
+        <div class="report-card" id="reportCardSec" style="display:none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Serum Iron Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" title="Copy" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" title="Print" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" title="Save Image" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelGender">Gender</strong>: <span id="resGender">-</span></span>
+            <span><strong data-translate="labelUnit">Unit</strong>: <span id="resUnit">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resVal">-</div>
+            <div style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;" id="resUnitLabel">µg/dL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left:50%;"></div>
+            </div>
+
+            <div class="range-ticks">
+              <span style="color:var(--low-color);" data-translate="tickLow">Low</span>
+              <span style="color:var(--normal-color);" id="tickNormal">Normal</span>
+              <span style="color:var(--critical-color);" data-translate="tickHigh">High</span>
+            </div>
+          </div>
+
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">📋 Recent Serum Iron Reports</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem;color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+    <button class="btn-icon" style="margin-top:10px;" onclick="clearHistory()" data-translate="clearHistoryBtn">🗑 Clear History</button>
+  </div>
+
+  <!-- FAQs -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions</h3>
+    <div id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult your physician for any abnormal results.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+const translations = {
+  en: {
+    navHome: "Home", navCat: "Iron Studies",
+    toolTitle: "Serum Iron Analyzer",
+    toolDesc: "Analyze serum iron levels to evaluate iron deficiency anemia or iron overload (hemochromatosis). Supports µg/dL and µmol/L with gender-specific reference ranges.",
+    inputsTitle: "🔬 Serum Iron Parameters",
+    clearBtn: "Reset",
+    labelIron: "Serum Iron Value",
+    labelUnit: "Unit",
+    labelGender: "Gender",
+    genderMale: "Male", genderFemale: "Female",
+    btnAnalyze: "Analyze Serum Iron Level",
+    placeholderTitle: "Analysis Report Pending",
+    placeholderDesc: "Enter your serum iron value, select unit and gender, then click Analyze to view clinical interpretation.",
+    reportTitle: "🔬 Serum Iron Report",
+    copyBtn: "Copy", printBtn: "Print", downloadImageBtn: "Save Image",
+    labelDate: "Date",
+    tickLow: "Low", tickHigh: "High",
+    recentRuns: "📋 Recent Serum Iron Reports",
+    noHistory: "No recent runs recorded.",
+    clearHistoryBtn: "🗑 Clear History",
+    faqTitle: "❓ Frequently Asked Questions",
+    disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult your physician for any abnormal results.",
+    titleEdu: "📚 Clinical Notes: Serum Iron",
+    eduQ1: "What is Serum Iron?",
+    eduA1: "Serum iron measures the amount of iron circulating bound to transferrin in the blood. It reflects only the transport pool, not total iron stores.",
+    eduQ2: "Why test serum iron?",
+    eduA2: "Serum iron helps diagnose iron deficiency anemia, iron overload disorders like hemochromatosis, and anemia of chronic disease. It must always be interpreted alongside TIBC and ferritin.",
+    eduQ3: "When is the best time to test?",
+    eduA3: "Morning fasting samples yield the most reliable serum iron results, as levels fluctuate significantly throughout the day and are highest in the morning.",
+    clinicalNote: "🩺 <strong>Clinical Note:</strong> Serum iron alone is not sufficient; interpret with TIBC and ferritin for a complete iron study profile.",
+    badgeNormal: "Normal Serum Iron",
+    badgeLow: "Low Serum Iron — Iron Deficiency",
+    badgeHigh: "High Serum Iron — Iron Overload",
+    titleInterpretation: "📋 Clinical Interpretation",
+    titleCauses: "Possible Causes",
+    titleSymptoms: "Common Symptoms",
+    titlePrevention: "Actionable Tips",
+    titleConsult: "When to Consult a Doctor"
+  },
+  bn: {
+    navHome: "হোম", navCat: "আয়রন স্টাডিজ",
+    toolTitle: "সিরাম আয়রন বিশ্লেষক",
+    toolDesc: "আয়রনের ঘাটতিজনিত রক্তস্বল্পতা বা অতিরিক্ত আয়রন (হেমোক্রোমাটোসিস) মূল্যায়নে সিরাম আয়রনের মাত্রা বিশ্লেষণ করুন।",
+    inputsTitle: "🔬 সিরাম আয়রন পরিমাপক",
+    clearBtn: "মুছুন",
+    labelIron: "সিরাম আয়রনের মান",
+    labelUnit: "একক",
+    labelGender: "লিঙ্গ",
+    genderMale: "পুরুষ", genderFemale: "নারী",
+    btnAnalyze: "সিরাম আয়রন বিশ্লেষণ করুন",
+    placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+    placeholderDesc: "সিরাম আয়রনের মান, একক ও লিঙ্গ নির্বাচন করুন, তারপর বিশ্লেষণ বোতাম চাপুন।",
+    reportTitle: "🔬 সিরাম আয়রন রিপোর্ট",
+    copyBtn: "কপি", printBtn: "প্রিন্ট", downloadImageBtn: "ছবি সংরক্ষণ",
+    labelDate: "তারিখ",
+    tickLow: "কম", tickHigh: "বেশি",
+    recentRuns: "📋 সাম্প্রতিক সিরাম আয়রন রিপোর্ট",
+    noHistory: "কোনো সাম্প্রতিক রেকর্ড নেই।",
+    clearHistoryBtn: "🗑 ইতিহাস মুছুন",
+    faqTitle: "❓ সচরাচর জিজ্ঞাস্য",
+    disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক উদ্দেশ্যে। এটি রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়।",
+    titleEdu: "📚 ক্লিনিক্যাল নোট: সিরাম আয়রন",
+    eduQ1: "সিরাম আয়রন কী?",
+    eduA1: "সিরাম আয়রন রক্তে ট্রান্সফারিনের সাথে আবদ্ধ পরিবহনযোগ্য আয়রনের পরিমাণ পরিমাপ করে। এটি শুধু পরিবহন অংশ পরিমাপ করে, সম্পূর্ণ আয়রন সঞ্চয় নয়।",
+    eduQ2: "কেন সিরাম আয়রন পরীক্ষা করবেন?",
+    eduA2: "আয়রনের ঘাটতিজনিত রক্তস্বল্পতা, হেমোক্রোমাটোসিস এবং দীর্ঘস্থায়ী রোগজনিত রক্তস্বল্পতা নির্ণয়ে সাহায্য করে। সবসময় TIBC ও ফেরিটিনের সাথে একসাথে মূল্যায়ন করুন।",
+    eduQ3: "পরীক্ষার সেরা সময় কখন?",
+    eduA3: "সকালে খালি পেটে নমুনা সংগ্রহ সবচেয়ে নির্ভরযোগ্য ফলাফল দেয়, কারণ সিরাম আয়রনের মাত্রা দিনের বিভিন্ন সময়ে ওঠানামা করে।",
+    clinicalNote: "🩺 <strong>ক্লিনিক্যাল নোট:</strong> সিরাম আয়রন একা যথেষ্ট নয়; পূর্ণাঙ্গ আয়রন স্টাডির জন্য TIBC ও ফেরিটিনের সাথে মূল্যায়ন করুন।",
+    badgeNormal: "স্বাভাবিক সিরাম আয়রন",
+    badgeLow: "কম সিরাম আয়রন — আয়রনের ঘাটতি",
+    badgeHigh: "বেশি সিরাম আয়রন — আয়রন ওভারলোড",
+    titleInterpretation: "📋 ক্লিনিক্যাল ব্যাখ্যা",
+    titleCauses: "সম্ভাব্য কারণ",
+    titleSymptoms: "সাধারণ লক্ষণ",
+    titlePrevention: "করণীয় পরামর্শ",
+    titleConsult: "কখন ডাক্তার দেখাবেন"
+  },
+    hi: {
+    navHome: "घर", navCat: "लौह अध्ययन",
+    toolTitle: "सीरम आयरन विश्लेषक",
+    toolDesc: "आयरन की कमी से होने वाले एनीमिया या आयरन की अधिकता (हेमोक्रोमैटोसिस) का मूल्यांकन करने के लिए सीरम आयरन के स्तर का विश्लेषण करें। लिंग-विशिष्ट संदर्भ श्रेणियों के साथ µg/dL और µmol/L का समर्थन करता है।",
+    inputsTitle: "🔬 सीरम आयरन पैरामीटर्स",
+    clearBtn: "रीसेट करें",
+    labelIron: "सीरम लौह मूल्य",
+    labelUnit: "इकाई",
+    labelGender: "लिंग",
+    genderMale: "पुरुष", genderFemale: "स्त्री",
+    btnAnalyze: "सीरम आयरन स्तर का विश्लेषण करें",
+    placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+    placeholderDesc: "अपना सीरम आयरन मान दर्ज करें, इकाई और लिंग चुनें, फिर नैदानिक ​​​​व्याख्या देखने के लिए विश्लेषण पर क्लिक करें।",
+    reportTitle: "🔬 सीरम आयरन रिपोर्ट",
+    copyBtn: "प्रतिलिपि", printBtn: "प्रिंट करें", downloadImageBtn: "छवि सहेजें",
+    labelDate: "दिनांक",
+    tickLow: "कम", tickHigh: "ऊँचा",
+    recentRuns: "📋 हालिया सीरम आयरन रिपोर्ट",
+    noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+    clearHistoryBtn: "🗑इतिहास साफ़ करें",
+    faqTitle: "❓अक्सर पूछे जाने वाले प्रश्न",
+    disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। किसी भी असामान्य परिणाम के लिए हमेशा अपने चिकित्सक से परामर्श लें।",
+    titleEdu: "📚 क्लिनिकल नोट्स: सीरम आयरन",
+    eduQ1: "सीरम आयरन क्या है?",
+    eduA1: "सीरम आयरन रक्त में ट्रांसफ़रिन से जुड़े आयरन की मात्रा को मापता है। यह केवल परिवहन पूल को दर्शाता है, कुल लौह भंडार को नहीं।",
+    eduQ2: "सीरम आयरन का परीक्षण क्यों करें?",
+    eduA2: "सीरम आयरन आयरन की कमी से ��ोने वाले एनीमिया, हेमोक्रोमैटोसिस जैसे आयरन अधिभार विकारों और पुरानी बीमारी के एनीमिया का निदान करने में मदद करता है। इसकी व्याख्या हमेशा TIBC और फ़ेरिटिन के साथ की जानी चाहिए।",
+    eduQ3: "परीक्षण करने का सबसे अच्छा समय कब है?",
+    eduA3: "सुबह के उपवास के नमूनों से सबसे विश्वसनीय सीरम आयरन परिणाम मिलते हैं, क्योंकि पूरे दि��� स्तर में काफी उतार-चढ़ाव होता है और सुबह में उच्चतम होता है।",
+    clinicalNote: "🩺<strong>क्लिनिकल नोट:</strong> अकेले सीरम आयरन पर्याप्त नहीं है; संपूर्ण लौह अध्ययन प्रोफ़ाइल के लिए टीआईबीसी और फ़ेरिटिन के साथ व्याख्या करें।",
+    badgeNormal: "सामान्य सीरम आयरन",
+    badgeLow: "कम सीरम आयरन - आयरन की कमी",
+    badgeHigh: "उच्च सीरम आयरन - आयरन अधिभार",
+    titleInterpretation: "📋नैदानिक व्याख्या",
+    titleCauses: "संभावित कारण",
+    titleSymptoms: "सामान्य लक्षण",
+    titlePrevention: "कार्रवाई योग्य युक्तियाँ",
+    titleConsult: "डॉक्टर से कब परामर्श लें"
+  }
+};
+
+const faqData = {
+  en: [
+    { q: "What is the normal range for serum iron?", a: "Normal serum iron ranges are 60–170 µg/dL for males and 50–170 µg/dL for females. Values may vary slightly between laboratories." },
+    { q: "What does low serum iron mean?", a: "Low serum iron (below 50–60 µg/dL depending on gender) suggests iron deficiency, which may be due to poor dietary intake, chronic blood loss, or malabsorption. It must be confirmed with ferritin and TIBC testing." },
+    { q: "What causes high serum iron (iron overload)?", a: "High serum iron may indicate hereditary hemochromatosis, repeated blood transfusions, excessive iron supplementation, liver disease, or hemolytic anemia where iron is released from destroyed red cells." },
+    { q: "Can serum iron fluctuate within a day?", a: "Yes. Serum iron is highest in the morning and can vary by up to 30% throughout the day. Stress, meals, and even sleep can alter levels, which is why fasting morning samples are preferred." }
+  ],
+  bn: [
+    { q: "সিরাম আয়রনের স্বাভাবিক মাত্রা কত?", a: "পুরুষদের জন্য ৬০–১৭০ µg/dL এবং নারীদের জন্য ৫০–১৭০ µg/dL স্বাভাবিক। বিভিন্ন ল্যাবরেটরিতে সামান্য পার্থক্য থাকতে পারে।" },
+    { q: "কম সিরাম আয়রন কী নির্দেশ করে?", a: "কম সিরাম আয়রন আয়রনের ঘাটতি নির্দেশ করে, যা দুর্বল খাদ্যাভ্যাস, দীর্ঘস্থায়ী রক্তক্ষরণ বা শোষণ সমস্যার কারণে হতে পারে। ফেরিটিন ও TIBC পরীক্ষা দিয়ে নিশ্চিত করুন।" },
+    { q: "বেশি সিরাম আয়রনের কারণ কী?", a: "হেরেডিটারি হেমোক্রোমাটোসিস, বারবার রক্ত সঞ্চালন, অতিরিক্ত আয়রন সাপ্লিমেন্ট, লিভার রোগ বা হেমোলাইটিক অ্যানিমিয়া সিরাম আয়রন বাড়াতে পারে।" },
+    { q: "সিরাম আয়রন কি দিনের মধ্যে পরিবর্তিত হয়?", a: "হ্যাঁ। সিরাম আয়রন সকালে সবচেয়ে বেশি থাকে এবং সারাদিনে ৩০% পর্যন্ত ওঠানামা করতে পারে। তাই সকালে খালি পেটে নমুনা দেওয়া সবচেয়ে ভালো।" }
+  ],
+    hi: [
+    { q: "सीरम आयरन की सामान्य सीमा क्या है?", a: "सामान्य सीरम आयरन की सीमा पुरुषों के लिए 60-170 µg/dL और महिलाओं के लिए 50-170 µg/dL है। प्रयोगशालाओं के बीच मान थोड़ा भिन्न हो सकते हैं।" },
+    { q: "कम सीरम आयरन का क्या मतलब है?", a: "कम सीरम आयरन (लिंग के आधार पर 50-60 मा��क्रोग्राम/डीएल से नीचे) आयरन की कमी का संकेत देता है, जो खराब आहार सेवन, पुरानी रक्त हानि या कुअवशोषण के कारण हो सकता है। इसकी पुष्टि फ़ेरिटिन और टीआईबीसी परीक्षण से की जानी चाहिए।" },
+    { q: "उच्च सीरम आयरन (आयरन अधिभार) का क्या कारण है?", a: "उच्च सीरम आयरन वंशानुगत हेमोक्रोमैटोसिस, बार-बार रक्त आधान, अत्यधिक आयरन अनुपूरण, यकृत रोग, या हेमोलिटिक एनीमिया का संकेत दे सकता है जहां नष्ट लाल कोशिकाओं से आयरन निकलता है।" },
+    { q: "क्या सीरम आयरन में एक दिन के भीतर उतार-चढ़ाव हो सकता है?", a: "हाँ। सीरम आयरन सुबह के समय सबसे अधिक होता है और पूरे दिन में 30% तक भिन्न हो सकता है। तनाव, भोजन और यहां तक ​​कि नींद भी स्तर को बदल सकती है, यही कारण है कि सुबह के उपवास के नमूनों को प्राथमिकता दी जाती है।" }
+  ]
+};
+
+const ironInsights = {
+  en: {
+    low: {
+      desc: "Your serum iron is below the normal range, indicating iron deficiency. This means your body has insufficient circulating iron for normal red blood cell production and oxygen delivery.",
+      causes: ["Inadequate dietary iron intake", "Chronic blood loss (GI bleed, heavy periods)", "Iron malabsorption (celiac disease, gastrectomy)", "Increased iron demand (pregnancy, growth)"],
+      symptoms: ["Fatigue and persistent weakness", "Pale skin and mucous membranes", "Brittle nails or hair loss", "Restless leg syndrome", "Reduced concentration"],
+      prevention: ["Consume iron-rich foods: red meat, lentils, spinach, fortified cereals", "Pair with Vitamin C to enhance absorption", "Avoid tea/coffee within 1 hour of meals", "Treat underlying causes of blood loss"],
+      consult: "Visit your physician to measure ferritin and TIBC to confirm iron deficiency anemia and assess the need for supplementation."
+    },
+    normal: {
+      desc: "Your serum iron is within the normal reference range for your gender. This indicates adequate circulating iron for optimal red blood cell production and oxygen transport.",
+      causes: ["Balanced dietary intake", "Healthy gastrointestinal absorption", "Normal red blood cell turnover"],
+      symptoms: ["Good energy and stamina", "Healthy skin and nail appearance", "Normal cognitive function"],
+      prevention: ["Continue a balanced diet with varied iron sources", "Get annual blood work to monitor iron stores (ferritin)", "Avoid unnecessary iron supplementation"],
+      consult: "No urgent consultation needed. Routine annual health check-ups are recommended to monitor trends over time."
+    },
+    high: {
+      desc: "Your serum iron is above the normal range, suggesting iron overload or hemochromatosis. Excess iron deposits in organs (liver, heart, pancreas) can cause serious long-term damage.",
+      causes: ["Hereditary hemochromatosis (HFE gene mutation)", "Multiple blood transfusions", "Excessive iron supplementation", "Liver disease (hepatitis, cirrhosis)", "Hemolytic anemia"],
+      symptoms: ["Fatigue and joint pain", "Abdominal pain (liver region)", "Skin bronzing or darkening", "Elevated liver enzymes", "Diabetes or heart arrhythmias (advanced)"],
+      prevention: ["Avoid iron-rich supplements and fortified foods", "Limit alcohol consumption (worsens liver damage)", "Reduce red meat consumption", "Stay hydrated and active"],
+      consult: "⚠️ Consult a physician or hematologist urgently. Genetic testing for HFE mutations and liver function tests are recommended. Therapeutic phlebotomy may be required."
+    }
+  },
+  bn: {
+    low: {
+      desc: "আপনার সিরাম আয়রন স্বাভাবিকের চেয়ে কম, যা আয়রনের ঘাটতি নির্দেশ করে। এর মানে স্বাভাবিক লোহিত রক্তকণিকা উৎপাদনের জন্য পর্যাপ্ত আয়রন নেই।",
+      causes: ["খাদ্যে আয়রনের অপ্রতুলতা", "দীর্ঘস্থায়ী রক্তক্ষরণ (পেটে রক্তপাত, অতিরিক্ত মাসিক)", "আয়রন শোষণে সমস্যা (সিলিয়াক ডিজিজ)", "আয়রনের বর্ধিত চাহিদা (গর্ভাবস্থা)"],
+      symptoms: ["ক্লান্তি ও দুর্বলতা", "ত্বক ও মিউকাস মেমব্রেন ফ্যাকাশে", "নখ ভাঙা বা চুল পড়া", "অস্থির পা সিন্ড্রোম", "মনোযোগ কমে যাওয়া"],
+      prevention: ["আয়রনসমৃদ্ধ খাবার খান: লাল মাংস, ডাল, পালং শাক", "ভিটামিন সি-র সাথে খান শোষণ বাড়াতে", "খাবারের ১ ঘণ্টার মধ্যে চা/কফি এড়িয়ে চলুন", "রক্তক্ষরণের কারণ চিহ্নিত করে চিকিৎসা করুন"],
+      consult: "আয়রনের ঘাটতির কারণ নিশ্চিত করতে ফেরিটিন ও TIBC পরীক্ষা করান এবং চিকিৎসকের পরামর্শ নিন।"
+    },
+    normal: {
+      desc: "আপনার সিরাম আয়রন আপনার লিঙ্গের জন্য স্বাভাবিক সীমার মধ্যে রয়েছে, যা সঠিক রক্তকণিকা উৎপাদন ও অক্সিজেন পরিবহনের জন্য পর্যাপ্ত আয়রনের সরবরাহ নির্দেশ করে।",
+      causes: ["সুষম খাদ্যগ্রহণ", "পরিপাকতন্ত্রের সঠিক শোষণ ক্ষমতা", "স্বাভাবিক লোহিত রক্তকণিকার পুনর্গঠন"],
+      symptoms: ["ভালো শক্তি ও কর্মক্ষমতা", "ত্বক ও নখের স্বাভাবিক অবস্থা", "স্বাভাবিক মনোযোগ ও স্মৃতিশক্তি"],
+      prevention: ["বিভিন্ন উৎস থেকে আয়রনযুক্ত সুষম খাদ্য বজায় রাখুন", "বার্ষিক রক্ত পরীক্ষা করুন (ফেরিটিন)", "অপ্রয়োজনীয় আয়রন সাপ্লিমেন্ট এড়ান"],
+      consult: "জরুরি পরামর্শের প্রয়োজন নেই। তবে বার্ষিক স্বাস্থ্য পরীক্ষা করার পরামর্শ দেওয়া হয়।"
+    },
+    high: {
+      desc: "আপনার সিরাম আয়রন স্বাভাবিকের চেয়ে বেশি, যা আয়রন ওভারলোড বা হেমোক্রোমাটোসিস নির্দেশ করতে পারে। অতিরিক্ত আয়রন অঙ্গ-প্রত্যঙ্গে (লিভার, হৃদপিণ্ড, অগ্ন্যাশয়) জমে মারাত্মক ক্ষতি করতে পারে।",
+      causes: ["বংশগত হেমোক্রোমাটোসিস (HFE জিন মিউটেশন)", "বারবার রক্ত সঞ্চালন", "অতিরিক্ত আয়রন সাপ্লিমেন্ট", "লিভার রোগ (হেপাটাইটিস, সিরোসিস)", "হেমোলাইটিক অ্যানিমিয়া"],
+      symptoms: ["ক্লান্তি ও জয়েন্টে ব্যথা", "পেটে ব্যথা (লিভার এলাকায়)", "ত্বক কালচে বা ব্রোঞ্জ রঙ ধারণ", "লিভার এনজাইম বৃদ্ধি", "উন্নত পর্যায়ে ডায়াবেটিস বা হৃদ্‌রোগ"],
+      prevention: ["আয়রনসমৃদ্ধ সাপ্লিমেন্ট ও ফোর্টিফাইড খাবার এড়িয়ে চলুন", "অ্যালকোহল সেবন কমান", "লাল মাংস কম খান", "পর্যাপ্ত পানি পান করুন"],
+      consult: "⚠️ জরুরিভাবে চিকিৎসক বা রক্তরোগ বিশেষজ্ঞের পরামর্শ নিন। HFE জিন পরীক্ষা ও লিভার ফাংশন টেস্ট প্রয়োজন। থেরাপিউটিক ফ্লেবোটমির প্রয়োজন হতে পারে।"
+    }
+  },
+    hi: {
+    low: {
+      desc: "आपका सीरम आयरन सामान्य सीमा से नीचे है, जो आयरन की कमी का संकेत है। इसका मतलब है कि आपके शरीर में सामान्य लाल रक्त कोशिका उत्पादन और ऑक्सीजन वितरण के लिए अपर्याप्त परिसंचारी आयरन है।",
+      causes: ["अपर्याप्त आहार आयरन का सेवन", "दीर्घकालिक रक्त हानि (जीआई रक्तस्राव, भारी मासिक धर्म)", "लौह कुअवशोषण (सीलिएक रोग, गैस्ट्रेक्टोमी)", "आयरन की बढ़ी हुई मांग (गर्भावस्था, वृद्धि)"],
+      symptoms: ["थकान और लगातार कमजोरी", "पीली त्वचा और श्लेष्मा झिल्ली", "भंगुर नाखून या बालों का झड़ना", "बेचैन पैर सिंड्रोम", "एकाग्रता में कमी"],
+      prevention: ["आयरन युक्त खाद्य पदार्थों का सेवन करें: लाल मांस, दाल, पालक, गढ़वाले अनाज", "अवशोषण बढ़ाने के लिए विटामिन सी के साथ मिलाएं", "भोजन के 1 घंटे के भीतर चाय/कॉफी से बचें", "खून की कमी के अंतर्निहित कारणों का इलाज करें"],
+      consult: "आयरन की कमी से होने वाले एनीमिया की पुष्टि करने और पूरकता की आवश्यकता का आकलन करने के लिए फेरिटिन और टीआईबीसी को मापने के लिए अपने चिकित्सक से मिलें।"
+    },
+    normal: {
+      desc: "आपका सीरम आयरन आपके लिंग के लिए सामान्य संदर्भ सीमा के भीतर है। यह इष्टतम लाल रक्त कोशिका उत्पादन और ऑक्सीजन परिवहन के लिए पर्याप्त परिसंचारी लौह को इंगित करता है।",
+      causes: ["संतुलित आहार का सेवन", "स्वस्थ जठरांत्र अवशोषण", "सामान्य लाल रक्त कोशिका कारोबार"],
+      symptoms: ["अच्छी ऊर्जा और सहनशक्ति", "स्वस्थ त्वचा और नाखून की उपस्थिति", "सामान्य संज्ञानात्मक कार्य"],
+      prevention: ["लौह के विभिन्न स्रोतों वाला संतुलित आहार जारी रखें", "आयरन भंडार (फेरिटिन) की निगरानी के लिए वार्षिक रक्त परीक्षण करवाएं", "अनावश्यक आयरन अनुपूरण से बचें"],
+      consult: "किसी तत्काल परामर्श की आवश्यकता नहीं है. समय के साथ रुझानों पर नजर रखने के लिए नियमित वार्षिक स्वास्थ्य जांच की सिफारिश की जाती है।"
+    },
+    high: {
+      desc: "आपका सीरम आयरन सामान्य सीमा से ऊपर है, जो आयरन अधिभार या हेमोक्रोमैटोसिस का सुझाव देता है। अंगों (यकृत, ���ृदय, अग्न्याशय) में अतिरिक्त लौह जमा गंभीर दीर्घकालिक क्षति का कारण बन सकता है।",
+      causes: ["वंशानुगत हेमोक्रोमैटोसिस (एचएफई जीन उत्परिवर्तन)", "एकाधिक रक्त आधान", "अत्यधिक लौह अनुपूरण", "जिगर की बीमारी (हेपेटाइटिस, सिरोसिस)", "हेमोलिटिक एनीमिया"],
+      symptoms: ["थकान और जोड़ों का दर्द", "पेट दर्द (यकृत क्षेत्र)", "त्वचा का रंग काला पड़ना या काला पड़ना", "ऊंचा लिवर एंजाइम", "मधुमेह या हृदय अतालता (उन्नत)"],
+      prevention: ["आयरन युक्त पूरक और गरिष्ठ खाद्य पदार्थों से बचें", "शराब का सेवन सीमित करें (यकृत की क्षति बिगड़ती है)", "लाल मांस का सेवन कम करें", "हाइड्रेटेड और सक्रिय रहें"],
+      consult: "⚠️ तुरंत किसी चिकित्सक या रुधिर रोग विशेषज्ञ से परामर्श लें। एचएफई उत्परिवर्तन और यकृत समारोह परीक्षणों के लिए आनुवंशिक परीक्षण की सिफारिश की जाती है। चिकित्सीय फ़्लेबोटॉमी की आवश्यकता हो सकती है।"
+    }
+  }
+};
+
+let currentLang = localStorage.getItem("ssdk-lang") || "en";
+let recentHistory = JSON.parse(localStorage.getItem("ssdk-seriron-history")) || [];
+let activeReportData = null;
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem("ssdk-lang", lang);
+  const btn = document.getElementById("langToggleBtn");
+  if (btn) btn.innerHTML = lang === "bn" ? '🇬🇧 <span>English</span>' : '🇧🇩 <span>বাংলা</span>';
+  document.querySelectorAll("[data-translate]").forEach(el => {
+    const key = el.getAttribute("data-translate");
+    if (translations[lang] && translations[lang][key] !== undefined) {
+      if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") el.placeholder = translations[lang][key];
+      else el.innerHTML = translations[lang][key];
+    }
+  });
+  renderFAQ();
+  renderHistory();
+}
+
+function toggleLanguage() {
+  setLanguage(currentLang === "en" ? "bn" : "en");
+}
+
+function t(key) {
+  return (translations[currentLang] && translations[currentLang][key]) || (translations.en[key]) || key;
+}
+
+function analyzeSerumIron() {
+  const rawVal = parseFloat(document.getElementById("ironValue").value);
+  const unit = document.getElementById("ironUnit").value;
+  const gender = document.getElementById("patientGender").value;
+
+  if (isNaN(rawVal) || rawVal <= 0) {
+    alert(currentLang === "bn" ? "একটি বৈধ সিরাম আয়রনের মান লিখুন।" : "Please enter a valid serum iron value.");
+    return;
+  }
+
+  // Convert to µg/dL for evaluation
+  let valUgDl = unit === "umoll" ? rawVal / 0.1791 : rawVal;
+  const displayVal = rawVal;
+  const displayUnit = unit === "umoll" ? "µmol/L" : "µg/dL";
+
+  // Determine ranges
+  const normalMin = gender === "male" ? 60 : 50;
+  const normalMax = 170;
+
+  let status = "normal";
+  if (valUgDl < normalMin) status = "low";
+  else if (valUgDl > normalMax) status = "high";
+
+  const colorMap = { low: "var(--low-color)", normal: "var(--normal-color)", high: "var(--critical-color)" };
+  const badgeMap = { low: t("badgeLow"), normal: t("badgeNormal"), high: t("badgeHigh") };
+
+  // Gauge pointer — span 0–250 µg/dL
+  const gaugeMin = 0, gaugeMax = 250;
+  let pct = ((valUgDl - gaugeMin) / (gaugeMax - gaugeMin)) * 100;
+  pct = Math.min(Math.max(pct, 2), 98);
+
+  document.getElementById("placeholderSec").style.display = "none";
+  const rc = document.getElementById("reportCardSec");
+  rc.style.display = "flex";
+
+  document.getElementById("resVal").textContent = displayVal;
+  document.getElementById("resVal").style.color = colorMap[status];
+  document.getElementById("resUnitLabel").textContent = displayUnit;
+  document.getElementById("resGender").textContent = gender === "male" ? t("genderMale") : t("genderFemale");
+  document.getElementById("resUnit").textContent = displayUnit;
+  document.getElementById("resDate").textContent = new Date().toLocaleDateString();
+  document.getElementById("resStatusLabel").textContent = badgeMap[status];
+  document.getElementById("resStatusLabel").style.color = colorMap[status];
+  document.getElementById("tickNormal").textContent = `${normalMin}–${normalMax} µg/dL`;
+
+  setTimeout(() => {
+    document.getElementById("rangePointer").style.left = pct + "%";
+  }, 100);
+
+  const insight = ironInsights[currentLang][status];
+  const sec = document.getElementById("insightSection");
+  sec.innerHTML = `
+    <div class="insight-card">
+      <h5 style="color:${colorMap[status]};">${t("titleInterpretation")}</h5>
+      <p>${insight.desc}</p>
+      <div class="insight-grid">
+        <div class="insight-mini">
+          <h6>🧬 ${t("titleCauses")}</h6>
+          <ul>${insight.causes.map(c => `<li>${c}</li>`).join("")}</ul>
+        </div>
+        <div class="insight-mini">
+          <h6>🩺 ${t("titleSymptoms")}</h6>
+          <ul>${insight.symptoms.map(s => `<li>${s}</li>`).join("")}</ul>
+        </div>
+        <div class="insight-mini">
+          <h6>💡 ${t("titlePrevention")}</h6>
+          <ul>${insight.prevention.map(p => `<li>${p}</li>`).join("")}</ul>
+        </div>
+        <div class="insight-mini">
+          <h6>🏥 ${t("titleConsult")}</h6>
+          <p style="font-size:0.78rem;color:var(--muted);line-height:1.5;">${insight.consult}</p>
+        </div>
+      </div>
+    </div>`;
+
+  // Save to history
+  const entry = {
+    date: new Date().toLocaleString(),
+    value: displayVal,
+    unit: displayUnit,
+    gender: gender,
+    status: status,
+    badge: badgeMap[status]
+  };
+  recentHistory.unshift(entry);
+  if (recentHistory.length > 10) recentHistory.pop();
+  localStorage.setItem("ssdk-seriron-history", JSON.stringify(recentHistory));
+  activeReportData = entry;
+  renderHistory();
+}
+
+function renderHistory() {
+  const container = document.getElementById("historyListContainer");
+  if (!recentHistory.length) {
+    container.innerHTML = `<p style="font-size:0.75rem;color:var(--muted);">${t("noHistory")}</p>`;
+    return;
+  }
+  container.innerHTML = recentHistory.map(h => `
+    <div class="history-item">
+      <span>${h.date}</span>
+      <span><strong>${h.value} ${h.unit}</strong> — ${h.badge}</span>
+    </div>`).join("");
+}
+
+function clearHistory() {
+  recentHistory = [];
+  localStorage.removeItem("ssdk-seriron-history");
+  renderHistory();
+}
+
+function resetForm() {
+  document.getElementById("ironValue").value = "";
+  document.getElementById("placeholderSec").style.display = "block";
+  document.getElementById("reportCardSec").style.display = "none";
+}
+
+function copyFormattedResult() {
+  if (!activeReportData) return;
+  const text = `Serum Iron Report\nDate: ${activeReportData.date}\nGender: ${activeReportData.gender}\nValue: ${activeReportData.value} ${activeReportData.unit}\nStatus: ${activeReportData.badge}`;
+  navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!")).catch(() => alert("Copy failed."));
+}
+
+function printReport() { window.print(); }
+
+function captureReportPng() {
+  const el = document.getElementById("reportCardSec");
+  if (!el) return;
+  html2canvas(el, { backgroundColor: "#0f172a", scale: 2 }).then(canvas => {
+    const a = document.createElement("a");
+    a.download = "serum-iron-report.png";
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+  });
+}
+
+function renderFAQ() {
+  const container = document.getElementById("faqAccordionContainer");
+  const faqs = faqData[currentLang];
+  container.innerHTML = faqs.map((f, i) => `
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggleFaq(${i})">
+        <span>${f.q}</span>
+        <em class="faq-icon" id="faq-icon-${i}">▾</em>
+      </div>
+      <div class="faq-answer" id="faq-ans-${i}">${f.a}</div>
+    </div>`).join("");
+}
+
+function toggleFaq(i) {
+  const ans = document.getElementById(`faq-ans-${i}`);
+  const icon = document.getElementById(`faq-icon-${i}`);
+  ans.classList.toggle("open");
+  icon.classList.toggle("open");
+}
+
+function toggleFavorite() {
+  const btn = document.getElementById("toolFavBtn");
+  const favs = JSON.parse(localStorage.getItem("ssdk-favorites") || "[]");
+  const id = "serum-iron-analyzer";
+  const idx = favs.indexOf(id);
+  if (idx === -1) { favs.push(id); btn.classList.add("active"); btn.textContent = "★"; }
+  else { favs.splice(idx, 1); btn.classList.remove("active"); }
+  localStorage.setItem("ssdk-favorites", JSON.stringify(favs));
+}
+
+// Init
+setLanguage(currentLang);
+renderHistory();
+(function() {
+  const favs = JSON.parse(localStorage.getItem("ssdk-favorites") || "[]");
+  if (favs.includes("serum-iron-analyzer")) {
+    const b = document.getElementById("toolFavBtn");
+    if (b) b.classList.add("active");
+  }
+})();
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

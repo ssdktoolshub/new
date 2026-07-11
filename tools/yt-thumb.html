@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Thumbnail Downloader &bull; Save Previews - SSDK TOOLS HUB</title>
+  <meta name="description" content="Extract and download high-resolution YouTube video thumbnails instantly. Works with standard links, shorts, and embed URLs.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      margin-top: 20px;
+    }
+    @media (max-width: 768px) {
+      .results-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .thumb-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+    .thumb-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .thumb-card h4 {
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+      color: var(--text);
+      font-weight: 700;
+    }
+    .thumb-img {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16/9;
+      border-radius: 8px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      background: #000;
+    }
+    .thumb-actions {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+    .thumb-actions button, .thumb-actions a {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-download {
+      background: var(--accent);
+      color: #fff;
+      border: 1px solid var(--accent);
+    }
+    .btn-download:hover {
+      opacity: 0.9;
+    }
+    .btn-link {
+      background: var(--bg3);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-link:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">YouTube Thumbnail Downloader</h1>
+  <p class="page-sub">Extract and download multiple sizes of YouTube video thumbnail covers instantly.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    
+    <div style="margin-bottom: 20px;">
+      <h4 style="margin-bottom: 8px;">Enter YouTube URL</h4>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="ytUrl" placeholder="e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); outline: none;">
+        <button class="btn" id="btnExtract">🔍 Extract</button>
+      </div>
+    </div>
+
+    <!-- Outputs Grid -->
+    <div id="resultsWrapper" style="display: none;">
+      <h3 style="border-bottom: 1px solid var(--border); padding-bottom: 8px; color: var(--accent); font-size: 1.1rem; font-weight: 800;">Extracted Thumbnails</h3>
+      
+      <p style="font-size: 0.8rem; color: var(--muted); margin: 6px 0 14px;">
+        ⚠️ Note: If download doesn't trigger directly due to browser CORS policies, click **"Open Link"**, right-click the image, and choose **"Save Image As"**.
+      </p>
+
+      <div class="results-grid">
+        <!-- Max Resolution -->
+        <div class="thumb-card" id="cardMax">
+          <h4>Maximum Resolution (HD 1080p)</h4>
+          <img class="thumb-img" id="imgMax" alt="HD Cover">
+          <div class="thumb-actions">
+            <button class="btn-download" onclick="downloadImage('max')">Download</button>
+            <a class="btn-link" id="linkMax" target="_blank">Open Link</a>
+          </div>
+        </div>
+
+        <!-- High Quality -->
+        <div class="thumb-card" id="cardHq">
+          <h4>High Quality (SD 480p)</h4>
+          <img class="thumb-img" id="imgHq" alt="HQ Cover">
+          <div class="thumb-actions">
+            <button class="btn-download" onclick="downloadImage('hq')">Download</button>
+            <a class="btn-link" id="linkHq" target="_blank">Open Link</a>
+          </div>
+        </div>
+
+        <!-- Medium Quality -->
+        <div class="thumb-card" id="cardMq">
+          <h4>Medium Quality (360p)</h4>
+          <img class="thumb-img" id="imgMq" alt="MQ Cover">
+          <div class="thumb-actions">
+            <button class="btn-download" onclick="downloadImage('mq')">Download</button>
+            <a class="btn-link" id="linkMq" target="_blank">Open Link</a>
+          </div>
+        </div>
+
+        <!-- Default Quality -->
+        <div class="thumb-card" id="cardDef">
+          <h4>Default Quality (120p)</h4>
+          <img class="thumb-img" id="imgDef" alt="Default Cover">
+          <div class="thumb-actions">
+            <button class="btn-download" onclick="downloadImage('def')">Download</button>
+            <a class="btn-link" id="linkDef" target="_blank">Open Link</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="placeholderBox" style="text-align: center; border: 1px dashed var(--border); border-radius: 12px; padding: 40px; background: var(--bg3);">
+      <p style="color: var(--muted); font-size: 0.85rem; margin: 0;">Enter video URL link to retrieve cover graphic assets.</p>
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; display: none;" id="clearControls">
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b; margin: 0 auto; display: block;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none; text-align: center;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Robust Parsing:</strong> Resolves standard Youtube URLs, Short Share handles (youtu.be), embedded links, and Youtube Shorts formats.</li>
+      <li><strong>Multiple Qualities:</strong> Pulls Maxres, Standard, Medium, and Default thumbnail variants in parallel.</li>
+      <li><strong>Fast Extraction:</strong> No API keys, zero authorization latency, pulls covers in sub-second times.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-list content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-item">
+      <div class="faq-q">Why does the HD thumbnail look blank or show a generic image?<span>＋</span></div>
+      <div class="faq-a">YouTube only generates the Maximum Resolution (maxresdefault) cover if the video creator uploaded a high-definition custom thumbnail (1280x720 pixels or greater). If they didn't, YouTube displays a generic placeholder. In such cases, use the High Quality (HQ) or Medium (MQ) options.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Where are downloaded images saved?<span>＋</span></div>
+      <div class="faq-a">Images are downloaded directly through your browser, usually saving to your system's default "Downloads" directory.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  let currentVideoId = '';
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  function extractVideoId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|\/shorts\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  }
+
+  $('btnExtract').onclick = () => {
+    const url = $('ytUrl').value.trim();
+    if (!url) {
+      showStatus('Please enter a YouTube video URL.', true);
+      return;
+    }
+
+    const videoId = extractVideoId(url);
+    if (!videoId) {
+      showStatus('Could not parse a valid 11-character YouTube video ID. Check the URL.', true);
+      return;
+    }
+
+    currentVideoId = videoId;
+    showStatus('Thumbnail assets successfully extracted!');
+
+    // Setup sources
+    const maxUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    const hqUrl = `https://img.youtube.com/vi/${videoId}/sddefault.jpg`;
+    const mqUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+    const defUrl = `https://img.youtube.com/vi/${videoId}/default.jpg`;
+
+    // Apply sources to images
+    $('imgMax').src = maxUrl;
+    $('imgHq').src = hqUrl;
+    $('imgMq').src = mqUrl;
+    $('imgDef').src = defUrl;
+
+    // Apply hrefs to open links
+    $('linkMax').href = maxUrl;
+    $('linkHq').href = hqUrl;
+    $('linkMq').href = mqUrl;
+    $('linkDef').href = defUrl;
+
+    $('placeholderBox').style.display = 'none';
+    $('resultsWrapper').style.display = 'block';
+    $('clearControls').style.display = 'block';
+  };
+
+  // Attempt canvas download to bypass standard links navigation
+  window.downloadImage = (quality) => {
+    if (!currentVideoId) return;
+    
+    let url = '';
+    switch (quality) {
+      case 'max': url = `https://img.youtube.com/vi/${currentVideoId}/maxresdefault.jpg`; break;
+      case 'hq': url = `https://img.youtube.com/vi/${currentVideoId}/sddefault.jpg`; break;
+      case 'mq': url = `https://img.youtube.com/vi/${currentVideoId}/mqdefault.jpg`; break;
+      case 'def': url = `https://img.youtube.com/vi/${currentVideoId}/default.jpg`; break;
+    }
+
+    showStatus('Preparing download...');
+
+    // Try canvas-based drawing to bypass cross-origin navigation
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // request CORS header
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          const dlUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = dlUrl;
+          a.download = `yt-thumbnail-${quality}.jpg`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(dlUrl);
+          showStatus('✅ Thumbnail downloaded successfully!');
+        }, 'image/jpeg', 0.95);
+      } catch (err) {
+        // Fallback: Open URL in new tab
+        console.warn('Canvas download failed (CORS restriction). Opening in tab.');
+        window.open(url, '_blank');
+        showStatus('⚠️ Direct download blocked. Opening image link. Right-click it and choose "Save Image As".', true);
+      }
+    };
+    img.onerror = () => {
+      // Fallback
+      window.open(url, '_blank');
+      showStatus('⚠️ Opening image link. Right-click and choose "Save Image As".');
+    };
+    img.src = url;
+  };
+
+  $('btnClear').onclick = () => {
+    $('ytUrl').value = '';
+    currentVideoId = '';
+    $('placeholderBox').style.display = 'block';
+    $('resultsWrapper').style.display = 'none';
+    $('clearControls').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thyroid Function Report Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Comprehensive Thyroid Panel Analyzer. Input TSH, Free T4, and Free T3 to evaluate thyroid function, hyperthyroidism, hypothyroidism, and euthyroid states.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+
+  <!-- html2canvas for PNG export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) { .lab-grid { grid-template-columns: 1fr; } }
+
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255,255,255,0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 580px) { .form-inputs-grid { grid-template-columns: 1fr; } }
+
+    .input-wrapper { display: flex; flex-direction: column; gap: 4px; }
+    .input-wrapper label { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+    .input-wrapper input,
+    .input-wrapper select {
+      padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg3); color: var(--text); outline: none;
+      font-size: 0.9rem; transition: all 0.25s;
+    }
+    .input-wrapper input:focus,
+    .input-wrapper select:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--glow); }
+
+    .lang-toggle-container { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+    .lang-btn {
+      background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+      padding: 6px 14px; border-radius: 20px; cursor: pointer;
+      font-size: 0.8rem; font-weight: 700; transition: all 0.3s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 10px var(--glow); }
+
+    .results-display {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px; min-height: 400px;
+    }
+
+    .results-placeholder { text-align: center; padding: 80px 20px; color: var(--muted); }
+    .results-placeholder .icon { font-size: 3.5rem; margin-bottom: 12px; opacity: 0.5; display: block; }
+
+    .report-card { display: flex; flex-direction: column; gap: 16px; }
+
+    .patient-summary {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px;
+      display: flex; justify-content: space-between; font-size: 0.85rem;
+    }
+    .patient-summary span strong { color: var(--accent); }
+
+    .panel-status-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px; text-align: center;
+    }
+    .status-large-badge {
+      display: inline-block; padding: 8px 16px; border-radius: 20px;
+      font-weight: 800; font-size: 1.15rem; text-transform: uppercase; margin-bottom: 16px;
+    }
+
+    .mini-gauge {
+      margin-bottom: 16px; padding-bottom: 12px;
+      border-bottom: 1px dashed rgba(255,255,255,0.05);
+    }
+    .mini-gauge:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .mini-gauge-label { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; }
+    .mini-gauge-val { color: var(--text); }
+    .mini-slider-bar {
+      height: 10px; border-radius: 5px; background: rgba(255,255,255,0.1); position: relative;
+    }
+    .mini-slider-fill {
+      height: 100%; border-radius: 5px; position: absolute; left: 0; width: 100%;
+    }
+    .mini-pointer {
+      width: 14px; height: 14px; border-radius: 50%; background: #fff;
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    }
+
+    .insight-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-top: 14px;
+    }
+    .insight-card h5 { font-size: 0.95rem; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .insight-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+    .insight-card ul { margin-left: 18px; font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+
+    .history-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 16px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: var(--bg3); border-radius: 6px;
+      font-size: 0.75rem; border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245,158,11,0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px; padding: 14px; margin-top: 16px;
+      font-size: 0.8rem; color: #fbbf24; line-height: 1.5;
+    }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding-top: 0 !important; }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon { display: none !important; }
+      .results-display { border: none !important; background: #fff !important; color: #000 !important; min-height: auto !important; padding: 0 !important; }
+      .panel-status-card, .insight-card { border: 1px solid #ddd !important; background: #fff !important; color: #000 !important; }
+      .lab-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumb -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Thyroid Function Report Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Upload or input TSH, Free T4, and Free T3 lab values to perform an integrated multi-hormonal assessment of thyroid health.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Tool Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🦋 Thyroid Panel Inputs</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <!-- TSH Block -->
+        <div class="fields-category">
+          <strong style="font-size:0.85rem; color:var(--text); margin-bottom:10px; display:block;">1. Thyroid Stimulating Hormone (TSH)</strong>
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="unitTSH" data-translate="labelUnit">TSH Unit</label>
+              <select id="unitTSH" onchange="updateLabels()">
+                <option value="miul" selected>mIU/L</option>
+                <option value="uiuml">µIU/mL</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label for="valTSH" id="tshLabel">TSH Value (mIU/L)</label>
+              <input type="number" step="0.01" id="valTSH" placeholder="e.g. 1.8" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- fT4 Block -->
+        <div class="fields-category">
+          <strong style="font-size:0.85rem; color:var(--text); margin-bottom:10px; display:block;">2. Free Thyroxine (Free T4 / fT4)</strong>
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="unitFT4" data-translate="labelUnit">fT4 Unit</label>
+              <select id="unitFT4" onchange="updateLabels()">
+                <option value="ngdl" selected>ng/dL</option>
+                <option value="pmoll">pmol/L</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label for="valFT4" id="ft4Label">Free T4 Value (ng/dL)</label>
+              <input type="number" step="0.01" id="valFT4" placeholder="e.g. 1.25" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- fT3 Block -->
+        <div class="fields-category">
+          <strong style="font-size:0.85rem; color:var(--text); margin-bottom:10px; display:block;">3. Free Triiodothyronine (Free T3 / fT3)</strong>
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="unitFT3" data-translate="labelUnit">fT3 Unit</label>
+              <select id="unitFT3" onchange="updateLabels()">
+                <option value="pgml" selected>pg/mL</option>
+                <option value="pmoll">pmol/L</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label for="valFT3" id="ft3Label">Free T3 Value (pg/mL)</label>
+              <input type="number" step="0.01" id="valFT3" placeholder="e.g. 3.2" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width:100%; justify-content:center;" onclick="analyzePanel()">
+            <span class="btn-icon-inside">🔬</span> <span data-translate="btnAnalyze">Analyze Thyroid Panel</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🔬</span>
+          <h4 data-translate="placeholderTitle">Panel Interpretation Pending</h4>
+          <p data-translate="placeholderDesc">Enter TSH, Free T4, and Free T3 values and click Analyze to perform clinical thyroid axis profiling.</p>
+        </div>
+
+        <div class="report-card" id="reportCardSec" style="display:none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Integrated Thyroid Panel Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" title="Copy" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" title="Print" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" title="Save Image" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Thyroid Function Panel</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="panel-status-card">
+            <div class="status-large-badge" id="resStatusBadge">-</div>
+
+            <!-- TSH Mini Gauge -->
+            <div class="mini-gauge">
+              <div class="mini-gauge-label">
+                <span>TSH</span>
+                <span class="mini-gauge-val" id="lblTSHVal">-</span>
+              </div>
+              <div class="mini-slider-bar">
+                <div class="mini-slider-fill" style="background:linear-gradient(to right, var(--low-color) 0%, var(--normal-color) 35%, var(--high-color) 70%, var(--critical-color) 100%);"></div>
+                <div class="mini-pointer" id="ptrTSH" style="left:50%;"></div>
+              </div>
+            </div>
+
+            <!-- fT4 Mini Gauge -->
+            <div class="mini-gauge">
+              <div class="mini-gauge-label">
+                <span>Free T4</span>
+                <span class="mini-gauge-val" id="lblFT4Val">-</span>
+              </div>
+              <div class="mini-slider-bar">
+                <div class="mini-slider-fill" style="background:linear-gradient(to right, var(--low-color) 0%, var(--normal-color) 45%, var(--critical-color) 100%);"></div>
+                <div class="mini-pointer" id="ptrFT4" style="left:50%;"></div>
+              </div>
+            </div>
+
+            <!-- fT3 Mini Gauge -->
+            <div class="mini-gauge">
+              <div class="mini-gauge-label">
+                <span>Free T3</span>
+                <span class="mini-gauge-val" id="lblFT3Val">-</span>
+              </div>
+              <div class="mini-slider-bar">
+                <div class="mini-slider-fill" style="background:linear-gradient(to right, var(--low-color) 0%, var(--normal-color) 45%, var(--critical-color) 100%);"></div>
+                <div class="mini-pointer" id="ptrFT3" style="left:50%;"></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Dynamic insight section -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Thyroid Panel</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">How do endocrinologists read a thyroid panel?</strong><br><span data-translate="eduA1">Endocrinologists look at TSH alongside Free T4 and Free T3 together. Under negative feedback loops, if T4/T3 drop, the pituitary responds by skyrocketing TSH. Conversely, if the thyroid is hyperactive, high T4/T3 suppresses TSH down near zero.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is Central/Secondary Hypothyroidism?</strong><br><span data-translate="eduA2">This is a rare form of underactive thyroid caused by a pituitary gland or hypothalamus issue rather than thyroid tissue damage. TSH is low or inappropriately normal, and Free T4 is low.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What is T3 Thyrotoxicosis?</strong><br><span data-translate="eduA3">A specific clinical presentation of hyperthyroidism where TSH is low and Free T3 is elevated, but Free T4 remains in the normal range. It is common in early hyperthyroidism or toxic nodular goiter.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Thyroid Panel Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQ Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Medical Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for thyroid evaluation and treatment decisions.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical &amp; Lab Tools",
+      toolTitle: "Thyroid Function Report Analyzer",
+      toolDesc: "Upload or input TSH, Free T4, and Free T3 lab values to perform an integrated multi-hormonal assessment of thyroid health.",
+      inputsTitle: "🦋 Thyroid Panel Inputs",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      btnAnalyze: "Analyze Thyroid Panel",
+      placeholderTitle: "Panel Interpretation Pending",
+      placeholderDesc: "Enter TSH, Free T4, and Free T3 values and click Analyze to perform clinical thyroid axis profiling.",
+      reportTitle: "🔬 Integrated Thyroid Panel Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Thyroid Panel Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for thyroid evaluation and treatment decisions.",
+      titleEdu: "📚 Clinical Pathology Notes: Thyroid Panel",
+      eduQ1: "How do endocrinologists read a thyroid panel?",
+      eduA1: "Endocrinologists look at TSH alongside Free T4 and Free T3 together. Under negative feedback loops, if T4/T3 drop, the pituitary responds by skyrocketing TSH. Conversely, if the thyroid is hyperactive, high T4/T3 suppresses TSH down near zero.",
+      eduQ2: "What is Central/Secondary Hypothyroidism?",
+      eduA2: "This is a rare form of underactive thyroid caused by a pituitary gland or hypothalamus issue rather than thyroid tissue damage. TSH is low or inappropriately normal, and Free T4 is low.",
+      eduQ3: "What is T3 Thyrotoxicosis?",
+      eduA3: "A specific clinical presentation of hyperthyroidism where TSH is low and Free T3 is elevated, but Free T4 remains in the normal range. It is common in early hyperthyroidism or toxic nodular goiter.",
+      
+      // Diagnoses
+      diagHyper: "Primary Hyperthyroidism",
+      diagT3Toxic: "T3 Thyrotoxicosis",
+      diagHypoOvert: "Primary Hypothyroidism (Overt)",
+      diagHypoSub: "Subclinical Hypothyroidism",
+      diagHypoSec: "Secondary/Central Hypothyroidism",
+      diagEuthyroid: "Euthyroid (Normal Thyroid Function)",
+      diagUnclassified: "Atypical or Mixed Thyroid Pattern",
+
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Management Tips",
+      titleConsult: "When to See a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "থাইরয়েড ফাংশন রিপোর্ট বিশ্লেষক",
+      toolDesc: "TSH, ফ্রি T4 এবং ফ্রি T3 ল্যাব ইনপুট দিয়ে থাইরয়েড স্বাস্থ্যের একটি সমন্বিত হরমোনাল মূল্যায়ন করুন।",
+      inputsTitle: "🦋 থাইরয়েড প্যানেল ইনপুট",
+      clearBtn: "মুছুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      btnAnalyze: "প্যানেল বিশ্লেষণ করুন",
+      placeholderTitle: "প্যানেল বিশ্লেষণ অমীমাংসিত",
+      placeholderDesc: "থাইরয়েড ফাংশনের মূল্যায়ন দেখতে TSH, ফ্রি T4 এবং ফ্রি T3 এর মান লিখুন এবং বিশ্লেষণ বোতামে ক্লিক করুন।",
+      reportTitle: "🔬 থাইরয়েড প্যানেল বিশ্লেষণ রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক থাইরয়েড প্যানেল বিশ্লেষণ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড নেই।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য অবশ্যই ডাক্তারের পরামর্শ নিন।",
+      titleEdu: "📚 ক্লিনিক্যাল নোটস: থাইরয়েড প্যানেল",
+      eduQ1: "থাইরয়েড প্যানেল রিপোর্ট চিকিৎসকরা কীভাবে পড়েন?",
+      eduA1: "চিকিৎসকরা TSH-এর সাথে ফ্রি T4 ও ফ্রি T3 একসাথে মিলিয়ে দেখেন। রক্তের হরমোন নিয়ন্ত্রণ ব্যবস্থার ফলে যদি T4/T3 কমে যায়, তখন পিটুইটারি গ্রন্থি TSH বাড়িয়ে দেয়। বিপরীতভাবে, হরমোন বেশি হলে TSH কমে প্রায় শূন্য হয়ে যায়।",
+      eduQ2: "সেন্ট্রাল বা সেকেন্ডারি হাইপোথাইরয়েডিজম কী?",
+      eduA2: "এটি থাইরয়েডের একটি বিরল সমস্যা, যা থাইরয়েড গ্রন্থির নিজস্ব ত্রুটির কারণে নয় বরং পিটুইটারি গ্রন্থি বা হাইপোথ্যালামাসের ত্রুটির জন্য ঘটে। এখানে TSH কম বা স্বাভাবিক থাকে কিন্তু ফ্রি T4 হ্রাস পায়।",
+      eduQ3: "T3 থাইরোটক্সিকোসিস কী?",
+      eduA3: "এটি হাইপারথাইরয়েডিজমের একটি বিশেষ রূপ যেখানে TSH কম ও ফ্রি T3 বেশি থাকে, কিন্তু ফ্রি T4 স্বাভাবিক থাকে। সাধারণত নোডিউলার গলগণ্ডে এটি দেখা যায়।",
+      
+      // Diagnoses
+      diagHyper: "প্রাইমারি হাইপারথাইরয়েডিজম",
+      diagT3Toxic: "T3 থাইরোটক্সিকোসিস",
+      diagHypoOvert: "প্রাইমারি হাইপোথাইরয়েডিজম (ওভার্ট)",
+      diagHypoSub: "সাবক্লিনিক্যাল হাইপোথাইরয়েডিজম",
+      diagHypoSec: "সেকেন্ডারি/সেন্ট্রাল হাইপোথাইরয়েডিজম",
+      diagEuthyroid: "ইউথাইরয়েড (স্বাভাবিক থাইরয়েড কার্যক্ষমতা)",
+      diagUnclassified: "অস্বাভাবিক বা মিশ্র থাইরয়েড প্যাটার্ন",
+
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "ব্যবস্থাপনা পরামর্শ",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "थायराइड फ़ंक्शन रिपोर्ट विश्लेषक",
+      toolDesc: "थायराइड स्वास्थ्य का एकीकृत बहु-हार्मोनल मूल्यांकन करने के लिए टीएसएच, फ्री टी4 और फ्री टी3 लैब मान अपलोड या इनपुट करें।",
+      inputsTitle: "🦋थायराइड पैनल इनपुट",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      btnAnalyze: "थायराइड पैनल का विश्लेषण करें",
+      placeholderTitle: "पैनल व्याख्या लंबित",
+      placeholderDesc: "टीएसएच, फ्री टी4 और फ्री टी3 मान दर्ज करें और क्लिनिकल थायरॉयड अक्ष प्रोफाइलिंग करने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 एकीकृत थायराइड पैनल रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हाल ही में थायराइड पैनल की व्याख्या",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। थायरॉयड मूल्यांकन और उपचार निर्णयों के लिए हमेशा एक योग्य चिकित्सक से परामर्श लें।",
+      titleEdu: "📚 क्लिनिकल पैथोलॉजी नोट्स: थायराइड पैनल",
+      eduQ1: "एंडोक्राइनोलॉजिस्ट थायरॉइड पैनल कैसे पढ़ते हैं?",
+      eduA1: "एंडोक्रिनोलॉजिस्ट टीएसएच को फ्री टी4 और फ्री टी3 के साथ मिलाकर देखते हैं। नकारात्मक फीडबैक लूप के तहत, यदि T4/T3 गिरता है, तो पिट्यूटरी टीएसएच को आसमान छूकर प्रतिक्रिया करता है। इसके विपरीत, यदि थायरॉयड अतिसक्रिय है, तो उच्च T4/T3 TSH को शून्य के करीब दबा देता है।",
+      eduQ2: "सेंट्रल/सेकेंडरी हाइपोथायरायडिज्म क्या है?",
+      eduA2: "यह निष्क्रिय थायरॉयड का एक दुर्लभ रूप है जो थायरॉयड ऊतक क्षति के बजाय पिट्यूटरी ग्रंथि या हाइपोथैलेमस समस्या के कारण होता है। टीएसएच कम या अन���चित रूप से सामान्य है, और फ्री टी4 कम है।",
+      eduQ3: "T3 थायरोटॉक्सिकोसिस क्या है?",
+      eduA3: "हाइपरथायरायडिज्म की एक विशिष्ट नैदानिक ​​प्रस्तुति जहां टीएसएच कम है और फ्री टी3 ऊंचा है, लेकिन फ्री टी4 सामान्य सीमा में रहता है। यह प्रारंभिक हाइपरथायरायडिज्म या विषाक्त गांठदार गण्डमाला में आम है।",
+      
+      // Diagnoses
+      diagHyper: "प्राथमिक अतिगलग्रंथिता",
+      diagT3Toxic: "टी3 थायरोटॉक्सिकोसिस",
+      diagHypoOvert: "प्राथमिक हाइपोथायरायडिज्म (प्रकट)",
+      diagHypoSub: "उपनैदानिक हाइपोथायरायडिज्म",
+      diagHypoSec: "माध्यमिक/केंद्रीय हाइपोथायरा���डिज्म",
+      diagEuthyroid: "यूथायरॉइड (सामान्य थायराइड कार्य)",
+      diagUnclassified: "असामान्य या मिश्रित थायराइड पैटर्न",
+
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "स��मान्य लक्षण",
+      titlePrevention: "प्रबंधन युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "Why evaluate TSH, fT4, and fT3 together?", a: "TSH indicates how hard the pituitary is driving the thyroid. fT4 and fT3 show actual circulating hormone. Measuring all three together provides a full profile of the thyroid feedback loop." },
+      { q: "What is Subclinical vs Overt Hypothyroidism?", a: "Subclinical has an elevated TSH but normal Free T4 (with few or no symptoms). Overt Hypothyroidism has elevated TSH and low Free T4, often with significant symptoms." },
+      { q: "What is Euthyroid Sick Syndrome?", a: "Also known as Non-Thyroidal Illness Syndrome, it is a state where T3/T4 conversion is impaired during critical illness, simulating hypothyroidism without intrinsic thyroid disease." }
+    ],
+    bn: [
+      { q: "TSH, fT4 এবং fT3 একসাথে কেন পরীক্ষা করা হয়?", a: "TSH নির্দেশ করে পিটুইটারি কত জোর দিচ্ছে থাইরয়েডকে কাজ করাতে। fT4 ও fT3 রক্তে হরমোনের আসল মাত্রা দেখায়। তিনটি একসাথে পরীক্ষা করলে পূর্ণাঙ্গ ধারণা পাওয়া যায়।" },
+      { q: "সাবক্লিনিক্যাল ও ওভার্ট হাইপোথাইরয়েডিজমের পার্থক্য কী?", a: "সাবক্লিনিক্যালে TSH বেশি থাকে কিন্তু ফ্রি T4 স্বাভাবিক থাকে (লক্ষণ কম থাকে)। ওভার্ট হাইপোথাইরয়েডিজমে TSH বেশি এবং ফ্রি T4 বেশ কম থাকে।" },
+      { q: "ইউথাইরয়েড সিক সিন্ড্রোম কী?", a: "এটি একটি সাময়িক অবস্থা যেখানে গুরুতর শারীরিক অসুস্থতার কারণে T3/T4 রূপান্তর ব্যাহত হয়, যা দেখতে হাইপোথাইরয়েডিজমের মতো হলেও আসলে থাইরয়েড গ্রন্থির নিজস্ব কোনো রোগ নয়।" }
+    ],
+    hi: [
+      { q: "TSH, fT4 और fT3 का एक साथ मूल्यांकन क्यों करें?", a: "टीएसएच इंगित करता है कि पिट्यूटरी ग्रंथि थायरॉयड को कितनी तीव्रता से चला रही है। fT4 और fT3 वास्तविक परिसंचारी हार्मोन दिखाते हैं। तीनों को एक साथ मापने से थायरॉइड फीडबैक लूप की पूरी प्रोफ़ाइल मिलती है।" },
+      { q: "सबक्लिनिकल बन��म प्रत्यक्ष हाइपोथायरायडिज्म क्या है?", a: "सबक्लिनिकल में टीएसएच ऊंचा है लेकिन सामान्य फ्री टी4 (कुछ या कोई लक्षण नहीं) है। प्रत्यक्ष हाइपोथायरायडिज्म में अक्सर महत्वपूर्ण लक्षणों के साथ टीएसएच बढ़ा हुआ और फ्री टी4 कम होता है।" },
+      { q: "यूथायरॉइड सिक सिंड्रोम क्या है?", a: "इसे गैर-थायराइडल बीमारी सिंड्रोम के रूप में भी जाना जाता है, यह एक ऐसी स्थिति है जहां गंभीर बीमारी के दौरान टी3/टी4 रूपांतरण बिगड़ जाता है, जो आंतरिक थायरॉयड रोग के बिना हाइपोथायरायडिज्म का अनुकरण करता है।" }
+    ]
+  };
+
+  const insights = {
+    en: {
+      hyper: {
+        desc: "The thyroid panel indicates Primary Hyperthyroidism (Low TSH with high fT4 and/or high fT3). The thyroid is producing excess hormones, causing a hypermetabolic state.",
+        factors: ["Graves' disease (autoimmune)", "Toxic multinodular goiter or toxic adenoma", "Excessive iodine or thyroid drug intake", "Thyroiditis (acute phase)"],
+        symptoms: ["Rapid heart rate, anxiety, tremor, weight loss, heat intolerance, sleep issues."],
+        prevention: ["Avoid iodine supplements/kelp", "Discuss anti-thyroid drug therapy or radioactive iodine therapy with an endocrinologist."],
+        consult: "⚠️ URGENT: Consult an endocrinologist for definitive diagnosis and beta-blocker/antithyroid drug initiation."
+      },
+      t3toxic: {
+        desc: "The panel indicates T3 Thyrotoxicosis (Low TSH, Normal fT4, High fT3). This is an isolated elevation of active T3 hormone, often seen in early-stage hyperthyroidism.",
+        factors: ["Early Graves' disease", "Autonomous T3-producing nodules", "Imbalanced peripheral conversion"],
+        symptoms: ["Palpitations, mild weight loss, anxiety, sweating, muscle weakness."],
+        prevention: ["Limit dietary iodine", "Adhere to regular cardiovascular assessment"],
+        consult: "Consult an endocrinologist. T3-targeted therapeutic suppression may be indicated."
+      },
+      hypoOvert: {
+        desc: "The panel indicates Overt Primary Hypothyroidism (High TSH and Low fT4). The thyroid gland has failed significantly, leading to metabolic slowdown.",
+        factors: ["Hashimoto's thyroiditis (autoimmune destruction)", "Post-surgical thyroidectomy or post-radiation ablation", "Severe iodine deficiency"],
+        symptoms: ["Extreme fatigue, weight gain, dry skin, severe cold intolerance, constipation, bradycardia."],
+        prevention: ["Levothyroxine thyroid hormone replacement therapy as prescribed by doctor.", "Avoid missing daily medication doses."],
+        consult: "⚠️ URGENT: Consult an endocrinologist. Daily hormone replacement therapy is typically mandatory."
+      },
+      hypoSub: {
+        desc: "The panel indicates Subclinical Hypothyroidism (High TSH with Normal fT4). The thyroid is struggling slightly, but is currently compensating to maintain normal free hormone levels.",
+        factors: ["Early autoimmune thyroiditis", "Incipient iodine deficiency", "Recovery from systemic illness"],
+        symptoms: ["Mild fatigue, dry skin, susceptibility to cold, mild depression."],
+        prevention: ["Follow up in 3-6 months with repeat panel", "Avoid high iodine doses unless recommended by doctor"],
+        consult: "Consult your physician. Treatment (levothyroxine) is optional and depends on symptoms, pregnancy plans, or antibody status."
+      },
+      hypoSec: {
+        desc: "The panel indicates Secondary or Central Hypothyroidism (Low TSH and Low fT4). The pituitary gland is not producing enough TSH to stimulate the thyroid gland, or this represents Non-Thyroidal Illness Syndrome.",
+        factors: ["Pituitary tumor or pituitary injury (Sheehan's syndrome)", "Hypothalamic dysfunction", "Critical illness / Severe euthyroid sick syndrome"],
+        symptoms: ["Fatigue, cold intolerance, headache, vision changes (if tumor is present), general weakness."],
+        prevention: ["Address underlying illness", "Avoid thyroid replacement until pituitary-adrenal axis is assessed"],
+        consult: "⚠️ CRITICAL: Consult an endocrinologist immediately. Pituitary hormone screening (especially cortisol/ACTH) must be completed before starting thyroid hormone therapy."
+      },
+      euthyroid: {
+        desc: "The thyroid panel indicates a Euthyroid state (All values within normal range). Your pituitary-thyroid feedback loop is in healthy equilibrium.",
+        factors: ["Normal thyroid and pituitary function", "Adequate nutritional iodine and mineral status"],
+        symptoms: ["No thyroid-related symptoms expected."],
+        prevention: ["Consume balanced nutrients", "Maintain active lifestyle"],
+        consult: "No immediate medical intervention required. Continue annual health checks."
+      },
+      unclassified: {
+        desc: "The panel displays an Atypical or Mixed thyroid pattern (e.g. discordant TSH and free hormones). This may be due to assay interference, drug interactions, pregnancy, or early phase thyroiditis.",
+        factors: ["Biotin interference (highly common in lab assays)", "Pregnancy-induced thyroid binding globulin shifts", "Medications (heparin, steroids, amiodarone)", "Thyroid hormone resistance syndrome (very rare)"],
+        symptoms: ["Varies widely depending on the underlying physiological cause."],
+        prevention: ["Discontinue biotin supplements for 3 days and repeat test", "Review complete medication list with a physician"],
+        consult: "Consult an endocrinologist. Refined testing or laboratory assay variations (like equilibrium dialysis) may be needed."
+      }
+    },
+    bn: {
+      hyper: {
+        desc: "থাইরয়েড প্যানেল প্রাইমারি হাইপারথাইরয়েডিজম নির্দেশ করছে (কম TSH এবং উচ্চ fT4 ও fT3)। থাইরয়েড গ্রন্থি অতিরিক্ত হরমোন তৈরি করছে।",
+        factors: ["গ্রেভস রোগ (অটোইমিউন)", "টক্সিক নোডিউলার গলগণ্ড", "থাইরয়েড ওষুধের মাত্রাতিরিক্ত সেবন", "থাইরয়েড গ্রন্থির প্রদাহ"],
+        symptoms: ["দ্রুত হৃদস্পন্দন, উদ্বেগ, হাত কাঁপুনি, ওজন হ্রাস, অতিরিক্ত গরম লাগা ও অনিদ্রা।"],
+        prevention: ["খাদ্যে অতিরিক্ত আয়োডিন এড়িয়ে চলুন", "এন্ডোক্রিনোলজিস্টের পরামর্শ অনুযায়ী অ্যান্টিথাইরয়েড ওষুধ সেবন করুন।"],
+        consult: "⚠️ জরুরি: বিস্তারিত ডায়াগনস্টিক পরীক্ষা ও চিকিৎসার জন্য এন্ডোক্রিনোলজিস্টের সাথে যোগাযোগ করুন।"
+      },
+      t3toxic: {
+        desc: "প্যানেলটি T3 থাইরোটক্সিকোসিস নির্দেশ করছে (কম TSH, স্বাভাবিক fT4, উচ্চ fT3)। এটি হাইপারথাইরয়েডিজমের প্রাথমিক স্তরে দেখা যেতে পারে।",
+        factors: ["প্রাথমিক গ্রেভস রোগ", "T3 তৈরি কারী থাইরয়েড নোডিউল", "T4 থেকে T3 রূপান্তরের ভারসাম্যহীনতা"],
+        symptoms: ["বুক ধড়ফড়ানি, হালকা ওজন হ্রাস, উদ্বেগ, অতিরিক্ত ঘাম ও পেশী দুর্বলতা।"],
+        prevention: ["খাদ্যে আয়োডিন গ্রহণ সীমিত করুন", "হৃদযন্ত্রের নিয়মিত পরীক্ষা সম্পন্ন করুন"],
+        consult: "এন্ডোক্রিনোলজিস্টের পরামর্শ নিন। হরমোন নিয়ন্ত্রণের জন্য চিকিৎসার প্রয়োজন হতে পারে।"
+      },
+      hypoOvert: {
+        desc: "প্যানেলটি ওভাট প্রাইমারি হাইপোথাইরয়েডিজম নির্দেশ করছে (উচ্চ TSH ও কম fT4)। থাইরয়েড গ্রন্থি মারাত্মকভাবে নিষ্ক্রিয় হয়ে পড়েছে।",
+        factors: ["হাশিমোটো থাইরয়েডাইটিস (অটোইমিউন ধ্বংস)", "থাইরয়েড গ্রন্থি অপসারণ বা রেডিয়েশন থেরাপি", "আয়োডিনের তীব্র অভাব"],
+        symptoms: ["চরম ক্লান্তি, ওজন বৃদ্ধি, শুষ্ক ত্বক, অতিরিক্ত ঠান্ডা লাগা, কোষ্ঠকাঠিন্য ও ধীর হৃদস্পন্দন।"],
+        prevention: ["ডাক্তারের পরামর্শ অনুযায়ী লেভোথাইরক্সিন ওষুধ সেবন করুন", "ওষুধ খেতে কখনো ভুল করবেন না।"],
+        consult: "⚠️ জরুরি: এন্ডোক্রিনোলজিস্টের সাথে যোগাযোগ করুন। প্রতিদিন থাইরয়েড হরমোন প্রতিস্থাপন থেরাপি নেওয়া বাধ্যতামূলক।"
+      },
+      hypoSub: {
+        desc: "প্যানেলটি সাবক্লিনিক্যাল হাইপোথাইরয়েডিজম নির্দেশ করছে (উচ্চ TSH ও স্বাভাবিক fT4)। থাইরয়েড গ্রন্থি কিছুটা দুর্বল হলেও হরমোন ব্যালেন্স ধরে রাখতে সক্ষম হয়েছে।",
+        factors: ["প্রাথমিক অটোইমিউন থাইরয়েড রোগ", "আয়োডিনের মৃদু অভাব", "অসুস্থতা পরবর্তী থাইরয়েড ধকল"],
+        symptoms: ["সামান্য ক্লান্তি, শুষ্ক ত্বক, দ্রুত ঠান্ডা লাগা ও মৃদু বিষণ্ণতা।"],
+        prevention: ["৩-৬ মাস পর পুনরায় থাইরয়েড পরীক্ষা করান", "ডাক্তারের পরামর্শ ছাড়া আয়োডিন সাপ্লিমেন্ট নেবেন না।"],
+        consult: "ডাক্তারের সাথে কথা বলুন। গর্ভাবস্থা বা হরমোনের তীব্র লক্ষণ থাকলে চিকিৎসা প্রয়োজন হতে পারে।"
+      },
+      hypoSec: {
+        desc: "প্যানেলটি সেকেন্ডারি বা সেন্ট্রাল হাইপোথাইরয়েডিজম নির্দেশ করছে (কম TSH ও কম fT4)। পিটুইটারি গ্রন্থি থাইরয়েডকে উদ্দীপিত করতে পারছে না, অথবা এটি তীব্র অসুস্থতার কারণে হতে পারে।",
+        factors: ["পিটুইটারি টিউমার বা পিটুইটারি ক্ষতি", "হাইপোথ্যালামাস গ্রন্থির সমস্যা", "ইউথাইরয়েড সিক সিন্ড্রোম (তীব্র অসুস্থতা)"],
+        symptoms: ["ক্লান্তি, ঠান্ডা লাগা, মাথা ব্যথা, দৃষ্টিশক্তির পরিবর্তন ও সাধারণ দুর্বলতা।"],
+        prevention: ["মূল শারীরিক রোগের চিকিৎসা করুন", "অ্যাড্রেনাল গ্রন্থি পরীক্ষা না করে থাইরয়েড হরমোন সেবন করবেন না"],
+        consult: "⚠️ জরুরি: এন্ডোক্রিনোলজিস্টের শরণাপন্ন হোন। থাইরয়েড শুরু করার আগে কর্টিসল পরীক্ষা করা গুরুত্বপূর্ণ।"
+      },
+      euthyroid: {
+        desc: "আপনার থাইরয়েড প্যানেল সম্পূর্ণ স্বাভাবিক (ইউথাইরয়েড অবস্থা)। সমস্ত হরমোনের মাত্রা কাঙ্ক্ষিত সীমার মধ্যে রয়েছে।",
+        factors: ["স্বাভাবিক থাইরয়েড ও পিটুইটারি কার্যক্ষমতা", "পর্যাপ্ত খাদ্য ও খনিজ পুষ্টির ভারসাম্য"],
+        symptoms: ["থাইরয়েড সম্পর্কিত কোনো লক্ষণ নেই।"],
+        prevention: ["সুষম খাবার গ্রহণ করুন", "নিয়মিত শারীরিক পরিশ্রম করুন"],
+        consult: "কোনো চিকিৎসার প্রয়োজন নেই। বার্ষিক স্বাস্থ্য পরীক্ষা করুন।"
+      },
+      unclassified: {
+        desc: "প্যানেলটি একটি অস্বাভাবিক বা মিশ্র থাইরয়েড প্যাটার্ন দেখাচ্ছে। এটি ল্যাব টেস্টের ত্রুটি, ওষুধের প্রভাব বা গর্ভাবস্থার কারণে হতে পারে।",
+        factors: ["বায়োটিন সাপ্লিমেন্ট গ্রহণ (ল্যাব টেস্টে ভুল ফলাফল দেয়)", "গর্ভাবস্থাজনিত হরমোনের পরিবর্তন", "ওষুধের প্রভাব (হেপারিন, স্টেরয়েড)", "থাইরয়েড হরমোন রেজিস্ট্যান্স (অত্যন্ত বিরল)"],
+        symptoms: ["মূল শারীরিক কারণের ওপর নির্ভর করে লক্ষণ পরিবর্তিত হয়।"],
+        prevention: ["পরীক্ষার ৩ দিন আগে থেকে বায়োটিন বা চুল-নখের ভিটামিন বন্ধ রাখুন", "ওষুধের তালিকা চিকিৎসকের সাথে পর্যালোচনা করুন"],
+        consult: "এন্ডোক্রিনোলজিস্টের পরামর্শ নিন। হরমোন ডায়ালাইসিস পরীক্ষার প্রয়োজন হতে পারে।"
+      }
+    },
+    hi: {
+      hyper: {
+        desc: "थायरॉयड पैनल प्राथमिक हाइपरथायरायडिज्म (उच्च एफटी4 और/या उच्च एफटी3 के साथ कम टीएसएच) को इंगित करता है। थायरॉइड अतिरिक्त हार्मोन का उत्पादन कर रहा है, जिससे हाइपरमेटाबोलिक स्थिति पैदा हो रही है।",
+        factors: ["ग्रेव्स रोग (ऑटोइम्यून)", "विषाक्त बहुकोशिकीय गण्डमाला या विषाक्त एडेनोमा", "अत्यधिक आयोडीन या थायराइड दवा का सेवन", "थायराइडाइटिस (तीव्र चरण)"],
+        symptoms: ["तेज़ हृदय गति, चिंता, कंपकंपी, वजन घटना, गर्मी असहिष्णुता, नींद की समस्या।"],
+        prevention: ["आयोडीन अनुपूरक/समुद्री घास से बचें", "किसी एंडोक्रिनोलॉजिस्ट से एंटी-थायराइड ड्रग थेरेपी या रेडियोधर्मी आयोडीन थेरेपी पर चर्चा करें।"],
+        consult: "⚠️ अत्यावश्यक: निश्चित निदान और बीटा-ब्लॉकर/एंटीथायरॉइड दवा शुरू करने के लिए एंडोक्रिनोलॉजिस्ट से परामर्श लें।"
+      },
+      t3toxic: {
+        desc: "पैनल टी3 थायरोटॉक्सिकोसिस (कम टीएसएच, सामान्य एफटी4, उच्च एफटी3) को इंगित करता है। यह सक्रिय T3 हार्मोन का एक पृथक उत्थान है, जो अक्सर प्रारंभिक चरण के हाइपरथायरायडिज्म में देखा जाता है।",
+        factors: ["अर्ली ग्रेव्स रोग", "स्वायत्त T3-उत्पादक नोड्यूल", "असंतुलित परिधीय रूपांतरण"],
+        symptoms: ["धड़कन बढ़ना, हल्का वजन कम होना, चिंता, पसीना आना, मांसपेशियों में कमजोरी।"],
+        prevention: ["आहार में आयोडीन सीमित करें", "नियमित हृदय संबंधी मूल्यांकन का पालन करें"],
+        consult: "किसी एंडोक्रिनोलॉजिस्ट से सलाह लें। T3-लक्षित चिकित्स���य दमन का संकेत दिया जा सकता है।"
+      },
+      hypoOvert: {
+        desc: "पैनल प्रत्यक्ष प्राथमिक हाइपोथायरायडिज्म (उच्च टीएसएच और निम्न एफटी4) को इंगित करता है। थायरॉयड ग्रंथि काफी हद तक विफल हो गई है, जिससे चयापचय धीमा हो गया है।",
+        factors: ["हाशिमोटो का थायरॉयडिटिस (ऑटोइम्यून विनाश)", "शल्य चिकित्सा के बाद थायरॉयडेक्टॉमी या विकिरण के बाद उच्छेदन", "गंभीर आयोडीन की कमी"],
+        symptoms: ["अत्यधिक थकान, वजन बढ़ना, शुष्क त्वचा, गंभीर ठंड असहिष्णुता, कब्ज, मंदनाड़ी।"],
+        prevention: ["डॉक्टर द्वारा बताई गई लेवोथायरोक्सिन थायराइड हार्मोन रिप्लेसमेंट थेरेपी।", "दैनिक दवा की खुराक भूलने से बचें।"],
+        consult: "⚠️ अत्यावश्यक: किसी एंडोक्रिनोलॉजिस्ट से परामर्श लें। दैनिक हार्मोन रिप्लेसमेंट थेरेपी आम तौर पर अनिवार्य है।"
+      },
+      hypoSub: {
+        desc: "पैनल सबक्लिनिकल हाइपोथायरायडिज्म (सामान्य एफटी4 के साथ उच्च टीएसएच) को इंगित करता है। थायराइड थोड़ा संघर्ष कर रहा है, लेकिन वर्तमान में सामान्य मुक्त हार्मोन स्तर को बनाए रखने के लिए क्षतिपूर्ति कर रहा है।",
+        factors: ["प्रारंभिक ऑटोइम्यून थायरॉयडिटिस", "आरंभिक आयोडीन की कमी", "प्रणालीगत बीमारी से रिकवरी"],
+        symptoms: ["हल्की थकान, शुष्क त्वचा, ठंड के प्रति संवेदनशीलता, हल्का अवसाद।"],
+        prevention: ["रिपीट पैनल के साथ 3-6 महीने में अनुवर्ती कार्रवाई करें", "जब तक डॉक्टर द्वारा सलाह न दी जाए, आयोडीन की उच्च खुराक लेने से बचें"],
+        consult: "अपने चिकित्सक से परामर्श लें. उपचार (लेवोथायरोक्सिन) वैकल्पिक है और लक्षणों, गर्भावस्था योजनाओं या एंटीबॉडी की स्थिति पर निर्भर करता है।"
+      },
+      hypoSec: {
+        desc: "पैनल माध्यमिक या केंद्रीय हाइपोथायरायडिज्म (कम TSH और कम fT4) को इंगित करता है। पिट्यूटरी ग्रंथि थायरॉयड ग्रंथि को उत्तेजित करने के लिए पर्याप्त टीएसएच का उत्पादन नहीं कर रही है, या यह गैर-थायराइडल बीमारी सिंड्रोम का प्रतिनिधित्व करती है।",
+        factors: ["पिट्यूटरी ट्यूमर या पिट्यूटरी चोट (शीहान सिंड्रोम)", "हाइपोथैलेमिक डिसफंक्शन", "गंभीर बीमारी / गंभीर यूथायरॉयड बीमार सिंड्रोम"],
+        symptoms: ["थकान, ठंड असहिष्णुता, सिरदर्द, दृष्टि परिवर्तन (यदि ट्यूमर मौजूद है), सामान्य कमजोरी।"],
+        prevention: ["अंतर्निहित बीमारी का पता लगाएं", "पिट्यूटरी-अधिवृक्क अक्ष का मूल्यांकन होने तक थायरॉयड प्रतिस्थापन से बचें"],
+        consult: "⚠️ गंभीर: तुरंत किसी एंडोक्राइनोलॉजिस्ट से परामर्श लें। थायराइड हार्मोन थेरेपी शुरू करने से पहले पिट्यूटरी हार्मोन स्क्रीनिंग (विशेषकर कोर्टिसोल/एसीटीएच) पूरी की जानी चाहिए।"
+      },
+      euthyroid: {
+        desc: "थायरॉइड पैनल यूथायरॉइड अवस्था (सभी मान सामान्य सीमा के भीतर) को इंगित करता है। आपका पिट्यूटरी-थायराइड फीडबैक लूप स्वस्थ संतुलन में है।",
+        factors: ["सामान्य थायरॉयड और पिट्यूटरी कार्य", "पर्याप्त पोषण आयोडीन और खनिज स्थिति"],
+        symptoms: ["थायराइड से संबंधित कोई लक्षण अपेक्षित नहीं है।"],
+        prevention: ["संतुलित पोषक तत्वों का सेवन करें", "सक्रिय जीवनशैली बनाए रखें"],
+        consult: "तत्काल चिकित्सा हस्तक्षेप की आवश्यकता नहीं है। वार्षिक स्वास्थ्य जांच जारी रखें."
+      },
+      unclassified: {
+        desc: "पैनल असामान्य या मिश्रित थायरॉयड पैटर्न (उदाहरण के लिए असंगत टीएसएच और मुक्त हार्मोन) प्रदर्शित करता है। यह परख हस्तक्षेप, दवा पारस्परिक क्रिया, गर्भावस्था, या प्रारंभिक चरण थायरॉयडिटिस के कारण हो सकता है।",
+        factors: ["बायोटिन हस्तक्षेप (प्रयोगशाला परीक्षण में अत्यधिक सामान्य)", "गर्भावस्था-प्रेरित थायरॉइड बाइंडिंग ग्लोब्युलिन शिफ्ट", "दवाएं (हेपरिन, स्टेरॉयड, एमियोडेरोन)", "थायराइड हार्मोन प्रतिरोध सिंड्रोम (बहुत दुर्लभ)"],
+        symptoms: ["अंतर्निहित शारीरिक कारण के आधार पर व्यापक रूप से भिन्न होता है।"],
+        prevention: ["3 दिनों के लिए बायोटिन की खुराक बंद करें और दोबारा परीक्षण करें", "एक चिकित्सक के साथ दवाओं की पूरी सूची की समीक्षा करें"],
+        consult: "किसी एंडोक्रिनोलॉजिस्ट से सलाह लें। परिष्कृत परीक्षण या प्रयोगशाला परख विविधताओं (जैसे संतुलन डायलिसिस) की आवश्यकता हो सकती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-thyroid-panel-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    const btn = document.getElementById("langToggleBtn");
+    if (btn) btn.innerHTML = lang === "bn" ? '🇬🇧 <span>English</span>' : '🇧🇩 <span>Bengali</span>';
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+    updateLabels();
+    renderFAQs();
+    renderHistoryDisplay();
+    if (activeReportData) updateReportDisplay();
+  }
+
+  function toggleLanguage() { setLanguage(currentLang === "en" ? "bn" : "en"); }
+
+  function updateLabels() {
+    const uTSH = document.getElementById("unitTSH").value === "miul" ? "mIU/L" : "µIU/mL";
+    const uFT4 = document.getElementById("unitFT4").value === "ngdl" ? "ng/dL" : "pmol/L";
+    const uFT3 = document.getElementById("unitFT3").value === "pgml" ? "pg/mL" : "pmol/L";
+
+    document.getElementById("tshLabel").textContent = (currentLang === "en" ? "TSH Value" : "TSH মান") + " (" + uTSH + ")";
+    document.getElementById("ft4Label").textContent = (currentLang === "en" ? "Free T4 Value" : "ফ্রি T4 মান") + " (" + uFT4 + ")";
+    document.getElementById("ft3Label").textContent = (currentLang === "en" ? "Free T3 Value" : "ফ্রি T3 মান") + " (" + uFT3 + ")";
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach(faq => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `<div class="faq-q">${faq.q}<span>＋</span></div><div class="faq-a">${faq.a}</div>`;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "300px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valTSH").value = "";
+    document.getElementById("valFT4").value = "";
+    document.getElementById("valFT3").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function getPanelDiagnosis(tsh, ft4, ft3) {
+    // Standard normal ranges:
+    // TSH: 0.4 - 4.0
+    // fT4: 0.8 - 1.8
+    // fT3: 2.3 - 4.2
+
+    const isTshLow = tsh < 0.4;
+    const isTshHigh = tsh > 4.0;
+    const isTshNormal = tsh >= 0.4 && tsh <= 4.0;
+
+    const isFt4Low = ft4 < 0.8;
+    const isFt4High = ft4 > 1.8;
+    const isFt4Normal = ft4 >= 0.8 && ft4 <= 1.8;
+
+    const isFt3Low = ft3 < 2.3;
+    const isFt3High = ft3 > 4.2;
+    const isFt3Normal = ft3 >= 2.3 && ft3 <= 4.2;
+
+    // Diagnoses combinations
+    if (isTshLow && isFt4High && isFt3High) {
+      return { key: "hyper", badge: "diagHyper", color: "critical" };
+    }
+    if (isTshLow && isFt4Normal && isFt3High) {
+      return { key: "t3toxic", badge: "diagT3Toxic", color: "critical" };
+    }
+    if (isTshLow && isFt4High && isFt3Normal) {
+      return { key: "hyper", badge: "diagHyper", color: "critical" }; // T4 thyrotoxicosis variant
+    }
+    if (isTshHigh && isFt4Low) {
+      return { key: "hypoOvert", badge: "diagHypoOvert", color: "critical" };
+    }
+    if (isTshHigh && isFt4Normal) {
+      return { key: "hypoSub", badge: "diagHypoSub", color: "high" };
+    }
+    if (isTshLow && isFt4Low) {
+      return { key: "hypoSec", badge: "diagHypoSec", color: "critical" };
+    }
+    if (isTshNormal && isFt4Normal && isFt3Normal) {
+      return { key: "euthyroid", badge: "diagEuthyroid", color: "normal" };
+    }
+
+    // Default/Discordant
+    return { key: "unclassified", badge: "diagUnclassified", color: "high" };
+  }
+
+  function calcTshPointer(tsh) {
+    if (tsh <= 0) return 5;
+    if (tsh < 0.4) return 5 + (tsh / 0.4) * 30; // 5-35
+    if (tsh <= 4.0) return 35 + ((tsh - 0.4) / 3.6) * 35; // 35-70
+    return Math.min(95, 70 + ((tsh - 4.0) / 16.0) * 25); // 70-95
+  }
+
+  function calcFt4Pointer(ft4) {
+    if (ft4 <= 0) return 5;
+    if (ft4 < 0.8) return 5 + (ft4 / 0.8) * 40; // 5-45
+    if (ft4 <= 1.8) return 45 + ((ft4 - 0.8) / 1.0) * 30; // 45-75
+    return Math.min(95, 75 + ((ft4 - 1.8) / 3.2) * 20); // 75-95
+  }
+
+  function calcFt3Pointer(ft3) {
+    if (ft3 <= 0) return 5;
+    if (ft3 < 2.3) return 5 + (ft3 / 2.3) * 40; // 5-45
+    if (ft3 <= 4.2) return 45 + ((ft3 - 2.3) / 1.9) * 30; // 45-75
+    return Math.min(95, 75 + ((ft3 - 4.2) / 5.8) * 20); // 75-95
+  }
+
+  function analyzePanel() {
+    const rawTsh = parseFloat(document.getElementById("valTSH").value);
+    const rawFt4 = parseFloat(document.getElementById("valFT4").value);
+    const rawFt3 = parseFloat(document.getElementById("valFT3").value);
+
+    if (isNaN(rawTsh) || rawTsh < 0 || isNaN(rawFt4) || rawFt4 < 0 || isNaN(rawFt3) || rawFt3 < 0) {
+      alert(currentLang === "en" ? "Please fill in all thyroid parameters correctly." : "দয়া করে সমস্ত থাইরয়েড প্যারামিটার সঠিকভাবে পূরণ করুন।");
+      return;
+    }
+
+    const uTSH = document.getElementById("unitTSH").value;
+    const uFT4 = document.getElementById("unitFT4").value;
+    const uFT3 = document.getElementById("unitFT3").value;
+
+    // Convert all to standard units:
+    // TSH: mIU/L (1:1)
+    // fT4: ng/dL (1 ng/dL = 12.87 pmol/L)
+    // fT3: pg/mL (1 pg/mL = 1.536 pmol/L)
+    const valTsh = rawTsh;
+    const valFt4 = uFT4 === "pmoll" ? rawFt4 / 12.87 : rawFt4;
+    const valFt3 = uFT3 === "pmoll" ? rawFt3 / 1.536 : rawFt3;
+
+    const diagnosis = getPanelDiagnosis(valTsh, valFt4, valFt3);
+
+    activeReportData = {
+      rawTsh, rawFt4, rawFt3,
+      valTsh, valFt4, valFt3,
+      uTSH, uFT4, uFT3,
+      diagnosis,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+    addToHistory(diagnosis.badge, rawTsh, rawFt4, rawFt3, uTSH, uFT4, uFT3);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+
+    document.getElementById("resDate").textContent = d.date;
+
+    const unitTshStr = d.uTSH === "miul" ? "mIU/L" : "µIU/mL";
+    const unitFt4Str = d.uFT4 === "ngdl" ? "ng/dL" : "pmol/L";
+    const unitFt3Str = d.uFT3 === "pgml" ? "pg/mL" : "pmol/L";
+
+    document.getElementById("lblTSHVal").textContent = `${d.rawTsh.toFixed(2)} ${unitTshStr}`;
+    document.getElementById("lblFT4Val").textContent = `${d.rawFt4.toFixed(2)} ${unitFt4Str}`;
+    document.getElementById("lblFT3Val").textContent = `${d.rawFt3.toFixed(2)} ${unitFt3Str}`;
+
+    // Pointer widths
+    document.getElementById("ptrTSH").style.left = `${calcTshPointer(d.valTsh)}%`;
+    document.getElementById("ptrFT4").style.left = `${calcFt4Pointer(d.valFt4)}%`;
+    document.getElementById("ptrFT3").style.left = `${calcFt3Pointer(d.valFt3)}%`;
+
+    // Status Badge
+    const badge = document.getElementById("resStatusBadge");
+    badge.textContent = translations[currentLang][d.diagnosis.badge];
+    badge.style.backgroundColor = `var(--${d.diagnosis.color}-color)`;
+    badge.style.color = "#fff";
+
+    // Set slider pointer border colors
+    document.getElementById("ptrTSH").style.borderColor = `var(--${d.valTsh < 0.4 ? 'low' : d.valTsh > 4.0 ? 'critical' : 'normal'}-color)`;
+    document.getElementById("ptrFT4").style.borderColor = `var(--${d.valFt4 < 0.8 ? 'low' : d.valFt4 > 1.8 ? 'critical' : 'normal'}-color)`;
+    document.getElementById("ptrFT3").style.borderColor = `var(--${d.valFt3 < 2.3 ? 'low' : d.valFt3 > 4.2 ? 'critical' : 'normal'}-color)`;
+
+    // Render insight
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+    const details = insights[currentLang][d.diagnosis.key];
+    if (!details) return;
+
+    const card = document.createElement("div");
+    card.className = "insight-card";
+    card.style.borderLeft = `4px solid var(--${d.diagnosis.color}-color)`;
+
+    const causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+    const symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+    const tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+    card.innerHTML = `
+      <h5>${translations[currentLang].titleInterpretation}</h5>
+      <p>${details.desc}</p>
+      <div style="font-size: 0.8rem; margin: 10px 0; color: var(--accent); display: flex; flex-wrap: wrap; gap: 10px;">
+        <span><strong>TSH Standard:</strong> ${d.valTsh.toFixed(2)} mIU/L</span>
+        <span><strong>fT4 Standard:</strong> ${d.valFt4.toFixed(2)} ng/dL</span>
+        <span><strong>fT3 Standard:</strong> ${d.valFt3.toFixed(2)} pg/mL</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+          <ul>${causesList}</ul>
+        </div>
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+          <ul>${symptomsList}</ul>
+        </div>
+      </div>
+      <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:10px;">
+        <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+        <ul>${tipsList}</ul>
+      </div>
+      <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+        <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+      </div>
+    `;
+    insightSection.appendChild(card);
+  }
+
+  function addToHistory(badgeKey, tsh, ft4, ft3, uTSH, uFT4, uFT3) {
+    const uT = uTSH === "miul" ? "mIU/L" : "µIU/mL";
+    const uF4 = uFT4 === "ngdl" ? "ng/dL" : "pmol/L";
+    const uF3 = uFT3 === "pgml" ? "pg/mL" : "pmol/L";
+    const valuesText = `TSH:${tsh}${uT} | fT4:${ft4}${uF4} | fT3:${ft3}${uF3}`;
+
+    const item = { date: new Date().toLocaleDateString(), badgeKey, valuesText, id: Date.now() };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-thyroid-panel-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `<span>📅 ${item.date}</span><strong>${statusText} <br><span style="font-size:0.65rem; color:var(--muted);">${item.valuesText}</span></strong>`;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() { window.print(); }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitTshStr = d.uTSH === "miul" ? "mIU/L" : "µIU/mL";
+    const unitFt4Str = d.uFT4 === "ngdl" ? "ng/dL" : "pmol/L";
+    const unitFt3Str = d.uFT3 === "pgml" ? "pg/mL" : "pmol/L";
+
+    let t = `--- INTEGRATED THYROID PANEL REPORT ---\n`;
+    t += `Date: ${d.date}\n`;
+    t += `TSH Value: ${d.rawTsh.toFixed(2)} ${unitTshStr} (Standard: ${d.valTsh.toFixed(2)} mIU/L)\n`;
+    t += `Free T4 Value: ${d.rawFt4.toFixed(2)} ${unitFt4Str} (Standard: ${d.valFt4.toFixed(2)} ng/dL)\n`;
+    t += `Free T3 Value: ${d.rawFt3.toFixed(2)} ${unitFt3Str} (Standard: ${d.valFt3.toFixed(2)} pg/mL)\n`;
+    t += `Integrated Diagnosis: ${translations[currentLang][d.diagnosis.badge]}\n`;
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, { backgroundColor: "#0a0e17", scale: 2 }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `thyroid-panel-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => { setLanguage(currentLang); });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

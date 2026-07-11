@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text to Speech Reader &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Free online Text to Speech reader helps you convert text drafts into spoken audio using high-quality system voices locally — with word highlighting, progress tracking, and more.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+
+  <style>
+    /* ── Grid helpers ── */
+    .control-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .control-row-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 640px) {
+      .control-row-3 { grid-template-columns: repeat(2, 1fr); }
+      .tts-main-grid { grid-template-columns: 1fr !important; }
+    }
+    @media (max-width: 420px) {
+      .control-row-3 { grid-template-columns: 1fr; }
+    }
+
+    /* ── Textarea wrapper (for highlight overlay) ── */
+    .textarea-wrapper {
+      position: relative;
+    }
+    #ttsInput {
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 220px;
+      resize: vertical;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Reading progress bar ── */
+    .read-progress-track {
+      width: 100%;
+      height: 5px;
+      background: var(--border);
+      border-radius: 3px;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    #readProgressBar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 3px;
+      transition: width 0.25s ease;
+    }
+
+    /* ── Stats row ── */
+    #statsRow {
+      display: flex;
+      gap: 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 7px;
+      flex-wrap: wrap;
+    }
+    #statsRow span { display: flex; align-items: center; gap: 4px; }
+
+    /* ── Sample text buttons ── */
+    .sample-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .sample-btn {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      white-space: nowrap;
+    }
+    .sample-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--bg2);
+    }
+
+    /* ── Config panel label style ── */
+    .cfg-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .cfg-label span { color: var(--text); }
+
+    /* ── Range inputs ── */
+    input[type="range"].tts-slider {
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--border);
+      outline: none;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    /* ── Select elements ── */
+    .tts-select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .tts-select:focus { border-color: var(--accent); }
+
+    /* ── Word-highlight overlay ── */
+    #wordHighlightOverlay {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      background: rgba(255, 211, 0, 0.35);
+      border-radius: 3px;
+      box-shadow: 0 0 0 2px rgba(255, 211, 0, 0.55);
+      display: none;
+      transition: left 0.08s, top 0.08s, width 0.08s;
+    }
+
+    /* ── Download note ── */
+    .download-note {
+      background: var(--bg3);
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 18px;
+      line-height: 1.6;
+    }
+    .download-note strong { color: var(--text); }
+
+    /* ── Status text ── */
+    #ttsStatus {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 700;
+      margin-top: 10px;
+      margin-bottom: 0;
+    }
+
+    /* ── Utility ── */
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Word highlight overlay (fixed, moves over current spoken word) -->
+<div id="wordHighlightOverlay"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Text to Speech Reader</h1>
+  <p class="page-sub">Read plain text aloud using your device's Speech Synthesis voices — with live word highlighting, progress tracking, and real-time controls.</p>
+
+  <!-- ══ TOOL CARD ══ -->
+  <div class="content-card tool-playground">
+
+    <div class="tool-io tts-main-grid" style="display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 24px; align-items: start;">
+
+      <!-- ── LEFT: Text input area ── -->
+      <div>
+        <!-- Sample texts -->
+        <div class="section-label">Quick Load Sample</div>
+        <div class="sample-btns">
+          <button class="sample-btn" onclick="loadSample('news')">📰 News Headline</button>
+          <button class="sample-btn" onclick="loadSample('poem')">🎭 Poem Verse</button>
+          <button class="sample-btn" onclick="loadSample('tech')">💻 Tech Article</button>
+        </div>
+
+        <h4 style="margin-bottom: 8px;">Script Text</h4>
+        <div class="textarea-wrapper">
+          <textarea id="ttsInput" class="tts-textarea" placeholder="Type or paste your content here to convert it to spoken audio...">Welcome to SSDK Tools Hub! We design fast, aesthetic, and responsive web utilities for smart creators worldwide.</textarea>
+        </div>
+
+        <!-- Reading progress bar -->
+        <div class="read-progress-track">
+          <div id="readProgressBar"></div>
+        </div>
+
+        <!-- Stats row -->
+        <div id="statsRow">
+          <span>📝 <span id="statWords">0</span>&nbsp;words</span>
+          <span>🔤 <span id="statChars">0</span>&nbsp;chars</span>
+          <span>⏱ ~<span id="statSecs">0</span>s&nbsp;at&nbsp;current&nbsp;speed</span>
+        </div>
+      </div>
+
+      <!-- ── RIGHT: Config panel ── -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px;">
+        <h4 style="margin-bottom: 14px;">Audio Configuration</h4>
+
+        <!-- Language filter -->
+        <div style="margin-bottom: 10px;">
+          <div class="cfg-label">Language Filter</div>
+          <select id="langFilter" class="tts-select" onchange="filterVoices()">
+            <option value="all">🌐 All Languages</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="hi">🇮🇳 Hindi</option>
+            <option value="fr">🇫🇷 French</option>
+            <option value="es">🇪🇸 Spanish</option>
+            <option value="de">🇩🇪 German</option>
+            <option value="ja">🇯🇵 Japanese</option>
+          </select>
+        </div>
+
+        <!-- Voice selector -->
+        <div style="margin-bottom: 14px;">
+          <div class="cfg-label">Voice Engine</div>
+          <select id="voiceSelect" class="tts-select"></select>
+        </div>
+
+        <!-- Sliders: Rate & Pitch -->
+        <div class="control-row">
+          <div>
+            <div class="cfg-label">Speed / Rate <span id="valRate">1.0×</span></div>
+            <input type="range" id="slideRate" class="tts-slider" min="0.5" max="2.5" step="0.1" value="1.0">
+          </div>
+          <div>
+            <div class="cfg-label">Pitch <span id="valPitch">1.0</span></div>
+            <input type="range" id="slidePitch" class="tts-slider" min="0.5" max="2.0" step="0.1" value="1.0">
+          </div>
+        </div>
+
+        <!-- Slider: Volume -->
+        <div style="margin-bottom: 14px;">
+          <div class="cfg-label">Volume <span id="valVolume">1.0</span></div>
+          <input type="range" id="slideVolume" class="tts-slider" min="0" max="1" step="0.05" value="1.0">
+        </div>
+
+        <!-- Playback controls -->
+        <div style="border-top: 1px solid var(--border); padding-top: 14px; text-align: center;">
+          <div style="display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap;">
+            <button class="btn" id="btnPlay" style="padding: 10px 20px;">▶ Speak</button>
+            <button class="btn" id="btnPause" style="padding: 10px 20px; display: none;">⏸ Pause</button>
+            <button class="btn" id="btnStop" style="padding: 10px 20px; display: none; background: #ef233c;">⏹ Stop</button>
+          </div>
+          <p id="ttsStatus">Reader Idle</p>
+        </div>
+
+        <!-- Download note -->
+        <div class="download-note">
+          <strong>⬇ Audio Download?</strong><br>
+          The Web Speech API synthesizes audio directly in the browser and <em>does not produce a downloadable file</em>. To save the audio, use a <strong>screen recorder</strong> (e.g. OBS Studio, Windows Xbox Game Bar <kbd>Win+G</kbd>, or macOS QuickTime) while the speech plays.
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Bottom controls -->
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear Text</button>
+    </div>
+  </div>
+
+  <!-- ══ FEATURES CARD ══ -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Voice Library:</strong> Dynamically lists all built-in system speech voices with language filtering for English, Hindi, French, Spanish, German, and Japanese.</li>
+      <li><strong>Word-by-Word Highlighting:</strong> A live highlight tracks each spoken word over the textarea using the browser's <code>onboundary</code> event.</li>
+      <li><strong>Reading Progress Bar:</strong> A thin bar under the text fills as each word is spoken, giving you an at-a-glance read progress indicator.</li>
+      <li><strong>Character &amp; Word Stats:</strong> See instant word count, character count, and estimated reading time at the current speed — updated as you type.</li>
+      <li><strong>Volume, Rate &amp; Pitch Sliders:</strong> Fine-tune all three audio properties with real-time value readouts.</li>
+      <li><strong>Sample Texts:</strong> One-click load for a News Headline, Poem Verse, or Tech Article Intro to test voices instantly.</li>
+      <li><strong>100% Serverless:</strong> Audio synthesis occurs entirely inside your browser — no data leaves your device.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  /* ════════════════════════════════════════
+     TTS Engine — SSDK Tools Hub
+     Features: voice filter, volume slider,
+     word highlighting, progress bar, stats,
+     sample texts, download note.
+  ════════════════════════════════════════ */
+  const $ = id => document.getElementById(id);
+
+  const synth    = window.speechSynthesis;
+  let allVoices  = [];
+  let utterance  = null;
+  let wordTokens = [];   // array of {word, charStart, charEnd}
+  let currentWordIdx = 0;
+
+  /* ── Sample texts ── */
+  const SAMPLES = {
+    news: `Breaking News: Scientists have discovered a new species of deep-sea fish capable of producing bioluminescent light patterns never seen before. Researchers from the Oceanic Institute say this finding could reshape our understanding of life in the abyss.`,
+    poem: `Two roads diverged in a yellow wood,
+And sorry I could not travel both
+And be one traveler, long I stood
+And looked down one as far as I could
+To where it bent in the undergrowth.
+— Robert Frost, The Road Not Taken`,
+    tech: `Artificial Intelligence is no longer a futuristic concept — it is reshaping industries right now. From large language models that write code, to vision systems that diagnose disease, AI is compressing decades of progress into years. The question for developers is not whether to adopt AI tools, but how to do so responsibly, securely, and at scale.`
+  };
+
+  function loadSample(key) {
+    if (synth.speaking) { synth.cancel(); updateUIState('idle'); }
+    $('ttsInput').value = SAMPLES[key] || '';
+    updateStats();
+  }
+
+  /* ── Voice population & language filter ── */
+  function populateVoiceList() {
+    allVoices = synth.getVoices();
+    filterVoices();
+  }
+
+  function filterVoices() {
+    const lang   = $('langFilter').value;
+    const select = $('voiceSelect');
+    const prev   = select.value;
+    select.innerHTML = '';
+
+    const filtered = lang === 'all'
+      ? allVoices
+      : allVoices.filter(v => v.lang.toLowerCase().startsWith(lang));
+
+    if (filtered.length === 0) {
+      const opt = document.createElement('option');
+      opt.textContent = 'No voices found for this language';
+      select.appendChild(opt);
+      return;
+    }
+
+    filtered.forEach(voice => {
+      const opt = document.createElement('option');
+      opt.textContent = `${voice.name} (${voice.lang})`;
+      if (voice.default) opt.textContent += ' [Default]';
+      opt.setAttribute('data-name', voice.name);
+      opt.setAttribute('data-lang', voice.lang);
+      if (voice.name === prev) opt.selected = true;
+      select.appendChild(opt);
+    });
+  }
+
+  populateVoiceList();
+  if (synth && synth.onvoiceschanged !== undefined) {
+    synth.onvoiceschanged = populateVoiceList;
+  }
+
+  /* ── Slider sync ── */
+  $('slideRate').oninput = e => {
+    $('valRate').textContent = parseFloat(e.target.value).toFixed(1) + '×';
+    updateStats();
+  };
+  $('slidePitch').oninput = e => {
+    $('valPitch').textContent = parseFloat(e.target.value).toFixed(1);
+  };
+  $('slideVolume').oninput = e => {
+    $('valVolume').textContent = parseFloat(e.target.value).toFixed(2);
+  };
+
+  /* ── Stats computation ── */
+  function updateStats() {
+    const text    = $('ttsInput').value;
+    const words   = text.trim() === '' ? [] : text.trim().split(/\s+/);
+    const wCount  = words.length;
+    const cCount  = text.length;
+    const rate    = parseFloat($('slideRate').value) || 1;
+    // average speaking rate ~130 wpm at rate=1
+    const secs    = wCount === 0 ? 0 : Math.round((wCount / (130 * rate)) * 60);
+
+    $('statWords').textContent = wCount;
+    $('statChars').textContent = cCount;
+    $('statSecs').textContent  = secs;
+  }
+
+  $('ttsInput').addEventListener('input', updateStats);
+  updateStats(); // initial
+
+  /* ── Word tokenizer (build char-index map) ── */
+  function tokenizeWords(text) {
+    const tokens = [];
+    const re = /\S+/g;
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      tokens.push({ word: m[0], start: m.index, end: m.index + m[0].length });
+    }
+    return tokens;
+  }
+
+  /* ── Word highlight overlay ── */
+  const hlOverlay = $('wordHighlightOverlay');
+
+  function showWordHighlight(wordIdx) {
+    if (wordIdx < 0 || wordIdx >= wordTokens.length) {
+      hlOverlay.style.display = 'none';
+      return;
+    }
+    const textarea = $('ttsInput');
+    const token    = wordTokens[wordIdx];
+
+    // Use a mirror div to find bounding box of the word inside textarea
+    const rect = getWordRect(textarea, token.start, token.end);
+    if (!rect) { hlOverlay.style.display = 'none'; return; }
+
+    hlOverlay.style.display = 'block';
+    hlOverlay.style.left    = rect.left   + 'px';
+    hlOverlay.style.top     = rect.top    + 'px';
+    hlOverlay.style.width   = rect.width  + 'px';
+    hlOverlay.style.height  = rect.height + 'px';
+  }
+
+  function hideWordHighlight() {
+    hlOverlay.style.display = 'none';
+  }
+
+  /* ── Mirror-div technique for word position in textarea ── */
+  function getWordRect(textarea, charStart, charEnd) {
+    const style   = window.getComputedStyle(textarea);
+    const mirror  = document.createElement('div');
+
+    // Copy styles
+    const props = [
+      'fontFamily','fontSize','fontWeight','fontStyle','letterSpacing',
+      'wordSpacing','lineHeight','padding','border','boxSizing',
+      'width','textAlign','whiteSpace','wordBreak','overflowWrap'
+    ];
+    props.forEach(p => { mirror.style[p] = style[p]; });
+    mirror.style.position   = 'absolute';
+    mirror.style.visibility = 'hidden';
+    mirror.style.whiteSpace = 'pre-wrap';
+    mirror.style.overflow   = 'hidden';
+    mirror.style.height     = 'auto';
+    // match scroll
+    document.body.appendChild(mirror);
+
+    const text    = textarea.value;
+    const before  = document.createTextNode(text.substring(0, charStart));
+    const wordSpan = document.createElement('span');
+    wordSpan.textContent = text.substring(charStart, charEnd);
+    const after   = document.createTextNode(text.substring(charEnd));
+
+    mirror.appendChild(before);
+    mirror.appendChild(wordSpan);
+    mirror.appendChild(after);
+
+    const taRect  = textarea.getBoundingClientRect();
+    const mRect   = mirror.getBoundingClientRect();
+    const wRect   = wordSpan.getBoundingClientRect();
+
+    // offset from mirror top-left to word span
+    const offsetTop  = wRect.top  - mRect.top;
+    const offsetLeft = wRect.left - mRect.left;
+
+    document.body.removeChild(mirror);
+
+    const scrollTop  = textarea.scrollTop;
+    const paddingTop = parseFloat(style.paddingTop);
+    const paddingLeft= parseFloat(style.paddingLeft);
+
+    const top  = taRect.top  + paddingTop  + offsetTop  - scrollTop;
+    const left = taRect.left + paddingLeft + offsetLeft;
+
+    // Only show if within textarea viewport
+    if (top < taRect.top - 2 || top > taRect.bottom + 2) return null;
+
+    return {
+      top,
+      left,
+      width : wRect.width,
+      height: wRect.height
+    };
+  }
+
+  /* ── Play / Pause / Stop ── */
+  $('btnPlay').onclick = () => {
+    const text = $('ttsInput').value.trim();
+    if (!text) { alert('Please enter some text to speak.'); return; }
+
+    if (synth.speaking) {
+      if (synth.paused) { synth.resume(); updateUIState('playing'); }
+      return;
+    }
+
+    wordTokens    = tokenizeWords($('ttsInput').value);
+    currentWordIdx = 0;
+    resetProgress();
+
+    utterance = new SpeechSynthesisUtterance(text);
+
+    // Voice
+    const selectedOpt = $('voiceSelect').selectedOptions[0];
+    if (selectedOpt) {
+      const voiceName = selectedOpt.getAttribute('data-name');
+      const voice     = allVoices.find(v => v.name === voiceName);
+      if (voice) utterance.voice = voice;
+    }
+
+    utterance.rate   = parseFloat($('slideRate').value);
+    utterance.pitch  = parseFloat($('slidePitch').value);
+    utterance.volume = parseFloat($('slideVolume').value);
+
+    /* Word boundary event — highlight & progress */
+    utterance.onboundary = (e) => {
+      if (e.name !== 'word') return;
+
+      // Find which word index corresponds to this char offset
+      const charIdx = e.charIndex;
+      let idx = wordTokens.findIndex(t => charIdx >= t.start && charIdx < t.end);
+      if (idx === -1) {
+        // fallback: nearest
+        idx = wordTokens.findIndex(t => t.start >= charIdx);
+        if (idx === -1) idx = wordTokens.length - 1;
+      }
+      currentWordIdx = idx < 0 ? 0 : idx;
+
+      showWordHighlight(currentWordIdx);
+
+      // Update progress bar
+      const pct = wordTokens.length > 1
+        ? (currentWordIdx / (wordTokens.length - 1)) * 100
+        : 100;
+      $('readProgressBar').style.width = Math.min(pct, 100) + '%';
+    };
+
+    utterance.onend = () => {
+      $('readProgressBar').style.width = '100%';
+      hideWordHighlight();
+      setTimeout(() => {
+        resetProgress();
+        updateUIState('idle');
+      }, 600);
+    };
+
+    utterance.onerror = () => {
+      hideWordHighlight();
+      resetProgress();
+      updateUIState('idle');
+    };
+
+    synth.speak(utterance);
+    updateUIState('playing');
+  };
+
+  $('btnPause').onclick = () => {
+    if (synth.speaking && !synth.paused) {
+      synth.pause();
+      hideWordHighlight();
+      updateUIState('paused');
+    }
+  };
+
+  $('btnStop').onclick = () => {
+    if (synth.speaking) {
+      synth.cancel();
+      hideWordHighlight();
+      resetProgress();
+      updateUIState('idle');
+    }
+  };
+
+  function resetProgress() {
+    $('readProgressBar').style.width = '0%';
+  }
+
+  /* ── UI state ── */
+  function updateUIState(state) {
+    if (state === 'playing') {
+      $('btnPlay').style.display  = 'none';
+      $('btnPause').style.display = 'inline-flex';
+      $('btnStop').style.display  = 'inline-flex';
+      $('ttsStatus').textContent  = '🔊 Speech Output Active…';
+      $('ttsStatus').style.color  = 'var(--accent)';
+    } else if (state === 'paused') {
+      $('btnPlay').style.display  = 'inline-flex';
+      $('btnPause').style.display = 'none';
+      $('btnStop').style.display  = 'inline-flex';
+      $('ttsStatus').textContent  = '⏸ Speech Output Paused';
+      $('ttsStatus').style.color  = 'var(--muted)';
+    } else {
+      $('btnPlay').style.display  = 'inline-flex';
+      $('btnPause').style.display = 'none';
+      $('btnStop').style.display  = 'none';
+      $('ttsStatus').textContent  = 'Reader Idle';
+      $('ttsStatus').style.color  = 'var(--muted)';
+    }
+  }
+
+  /* ── Clear ── */
+  $('btnClear').onclick = () => {
+    if (synth.speaking) synth.cancel();
+    $('ttsInput').value = '';
+    hideWordHighlight();
+    resetProgress();
+    updateUIState('idle');
+    updateStats();
+  };
+
+  /* ── Hide highlight when textarea scrolls (repositioning needed) ── */
+  $('ttsInput').addEventListener('scroll', () => {
+    if (synth.speaking && !synth.paused) {
+      showWordHighlight(currentWordIdx);
+    }
+  });
+
+  /* ── Recalculate highlight on window resize ── */
+  window.addEventListener('resize', () => {
+    if (synth.speaking && !synth.paused) {
+      showWordHighlight(currentWordIdx);
+    }
+  });
+
+  /* ── FAQ accordions (if any) ── */
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => q.parentElement.classList.toggle('open');
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

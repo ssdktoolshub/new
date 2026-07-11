@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Potassium Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate serum Potassium (K+) levels online. Check for hypokalemia, hyperkalemia, cardiac risk safety thresholds, and renal clearance.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--critical-color) 0%, 
+        var(--low-color) 25%, 
+        var(--normal-color) 60%, 
+        var(--high-color) 85%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Potassium Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze serum Potassium (K+) levels to check for hyperkalemia, hypokalemia, or cardiac safety limits.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Potassium Input</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valPotassium" id="inputLabel" data-translate="labelPotassium">Serum Potassium (K+)</label>
+              <input type="number" step="0.01" id="valPotassium" placeholder="e.g. 4.0" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzePotassium()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Potassium</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your potassium level and click the analyze button to display cardiovascular safety summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Electrolyte Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Serum Potassium (K+)</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resPotVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">mEq/L</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--critical-color);">&lt; 3.5</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">3.5 - 5.1</span>
+              <span id="tickHigh" style="color: var(--critical-color);">5.1+</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Potassium</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">Why is Potassium critical?</strong><br><span data-translate="eduA1">Potassium is the chief intracellular electrolyte, responsible for cardiac electrophysiology, muscle contractions, and nerve conduction. Very small changes in blood potassium can affect heart rhythm.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What are the clinical limits?</strong><br><span data-translate="eduA2">- **Hypokalemia (&lt; 3.5 mEq/L)**: Low potassium, commonly caused by water loss (diarrhea/vomiting) or loop diuretic medicines. It can cause muscle weakness or arrhythmia.<br>- **Hyperkalemia (&gt; 5.1 mEq/L)**: High potassium, often seen in kidney failure (inability to excrete potassium) or tissue trauma. It poses severe cardiac risks.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Potassium Analyzer",
+      toolDesc: "Analyze serum Potassium (K+) levels to check for hyperkalemia, hypokalemia, or cardiac safety limits.",
+      inputsTitle: "🧬 Potassium Input",
+      clearBtn: "Reset",
+      labelPotassium: "Serum Potassium (K+)",
+      btnAnalyze: "Analyze Potassium",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your potassium level and click the analyze button to display cardiovascular safety summaries.",
+      reportTitle: "🔬 Electrolyte Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Potassium (Stable Cardiac Status)",
+      badgeLow: "Mild Hypokalemia (Potassium Deficit)",
+      badgeCriticalLow: "SEVERE HYPOKALEMIA (High Cardiac Arrhythmia Risk)",
+      badgeHigh: "Mild Hyperkalemia (Potassium Elevation)",
+      badgeCriticalHigh: "SEVERE HYPERKALEMIA (Critical Cardiac Arrest Risk)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "পটাশিয়াম বিশ্লেষক",
+      toolDesc: "রক্তের পটাশিয়াম (K+) মাত্রা বিশ্লেষণ করে হার্টের ছন্দ ও কিডনির কার্যকারিতা পরীক্ষা করুন।",
+      inputsTitle: "🧬 পটাশিয়াম ইনপুট",
+      clearBtn: "মুছে ফেলুন",
+      labelPotassium: "সিরাম পটাশিয়াম (K+)",
+      btnAnalyze: "পটাশিয়াম বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "পটাশিয়ামের মান লিখুন এবং বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 ইলেক্ট্রোলাইট ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক পটাশিয়াম (সুস্থ হার্ট রেট)",
+      badgeLow: "মৃদু হাইপোক্যালেমিয়া (পটাশিয়ামের ঘাটতি)",
+      badgeCriticalLow: "মারাত্মক হাইপোক্যালেমিয়া (অ্যারিথমিয়া বা হার্টের ছন্দের উচ্চ ঝুঁকি)",
+      badgeHigh: "মৃদু হাইপারক্যালেমিয়া (পটাশিয়াম বৃদ্ধি)",
+      badgeCriticalHigh: "মারাত্মক হাইপারক্যালেমিয়া (কার্ডিয়াক অ্যারেস্টের উচ্চ ঝুঁকি)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "पोटेशियम विश्लेषक",
+      toolDesc: "हाइपरकेलेमिया, हाइपोकैलेमिया, या हृदय संबंधी सुरक्षा सीमाओं की जांच के लिए सीरम पोटेशियम (K+) स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬पोटैशियम इनपुट",
+      clearBtn: "रीसेट करें",
+      labelPotassium: "सीरम पोटेशियम (K+)",
+      btnAnalyze: "पोटेशियम का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना पोटेशियम स्तर दर्ज करें और हृदय संबंधी सुरक्षा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 इलेक्ट्रोलाइट डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य पोटेशियम (स्थिर हृदय स्थिति)",
+      badgeLow: "हल्का हाइपोकैलिमिया (पोटेशियम की कमी)",
+      badgeCriticalLow: "गंभीर हाइपोकैलेमिया (उच्च हृदय अतालता जोखिम)",
+      badgeHigh: "हल्का हाइपरकेलेमिया (पोटेशियम ऊंचाई)",
+      badgeCriticalHigh: "गंभीर हाइपरकेलेमिया (गंभीर कार���डिएक अरेस्ट जोखिम)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना ह��"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is a normal potassium level?", a: "The normal reference range is 3.5 to 5.1 mEq/L (or mmol/L)." },
+      { q: "Why is potassium safety so important?", a: "Potassium directly controls cardiac muscular excitability. High or low values can cause cardiac arrest or severe arrhythmias." },
+      { q: "What causes high potassium (Hyperkalemia)?", a: "The most common cause is chronic kidney disease, tissue damage, or medications like ACE inhibitors." },
+      { q: "What causes low potassium (Hypokalemia)?", a: "Vomiting, diarrhea, chronic diuretic use, or low intake." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "পটাশিয়ামের স্বাভাবিক মাত্রা কত?", a: "স্বাভাবিক মাত্রা হলো ৩.৫ থেকে ৫.১ mEq/L (বা mmol/L)।" },
+      { q: "পটাশিয়াম কেন হার্টের জন্য এত জরুরি?", a: "পটাশিয়াম সরাসরি হার্টের পেশীর বৈদ্যুতিক সংকেত নিয়ন্ত্রণ করে। এর কম বা বেশি মাত্রা হার্ট অ্যাটাকের কারণ হতে পারে।" },
+      { q: "পটাশিয়াম বাড়ার কারণ কী?", a: "কিডনি রোগ (প্রস্রাব দিয়ে বের হতে না পারা), রক্তচাপের কিছু ওষুধ (যেমন ACE Inhibitors)।" },
+      { q: "পটাশিয়াম কমে যাওয়ার কারণ কী?", a: "বমি, ডায়রিয়া, প্রস্রাব বাড়ানোর ওষুধ খাওয়া বা খাবারে পটাশিয়ামের অভাব।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "सामान्य पोटेशियम स्तर क्या है?", a: "सामान्य संदर्भ सीमा 3.5 से 5.1 mEq/L (या mmol/L) है।" },
+      { q: "पोटेशियम सुरक्षा इतनी महत्वपूर्ण क्यों है?", a: "पोटेशियम सीधे हृदय की मांसपेशियों की उत्तेजना को नियंत्रित करता है। उच्च या निम्न मान कार्डियक अरेस्ट या गंभी��� अतालता का कारण बन सकते हैं।" },
+      { q: "उच्च पोटेशियम (हाइपरकेलेमिया) का क्या कारण है?", a: "सबसे आम कारण क्रोनिक किडनी रोग, ऊतक क्षति, या एसीई अवरोधक जैसी दवाएं हैं।" },
+      { q: "कम पोटेशियम (हाइपोकैलिमिया) का क्या कारण है?", a: "उल्टी, दस्त, दीर्घकालिक मूत्रवर्धक उपयोग, या कम सेवन।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const potassiumInsights = {
+    en: {
+      normal: {
+        desc: "Your potassium level is optimal. This supports healthy cardiac electrical activity and normal skeletal muscle contractions.",
+        factors: ["Adequate dietary potassium from foods", "Intact renal excretion capacity"],
+        symptoms: ["No muscle weakness or irregular heartbeats"],
+        prevention: ["Continue consuming potassium-rich foods (bananas, spinach, beans)", "Monitor levels regularly if taking blood pressure meds"],
+        consult: "Maintain standard annual metabolic checks."
+      },
+      low: {
+        desc: "Your potassium level is mildly low (mild hypokalemia). This can trigger muscle twitching and fatigue.",
+        factors: ["Diuretic therapy (non-potassium-sparing)", "Recent vomiting or diarrhea", "Excessive sweating without replacement"],
+        symptoms: ["Mild muscle weakness, spasms", "Fatigue, constipation"],
+        prevention: ["Incorporate potassium-dense foods into your diet", "Check potassium levels with your physician regularly"],
+        consult: "Consult your doctor if you take daily diuretics for blood pressure."
+      },
+      criticalLow: {
+        desc: "Your potassium level is critically low. This poses an immediate threat of cardiac arrhythmias and skeletal muscle paralysis.",
+        factors: ["Severe fluid depletion", "Primary hyperaldosteronism", "Chronic abuse of laxatives or diuretics"],
+        symptoms: ["Palpitations, chest fluttering, muscle paralysis", "Severe muscle weakness or breathing difficulty"],
+        prevention: ["Do not engage in physical training", "Seek medical assessment immediately"],
+        consult: "⚠️ EMERGENCY: Seek immediate emergency room evaluation. Controlled oral or intravenous potassium replacement is needed."
+      },
+      high: {
+        desc: "Your potassium level is mildly elevated (mild hyperkalemia). This requires close monitoring to prevent further elevations.",
+        factors: ["Chronic kidney dysfunction", "Medications (ACE inhibitors, ARBs, potassium supplements)", "High intake in the presence of mild renal impairment"],
+        symptoms: ["Often asymptomatic", "Mild tingling or numbness in hands/feet"],
+        prevention: ["Avoid potassium supplements", "Limit high-potassium foods (tomatoes, potatoes, bananas, coconut water)"],
+        consult: "Consult your doctor to evaluate kidney function and check your medication list."
+      },
+      criticalHigh: {
+        desc: "Your potassium level is critically elevated. This is a severe medical emergency due to the high risk of life-threatening cardiac conduction blocks or cardiac arrest.",
+        factors: ["Advanced stage chronic kidney disease", "Severe metabolic acidosis", "Acute cellular destruction (hemolysis, rhabdomyolysis)"],
+        symptoms: ["Severe muscle weakness, slow heart rate (bradycardia)", "Palpitations, shortness of breath, or numbness"],
+        prevention: ["Strictly avoid all potassium intake", "Go to the hospital immediately"],
+        consult: "⚠️ EMERGENCY: Go to the nearest emergency room immediately for medical treatment (such as calcium gluconate or insulin-dextrose therapy)."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার পটাশিয়াম মাত্রা স্বাভাবিক রয়েছে। এটি হৃদস্পন্দন এবং পেশীর কার্যকারিতা সুষ্ঠু রাখতে সাহায্য করে।",
+        factors: ["সঠিক খাদ্য তালিকা ও পুষ্টি", "কিডনির স্বাভাবিক পটাশিয়াম অপসারণ ক্ষমতা"],
+        symptoms: ["কোনো পেশীর দুর্বলতা বা অনিয়মিত হৃদস্পন্দন নেই"],
+        prevention: ["পটাশিয়াম যুক্ত খাবার (কলা, ডালিম, শাকসবজি) গ্রহণ বজায় রাখুন"],
+        consult: "রুটিন বার্ষিক চেকআপ করান।"
+      },
+      low: {
+        desc: "আপনার পটাশিয়ামের মাত্রা সামান্য কম (মৃদু হাইপোক্যালেমিয়া)। এটি পেশীতে টান পড়া বা দুর্বলতার কারণ হতে পারে।",
+        factors: ["প্রস্রাব বাড়ানোর ওষুধ সেবন", "সাম্প্রতিক ডায়রিয়া বা বমি", "অতিরিক্ত ঘাম"],
+        symptoms: ["পেশীতে হালকা ব্যথা বা টান লাগা", "ক্লান্তি, কোষ্ঠকাঠিন্য"],
+        prevention: ["পটাশিয়াম সমৃদ্ধ খাবার খাদ্যতালিকায় যোগ করুন"],
+        consult: "রক্তচাপের ওষুধ খেলে চিকিৎসকের সাথে পরামর্শ করুন।"
+      },
+      criticalLow: {
+        desc: "আপনার পটাশিয়ামের মাত্রা মারাত্মক কম। এটি হৃদস্পন্দনে গুরুতর বিঘ্ন (Arrhythmia) এবং পেশী পক্ষাঘাতের বড় ঝুঁকি তৈরি করে।",
+        factors: ["মারাত্মক পানিশূন্যতা", "অতিরিক্ত ল্যাক্সেটিভ বা ডিউরেটিক সেবন"],
+        symptoms: ["বুক ধড়ফড় করা, শ্বাসকষ্ট, পেশী প্যারালাইসিস বা অবসাদ"],
+        prevention: ["কায়িক পরিশ্রম সম্পূর্ণ বন্ধ রাখুন"],
+        consult: "⚠️ জরুরি: অবিলম্বে হাসপাতালের জরুরি বিভাগে যান এবং শিরায় পটাশিয়াম থেরাপি নিন।"
+      },
+      high: {
+        desc: "আপনার পটাশিয়াম মাত্রা কিছুটা বেশি (মৃদু হাইপারক্যালেমিয়া)। এটি নিয়ন্ত্রণে রাখা জরুরী যাতে হার্টের ওপর ক্ষতিকর প্রভাব না পড়ে।",
+        factors: ["কিডনির ছাঁকন ক্ষমতা কমে যাওয়া", "রক্তচাপের কিছু নির্দিষ্ট ওষুধ সেবন", "পটাশিয়াম সাপ্লিমেন্ট গ্রহণ"],
+        symptoms: ["হাত-পায়ে অবশ অনুভূতি", "অনেক সময় কোনো লক্ষণ থাকে না"],
+        prevention: ["কলা, ডাব, আলু, টমেটো খাওয়া সাময়িকভাবে সীমিত করুন"],
+        consult: "ওষুধ পরিবর্তন ও কিডনি কার্যকারিতা মূল্যায়নে ডাক্তারের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার পটাশিয়ামের মাত্রা মারাত্মক বেশি। এটি হৃদস্পন্দন বন্ধ হওয়া (Cardiac Arrest) এর মতো মারাত্মক ঝুঁকি তৈরি করে।",
+        factors: ["অ্যাডভান্সড ক্রনিক কিডনি ডিজিজ", "তীব্র রক্তকণিকা ভাঙন"],
+        symptoms: ["ধীর হৃদস্পন্দন (Bradycardia), তীব্র বুক ধড়ফড়", "পেশীর অসাড়তা, শ্বাসকষ্ট"],
+        prevention: ["পটাশিয়াম সমৃদ্ধ খাবার খাওয়া সম্পূর্ণ বন্ধ রাখুন"],
+        consult: "⚠️ জরুরি: অবিলম্বে হাসপাতালের জরুরি বিভাগে যান এবং রক্ত পরিশোধক বা পটাশিয়াম কমানোর জরুরি ইনজেকশন নিন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका पोटेशियम स्तर इष्टतम है। यह स्वस्थ हृदय विद्युत गतिविधि और सामान्य कंकाल की मांसपेशी संकुचन का समर्थन करता है।",
+        factors: ["खाद्य पदार्थों से पर्याप्त आहार पोटेशियम", "अक्षुण्ण गुर्दे की उत्सर्जन क्षमता"],
+        symptoms: ["मांसपेशियों में कमजोरी या ��नियमित दिल की धड़कन नहीं"],
+        prevention: ["पोटेशियम युक्त खाद्य पदार्थ (केला, पालक, बीन्स) का सेवन जारी रखें", "यदि आप रक्तचाप की दवाएं ले रहे हैं तो नियमित रूप से स्तर की निगरानी करें"],
+        consult: "मानक वार्षिक चयापचय जाँच बनाए रखें।"
+      },
+      low: {
+        desc: "आपका पोटेशियम स्तर थोड़ा कम है (हल्का हाइपोकैलेमिया)। इससे मांसपेशियों में मरोड़ और थकान हो सकती है।",
+        factors: ["मूत्रवर्धक चिकित्सा (गैर-पोटेशियम-बख्शते)", "हाल ही में उल्टी या दस्त होना", "प्रतिस्थापन के बिना अत्यधिक पसीना आना"],
+        symptoms: ["हल्की मांसपेशियों में कमजोरी, ऐंठन", "थकान, कब्ज"],
+        prevention: ["अपने आहार में पोटेशियम से भरपूर खाद्य पदार्थों को शामिल करें", "अपने चिकित्सक से नियमित रूप से पोटेशियम के स्तर की जाँच करें"],
+        consult: "यदि आप रक्तचाप के लिए दैनिक मूत्रवर्धक लेते हैं तो अपने चिकित्सक से परामर्श करें।"
+      },
+      criticalLow: {
+        desc: "आपका पोटेशियम स्तर गंभीर रूप से कम है। इससे हृदय संबंधी अतालता और कंकाल की मांसपेशी पक्षाघात का तत्काल खतरा पैदा हो जाता है।",
+        factors: ["गंभीर तरल पदार्थ की कमी", "प्राथमिक हाइपरल्डोस्टेरोनिज़्म", "जुलाब या मूत्रवर्धक का दीर्घकालिक दुरुपयोग"],
+        symptoms: ["धड़कन, छाती का फड़कना, मांसपेशी पक्षाघात", "गंभीर मांसपेशियों में कमजोरी या सांस लेने में कठिनाई"],
+        prevention: ["शारीरिक प्रशिक्षण में शामिल न हों", "तुरंत चिकित्सा मूल्यांकन लें"],
+        consult: "⚠️ आपातकालीन स्थिति: तत्काल आप��तकालीन कक्ष मूल्यांकन की तलाश करें। नियंत्रित मौखिक या अंतःशिरा पोटेशियम प्रतिस्थापन की आवश्यकता है।"
+      },
+      high: {
+        desc: "आपका पोटेशियम स्तर हल्का ऊंचा है (हल्का हाइपरकेलेमिया)। इसमें आगे की वृद्धि को रोकने के लिए कड़ी निगरानी की आवश्यकता है।",
+        factors: ["क्रोनिक किडनी रोग", "दवाएं (एसीई अवरोधक, एआरबी, पोटेशियम पूरक)", "हल्के गुर्दे की हानि की उपस्थिति में उच्च सेवन"],
+        symptoms: ["अक्सर लक्षणरहित", "हाथों/पैरों में हल्की झुनझुनी या सुन्नता"],
+        prevention: ["पोटेशियम सप्लीमेंट से बचें", "उच्च पोटेशियम वाले खाद्य पदार्थ (टमाटर, आलू, केला, नारियल पानी) सीमित करें"],
+        consult: "किडनी की कार्यप्रणाली का मूल्यांकन करने और अपनी दवा सूची की जांच करने के लिए अपने डॉक्टर से परामर्श लें।"
+      },
+      criticalHigh: {
+        desc: "आपका पोटेशियम स्तर गंभीर र��प से बढ़ा हुआ है। जीवन-घातक कार्डियक चालन ब्लॉक या कार्डियक अरेस्ट के उच्च जोखिम के कारण यह एक गंभीर चिकित्सा आपात स्थिति है।",
+        factors: ["उन्नत चरण की क्रोनिक किडनी रोग", "गंभीर चयापचय अम्लरक्तता", "तीव्र सेलुलर विनाश (हेमोलिसिस, रबडोमायोलिसिस)"],
+        symptoms: ["गंभीर मांसपेशियों की कमजोरी, धीमी हृदय गति (ब्रैडीकार्डिया)", "धड़कन, सांस की तकलीफ, या सुन्नता"],
+        prevention: ["पोटेशियम के सभी सेवन से सख्ती से बचें", "तुरंत अस्पताल जाओ"],
+        consult: "⚠️ आपातकालीन स्थिति: चिकित्सा उपचार (जैसे कैल्शियम ग्लूकोनेट या इंसुलिन-डेक्सट्रोज़ थेरेपी) के लिए तुरंत निकटतम आपातकालीन कक्ष में जाएँ।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-potassium-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function resetForm() {
+    document.getElementById("valPotassium").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function analyzePotassium() {
+    const valPot = parseFloat(document.getElementById("valPotassium").value);
+
+    if (isNaN(valPot) || valPot <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid potassium value." : "দয়া করে পটাশিয়ামের সঠিক মান লিখুন।");
+      return;
+    }
+
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valPot < 3.5) {
+      if (valPot < 2.5) {
+        statusKey = "criticalLow";
+        badgeKey = "badgeCriticalLow";
+      } else {
+        statusKey = "low";
+        badgeKey = "badgeLow";
+      }
+    } else if (valPot > 5.1) {
+      if (valPot > 6.0) {
+        statusKey = "criticalHigh";
+        badgeKey = "badgeCriticalHigh";
+      } else {
+        statusKey = "high";
+        badgeKey = "badgeHigh";
+      }
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valPot >= 3.5 && valPot <= 5.1) {
+      pointerPct = 40 + ((valPot - 3.5) / 1.6) * 20; // 40% - 60%
+    } else if (valPot < 3.5) {
+      pointerPct = Math.max(5, ((valPot - 1.5) / 2.0) * 35); // 5% - 40%
+    } else {
+      pointerPct = Math.min(95, 60 + ((valPot - 5.1) / 3.0) * 35); // 60% - 95%
+    }
+
+    activeReportData = {
+      valPot,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valPot);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resPotVal").textContent = d.valPot.toFixed(2);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low" || d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey === "criticalLow" || d.statusKey === "criticalHigh") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resPotVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = potassiumInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valPot) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valPot,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-potassium-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valPot.toFixed(2)} mEq/L (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- SERUM POTASSIUM REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Value: ${activeReportData.valPot.toFixed(2)} mEq/L\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `potassium-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

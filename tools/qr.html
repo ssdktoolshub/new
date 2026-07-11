@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Generator &amp; Creator &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Free QR Code Generator helps you create customized QR Codes with logo overlays, custom colors, and sizes locally in your browser.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+
+  <!-- Pure JS QR Code Library (Client-Side) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- jsQR for scan-test verification -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+  <script src="../assets/js/theme.js"></script>
+
+  <style>
+    /* ─── QR Builder Core ─── */
+    #qrcode { display: none; }
+
+    #qrcodeContainer {
+      display: inline-block;
+      background: #ffffff;
+      padding: 14px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    #qrcodeContainer canvas,
+    #qrcodeContainer img {
+      max-width: 100%;
+      height: auto !important;
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* ─── QR Type Tabs ─── */
+    .qr-type-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .qr-type-tab {
+      padding: 7px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .qr-type-tab:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .qr-type-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* ─── Type-Specific Form Panels ─── */
+    .type-panel { display: none; }
+    .type-panel.active { display: block; }
+
+    /* ─── Field Grid ─── */
+    .field-grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .field-grid-1 { margin-bottom: 10px; }
+
+    .field-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .field-input {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 0.88rem;
+      outline: none;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+    .field-input:focus { border-color: var(--accent); }
+    .field-input-ta {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    /* ─── Data String Preview ─── */
+    #dataPreviewBox {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      word-break: break-all;
+      margin-bottom: 14px;
+      min-height: 34px;
+      transition: color 0.2s;
+    }
+
+    /* ─── Color Pickers ─── */
+    .color-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .color-field { display: flex; flex-direction: column; gap: 5px; }
+    .color-picker-input {
+      width: 100%;
+      height: 42px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      border-radius: 8px;
+      padding: 3px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    /* ─── Dot Style Selector ─── */
+    .dot-style-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .dot-style-btn {
+      flex: 1;
+      padding: 8px 6px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .dot-style-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .dot-style-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .dot-style-btn .dot-icon {
+      display: block;
+      font-size: 1.2rem;
+      margin-bottom: 3px;
+    }
+
+    /* ─── Preview Panel ─── */
+    #previewPanel {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 330px;
+      background: var(--bg3);
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    #qrResult { margin-bottom: 14px; }
+
+    /* ─── Size Info ─── */
+    #sizeInfo {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 8px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    /* ─── Scan Test Result ─── */
+    #scanResult {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      color: var(--text);
+      word-break: break-all;
+      margin-top: 8px;
+      display: none;
+    }
+    #scanResult.ok { border-color: #4ade80; color: #4ade80; }
+    #scanResult.err { border-color: #ff6b6b; color: #ff6b6b; }
+
+    /* ─── Export Buttons ─── */
+    .export-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      justify-content: center;
+    }
+    .export-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+    .export-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .export-btn.primary {
+      background: var(--grad2);
+      border-color: transparent;
+      color: #fff;
+    }
+    .export-btn.primary:hover { opacity: 0.88; color: #fff; }
+
+    /* ─── QR History ─── */
+    .section-divider {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      margin: 18px 0 12px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    #historyList {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 260px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    #historyList:empty::after {
+      content: "No history yet — generate a QR code first.";
+      color: var(--muted);
+      font-size: 0.8rem;
+      display: block;
+      text-align: center;
+      padding: 10px 0;
+    }
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .history-item:hover {
+      border-color: var(--accent);
+    }
+    .history-thumb {
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #fff;
+    }
+    .history-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .history-type {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    .history-text {
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .history-del {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0 4px;
+      flex-shrink: 0;
+      transition: color 0.2s;
+    }
+    .history-del:hover { color: #ff6b6b; }
+
+    /* ─── Logo Selector ─── */
+    #logoStatus { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 720px) {
+      .tool-io-grid { grid-template-columns: 1fr !important; }
+      .field-grid-2 { grid-template-columns: 1fr; }
+      .dot-style-row { flex-wrap: wrap; }
+      .qr-type-tabs { gap: 4px; }
+      .qr-type-tab { font-size: 0.72rem; padding: 5px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">QR Code Designer</h1>
+  <p class="page-sub">Generate advanced QR Codes for URLs, vCards, WiFi, SMS, Email and more — 100% locally, with dot styles, history, and export options.</p>
+
+  <!-- ══════════════════════════════════════
+       MAIN TOOL CARD
+  ══════════════════════════════════════ -->
+  <div class="content-card tool-playground">
+
+    <!-- QR Type Tabs -->
+    <div class="qr-type-tabs" id="qrTypeTabs">
+      <button class="qr-type-tab active" data-type="url">🌐 URL</button>
+      <button class="qr-type-tab" data-type="vcard">👤 vCard</button>
+      <button class="qr-type-tab" data-type="wifi">📶 WiFi</button>
+      <button class="qr-type-tab" data-type="email">✉️ Email</button>
+      <button class="qr-type-tab" data-type="sms">💬 SMS</button>
+      <button class="qr-type-tab" data-type="text">📄 Plain Text</button>
+    </div>
+
+    <!-- Tool I/O Grid -->
+    <div class="tool-io tool-io-grid" style="display:grid; grid-template-columns:1.2fr 0.8fr; gap:28px; align-items:start;">
+
+      <!-- ── LEFT COLUMN ── -->
+      <div>
+
+        <!-- URL Panel -->
+        <div class="type-panel active" id="panel-url">
+          <div class="field-grid-1">
+            <label class="field-label">Website URL</label>
+            <input class="field-input" id="url-url" type="url" placeholder="https://example.com" oninput="buildData()">
+          </div>
+        </div>
+
+        <!-- vCard Panel -->
+        <div class="type-panel" id="panel-vcard">
+          <div class="field-grid-2">
+            <div>
+              <label class="field-label">First Name</label>
+              <input class="field-input" id="vcard-first" type="text" placeholder="John" oninput="buildData()">
+            </div>
+            <div>
+              <label class="field-label">Last Name</label>
+              <input class="field-input" id="vcard-last" type="text" placeholder="Doe" oninput="buildData()">
+            </div>
+          </div>
+          <div class="field-grid-2">
+            <div>
+              <label class="field-label">Phone</label>
+              <input class="field-input" id="vcard-phone" type="tel" placeholder="+1 555 000 0000" oninput="buildData()">
+            </div>
+            <div>
+              <label class="field-label">Email</label>
+              <input class="field-input" id="vcard-email" type="email" placeholder="john@example.com" oninput="buildData()">
+            </div>
+          </div>
+          <div class="field-grid-2">
+            <div>
+              <label class="field-label">Company</label>
+              <input class="field-input" id="vcard-company" type="text" placeholder="Acme Corp" oninput="buildData()">
+            </div>
+            <div>
+              <label class="field-label">Job Title</label>
+              <input class="field-input" id="vcard-title" type="text" placeholder="Designer" oninput="buildData()">
+            </div>
+          </div>
+          <div class="field-grid-1">
+            <label class="field-label">Website</label>
+            <input class="field-input" id="vcard-web" type="url" placeholder="https://..." oninput="buildData()">
+          </div>
+        </div>
+
+        <!-- WiFi Panel -->
+        <div class="type-panel" id="panel-wifi">
+          <div class="field-grid-1">
+            <label class="field-label">Network Name (SSID)</label>
+            <input class="field-input" id="wifi-ssid" type="text" placeholder="MyHomeNetwork" oninput="buildData()">
+          </div>
+          <div class="field-grid-2">
+            <div>
+              <label class="field-label">Password</label>
+              <input class="field-input" id="wifi-pass" type="text" placeholder="password123" oninput="buildData()">
+            </div>
+            <div>
+              <label class="field-label">Security Type</label>
+              <select class="field-input" id="wifi-security" onchange="buildData()">
+                <option value="WPA">WPA / WPA2</option>
+                <option value="WEP">WEP</option>
+                <option value="nopass">None (Open)</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-grid-1">
+            <label class="field-label">
+              <input type="checkbox" id="wifi-hidden" onchange="buildData()" style="margin-right:6px;">
+              Hidden Network
+            </label>
+          </div>
+        </div>
+
+        <!-- Email Panel -->
+        <div class="type-panel" id="panel-email">
+          <div class="field-grid-1">
+            <label class="field-label">To (Email Address)</label>
+            <input class="field-input" id="email-to" type="email" placeholder="recipient@example.com" oninput="buildData()">
+          </div>
+          <div class="field-grid-1">
+            <label class="field-label">Subject</label>
+            <input class="field-input" id="email-subject" type="text" placeholder="Hello there!" oninput="buildData()">
+          </div>
+          <div class="field-grid-1">
+            <label class="field-label">Body</label>
+            <textarea class="field-input field-input-ta" id="email-body" placeholder="Email message body..." oninput="buildData()"></textarea>
+          </div>
+        </div>
+
+        <!-- SMS Panel -->
+        <div class="type-panel" id="panel-sms">
+          <div class="field-grid-1">
+            <label class="field-label">Phone Number</label>
+            <input class="field-input" id="sms-phone" type="tel" placeholder="+1555000000" oninput="buildData()">
+          </div>
+          <div class="field-grid-1">
+            <label class="field-label">Message</label>
+            <textarea class="field-input field-input-ta" id="sms-msg" placeholder="Your pre-filled SMS message..." oninput="buildData()"></textarea>
+          </div>
+        </div>
+
+        <!-- Plain Text Panel -->
+        <div class="type-panel" id="panel-text">
+          <div class="field-grid-1">
+            <label class="field-label">Plain Text</label>
+            <textarea class="field-input field-input-ta" id="text-content" placeholder="Any text you want to encode into the QR..." oninput="buildData()" style="min-height:100px;"></textarea>
+          </div>
+        </div>
+
+        <!-- Data String Preview -->
+        <div class="section-divider">Encoded Data Preview</div>
+        <div id="dataPreviewBox">—</div>
+
+        <!-- Size & Error -->
+        <div style="display:grid;grid-template-columns:1.2fr 0.8fr;gap:14px;margin-bottom:14px;">
+          <div>
+            <label class="field-label">QR Size</label>
+            <select class="field-input" id="qrSize">
+              <option value="200">200 × 200 px</option>
+              <option value="300" selected>300 × 300 px</option>
+              <option value="400">400 × 400 px</option>
+              <option value="600">600 × 600 px</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Error Correction</label>
+            <select class="field-input" id="qrError">
+              <option value="L">L — Low (7%)</option>
+              <option value="M">M — Medium (15%)</option>
+              <option value="Q">Q — High (25%)</option>
+              <option value="H" selected>H — Max (30%)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Color Theme -->
+        <div class="section-divider">Color Theme</div>
+        <div class="color-inputs">
+          <div class="color-field">
+            <label class="field-label">Dots / Foreground</label>
+            <input type="color" id="colorForeground" value="#000000" class="color-picker-input">
+          </div>
+          <div class="color-field">
+            <label class="field-label">Background</label>
+            <input type="color" id="colorBackground" value="#ffffff" class="color-picker-input">
+          </div>
+        </div>
+
+        <!-- Dot Style -->
+        <div class="section-divider">Dot Style</div>
+        <div class="dot-style-row">
+          <button class="dot-style-btn active" data-dot="square">
+            <span class="dot-icon">▪️</span>Square
+          </button>
+          <button class="dot-style-btn" data-dot="rounded">
+            <span class="dot-icon">🔲</span>Rounded
+          </button>
+          <button class="dot-style-btn" data-dot="circle">
+            <span class="dot-icon">⚫</span>Circle
+          </button>
+        </div>
+
+        <!-- Logo Overlay -->
+        <div class="section-divider">Brand Logo Overlay</div>
+        <label class="field-label">Add Center Logo (Optional — uses H correction)</label>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <input type="file" id="logoInput" accept="image/*" style="display:none;">
+          <button class="toggle" id="btnUploadLogo" style="border-radius:8px;padding:10px 18px;cursor:pointer;">🖼 Select Logo</button>
+          <span id="logoStatus">No logo selected</span>
+        </div>
+      </div>
+
+      <!-- ── RIGHT COLUMN: PREVIEW ── -->
+      <div id="previewPanel">
+        <div id="qrResult">
+          <p style="color:var(--muted);font-size:0.85rem;padding:30px 0 10px;">Fill in the fields on the left,<br>then hit <strong>Generate</strong>.</p>
+        </div>
+        <div id="sizeInfo"></div>
+
+        <!-- Export Buttons (hidden until generated) -->
+        <div class="export-row" id="exportRow" style="display:none;">
+          <button class="export-btn primary" id="btnDownloadPng">⬇ PNG</button>
+          <button class="export-btn" id="btnCopyDataUrl">📋 Copy URL</button>
+          <button class="export-btn" id="btnDownloadSvg">🖊 SVG</button>
+          <button class="export-btn" id="btnTestScan">🔍 Test Scan</button>
+        </div>
+        <div id="scanResult"></div>
+      </div>
+
+    </div><!-- /tool-io-grid -->
+
+    <!-- Generate / Clear controls -->
+    <div class="tool-control" style="margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
+      <button class="btn" id="btnGen">⚡ Generate QR Code</button>
+      <button class="btn ghost" id="btnClear" style="border-color:#ff6b6b;color:#ff6b6b;">🗑 Clear Workspace</button>
+    </div>
+    <p id="statusMsg" style="margin-top:12px;font-weight:bold;font-size:0.9rem;display:none;"></p>
+
+  </div><!-- /content-card -->
+
+  <!-- ══════════════════════════════════════
+       QR HISTORY CARD
+  ══════════════════════════════════════ -->
+  <div class="content-card">
+    <h3 style="margin-bottom:4px;">📋 Recent QR History</h3>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:14px;">Last 5 generated codes. Click any item to restore and regenerate.</p>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       DOCUMENTATION
+  ══════════════════════════════════════ -->
+  <div class="content-card">
+    <h3>Advanced QR Customization</h3>
+    <ul>
+      <li><strong>Client-Side Engine:</strong> QR codes are created locally in your browser. No data leaves your machine.</li>
+      <li><strong>QR Types:</strong> Auto-format vCard, WiFi credentials, Email, SMS and more with the type switcher.</li>
+      <li><strong>Dot Styles:</strong> Switch between square, rounded-rectangle, and circle dot rendering per module.</li>
+      <li><strong>Scan Verification:</strong> Use "Test Scan" to instantly verify that the generated QR decodes correctly via jsQR.</li>
+      <li><strong>Export Options:</strong> Download as PNG, copy base64 Data URL to clipboard, or export as an SVG file.</li>
+      <li><strong>Logo Overlay:</strong> Upload a logo — it is composited at 22% scale in the center with a clean cutout.</li>
+      <li><strong>Max Error Correction:</strong> Use "H" level so logos covering 30% of the QR still scan reliably.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">Will my QR code scan if I add a logo?<span>＋</span></div>
+        <div class="faq-a">Yes. We default error correction to "H (30%)" which repeats encoded bits multiple times. This allows mobile cameras to successfully reconstruct and scan the code even with a logo covering the center patterns.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What does the dot style do?<span>＋</span></div>
+        <div class="faq-a">After qrcodejs renders the QR matrix to a canvas, we read every dark pixel and redraw each module (cell) in your chosen shape — square, rounded rectangle, or circle. All standard scanners can decode any of these styles.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How does Test Scan work?<span>＋</span></div>
+        <div class="faq-a">It reads the generated canvas pixel data and passes it to the jsQR library which runs a full QR decode in the browser — showing you exactly what a camera would decode, without any network request.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Can I change colors to anything?<span>＋</span></div>
+        <div class="faq-a">Yes, but maintain high contrast. Dark dots on a light background work best. If the colors are too similar, scanners will fail to capture the grid.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<!-- Hidden QR render target -->
+<div id="qrcode" style="display:none;position:absolute;left:-9999px;"></div>
+
+<script>
+'use strict';
+
+/* ─────────────────────────────────────────────
+   GLOBALS
+───────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+let logoDataUrl   = '';
+let finalCanvas   = null;   // The styled canvas currently shown
+let currentType   = 'url';
+let currentDot    = 'square';
+let qrHistory     = [];     // Max 5 entries: {type, data, thumbUrl, label}
+
+/* ─────────────────────────────────────────────
+   STATUS
+───────────────────────────────────────────── */
+function showStatus(text, isError = false) {
+  const el = $('statusMsg');
+  el.style.display = 'block';
+  el.textContent   = text;
+  el.style.color   = isError ? '#ff6b6b' : 'var(--accent)';
+}
+
+/* ─────────────────────────────────────────────
+   QR TYPE TABS
+───────────────────────────────────────────── */
+document.querySelectorAll('.qr-type-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.qr-type-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.type-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    currentType = tab.dataset.type;
+    $('panel-' + currentType).classList.add('active');
+    buildData();
+  });
+});
+
+/* ─────────────────────────────────────────────
+   BUILD ENCODED DATA STRING FROM ACTIVE PANEL
+───────────────────────────────────────────── */
+function buildData() {
+  let str = '';
+
+  switch (currentType) {
+    case 'url': {
+      str = $('url-url').value.trim() || '';
+      break;
+    }
+    case 'vcard': {
+      const fn   = ($('vcard-first').value.trim() + ' ' + $('vcard-last').value.trim()).trim();
+      const org  = $('vcard-company').value.trim();
+      const tel  = $('vcard-phone').value.trim();
+      const mail = $('vcard-email').value.trim();
+      const url  = $('vcard-web').value.trim();
+      const tit  = $('vcard-title').value.trim();
+      str  = 'BEGIN:VCARD\nVERSION:3.0\n';
+      if (fn)   str += `FN:${fn}\n`;
+      if (org)  str += `ORG:${org}\n`;
+      if (tit)  str += `TITLE:${tit}\n`;
+      if (tel)  str += `TEL:${tel}\n`;
+      if (mail) str += `EMAIL:${mail}\n`;
+      if (url)  str += `URL:${url}\n`;
+      str += 'END:VCARD';
+      break;
+    }
+    case 'wifi': {
+      const ssid   = $('wifi-ssid').value.trim();
+      const pass   = $('wifi-pass').value.trim();
+      const sec    = $('wifi-security').value;
+      const hidden = $('wifi-hidden').checked ? 'true' : 'false';
+      const escapedSsid = ssid.replace(/([\\;,":"])/g, '\\$1');
+      const escapedPass = pass.replace(/([\\;,":"])/g, '\\$1');
+      str = `WIFI:T:${sec};S:${escapedSsid};P:${escapedPass};H:${hidden};;`;
+      break;
+    }
+    case 'email': {
+      const to      = encodeURIComponent($('email-to').value.trim());
+      const subject = encodeURIComponent($('email-subject').value.trim());
+      const body    = encodeURIComponent($('email-body').value.trim());
+      str = `mailto:${to}?subject=${subject}&body=${body}`;
+      break;
+    }
+    case 'sms': {
+      const phone = $('sms-phone').value.trim();
+      const msg   = encodeURIComponent($('sms-msg').value.trim());
+      str = `smsto:${phone}:${msg}`;
+      break;
+    }
+    case 'text': {
+      str = $('text-content').value;
+      break;
+    }
+  }
+
+  $('dataPreviewBox').textContent = str || '—';
+  $('dataPreviewBox').style.color = str ? 'var(--text)' : 'var(--muted)';
+  return str;
+}
+
+/* ─────────────────────────────────────────────
+   DOT STYLE BUTTONS
+───────────────────────────────────────────── */
+document.querySelectorAll('.dot-style-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dot-style-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentDot = btn.dataset.dot;
+    // Re-apply style if we have a canvas already
+    if (finalCanvas) applyDotStyleAndRender(finalCanvas._sourceCanvas, finalCanvas._colorFore, finalCanvas._colorBack);
+  });
+});
+
+/* ─────────────────────────────────────────────
+   DOT STYLE RENDERER
+   Reads source qrcodejs canvas, redraws modules
+   in selected shape on a new canvas
+───────────────────────────────────────────── */
+function applyDotStyle(srcCanvas, colorFore, colorBack, dotStyle) {
+  const size  = srcCanvas.width;
+  const ctx   = srcCanvas.getContext('2d');
+  const imgData = ctx.getImageData(0, 0, size, size);
+  const data  = imgData.data;
+
+  // Detect module size by scanning first row for color change
+  // qrcodejs uses a fixed quiet zone of 4 modules by default
+  // We detect module size by finding the first dark block
+  let moduleSize = 0;
+  for (let x = 0; x < size; x++) {
+    const idx = x * 4;
+    if (data[idx] < 128) {
+      // find end of this block
+      let ex = x;
+      while (ex < size && data[ex * 4] < 128) ex++;
+      moduleSize = ex - x;
+      break;
+    }
+  }
+  if (moduleSize < 1) moduleSize = Math.max(1, Math.round(size / 25));
+
+  const out   = document.createElement('canvas');
+  out.width   = size;
+  out.height  = size;
+  const oc    = out.getContext('2d');
+
+  // Fill background
+  oc.fillStyle = colorBack;
+  oc.fillRect(0, 0, size, size);
+
+  oc.fillStyle = colorFore;
+
+  const numModules = Math.round(size / moduleSize);
+
+  for (let row = 0; row < numModules; row++) {
+    for (let col = 0; col < numModules; col++) {
+      const px  = Math.round(col * moduleSize);
+      const py  = Math.round(row * moduleSize);
+      const idx = (py * size + px) * 4;
+      const isDark = data[idx] < 128;
+
+      if (!isDark) continue;
+
+      const x = col * moduleSize;
+      const y = row * moduleSize;
+      const s = moduleSize;
+      const pad = Math.max(1, s * 0.08);
+
+      switch (dotStyle) {
+        case 'square':
+          oc.fillRect(x, y, s, s);
+          break;
+
+        case 'rounded': {
+          const r = s * 0.35;
+          oc.beginPath();
+          oc.moveTo(x + pad + r, y + pad);
+          oc.lineTo(x + s - pad - r, y + pad);
+          oc.quadraticCurveTo(x + s - pad, y + pad, x + s - pad, y + pad + r);
+          oc.lineTo(x + s - pad, y + s - pad - r);
+          oc.quadraticCurveTo(x + s - pad, y + s - pad, x + s - pad - r, y + s - pad);
+          oc.lineTo(x + pad + r, y + s - pad);
+          oc.quadraticCurveTo(x + pad, y + s - pad, x + pad, y + s - pad - r);
+          oc.lineTo(x + pad, y + pad + r);
+          oc.quadraticCurveTo(x + pad, y + pad, x + pad + r, y + pad);
+          oc.closePath();
+          oc.fill();
+          break;
+        }
+
+        case 'circle': {
+          const cx = x + s / 2;
+          const cy = y + s / 2;
+          const rad = (s / 2) - pad;
+          oc.beginPath();
+          oc.arc(cx, cy, Math.max(rad, 0.5), 0, Math.PI * 2);
+          oc.fill();
+          break;
+        }
+      }
+    }
+  }
+  return out;
+}
+
+/* ─────────────────────────────────────────────
+   APPLY DOT STYLE AND DISPLAY
+───────────────────────────────────────────── */
+function applyDotStyleAndRender(srcCanvas, colorFore, colorBack) {
+  const styled = applyDotStyle(srcCanvas, colorFore, colorBack, currentDot);
+
+  // If logo is loaded, composite it
+  if (logoDataUrl) {
+    const size    = srcCanvas.width;
+    const composite = document.createElement('canvas');
+    composite.width  = size;
+    composite.height = size;
+    const cc = composite.getContext('2d');
+    cc.drawImage(styled, 0, 0);
+    const logoImg = new Image();
+    logoImg.onload = () => {
+      const logoSize = size * 0.22;
+      const lx = (size - logoSize) / 2;
+      const ly = (size - logoSize) / 2;
+      cc.fillStyle = colorBack;
+      cc.beginPath();
+      cc.roundRect(lx - 5, ly - 5, logoSize + 10, logoSize + 10, 8);
+      cc.fill();
+      cc.drawImage(logoImg, lx, ly, logoSize, logoSize);
+      storeAndDisplayCanvas(composite, srcCanvas, colorFore, colorBack);
+    };
+    logoImg.src = logoDataUrl;
+  } else {
+    storeAndDisplayCanvas(styled, srcCanvas, colorFore, colorBack);
+  }
+}
+
+/* ─────────────────────────────────────────────
+   STORE CANVAS REFERENCE & RENDER TO DOM
+───────────────────────────────────────────── */
+function storeAndDisplayCanvas(canvas, srcCanvas, colorFore, colorBack) {
+  // Attach metadata for dot-style re-renders
+  canvas._sourceCanvas = srcCanvas;
+  canvas._colorFore    = colorFore;
+  canvas._colorBack    = colorBack;
+
+  finalCanvas = canvas;
+
+  const dataUrl = canvas.toDataURL('image/png');
+
+  $('qrResult').innerHTML = `
+    <div id="qrcodeContainer">
+      <img src="${dataUrl}" alt="SSDK Custom QR Code" style="max-width:260px;">
+    </div>`;
+
+  // Update size info
+  const byteLen  = Math.round((dataUrl.length * 3) / 4);
+  const kb       = (byteLen / 1024).toFixed(1);
+  $('sizeInfo').textContent = `${canvas.width} × ${canvas.height} px | ~${kb} KB file size`;
+
+  $('exportRow').style.display = 'flex';
+  showStatus('✅ QR Code generated successfully!');
+}
+
+/* ─────────────────────────────────────────────
+   LOGO UPLOAD
+───────────────────────────────────────────── */
+$('btnUploadLogo').onclick = () => $('logoInput').click();
+$('logoInput').onchange = e => {
+  if (!e.target.files.length) return;
+  const file = e.target.files[0];
+  if (!file.type.startsWith('image/')) { alert('Please select a valid image file.'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    logoDataUrl = ev.target.result;
+    $('logoStatus').textContent = '📁 ' + file.name.substring(0, 18) + (file.name.length > 18 ? '…' : '');
+    $('logoStatus').style.color = 'var(--accent)';
+  };
+  reader.readAsDataURL(file);
+};
+
+/* ─────────────────────────────────────────────
+   GENERATE
+───────────────────────────────────────────── */
+$('btnGen').onclick = () => {
+  const data = buildData();
+  if (!data || data === '—') {
+    showStatus('Please fill in at least one field first.', true);
+    return;
+  }
+
+  showStatus('Generating QR code…');
+  $('scanResult').style.display = 'none';
+
+  const size         = parseInt($('qrSize').value) || 300;
+  const errorStr     = $('qrError').value;
+  const colorFore    = $('colorForeground').value;
+  const colorBack    = $('colorBackground').value;
+
+  // Map error level
+  let correctLevel = QRCode.CorrectLevel.H;
+  if (errorStr === 'L') correctLevel = QRCode.CorrectLevel.L;
+  if (errorStr === 'M') correctLevel = QRCode.CorrectLevel.M;
+  if (errorStr === 'Q') correctLevel = QRCode.CorrectLevel.Q;
+
+  // Clear qrcode div and regenerate
+  const qrDiv = $('qrcode');
+  qrDiv.innerHTML = '';
+
+  try {
+    new QRCode(qrDiv, {
+      text:         data,
+      width:        size,
+      height:       size,
+      colorDark:    colorFore,
+      colorLight:   colorBack,
+      correctLevel: correctLevel
+    });
+  } catch(e) {
+    showStatus('❌ QR generation failed: ' + e.message, true);
+    return;
+  }
+
+  setTimeout(() => {
+    const srcCanvas = qrDiv.querySelector('canvas');
+    if (!srcCanvas) {
+      showStatus('❌ Could not render QR canvas.', true);
+      return;
+    }
+    applyDotStyleAndRender(srcCanvas, colorFore, colorBack);
+
+    // After render, add to history (slight delay so finalCanvas is ready)
+    setTimeout(() => addToHistory(currentType, data), 50);
+  }, 120);
+};
+
+/* ─────────────────────────────────────────────
+   HISTORY
+───────────────────────────────────────────── */
+function addToHistory(type, data) {
+  if (!finalCanvas) return;
+  const thumb = finalCanvas.toDataURL('image/png');
+
+  // Deduplicate by data string
+  qrHistory = qrHistory.filter(h => h.data !== data);
+
+  qrHistory.unshift({ type, data, thumbUrl: thumb, label: data.substring(0, 60) });
+  if (qrHistory.length > 5) qrHistory.pop();
+
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = $('historyList');
+  list.innerHTML = '';
+  if (!qrHistory.length) return;
+
+  qrHistory.forEach((item, idx) => {
+    const el = document.createElement('div');
+    el.className = 'history-item';
+    el.innerHTML = `
+      <img class="history-thumb" src="${item.thumbUrl}" alt="QR thumbnail">
+      <div class="history-meta">
+        <div class="history-type">${item.type.toUpperCase()}</div>
+        <div class="history-text" title="${escHtml(item.data)}">${escHtml(item.label)}${item.data.length > 60 ? '…' : ''}</div>
+      </div>
+      <button class="history-del" title="Remove from history">✕</button>`;
+
+    // Restore on click (not the delete button)
+    el.querySelector('.history-meta').onclick = () => restoreFromHistory(item);
+    el.querySelector('.history-thumb').onclick = () => restoreFromHistory(item);
+    el.querySelector('.history-del').onclick   = () => {
+      qrHistory.splice(idx, 1);
+      renderHistory();
+    };
+    list.appendChild(el);
+  });
+}
+
+function restoreFromHistory(item) {
+  // Switch tab
+  const tabBtn = document.querySelector(`.qr-type-tab[data-type="${item.type}"]`);
+  if (tabBtn) tabBtn.click();
+
+  // Fill in data field depending on type
+  switch (item.type) {
+    case 'url':  $('url-url').value       = item.data; break;
+    case 'text': $('text-content').value  = item.data; break;
+    default:
+      // For structured types, just put the raw string in the preview
+      // and trigger generate directly since we can't reverse-parse easily
+      break;
+  }
+
+  buildData();
+  // Trigger generate
+  $('btnGen').click();
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ─────────────────────────────────────────────
+   SCAN TEST (jsQR)
+───────────────────────────────────────────── */
+$('btnTestScan').onclick = () => {
+  const resultEl = $('scanResult');
+  if (!finalCanvas) { resultEl.textContent = '⚠ No QR generated yet.'; resultEl.className = 'err'; resultEl.style.display = 'block'; return; }
+
+  // Use the source QR canvas (unmodified pixels) for reliable decoding
+  const src  = finalCanvas._sourceCanvas || finalCanvas;
+  const ctx  = src.getContext('2d');
+  const imgD = ctx.getImageData(0, 0, src.width, src.height);
+
+  try {
+    const code = jsQR(imgD.data, imgD.width, imgD.height, { inversionAttempts: 'dontInvert' });
+    if (code) {
+      resultEl.textContent = '✅ Decoded: ' + code.data;
+      resultEl.className   = 'ok';
+    } else {
+      resultEl.textContent = '⚠ jsQR could not decode this QR. Try higher error correction or simpler data.';
+      resultEl.className   = 'err';
+    }
+  } catch(e) {
+    resultEl.textContent = '❌ Scan error: ' + e.message;
+    resultEl.className   = 'err';
+  }
+  resultEl.style.display = 'block';
+};
+
+/* ─────────────────────────────────────────────
+   EXPORT: PNG DOWNLOAD
+───────────────────────────────────────────── */
+$('btnDownloadPng').onclick = () => {
+  if (!finalCanvas) return;
+  finalCanvas.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href     = url;
+    a.download = 'ssdk-qrcode.png';
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    showStatus('⬇ PNG downloaded!');
+  }, 'image/png');
+};
+
+/* ─────────────────────────────────────────────
+   EXPORT: COPY DATA URL
+───────────────────────────────────────────── */
+$('btnCopyDataUrl').onclick = async () => {
+  if (!finalCanvas) return;
+  try {
+    await navigator.clipboard.writeText(finalCanvas.toDataURL('image/png'));
+    showStatus('📋 Data URL copied to clipboard!');
+  } catch(e) {
+    showStatus('❌ Clipboard copy failed: ' + e.message, true);
+  }
+};
+
+/* ─────────────────────────────────────────────
+   EXPORT: SVG
+   Reads the styled canvas pixel data and builds
+   an SVG of <rect> elements per dark module
+───────────────────────────────────────────── */
+$('btnDownloadSvg').onclick = () => {
+  if (!finalCanvas) return;
+
+  const canvas = finalCanvas;
+  const size   = canvas.width;
+  const ctx    = canvas.getContext('2d');
+  const imgData = ctx.getImageData(0, 0, size, size);
+  const data   = imgData.data;
+
+  // Detect module size same way as dot renderer
+  let moduleSize = 0;
+  for (let x = 0; x < size; x++) {
+    const idx = x * 4;
+    if (data[idx] < 128) {
+      let ex = x;
+      while (ex < size && data[ex * 4] < 128) ex++;
+      moduleSize = ex - x;
+      break;
+    }
+  }
+  if (moduleSize < 1) moduleSize = Math.max(1, Math.round(size / 25));
+
+  const colorFore  = canvas._colorFore || '#000000';
+  const colorBack  = canvas._colorBack || '#ffffff';
+  const numModules = Math.round(size / moduleSize);
+  const ms         = moduleSize;
+
+  let rects = '';
+  for (let row = 0; row < numModules; row++) {
+    for (let col = 0; col < numModules; col++) {
+      const px  = Math.round(col * ms);
+      const py  = Math.round(row * ms);
+      const idx = (py * size + px) * 4;
+      if (data[idx] < 128) {
+        rects += `<rect x="${col * ms}" y="${row * ms}" width="${ms}" height="${ms}" fill="${colorFore}"/>`;
+      }
+    }
+  }
+
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <rect width="${size}" height="${size}" fill="${colorBack}"/>
+  ${rects}
+</svg>`;
+
+  const blob  = new Blob([svg], { type: 'image/svg+xml' });
+  const url   = URL.createObjectURL(blob);
+  const a     = document.createElement('a');
+  a.href      = url;
+  a.download  = 'ssdk-qrcode.svg';
+  document.body.appendChild(a);
+  a.click();
+  URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+  showStatus('🖊 SVG exported!');
+};
+
+/* ─────────────────────────────────────────────
+   CLEAR WORKSPACE
+───────────────────────────────────────────── */
+$('btnClear').onclick = () => {
+  // Reset all type-panel inputs
+  document.querySelectorAll('.field-input, .field-input-ta').forEach(el => { el.value = ''; });
+  $('wifi-security').value    = 'WPA';
+  $('wifi-hidden').checked    = false;
+  $('qrSize').value           = '300';
+  $('qrError').value          = 'H';
+  $('colorForeground').value  = '#000000';
+  $('colorBackground').value  = '#ffffff';
+
+  logoDataUrl = '';
+  finalCanvas = null;
+  $('logoInput').value   = '';
+  $('logoStatus').textContent = 'No logo selected';
+  $('logoStatus').style.color = 'var(--muted)';
+
+  $('qrResult').innerHTML    = '<p style="color:var(--muted);font-size:0.85rem;padding:30px 0 10px;">Fill in the fields on the left,<br>then hit <strong>Generate</strong>.</p>';
+  $('sizeInfo').textContent  = '';
+  $('exportRow').style.display = 'none';
+  $('scanResult').style.display = 'none';
+  $('statusMsg').style.display  = 'none';
+  $('dataPreviewBox').textContent = '—';
+  $('dataPreviewBox').style.color = 'var(--muted)';
+  $('qrcode').innerHTML = '';
+};
+
+/* ─────────────────────────────────────────────
+   FAQ ACCORDION
+───────────────────────────────────────────── */
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.onclick = () => q.parentElement.classList.toggle('open');
+});
+
+/* ─────────────────────────────────────────────
+   INITIAL DATA PREVIEW
+───────────────────────────────────────────── */
+buildData();
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

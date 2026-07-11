@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vitamin B12 Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze Vitamin B12 (cobalamin) levels online. Evaluate deficiency, borderline levels, normal range, and high levels with clinical insights.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+
+  <!-- html2canvas for PNG export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) { .lab-grid { grid-template-columns: 1fr; } }
+
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255,255,255,0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+
+    .input-wrapper { display: flex; flex-direction: column; gap: 4px; }
+    .input-wrapper label { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+    .input-wrapper input,
+    .input-wrapper select {
+      padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg3); color: var(--text); outline: none;
+      font-size: 0.9rem; transition: all 0.25s;
+    }
+    .input-wrapper input:focus,
+    .input-wrapper select:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--glow); }
+
+    .lang-toggle-container { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+    .lang-btn {
+      background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+      padding: 6px 14px; border-radius: 20px; cursor: pointer;
+      font-size: 0.8rem; font-weight: 700; transition: all 0.3s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 10px var(--glow); }
+
+    .results-display {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px; min-height: 400px;
+    }
+
+    .results-placeholder { text-align: center; padding: 80px 20px; color: var(--muted); }
+    .results-placeholder .icon { font-size: 3.5rem; margin-bottom: 12px; opacity: 0.5; display: block; }
+
+    .report-card { display: flex; flex-direction: column; gap: 16px; }
+
+    .patient-summary {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px;
+      display: flex; justify-content: space-between; font-size: 0.85rem;
+    }
+    .patient-summary span strong { color: var(--accent); }
+
+    .gauge-container {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; text-align: center; position: relative;
+    }
+    .val-large { font-size: 3.2rem; font-weight: 900; line-height: 1.1; margin-bottom: 4px; }
+    .status-label { font-weight: 800; font-size: 1.1rem; text-transform: uppercase; margin-bottom: 16px; }
+
+    .range-slider-bar {
+      height: 16px; border-radius: 8px;
+      background: linear-gradient(to right,
+        var(--critical-color) 0%,
+        var(--high-color) 25%,
+        var(--normal-color) 60%,
+        var(--low-color) 100%
+      );
+      position: relative; margin-bottom: 10px;
+    }
+    .range-pointer {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #fff; border: 3px solid var(--bg1);
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+    .range-ticks { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); font-weight: 700; }
+
+    .insight-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-top: 14px;
+    }
+    .insight-card h5 { font-size: 0.95rem; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .insight-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+    .insight-card ul { margin-left: 18px; font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+
+    .history-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 16px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: var(--bg3); border-radius: 6px;
+      font-size: 0.75rem; border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245,158,11,0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px; padding: 14px; margin-top: 16px;
+      font-size: 0.8rem; color: #fbbf24; line-height: 1.5;
+    }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding-top: 0 !important; }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon { display: none !important; }
+      .results-display { border: none !important; background: #fff !important; color: #000 !important; min-height: auto !important; padding: 0 !important; }
+      .gauge-container, .insight-card { border: 1px solid #ddd !important; background: #fff !important; color: #000 !important; }
+      .lab-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumb -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Vitamin B12 Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze Vitamin B12 (cobalamin) levels to evaluate red blood cell health, nervous system function, and deficiency risks.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Tool Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Vitamin B12 Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="pgml" selected>pg/mL</option>
+                <option value="pmoll">pmol/L</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label for="valB12" id="inputLabel" data-translate="labelB12">Vitamin B12 Value (pg/mL)</label>
+              <input type="number" step="1" id="valB12" placeholder="e.g. 350" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info note -->
+        <div style="font-size:0.78rem; color:var(--muted); padding:8px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:14px; line-height:1.5;">
+          <strong style="color:var(--text);">ℹ️ Note:</strong> <span data-translate="unitNote">1 pg/mL = 0.738 pmol/L. Reference ranges: Deficient &lt; 200, Borderline 200–300, Normal 300–900, High &gt; 900 pg/mL.</span>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width:100%; justify-content:center;" onclick="analyzeB12()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Vitamin B12</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧬</span>
+          <h4 data-translate="placeholderTitle">Analysis Pending</h4>
+          <p data-translate="placeholderDesc">Enter your Vitamin B12 level and click Analyze to view cobalamin diagnostics.</p>
+        </div>
+
+        <div class="report-card" id="reportCardSec" style="display:none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Vitamin B12 Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" title="Copy" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" title="Print" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" title="Save Image" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Vitamin B12 (Cobalamin)</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resB12Val">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">pg/mL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left:50%;"></div>
+            </div>
+            <div class="range-ticks">
+              <span id="tickDeficient" style="color:var(--critical-color);">&lt; 200 Deficient</span>
+              <span id="tickBorderline" style="color:var(--high-color);">200 – 300</span>
+              <span id="tickNormal" style="color:var(--normal-color);">300 – 900 Normal</span>
+              <span id="tickHigh" style="color:var(--low-color);">&gt; 900 High</span>
+            </div>
+          </div>
+
+          <!-- Dynamic insight section -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Vitamin B12</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">Why is Vitamin B12 critical?</strong><br><span data-translate="eduA1">Vitamin B12 is essential for DNA synthesis, red blood cell production, and neurological development. It maintains the myelin sheath that covers nerves, and deficiency can lead to irreversible nerve damage if untreated.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is Pernicious Anemia?</strong><br><span data-translate="eduA2">Pernicious anemia is an autoimmune condition where the stomach's parietal cells or intrinsic factor (essential for B12 absorption in the small intestine) are destroyed by antibodies. It leads to severe B12 deficiency despite high dietary intake.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What dietary factors affect B12?</strong><br><span data-translate="eduA3">Vitamin B12 is primarily found in animal products (meat, fish, eggs, dairy). Strict vegetarians and vegans are at high risk of dietary deficiency and should consume fortified foods or daily supplements. Metformin and acid-blockers (PPIs) also reduce absorption.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Vitamin B12 Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQ Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Medical Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for Vitamin B12 evaluation and treatment decisions.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical &amp; Lab Tools",
+      toolTitle: "Vitamin B12 Analyzer",
+      toolDesc: "Analyze Vitamin B12 (cobalamin) levels to evaluate red blood cell health, nervous system function, and deficiency risks.",
+      inputsTitle: "🧬 Vitamin B12 Parameters",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      labelB12: "Vitamin B12 Value",
+      unitNote: "1 pg/mL = 0.738 pmol/L. Reference ranges: Deficient < 200, Borderline 200–300, Normal 300–900, High > 900 pg/mL.",
+      btnAnalyze: "Analyze Vitamin B12",
+      placeholderTitle: "Analysis Pending",
+      placeholderDesc: "Enter your Vitamin B12 level and click Analyze to view cobalamin diagnostics.",
+      reportTitle: "🔬 Vitamin B12 Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Vitamin B12 Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for Vitamin B12 evaluation and treatment decisions.",
+      titleEdu: "📚 Clinical Pathology Notes: Vitamin B12",
+      eduQ1: "Why is Vitamin B12 critical?",
+      eduA1: "Vitamin B12 is essential for DNA synthesis, red blood cell production, and neurological development. It maintains the myelin sheath that covers nerves, and deficiency can lead to irreversible nerve damage if untreated.",
+      eduQ2: "What is Pernicious Anemia?",
+      eduA2: "Pernicious anemia is an autoimmune condition where the stomach's parietal cells or intrinsic factor (essential for B12 absorption in the small intestine) are destroyed by antibodies. It leads to severe B12 deficiency despite high dietary intake.",
+      eduQ3: "What dietary factors affect B12?",
+      eduA3: "Vitamin B12 is primarily found in animal products (meat, fish, eggs, dairy). Strict vegetarians and vegans are at high risk of dietary deficiency and should consume fortified foods or daily supplements. Metformin and acid-blockers (PPIs) also reduce absorption.",
+      badgeDeficient: "Deficient (< 200 pg/mL)",
+      badgeBorderline: "Borderline (200 - 300 pg/mL)",
+      badgeNormal: "Normal (300 - 900 pg/mL)",
+      badgeHigh: "High (> 900 pg/mL)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Management Tips",
+      titleConsult: "When to See a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ভিটামিন বি১২ বিশ্লেষক",
+      toolDesc: "লোহিত রক্তকণিকার স্বাস্থ্য, স্নায়ুতন্ত্রের কার্যকারিতা এবং ঘাটতির ঝুঁকি মূল্যায়নে ভিটামিন বি১২ (কোবালামিন) মাত্রা বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 ভিটামিন বি১২ ইনপুট",
+      clearBtn: "মুছুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelB12: "ভিটামিন বি১২ মান",
+      unitNote: "১ pg/mL = ০.৭৩৮ pmol/L। রেফারেন্স পরিসীমা: ঘাটতি < ২০০, সীমানাবর্তী ২০০-৩০০, স্বাভাবিক ৩০০-৯০০, উচ্চ > ৯০০ pg/mL।",
+      btnAnalyze: "বি১২ বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ অমীমাংসিত",
+      placeholderDesc: "আপনার ভিটামিন বি১২ মান লিখুন এবং কোবালামিন বিশ্লেষণ দেখতে বিশ্লেষণ বাটনে ক্লিক করুন।",
+      reportTitle: "🔬 ভিটামিন বি১২ রিপোর্ট বিশ্লেষণ",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক ভিটামিন বি১২ বিশ্লেষণ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড নেই।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য অবশ্যই ডাক্তারের পরামর্শ নিন।",
+      titleEdu: "📚 ক্লিনিক্যাল নোটস: ভিটামিন বি১২",
+      eduQ1: "ভিটামিন বি১২ কেন গুরুত্বপূর্ণ?",
+      eduA1: "ভিটামিন বি১২ ডিএনএ সংশ্লেষণ, লোহিত রক্তকণিকা গঠন এবং স্নায়ুতন্ত্রের স্বাস্থ্যের জন্য অপরিহার্য। এটি স্নায়ুর চারপাশের সুরক্ষামূলক আবরণ মায়েলিন শিথ বজায় রাখে।",
+      eduQ2: "পার্নিশিয়াস অ্যানিমিয়া কী?",
+      eduA2: "এটি একটি অটোইমিউন রোগ যাতে পাকস্থলীর প্যারাইটাল কোষ বা ইনট্রিনসিক ফ্যাক্টর (যা ভিটামিন বি১২ শোষণের জন্য প্রয়োজন) অ্যান্টিবডির মাধ্যমে ধ্বংস হয়ে যায়। এর ফলে শরীরে তীব্র বি১২ ঘাটতি দেখা দেয়।",
+      eduQ3: "খাদ্যাভ্যাসের কোন উপাদানগুলো বি১২-কে প্রভাবিত করে?",
+      eduA3: "ভিটামিন বি১২ সাধারণত প্রাণীজ খাবারে (মাংস, মাছ, ডিম, দুধ) পাওয়া যায়। নিরামিষাশীদের মধ্যে এর ঘাটতি দেখা দেওয়ার ঝুঁকি বেশি থাকে। এছাড়া মেটফরমিন জাতীয় ওষুধ এবং এসিডিটির ওষুধ শোষণ কমিয়ে দিতে পারে।",
+      badgeDeficient: "ঘাটতি / তীব্র অভাব রয়েছে (< ২০০ pg/mL)",
+      badgeBorderline: "সীমানাবর্তী / সামান্য কম (২০০ - ৩০০ pg/mL)",
+      badgeNormal: "স্বাভাবিক / সন্তোষজনক (৩০০ - ৯০০ pg/mL)",
+      badgeHigh: "উচ্চ মাত্রা (> ৯০০ pg/mL)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "ব্যবস্থাপনা পরামর্শ",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "विटामिन बी12 विश्लेषक",
+      toolDesc: "लाल रक्त कोशिका स्वास्थ्य, तंत्रिका तंत्र कार्य और कमी के जोखिमों का मूल्यांकन करने के लिए विटामिन बी 12 (कोबालामिन) के स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬विटामिन बी12 पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      labelB12: "विटामिन बी12 मूल्य",
+      unitNote: "1 पीजी/एमएल = 0.738 pmol/L. संदर्भ श्रेणियाँ: कमी <200, सीमा रेखा 200-300, सामान्य 300-900, उच्च > 900 पीजी/एमएल।",
+      btnAnalyze: "विटामिन बी12 का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण लंबित",
+      placeholderDesc: "अपना विटामिन बी12 स्तर दर्ज करें और कोबालामिन निदान देखने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬विटामिन बी12 डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हाल की विटामिन बी12 व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। विटामिन बी12 के मूल्यांकन और उपचार निर्णयों के लिए हमेशा एक योग्य चिकित्सक से परामर्श लें।",
+      titleEdu: "📚 क्लिनिकल पैथोलॉजी नोट्स: विटामिन बी12",
+      eduQ1: "विटामिन बी12 महत्वपूर्ण क्यों है?",
+      eduA1: "विटामिन बी12 डीएनए संश्लेषण, लाल रक्त कोशिका उत्पादन और तंत्रिका संबंधी विकास के लिए आवश्यक है। यह तंत्रिकाओं को ढकने वाले माइलिन आवरण को बनाए रखता है, और यदि इलाज न किया जाए तो इसकी कमी से अपरिवर्तनीय तंत्रिका क्षति हो सकती है।",
+      eduQ2: "घातक रक्ताल्पता क्या है?",
+      eduA2: "पर्निशियस एनीमिया एक ऑटोइम्यून स्थिति है जहां पेट की पार्श्विका कोशिकाएं या आंतरिक कारक (छोटी आंत में बी 12 अवशोषण के लिए आवश्यक) एंटीबॉडी द्वारा नष्ट हो जाते हैं। उच्च आहार सेवन के बावजूद यह गंभीर बी12 की कमी का कारण बनता है।",
+      eduQ3: "कौन से आहार संबंधी कारक बी12 को प्रभावित करते हैं?",
+      eduA3: "विटामिन बी12 मुख्य रूप से पशु उत्पादों (मांस, मछली, अंडे, डेयरी) में पाया जाता है। सख्त शाकाहारी और शाकाहारी लोगों में आहार की कमी का खतरा अधिक होता है और उन्हें गरिष्ठ खाद्य पदार्थ या दैनिक पूरक का सेवन करना चाहिए। मेटफॉर्मिन और एसिड-ब्लॉकर्स (पीपीआई) भी अवशोषण को कम करते हैं।",
+      badgeDeficient: "कमी (<200 पीजी/एमएल)",
+      badgeBorderline: "सीमा रेखा (200 - 300 पीजी/एमएल)",
+      badgeNormal: "सामान्य (300 - 900 पीजी/एमएल)",
+      badgeHigh: "उच्च (> 900 पीजी/एमएल)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "प्रबंधन युक्तियाँ",
+      titleConsult: "डॉक्टर से कब म��लना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What are the common symptoms of Vitamin B12 deficiency?", a: "Symptoms include fatigue, muscle weakness, numbness or tingling in the hands and feet (pins and needles), memory loss, balance problems, and a smooth, red tongue." },
+      { q: "Who is at risk of Vitamin B12 deficiency?", a: "Vegans and strict vegetarians, older adults, individuals who have undergone gastric bypass surgery, and patients with celiac disease or Crohn's disease." },
+      { q: "How do I convert Vitamin B12 units?", a: "Multiply pg/mL by 0.738 to obtain pmol/L. Conversely, divide pmol/L by 0.738 to get pg/mL." },
+      { q: "What does elevated Vitamin B12 indicate?", a: "High B12 is often due to supplementation. Rarely, it can relate to serious liver dysfunction, kidney disease, or hematological disorders." }
+    ],
+    bn: [
+      { q: "ভিটামিন বি১২ ঘাটতির সাধারণ লক্ষণগুলো কী?", a: "ক্লান্তি, পেশী দুর্বলতা, হাত-পায়ে অসাড়তা বা ঝিনঝিন করা, স্মৃতিশক্তি কমে যাওয়া, ভারসাম্য বজায় রাখার সমস্যা এবং জিহ্বা লাল ও মসৃণ হওয়া।" },
+      { q: "ভিটামিন বি১২ ঘাটতির ঝুঁকিতে কারা আছেন?", a: "সম্পূর্ণ নিরামিষাশী ব্যক্তিরা, প্রবীণ ব্যক্তিরা, যাদের পাকস্থলী বা অন্ত্রের অস্ত্রোপচার হয়েছে এবং সিলিয়াক বা ক্রোহনস রোগে আক্রান্ত রোগীরা।" },
+      { q: "ভিটামিন বি১২ একক কীভাবে পরিবর্তন করব?", a: "pg/mL-কে ০.৭৩৮ দ্বারা গুণ করলে pmol/L পাওয়া যায়। পক্ষান্তরে, pmol/L-কে ০.৭৩৮ দ্বারা ভাগ করলে pg/mL পাওয়া যায়।" },
+      { q: "উচ্চ ভিটামিন বি১২ কী নির্দেশ করে?", a: "উচ্চ মাত্রা মূলত অতিরিক্ত সাপ্লিমেন্ট গ্রহণের ফলে হয়। তবে বিরল ক্ষেত্রে এটি লিভারের সমস্যা বা রক্তজনিত জটিলতার সূচক হতে পারে।" }
+    ],
+    hi: [
+      { q: "विटामिन बी12 की कमी के सामान्य लक्षण क्या हैं?", a: "लक्षणों में थकान, मांसपेशियों में कमजोरी, हाथों और पैरों में सुन्नता या झुनझुनी (पिन और सुई), याददाश्त में कमी, संतुलन की समस्याएं और चिकनी, लाल जीभ शामिल हैं।" },
+      { q: "विटामिन बी12 की कमी का खतरा किसे है?", a: "शाकाहारी और सख्त शाकाहारी, वृद्ध वयस्क, ऐसे व्यक्ति जिनकी गैस्ट्रिक बाईपास सर्जरी हुई है, और सीलिएक रोग या क्रोहन रोग के रोगी।" },
+      { q: "मैं विटामिन बी12 इकाइयों को कैसे परिवर्तित करूं?", a: "pmol/L प्राप्त करने के लिए pg/mL को 0.738 से गुणा करें। इसके विपरीत, pg/mL प्राप्त करने के लिए pmol/L को 0.738 से विभाजित करें।" },
+      { q: "बढ़ा हुआ विटामिन बी12 क्या दर्शाता है?", a: "उच्च बी12 अक्सर पूरकता के कारण होता है। शायद ही, यह गंभीर यकृत रोग, गुर्दे की बीमारी, या रुधिर संबंधी विकारों से संबंधित हो सकता है।" }
+    ]
+  };
+
+  const insights = {
+    en: {
+      deficient: {
+        desc: "Your Vitamin B12 level is critically low (< 200 pg/mL). This severe deficiency can lead to megaloblastic anemia and progressive, irreversible neurological dysfunction if left untreated.",
+        factors: ["Pernicious anemia (autoimmune attack on gastric parietal cells)", "Strict vegan or vegetarian diet without supplementation", "Gastrectomy or gastric bypass surgery", "Malabsorption (Crohn's, celiac disease, or chronic gastritis)", "Prolonged use of Metformin or proton pump inhibitors (PPIs)"],
+        symptoms: ["Severe fatigue, shortness of breath, and pale skin", "Paresthesia (numbness or tingling sensation in hands and feet)", "Cognitive decline, confusion, or forgetfulness", "Loss of balance and coordination", "Sore, swollen, or unusually red tongue (glossitis)"],
+        prevention: ["Administer intramuscular Vitamin B12 injections (cyanocobalamin) under physician prescription", "Take high-dose oral Vitamin B12 supplements (1,000–2,000 mcg daily) if absorption is intact", "Increase intake of fortified breakfast cereals and animal protein"],
+        consult: "⚠️ URGENT: Consult a physician or neurologist immediately. Early intervention is critical to prevent irreversible spinal cord demyelination (subacute combined degeneration)."
+      },
+      borderline: {
+        desc: "Your Vitamin B12 level is in the borderline zone (200 – 300 pg/mL). While not overtly deficient, some individuals exhibit functional tissue-level B12 deficiency at this stage.",
+        factors: ["Suboptimal dietary intake", "Early stages of malabsorption", "Increased metabolic demands"],
+        symptoms: ["Mild unexplained fatigue", "Subtle memory glitches or low focus", "Intermittent mild tingling in fingers or toes"],
+        prevention: ["Integrate B12-rich foods (eggs, cheese, fortified milk, beef)", "Consider a daily oral methylcobalamin supplement (250–500 mcg)", "Perform a secondary test for Methylmalonic Acid (MMA) or Homocysteine to check for cellular deficiency"],
+        consult: "Discuss with your doctor. An MMA test can confirm if you need active supplementation."
+      },
+      normal: {
+        desc: "Your Vitamin B12 level is within the healthy reference range (300 – 900 pg/mL). This indicates adequate stores to support red blood cell maturation and nervous system integrity.",
+        factors: ["Balanced diet containing animal products or regular maintenance supplementation", "Healthy stomach and ileal absorption mechanisms"],
+        symptoms: ["No Vitamin B12 deficiency symptoms expected."],
+        prevention: ["Continue your normal dietary intake", "Routine monitoring every 1–2 years if in high-risk categories (vegans, elderly)"],
+        consult: "No immediate clinical treatment required. Continue healthy lifestyle habits."
+      },
+      high: {
+        desc: "Your Vitamin B12 level is elevated (> 900 pg/mL). While excess dietary B12 is excreted in urine, extremely high serum levels require clinical review.",
+        factors: ["High-dose supplement use (multivitamins or B-complex shots)", "Liver diseases (causing release of stored cobalamin)", "Renal impairment (reduced excretion)", "Myeloproliferative disorders (rare hematological issues)"],
+        symptoms: ["Often asymptomatic, though skin flushing or acne can sometimes occur with massive supplement doses."],
+        prevention: ["Discontinue optional Vitamin B12 supplements or reduce the dosage", "Review current medications and supplement ingredients with your physician"],
+        consult: "Consult your doctor. If you are not taking B12 supplements, they may evaluate liver enzymes and complete blood counts (CBC) to check for underlying conditions."
+      }
+    },
+    bn: {
+      deficient: {
+        desc: "আপনার ভিটামিন বি১২ এর স্তর অত্যন্ত কম (< ২০০ pg/mL)। এই অভাব লোহিত রক্তকণিকা পরিপক্বতা ব্যাহত করতে পারে এবং স্থায়ী স্নায়বিক ক্ষতির কারণ হতে পারে।",
+        factors: ["পার্নিশিয়াস অ্যানিমিয়া (ইনট্রিনসিক ফ্যাক্টরের অভাব)", "সাপ্লিমেন্ট ছাড়া কঠোর নিরামিষ আহার", "পাকস্থলী অপসারণ বা বাইপাস সার্জারি", "অন্ত্রের শোষণ ক্ষমতা ব্যাহত হওয়া (যেমন সিলিয়াক রোগ)", "মেটফরমিন বা গ্যাসের ওষুধের দীর্ঘমেয়াদী ব্যবহার"],
+        symptoms: ["তীব্র ক্লান্তি, শ্বাসকষ্ট এবং ফ্যাকাশে চামড়া", "হাত ও পায়ে অবশ ভাব বা সুই ফোটার মতো অনুভূতি", "স্মৃতিশক্তি হ্রাস পাওয়া, মনোযোগে তীব্র ঘাটতি", "হাঁটার সময় ভারসাম্য বজায় রাখতে সমস্যা", "জিহ্বায় প্রদাহ ও লালচে ভাব"],
+        prevention: ["চিকিৎসকের পরামর্শ অনুযায়ী পেশীতে ভিটামিন বি১২ ইনজেকশন গ্রহণ করুন", "যদি অন্ত্র স্বাভাবিক থাকে তবে উচ্চ মাত্রার মুখের ওষুধ (যেমন ১০০০-২০০০ মাইক্রোগ্রাম) খান", "ভিটামিন বি১২ সমৃদ্ধ ফর্টিফাইড খাবার খান"],
+        consult: "⚠️ জরুরি: অবিলম্বে ডাক্তারের সাথে দেখা করুন। স্নায়ুর স্থায়ী ক্ষতি এড়াতে দ্রুত চিকিৎসা শুরু করা আবশ্যক।"
+      },
+      borderline: {
+        desc: "আপনার ভিটামিন বি১২ এর স্তর সীমানাবর্তী জোনে রয়েছে (২০০ – ৩০০ pg/mL)। এটি তীব্র ঘাটতি না হলেও কারো কারো ক্ষেত্রে কোষীয় পর্যায়ে বি১২ এর অভাব দেখা দিতে পারে।",
+        factors: ["খাদ্যাভ্যাসে প্রয়োজনীয় পুষ্টির অভাব", "শোষণ ক্ষমতার প্রাথমিক দুর্বলতা"],
+        symptoms: ["অকারণ ক্লান্তি ও অলসতা", "সামান্য ভুলে যাওয়া বা মানসিক অবসাদ", "মাঝে মাঝে হাত বা পায়ের আঙুল ঝিনঝিন করা"],
+        prevention: ["ভিটামিন বি১২ সমৃদ্ধ খাবার (ডিম, পনির, গরুর মাংস, ফর্টিফাইড দুধ) বেশি খান", "প্রতিদিন ২৫০-৫০০ মাইক্রোগ্রাম মুখে খাওয়ার সাপ্লিমেন্ট শুরু করার কথা ভাবুন", "কোষীয় অভাব নিশ্চিত হতে রক্তে MMA বা হোমোসিস্টিন পরীক্ষা করুন"],
+        consult: "ডাক্তারের পরামর্শ নিন। তিনি কোষের আসল অবস্থা বুঝতে MMA টেস্ট করার পরামর্শ দিতে পারেন।"
+      },
+      normal: {
+        desc: "আপনার ভিটামিন বি১২ এর স্তর স্বাভাবিক রয়েছে (৩০০ – ৯০০ pg/mL)। এর মানে আপনার শরীরে পর্যাপ্ত কোবালামিন জমা রয়েছে যা রক্ত উৎপাদন ও স্নায়ুর সুরক্ষার জন্য উপযুক্ত।",
+        factors: ["সুষম খাদ্য গ্রহণ", "পাকস্থলী ও অন্ত্রের স্বাভাবিক শোষণ ক্ষমতা"],
+        symptoms: ["ভিটামিন বি১২ এর ঘাটতিজনিত কোনো লক্ষণ নেই।"],
+        prevention: ["বর্তমান খাদ্যাভ্যাস বজায় রাখুন", "নিরামিষাশী বা প্রবীণ হলে প্রতি ১-২ বছর পর রুটিন পরীক্ষা করুন"],
+        consult: "কোনো চিকিৎসার প্রয়োজন নেই। সাধারণ স্বাস্থ্যবিধি মেনে চলুন।"
+      },
+      high: {
+        desc: "আপনার ভিটামিন বি১২ এর স্তর স্বাভাবিকের চেয়ে বেশি (> ৯০০ pg/mL)। সাধারণত সাপ্লিমেন্ট নেওয়ার ফলে এটি বৃদ্ধি পায়, তবে সাপ্লিমেন্ট না নিয়ে থাকলে ডাক্তার দেখানো উচিত।",
+        factors: ["উচ্চ মাত্রায় বি১২ সাপ্লিমেন্ট বা ইনজেকশন গ্রহণ", "লিভারের সমস্যা (জমা থাকা হরমোন রক্তে মিশে যাওয়া)", "কিডনির কার্যকারিতা হ্রাস", "রক্তের বিশেষ রোগসমূহ (বিরল)"],
+        symptoms: ["সাধারণত কোনো লক্ষণ থাকে না, তবে বেশি সাপ্লিমেন্ট খেলে ত্বকে র্যাশ হতে পারে।"],
+        prevention: ["চিকিৎসকের নির্দেশ ছাড়া সাপ্লিমেন্ট বা বি-কমপ্লেক্স খাওয়া বন্ধ রাখুন", "আপনার প্রেসক্রিপশনের ওষুধগুলো পুনরায় পরীক্ষা করান"],
+        consult: "চিকিৎসকের পরামর্শ নিন। যদি আপনি কোনো সাপ্লিমেন্ট না খেয়ে থাকেন, তবে লিভার ও রক্তের সাধারণ পরীক্ষা করানো প্রয়োজন।"
+      }
+    },
+    hi: {
+      deficient: {
+        desc: "आपका विटामिन बी12 स्तर गंभीर रूप से कम है (<200 पीजी/एमएल)। यदि उपचार न किया जाए तो इस गंभीर कमी से मेगालोब्लास्टिक एनीमिया और प्रगतिशील, अपरिवर्तनीय न्यूरोलॉजिकल डिसफंक्शन हो सकता है।",
+        factors: ["घातक रक्ताल्पता (गैस्ट्रिक पार्श्विका कोशिकाओं पर ऑटोइम्यून हमला)", "पूरकता के बिना सख्त शाकाहारी या शाकाहारी आहार", "गैस्ट्रेक्टोमी या गैस्ट्रिक बाईपास सर्जरी", "कुअवशोषण (क्रोहन, सीलिएक रोग, या क्रोनिक गैस्ट्राइटिस)", "मेटफॉर्मिन या प्रोटॉन पंप अवरोधक (पीपीआई) का लंबे समय तक उपयोग"],
+        symptoms: ["गंभीर थकान, सांस लेने में तकलीफ और पीली त्वचा", "पेरेस्टेसिया (हाथों और पैरों में सुन्नता या झुनझुनी सनसनी)", "संज्ञानात्मक गिरावट, भ्रम, या भूलने की बीमारी", "संतुलन और समन्वय की हानि", "पीड़ा��ायक, सूजी हुई या असामान्य रूप से लाल जीभ (ग्लोसाइटिस)"],
+        prevention: ["चिकित्सक के परामर्श के तहत इंट्रामस्क्युलर विटामिन बी12 इंजेक्शन (सायनोकोबालामिन) दें", "यदि अवशोषण बरकरार है तो उच्च खुराक मौखिक विटामिन बी 12 की खुराक (प्रतिदिन 1,000-2,000 एमसीजी) लें", "गरिष्ठ नाश्ता अनाज और पशु प्रोटीन का सेवन बढ़ाएँ"],
+        consult: "⚠️ अत्यावश्यक: तुरंत किसी चिकित्सक या न्यूरोलॉजिस्ट से परामर्श लें। अपरिवर्तनीय रीढ़ की हड्डी के विघटन (सब्स्यूट्यूट संयुक्त अध: पतन) को रोकने के लिए प्रारंभिक हस्तक्षेप महत्वपूर्ण है।"
+      },
+      borderline: {
+        desc: "आपका विटामिन बी12 स्तर सीमा रेखा क्षेत्र (200 - 300 पीजी/एमएल) में है। हालांकि स्पष्ट रूप से कमी नहीं है, कुछ व्यक्तियों में इस स्तर पर कार्यात्मक ऊतक-स्तर बी12 की कमी प्रदर्शित होती है।",
+        factors: ["इष्टतम आहार सेवन नहीं", "कुअवशोषण की प्रारंभिक अवस्था", "चयापचय संबंधी माँगों में वृद्धि"],
+        symptoms: ["हल्की अस्पष्ट थकान", "सूक्ष्म स्मृति गड़बड़ियाँ या कम फोकस", "उंगलियों या पैर की उंगलियों में रुक-रुक कर हल्की झुनझुनी होना"],
+        prevention: ["बी12 से भरपूर खाद्य पदार्थ (अंडे, पनीर, फोर्टिफाइड दूध, बीफ) शामिल करें", "दैनिक मौखिक मिथाइलकोबालामिन अनुपूरक (250-500 एमसीजी) पर विचार करें", "सेलुलर कमी की जांच के लिए मिथाइलमेलोनिक एसिड (एमएमए) या होमोसिस्टीन के लिए एक माध्यमिक परीक्षण करें"],
+        consult: "अपने डॉक्टर से चर्चा करें. एमएमए परीक्षण यह पुष्टि कर सकता है कि आपको सक्रिय पूरकता की आवश्यकता है या नहीं।"
+      },
+      normal: {
+        desc: "आपका विटामिन बी12 स्तर स्वस्थ संदर्भ सीमा (300 - 900 पीजी/एमएल) के भीतर है। यह लाल रक्त कोशिका परिपक्वता और तंत्रिका तंत्र अखंडता का समर्थन करने के लिए पर्याप्त भंडार को इंगित करता है।",
+        factors: ["पशु उत्पाद युक्त संतुलित आहार या नियमित रखरखाव अनुपूरक", "स्वस्थ पेट और इलियल अवशोषण तंत्र"],
+        symptoms: ["विटामिन बी12 की कमी के कोई लक्षण अपेक्षित नहीं हैं।"],
+        prevention: ["अपना सामान्य आहार सेवन जारी रखें", "यदि उच्च जोखिम वाली श्रेणियों (शाकाहारी, बुजुर्ग) में हैं तो हर 1-2 साल में नियमित निगरानी"],
+        consult: "तत्काल चिकित्सीय उपचार की आवश्यकता नहीं है। स्वस्थ जीवनशैली की आदतें जारी रखें।"
+      },
+      high: {
+        desc: "आपका विटामिन बी12 स्तर ऊंचा (>900 पीजी/एमएल) है। जबकि अतिरिक्त आहार बी12 मूत्र में उत्सर्जित होता है, अत्यधिक उच्च सीरम स्तर के लिए नैदानिक ​​​​समीक्षा की आवश्यकता होती है।",
+        factors: ["उच्च खुराक वाले पूरक का उपयोग (मल्टीविटामिन या बी-कॉम्प्लेक्स शॉट्���)", "जिगर की बीमारियाँ (संग्रहीत कोबालामिन के स्राव के कारण)", "गुर्दे की हानि (उत्सर्जन में कमी)", "मायलोप्रोलिफेरेटिव विकार (दुर्लभ हेमटोलॉजिकल मुद्दे)"],
+        symptoms: ["अक्सर लक्षणहीन, हालांकि बड़े पैम���ने पर पूरक खुराक के साथ कभी-कभी त्वचा में लाली या मुँहासे हो सकते हैं।"],
+        prevention: ["वैकल्पिक विटामिन बी12 की खुराक बंद करें या खुराक कम करें", "अपने चिकित्सक से वर्तमान दवाओं और पूरक सामग्रियों की समीक्षा करें"],
+        consult: "अपने डॉक्टर से सलाह लें. यदि आप बी12 की खुराक नहीं ले रहे हैं, तो वे अंतर्निहित स्थितियों की जांच के लिए लीवर एंजाइम और पूर्ण रक्त गणना (सीबीसी) का मूल्यांकन कर सकते हैं।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-b12-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "pgml";
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    const btn = document.getElementById("langToggleBtn");
+    const finalFlag = lang === "bn" ? '🇬🇧' : '🇧🇩';
+    const finalLabel = lang === "bn" ? 'English' : 'Bengali';
+    if (btn) btn.innerHTML = `${finalFlag} <span>${finalLabel}</span>`;
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    if (activeReportData) updateReportDisplay();
+  }
+
+  function toggleLanguage() { setLanguage(currentLang === "en" ? "bn" : "en"); }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const label = document.getElementById("inputLabel");
+    const unit = currentUnit === "pgml" ? "pg/mL" : "pmol/L";
+    label.textContent = (currentLang === "en" ? "Vitamin B12 Value" : "ভিটামিন বি১২ মান") + " (" + unit + ")";
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach(faq => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `<div class="faq-q">${faq.q}<span>＋</span></div><div class="faq-a">${faq.a}</div>`;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "300px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valB12").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function getStatusFromB12(valPgMl) {
+    if (valPgMl < 200) return { key: "deficient", badge: "badgeDeficient", color: "critical" };
+    if (valPgMl < 300) return { key: "borderline", badge: "badgeBorderline", color: "high" };
+    if (valPgMl <= 900) return { key: "normal", badge: "badgeNormal", color: "normal" };
+    return { key: "high", badge: "badgeHigh", color: "low" };
+  }
+
+  function calcPointer(valPgMl) {
+    if (valPgMl <= 0) return 5;
+    if (valPgMl < 200) return 5 + (valPgMl / 200) * 25; // 5-30
+    if (valPgMl < 300) return 30 + ((valPgMl - 200) / 100) * 20; // 30-50
+    if (valPgMl <= 900) return 50 + ((valPgMl - 300) / 600) * 30; // 50-80
+    return Math.min(95, 80 + ((valPgMl - 900) / 600) * 15); // 80-95
+  }
+
+  function analyzeB12() {
+    const rawVal = parseFloat(document.getElementById("valB12").value);
+    if (isNaN(rawVal) || rawVal < 0) {
+      alert(currentLang === "en" ? "Please enter a valid Vitamin B12 value." : "দয়া করে সঠিক ভিটামিন বি১২ মান লিখুন।");
+      return;
+    }
+
+    let valPgMl = rawVal;
+    let valPmolL = rawVal;
+
+    if (currentUnit === "pmoll") {
+      valPgMl = rawVal / 0.738;
+    } else {
+      valPmolL = rawVal * 0.738;
+    }
+
+    const status = getStatusFromB12(valPgMl);
+    const pointerPct = calcPointer(valPgMl);
+
+    activeReportData = {
+      rawVal, valPgMl, valPmolL, status, pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+    addToHistory(status.badge, rawVal, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitStr = d.unit === "pgml" ? "pg/mL" : "pmol/L";
+
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resUnitText").textContent = unitStr;
+    document.getElementById("resB12Val").textContent = d.rawVal.toFixed(0);
+
+    const colorVar = `var(--${d.status.color}-color)`;
+    document.getElementById("resB12Val").style.color = colorVar;
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.status.badge];
+    statusLabel.style.color = colorVar;
+
+    const ptr = document.getElementById("rangePointer");
+    ptr.style.left = `${d.pointerPct}%`;
+    ptr.style.borderColor = colorVar;
+
+    // Ticks reference
+    if (d.unit === "pmoll") {
+      document.getElementById("tickDeficient").textContent = "< 147.6 Deficient";
+      document.getElementById("tickBorderline").textContent = "147.6 – 221.4";
+      document.getElementById("tickNormal").textContent = "221.4 – 664.2 Normal";
+      document.getElementById("tickHigh").textContent = "> 664.2 High";
+    } else {
+      document.getElementById("tickDeficient").textContent = "< 200 Deficient";
+      document.getElementById("tickBorderline").textContent = "200 – 300";
+      document.getElementById("tickNormal").textContent = "300 – 900 Normal";
+      document.getElementById("tickHigh").textContent = "> 900 High";
+    }
+
+    // Render insight
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+    const details = insights[currentLang][d.status.key];
+    if (!details) return;
+
+    const card = document.createElement("div");
+    card.className = "insight-card";
+    card.style.borderLeft = `4px solid ${colorVar}`;
+
+    const causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+    const symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+    const tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+    card.innerHTML = `
+      <h5>${translations[currentLang].titleInterpretation}</h5>
+      <p>${details.desc}</p>
+      <div style="font-size: 0.8rem; margin: 10px 0; color: var(--accent);">
+        <strong>Converted Values:</strong> ${d.valPgMl.toFixed(0)} pg/mL (${d.valPmolL.toFixed(0)} pmol/L)
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+          <ul>${causesList}</ul>
+        </div>
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+          <ul>${symptomsList}</ul>
+        </div>
+      </div>
+      <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:10px;">
+        <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+        <ul>${tipsList}</ul>
+      </div>
+      <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+        <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+      </div>
+    `;
+    insightSection.appendChild(card);
+  }
+
+  function addToHistory(badgeKey, val, unit) {
+    const unitStr = unit === "pgml" ? " pg/mL" : " pmol/L";
+    const item = { date: new Date().toLocaleDateString(), badgeKey, val, unitStr, id: Date.now() };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-b12-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `<span>📅 ${item.date}</span><strong>${item.val.toFixed(0)}${item.unitStr} — ${statusText}</strong>`;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() { window.print(); }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitStr = d.unit === "pgml" ? " pg/mL" : " pmol/L";
+    let t = `--- VITAMIN B12 ANALYSIS REPORT ---\n`;
+    t += `Date: ${d.date}\n`;
+    t += `Vitamin B12 Value: ${d.rawVal.toFixed(0)}${unitStr}\n`;
+    t += `Values in both units: ${d.valPgMl.toFixed(0)} pg/mL / ${d.valPmolL.toFixed(0)} pmol/L\n`;
+    t += `Assessment: ${translations[currentLang][d.status.badge]}\n`;
+    t += `Reference Range: 300 – 900 pg/mL (Normal)\n`;
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, { backgroundColor: "#0a0e17", scale: 2 }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `vitamin-b12-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => { setLanguage(currentLang); });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

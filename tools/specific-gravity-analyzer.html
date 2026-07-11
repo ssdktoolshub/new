@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Specific Gravity Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate urine Specific Gravity levels online. Check for dehydration, diabetes insipidus, renal concentration capacity, or SIADH.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--low-color) 0%, 
+        var(--normal-color) 45%, 
+        var(--high-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Specific Gravity Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Evaluate urine specific gravity to assess hydration status, renal concentration capacity, or hormonal balance.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Specific Gravity Entry</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valSG" id="inputLabel" data-translate="labelSG">Urine Specific Gravity (USG)</label>
+              <input type="number" step="0.001" id="valSG" placeholder="e.g. 1.015" min="1.000" max="1.040" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeSG()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze USG Level</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your urine specific gravity measurement and click analyze to display clinical assessments.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Specific Gravity Profile</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Urine Specific Gravity (USG)</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resSGVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">Ratio</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--low-color);">&lt; 1.005 (Dilute)</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">1.005 - 1.030 (Normal)</span>
+              <span id="tickHigh" style="color: var(--high-color);">1.030+ (Concentrated)</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Specific Gravity</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Specific Gravity (USG)?</strong><br><span data-translate="eduA1">Specific gravity measures the concentration of solutes (like minerals, salts, and proteins) in urine compared to pure water. It is a highly sensitive metric for evaluating hydration.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What do abnormal USG values mean?</strong><br><span data-translate="eduA2">
+        - **Low USG (&lt; 1.005)**: Very dilute urine. Caused by high water intake, use of diuretics, diabetes insipidus (inability to retain water due to low ADH hormone), or severe chronic kidney disease.<br>
+        - **High USG (&gt; 1.030)**: Highly concentrated urine. Caused by dehydration, fever, SIADH (excessive ADH hormone holding water), or molecules like glucose (diabetes) or protein spilling into urine.
+      </span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Specific Gravity Analyzer",
+      toolDesc: "Evaluate urine specific gravity to assess hydration status, renal concentration capacity, or hormonal balance.",
+      inputsTitle: "🧬 Specific Gravity Entry",
+      clearBtn: "Reset",
+      labelSG: "Urine Specific Gravity (USG)",
+      btnAnalyze: "Analyze USG Level",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your urine specific gravity measurement and click analyze to display clinical assessments.",
+      reportTitle: "🔬 Specific Gravity Profile",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Urine Specific Gravity",
+      badgeLow: "Low USG (Dilute Urine / Fluid Load)",
+      badgeHigh: "Elevated USG (Concentrated Urine / Dehydration)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "আপেক্ষিক গুরুত্ব (Specific Gravity) বিশ্লেষক",
+      toolDesc: "প্রস্রাবের আপেক্ষিক গুরুত্ব বা ঘনত্ব বিশ্লেষণ করে পানিশূন্যতা ও কিডনির জল ধরে রাখার ক্ষমতা পরীক্ষা করুন।",
+      inputsTitle: "🧬 প্রস্রাব ঘনত্ব ইনপুট",
+      clearBtn: "মুছে ফেলুন",
+      labelSG: "ইউরিন স্পেসিফিক গ্র্যাভিটি (USG)",
+      btnAnalyze: "ঘনত্ব বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "প্রস্রাবের আপেক্ষিক গুরুত্বের মান লিখুন এবং বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 প্রস্রাবের আপেক্ষিক গুরুত্ব প্রোফাইল",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক প্রস্রাবের আপেক্ষিক গুরুত্ব",
+      badgeLow: "কম ইউএসজি (পাতলা প্রস্রাব / অতিরিক্ত জল)",
+      badgeHigh: "উচ্চ ইউএসজি (ঘন প্রস্রাব / পানিশূন্যতা)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "विशिष्ट गुरुत्व विश्लेषक",
+      toolDesc: "जलयोजन स्थिति, गुर्दे की एकाग्रता क्षमता, या हार्मोनल संतुलन का आकलन करने के लिए मूत्र के विशिष्ट गुरुत्व का मूल्यांकन करें।",
+      inputsTitle: "🧬 वि���िष्ट गुरुत्व प्रविष्टि",
+      clearBtn: "रीसेट करें",
+      labelSG: "मूत्र विशिष्ट गुरुत्व (यूएसजी)",
+      btnAnalyze: "यूएसजी स्तर का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना मूत्र विशिष्��� गुरुत्व माप दर्ज करें और नैदानिक ​​मूल्यांकन प्रदर्शित करने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 विशिष्ट गुरुत्व प्रोफ़ाइल",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उ���्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य मूत्र विशिष्ट गुरुत्व",
+      badgeLow: "कम यूएसजी (पतला मूत्र/द्रव भार)",
+      badgeHigh: "ऊंचा यूएसजी (सांद्रित मूत्र/निर्जलीकरण)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Urine Specific Gravity (USG)?", a: "USG measures the density of urine compared to distilled water, reflecting the kidney's concentration ability." },
+      { q: "What is a normal USG range?", a: "A normal random sample typically ranges between 1.005 and 1.030." },
+      { q: "What causes a low USG?", a: "High fluid intake, use of diuretics, diabetes insipidus, or kidney damage where tubules cannot concentrate solutes." },
+      { q: "What causes a high USG?", a: "Dehydration (loss of water), vomiting, diarrhea, high levels of protein or glucose in urine, or SIADH." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "প্রস্রাবের আপেক্ষিক গুরুত্ব (USG) কী?", a: "এটি ডিস্টিলড ওয়াটারের তুলনায় প্রস্রাবের ঘনত্বের পরিমাপ, যা কিডনির পানি ধরে রাখা বা ফিল্টারিং ক্ষমতার প্রতিচ্ছবি।" },
+      { q: "ইউএসজি এর স্বাভাবিক মাত্রা কত?", a: "স্বাভাবিক মাত্রা হলো ১.০০৫ থেকে ১.০৩০ এর মধ্যে।" },
+      { q: "ইউএসজি কমে যাওয়ার কারণ কী?", a: "অতিরিক্ত পানি পান, ডায়াবেটিস ইনসিপিডাস (হরমোনজনিত রোগ), বা কিডনির টিউবুলার অংশ ড্যামেজ হওয়া।" },
+      { q: "ইউএসজি বাড়ার কারণ কী?", a: "তীব্র পানিশূন্যতা, বমি, ডায়রিয়া, প্রস্রাবে অতিরিক্ত গ্লুকোজ বা প্রোটিনের উপস্থিতি।" }
+    ],
+    hi: [
+      { q: "मूत्र विशिष्ट गुरुत्व (यूएसजी) क्या है?", a: "यूएसजी आसुत जल की तुलना में मूत्र के घनत्व को मापता है, जो किडनी की एकाग्रता क्षमता को दर्शाता है।" },
+      { q: "सामान्य यूएसजी रेंज क्या है?", a: "एक सामान्य यादृच्छिक नमूना आम तौर पर 1.005 और 1.030 के बीच होता है।" },
+      { q: "कम यूएसजी का क्या कारण है?", a: "उच्च तरल पदार्थ का सेवन, मूत्रवर्धक का उपयोग, डायबिटीज इन्सिपिडस, या गुर्दे की क्षति जहां नलिकाएं विलेय को केंद्रित नहीं कर पाती हैं।" },
+      { q: "उच्च यूएसजी का क्या कारण है?", a: "निर्जलीकरण (पानी की कमी), ��ल्टी, दस्त, मूत्र में प्रोटीन या ग्लूकोज का उच्च स्तर, या SIADH।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const sgInsights = {
+    en: {
+      normal: {
+        desc: "Your urine specific gravity is normal. This suggests healthy kidney concentration capacity and balanced fluid intake.",
+        factors: ["Balanced fluid intake", "Intact renal concentrating and diluting mechanisms"],
+        symptoms: ["None; clear light-yellow urine color"],
+        prevention: ["Continue standard fluid intake based on natural thirst cues"],
+        consult: "Confirm with annual metabolic panels."
+      },
+      low: {
+        desc: "Your USG is low (< 1.005). This suggests dilute urine, which is common with high fluid intake, but can indicate underlying hormone or renal issues.",
+        factors: ["High water or beverage consumption", "Use of diuretic medications", "Diabetes Insipidus (lack of anti-diuretic hormone ADH)"],
+        symptoms: ["Polyuria (frequent urination), clear watery urine, excessive thirst"],
+        prevention: ["Moderate your water intake if drinking excessively without workouts", "Monitor electrolyte levels if taking diuretics"],
+        consult: "Consult your doctor if you experience extreme thirst and urination despite cutting back on fluids."
+      },
+      high: {
+        desc: "Your USG is elevated (> 1.030). This suggests highly concentrated urine, most commonly due to dehydration, but can also indicate spillage of large molecules like glucose or protein.",
+        factors: ["Dehydration (excessive sweat, fever, insufficient water intake)", "SIADH (excessive ADH hormone production)", "Presence of glucose (glucosuria in diabetes) or protein (proteinuria) in urine"],
+        symptoms: ["Dark yellow/amber urine, dry mouth, thirst, fatigue"],
+        prevention: ["Drink 2-3 cups of water immediately", "Maintain optimal hydration, especially in warm weather"],
+        consult: "⚠️ Recommended to seek medical evaluation. Checking urine protein/glucose and hydration markers is advised."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার প্রস্রাবের আপেক্ষিক গুরুত্ব স্বাভাবিক। এটি সুস্থ কিডনি ও সঠিক হাইড্রেশন নির্দেশ করে।",
+        factors: ["সুষম তরল গ্রহণ", "কিডনির স্বাভাবিক প্রস্রাব উৎপাদন ক্ষমতা"],
+        symptoms: ["কোনো অস্বাভাবিক উপসর্গ নেই; হালকা হলুদ রঙের প্রস্রাব"],
+        prevention: ["তৃষ্ণা অনুযায়ী পর্যাপ্ত পানি পান করুন"],
+        consult: "বার্ষিক লেন্যাল চেকআপ বজায় রাখুন।"
+      },
+      low: {
+        desc: "আপনার ইউএসজি কম। এর অর্থ প্রস্রাব অতিরিক্ত পাতলা। অতিরিক্ত পানি পান বা প্রস্রাববর্ধক ওষুধের জন্য এটি হতে পারে।",
+        factors: ["অতিরিক্ত তরল পান করা", "প্রস্রাব বাড়ানোর ওষুধ সেবন", "ডায়াবেটিস ইনসিপিডাস (হরমোনের অভাব)"],
+        symptoms: ["ঘন ঘন প্রস্রাব হওয়া, জলের মতো পরিষ্কার প্রস্রাব, অতিরিক্ত পিপাসা"],
+        prevention: ["অতিরিক্ত পানি পানের অভ্যাস থাকলে তা নিয়ন্ত্রণ করুন"],
+        consult: "অতিরিক্ত পিপাসা ও ঘন ঘন প্রস্রাবের সমস্যা থাকলে ডাক্তারের পরামর্শ নিন।"
+      },
+      high: {
+        desc: "আপনার ইউএসজি বেশি। এর অর্থ প্রস্রাব অতিরিক্ত ঘন। এটি সাধারণত শরীরে পানিশূন্যতা বা প্রস্রাবে প্রোটিন/গ্লুকোজ ঝরে যাওয়ার লক্ষণ।",
+        factors: ["পানিশূন্যতা (কম পানি পান, অতিরিক্ত ঘাম, জ্বর)", "প্রস্রাবে অ্যালবুমিন বা সুগার ক্ষরণ"],
+        symptoms: ["গাঢ় হলুদ প্রস্রাব, শুষ্ক মুখ ও তীব্র তৃষ্ণা, ক্লান্তি"],
+        prevention: ["অবিলম্বে পর্যাপ্ত বিশুদ্ধ পানি বা স্যালাইন পান করুন"],
+        consult: "⚠️ প্রস্রাবে সুগার বা প্রোটিন রয়েছে কিনা তা যাচাই করতে ডাক্তারের পরামর্শ নিন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका मूत्र विशिष्ट गुरुत्व सामान्य है। यह स्वस्थ किडनी एकाग्रता क्षमता और संतुलित तरल सेवन का सुझाव देता है।",
+        factors: ["संतुलित तरल पदार्थ का सेवन", "वृक्क संकेन्द्रण और तनुकरण तंत्र बरकरार"],
+        symptoms: ["कोई नहीं; मूत्र का रंग साफ़ हल्का पी��ा होना"],
+        prevention: ["प्राकृतिक प्यास संकेतों के आधार पर मानक तरल पदार्थ का सेवन जारी रखें"],
+        consult: "वार्षिक मेटाबॉलिक पैनल से पुष्टि करें।"
+      },
+      low: {
+        desc: "आपका यूएसजी कम है (<1.005)। यह पतले मूत्र का सुझाव देता है, जो उच्च तरल पदार्थ के सेवन के साथ आम है, लेकिन अंतर्निहित हार्मोन या ग��र्दे की समस्याओं का संकेत दे सकता है।",
+        factors: ["अधिक पानी या पेय पदार्थ का सेवन", "मूत्रवर्धक दवाओं का उपयोग", "डायबिटीज इन्सिपिडस (एंटी-मूत्रवर्धक हार्मोन ADH की कमी)"],
+        symptoms: ["बहुमूत्र (बार-बा�� पेशाब आना), साफ पानी जैसा पेशाब आना, अत्यधिक प्यास लगना"],
+        prevention: ["यदि बिना वर्कआउट के अत्यधिक पानी पी रहे हैं तो अपने पानी का सेवन नियंत्रित करें", "यदि आप मूत्रवर्धक ले रहे हैं तो इलेक्ट्रोलाइट स्तर की निगरानी करें"],
+        consult: "यदि तरल पदार्थ कम करने के बावजूद आपको अत्यधिक प्यास और पेशाब का अनुभव हो तो अपने डॉक्टर से परामर्श लें।"
+      },
+      high: {
+        desc: "आपका यूएसजी ऊंचा है (> 1.030)। यह अत्यधिक संकेंद्रित मूत्र का संकेत देता है, जो आमतौर पर निर्जलीकरण के कारण होता है, लेकिन यह ग्लूकोज या प्रोटीन जैसे बड़े अणुओं के फैलने का भी संकेत दे सकता है।",
+        factors: ["निर्जलीकरण (अत्यधिक पसीना, बुखार, अपर्याप्त पा���ी का सेवन)", "SIADH (अत्यधिक ADH हार्मोन उत्पादन)", "मूत्र में ग्लूकोज (मधुमेह में ग्लूकोसुरिया) या प्रोटीन (प्रोटीन्यूरिया) की उपस्थिति"],
+        symptoms: ["गहरा पीला/एम्बरी मूत्र, शुष्क मुँह, प्यास, थकान"],
+        prevention: ["तुरंत 2-3 कप पानी पियें", "इष्टतम जलयोजन बनाए रखें, विशेष रूप से गर्म मौसम में"],
+        consult: "⚠️ चिकित्सीय मूल्यांकन लेने की अनुशंसा की जाती है। मूत्र प्रोटीन/ग्लूकोज और हाइड्रेशन मार्करों की जाँच करने की सलाह दी जाती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-usg-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function resetForm() {
+    document.getElementById("valSG").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function analyzeSG() {
+    const valSG = parseFloat(document.getElementById("valSG").value);
+
+    if (isNaN(valSG) || valSG < 1.000 || valSG > 1.040) {
+      alert(currentLang === "en" ? "Please enter a valid USG value between 1.000 and 1.040." : "দয়া করে ১.০০০ থেকে ১.০৪০ এর মধ্যে সঠিক আপেক্ষিক গুরুত্ব লিখুন।");
+      return;
+    }
+
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valSG < 1.005) {
+      statusKey = "low";
+      badgeKey = "badgeLow";
+    } else if (valSG > 1.030) {
+      statusKey = "high";
+      badgeKey = "badgeHigh";
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valSG >= 1.005 && valSG <= 1.030) {
+      pointerPct = 35 + ((valSG - 1.005) / 0.025) * 30; // 35% - 65%
+    } else if (valSG < 1.005) {
+      pointerPct = Math.max(5, ((valSG - 1.000) / 0.005) * 30); // 5% - 35%
+    } else {
+      pointerPct = Math.min(95, 65 + ((valSG - 1.030) / 0.010) * 30); // 65% - 95%
+    }
+
+    activeReportData = {
+      valSG,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valSG);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resSGVal").textContent = d.valSG.toFixed(3);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resSGVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = sgInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valSG) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valSG,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-usg-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>USG: ${item.valSG.toFixed(3)} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- URINE SPECIFIC GRAVITY REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Value: ${activeReportData.valSG.toFixed(3)}\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `urine-sg-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

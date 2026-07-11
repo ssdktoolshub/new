@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prolactin Analyzer &bull; SSDK CLINICAL TOOLS</title>
+  <meta name="description" content="Evaluate serum Prolactin levels online. Assess hyperprolactinemia risk, prolactinoma thresholds, and pituitary gland function for men and women.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--low-color) 0%, 
+        var(--normal-color) 30%, 
+        var(--high-color) 70%,
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Prolactin Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze serum prolactin levels to identify hyperprolactinemia, monitor pituitary function, and check for clinical thresholds.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Prolactin Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valGender" data-translate="labelGender">Biological Gender</label>
+              <select id="valGender" onchange="resetForm()">
+                <option value="male" selected data-translate="optMale">Male (Normal 3-15 ng/mL)</option>
+                <option value="female" data-translate="optFemale">Female (Normal 3-30 ng/mL)</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valProlactin" data-translate="labelProlactin">Serum Prolactin (ng/mL)</label>
+              <input type="number" step="0.1" id="valProlactin" placeholder="e.g. 24.5" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeProlactin()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Prolactin</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your prolactin level and select gender, then click Analyze to display report details.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Serum Prolactin Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Serum Prolactin</span>
+            <span><strong data-translate="labelGenderSum">Gender</strong>: <span id="resGenderText">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resProlVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">ng/mL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--low-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">-</span>
+              <span id="tickHigh" style="color: var(--high-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Prolactin</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Prolactin?</strong><br><span data-translate="eduA1">Prolactin is a peptide hormone synthesized and secreted by the lactotroph cells of the anterior pituitary gland. Its primary physiological role is to stimulate and sustain lactation (milk production) post-pregnancy, but it also influences reproductive and immune functions.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is Hyperprolactinemia?</strong><br><span data-translate="eduA2">Hyperprolactinemia refers to abnormally high levels of prolactin in the blood. It can suppress hypothalamic GnRH, leading to reduced LH and FSH levels. This results in irregular periods and galactorrhea in women, and erectile dysfunction or decreased libido in men.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What does a value > 100 ng/mL imply?</strong><br><span data-translate="eduA3">While mild elevations (30 to 100 ng/dL) are often caused by stress, physical exercise, or medications (e.g. antipsychotics, dopamine antagonists), highly elevated levels (> 100 ng/mL) raise strong suspicion of a prolactinoma (a benign pituitary tumor). Levels above 250 ng/mL are almost always diagnostic of a macroprolactinoma.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Prolactin Analyzer",
+      toolDesc: "Analyze serum prolactin levels to identify hyperprolactinemia, monitor pituitary function, and check for clinical thresholds.",
+      inputsTitle: "🧬 Prolactin Parameters",
+      clearBtn: "Reset",
+      labelGender: "Biological Gender",
+      labelProlactin: "Serum Prolactin (ng/mL)",
+      btnAnalyze: "Analyze Prolactin",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your prolactin level and select gender, then click Analyze to display report details.",
+      reportTitle: "🔬 Serum Prolactin Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelGenderSum: "Gender",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      optMale: "Male (Normal 3 - 15 ng/mL)",
+      optFemale: "Female (Normal 3 - 30 ng/mL)",
+      badgeNormal: "Normal Prolactin Level",
+      badgeLow: "Low Prolactin Level",
+      badgeHigh: "Elevated Prolactin Level (Hyperprolactinemia)",
+      badgeCritical: "Critical High Prolactin (Suspected Prolactinoma)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "প্রোল্যাকটিন বিশ্লেষক",
+      toolDesc: "রক্তে প্রোল্যাকটিনের অতিরিক্ত মাত্রা (হাইপারপ্রোল্যাকটিনেমিয়া), পিটুইটারি গ্রন্থির কার্যকারিতা এবং ক্লিনিক্যাল মাত্রা নির্ণয়ে সিরাম প্রোল্যাকটিন বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 প্রোল্যাকটিন পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelGender: "শারীরবৃত্তীয় লিঙ্গ",
+      labelProlactin: "সিরাম প্রোল্যাকটিন (ng/mL)",
+      btnAnalyze: "প্রোল্যাকটিন বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "প্রোল্যাকটিন মান লিখুন, লিঙ্গ নির্বাচন করুন ও বিশ্লেষণ করুন বোতামে ক্লিক করুন।",
+      reportTitle: "🔬 সিরাম প্রোল্যাকটিন ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelGenderSum: "লিঙ্গ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      optMale: "পুরুষ (স্বাভাবিক ৩ - ১৫ ng/mL)",
+      optFemale: "নারী (স্বাভাবিক ৩ - ৩০ ng/mL)",
+      badgeNormal: "স্বাভাবিক প্রোল্যাকটিন লেভেল",
+      badgeLow: "কম প্রোল্যাকটিন লেভেল",
+      badgeHigh: "উচ্চ প্রোল্যাকটিন লেভেল (হাইপারপ্রোল্যাকটিনেমিয়া)",
+      badgeCritical: "মারাত্মক বেশি প্রোল্যাকটিন (পিটুইটারি টিউমারের আশঙ্কা)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভavy প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "प्रोलैक्टिन विश्लेषक",
+      toolDesc: "हाइपरप्रोलैक्टिनीमिया की पहचान करने, पिट्यूटरी फ़ंक्शन की निगरानी करने और नैदानिक ​​​​सीमाओं की जांच करने के लिए सीरम प्रोलैक्टिन स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬 प्रोलैक्टिन पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelGender: "जैविक लिंग",
+      labelProlactin: "सीरम प्रोलैक्टिन (एनजी/एमएल)",
+      btnAnalyze: "प्रोलैक्टिन का विश्लेषण करें",
+      placeholderTitle: "विश्��ेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना प्रोलैक्टिन स्तर दर्ज करें और लिंग चुनें, फिर रिपोर्ट विवरण प्रदर्शित करने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 सीरम प्रोलैक्टिन डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelGenderSum: "लिंग",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नह��ं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      optMale: "पुरुष (सामान्य 3 - 15 एनजी/एमएल)",
+      optFemale: "महिला (सामान्य 3 - 30 एनजी/एमएल)",
+      badgeNormal: "सामान्य प्रोलैक्टिन स्तर",
+      badgeLow: "निम्न प्रोलैक्टिन स्तर",
+      badgeHigh: "ऊंचा प्रोलैक्टिन स्तर (हाइपरप्रोलैक्टिनीमिया)",
+      badgeCritical: "गंभीर उच्च प्रोलैक्टिन (संदिग्ध प्रोलैक्टिनोमा)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is prolactin?", a: "Prolactin is a pituitary hormone that stimulates lactation. High levels block reproduction and reduce testosterone or estrogen." },
+      { q: "What are normal prolactin ranges?", a: "Adult males: 3 to 15 ng/mL. Adult females: 3 to 30 ng/mL." },
+      { q: "What is a prolactinoma?", a: "A prolactinoma is a non-cancerous tumor of the pituitary gland that produces excessive prolactin, often leading to levels over 100 ng/mL." },
+      { q: "What other factors elevate prolactin?", a: "Stress, medications (such as SSRIs or blood pressure drugs), physical activity, thyroid issues (hypothyroidism), or pregnancy." }
+    ],
+    bn: [
+      { q: "প্রোল্যাকটিন কী?", a: "প্রোল্যাকটিন হলো পিটুইটারি গ্রন্থি থেকে আসা হরমোন যা নারীদের স্তনে দুধ তৈরি করতে সাহায্য করে। অতিরিক্ত প্রোল্যাকটিন বন্ধ্যাত্ব ও হরমোন ঘাটতি তৈরি করে।" },
+      { q: "এর স্বাভাবিক মাত্রা কত?", a: "প্রাপ্তবয়স্ক পুরুষদের জন্য: ৩ - ১৫ ng/mL। প্রাপ্তবয়স্ক নারীদের জন্য: ৩ - ৩০ ng/mL।" },
+      { q: "প্রোল্যাকটিনোমা কী?", a: "এটি পিটুইটারি গ্রন্থির একটি সাধারণ বিনাইন (ক্যান্সার নয় এমন) টিউমার যা অতিরিক্ত প্রোল্যাকটিন তৈরি করে এবং রক্তের মাত্রা ১০০ ng/mL ছাড়িয়ে যায়।" },
+      { q: "অন্য কোন কোন কারণে প্রোল্যাকটিন বাড়ে?", a: "মানসিক চাপ, কিছু মানসিক রোগের ওষুধ, থাইরয়েডের সমস্যা (হাইপোথাইরয়েডিজম) অথবা গর্ভাবস্থা।" }
+    ],
+    hi: [
+      { q: "प्रोलैक्टिन क्या है?", a: "प्रोलैक्टिन एक पिट्यूटरी हार्मोन है जो स्तनपान को उत्तेजित करता है। उच्च स्तर प्रजनन को अवरुद्ध करता है और टेस्टोस्टेरोन या एस्ट्रोजन को कम करता है।" },
+      { q: "सामान्य प्रोलैक्टिन श्रेणियाँ क्या हैं?", a: "वयस्क पुरुष: 3 से 15 एनजी/एमएल। वयस्क मादा: 3 से 30 एनजी/एमएल।" },
+      { q: "प्रोलैक्टिनोमा क्या है?", a: "प्रोलैक्टिनोमा पिट्यूटरी ग्रंथि का एक गैर-कैंसरयुक्त ट्यूमर है जो अत्यधिक प्रोलैक्टिन का उत्पादन करता है, जिससे अक्सर 100 एनजी/एमएल से अधिक का स्तर हो जाता है।" },
+      { q: "कौन से अन्य कारक प्रोलैक्टिन को बढ़ाते हैं?", a: "तनाव, दवाएं (जैसे एसएसआरआई या रक्तचाप की दवाएं), शारीरिक गतिविधि, थायरॉयड समस्याएं (हाइपोथायरायडिज्म), या गर्भावस्था।" }
+    ]
+  };
+
+  const prolactinInsights = {
+    en: {
+      normal: {
+        desc: "Your serum prolactin level is within the healthy reference range. This points to appropriate secretory activity from the pituitary lactotroph cells.",
+        factors: ["Normal hypothalamic-pituitary-adrenal axis regulation", "Absence of prolactin-inducing medication intake", "Healthy dopamine regulation (which naturally inhibits prolactin)"],
+        symptoms: ["Regular reproductive cycle (females)", "Normal sexual drive and potency (males)"],
+        prevention: ["Continue regular health monitors", "Avoid unnecessary use of heavy dopamine-antagonistic drugs"],
+        consult: "No pituitary follow-up is necessary. Repeat during annual endocrine checkups if needed."
+      },
+      low: {
+        desc: "Your prolactin level is low. Pathologically low levels (hypoprolactinemia) are rare and generally represent pituitary gland hypofunction.",
+        factors: ["Sheehan's syndrome (postpartum pituitary necrosis)", "Panhypopituitarism (generalized pituitary underactivity)", "Dopamine agonist overuse"],
+        symptoms: ["Inability to lactate after childbirth (females)", "Altered ovarian function or immune response (very rare)"],
+        prevention: ["Discuss current dopamine agonist dosages with your provider if taking them"],
+        consult: "Consult a doctor if this is combined with other pituitary hormone deficiencies (e.g. low TSH, ACTH)."
+      },
+      high: {
+        desc: "Your prolactin level is elevated. Mild to moderate elevations (up to 100 ng/mL) can be physiological, drug-induced, or indicate mild pituitary irritation.",
+        factors: ["Certain medications (antipsychotics, SSRI antidepressants, metoclopramide)", "Hypothyroidism (high TRH stimulates prolactin)", "Physical stress, intense exercise, or recent breast stimulation", "Pregnancy and breastfeeding (expected physical states)"],
+        symptoms: ["Irregular or absent menstrual periods (females)", "Galactorrhea (unprompted milk discharge)", "Reduced sexual drive, erectile dysfunction (males)", "Gynecomastia (males)"],
+        prevention: ["Discuss medication lists with your physician to identify prolactin-raising drugs", "Manage acute stressors"],
+        consult: "Discuss with your physician. A thyroid screening (TSH) is usually checked first to rule out hypothyroidism."
+      },
+      critical: {
+        desc: "Your prolactin level is critically high (>100 ng/mL). This highly elevated concentration is highly suspicious for a prolactin-secreting pituitary tumor (prolactinoma).",
+        factors: ["Pituitary prolactinoma (micro- or macro-adenoma)", "Severe kidney or liver failure", "Rare high-dose drug reactions"],
+        symptoms: ["Headaches, visual field disturbances (due to tumor pressing on the optic chiasm)", "Severe reproductive dysfunction (amenorrhea, infertility)", "Spontaneous, severe galactorrhea"],
+        prevention: ["Avoid heavy physical strain", "Do not ignore visual disturbances"],
+        consult: "Urgent medical referral to an endocrinologist is advised. An MRI of the brain/pituitary gland is generally the next diagnostic step."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার রক্তের প্রোল্যাকটিনের মাত্রা স্বাভাবিক রয়েছে। এটি পিটুইটারি গ্রন্থির সুস্থ কার্যকারিতা নির্দেশ করে।",
+        factors: ["স্বাভাবিক হরমোন নিঃসরণ নিয়ন্ত্রণ", "কোনো ক্ষতিকর ওষুধের প্রভাব না থাকা"],
+        symptoms: ["নিয়মিত ঋতুস্রাব (নারীদের ক্ষেত্রে)", "স্বাভাবিক যৌন আকাঙ্ক্ষা ও শক্তি"],
+        prevention: ["সাধারণ জীবনযাত্রা বজায় রাখুন", "ঘুমের স্বাভাবিক চক্র ঠিক রাখুন"],
+        consult: "কোনো জরুরি ফলোআপের প্রয়োজন নেই।"
+      },
+      low: {
+        desc: "আপনার প্রোল্যাকটিনের মাত্রা কম। এটি অত্যন্ত বিরল এবং পিটুইটারি গ্রন্থির সামগ্রিক দুর্বলতার কারণে হতে পারে।",
+        factors: ["শিহানস সিন্ড্রোম (গর্ভধারণ পরবর্তী পিটুইটারি গ্রন্থির ক্ষতি)", "পিটুইটারি গ্রন্থির অকার্যকারিতা", "অতিরিক্ত ডোপামিন ওষুধ গ্রহণ"],
+        symptoms: ["প্রসবের পর স্তনদুগ্ধ তৈরিতে অক্ষমতা"],
+        prevention: ["হরমোনের মাত্রার ভারসাম্য রক্ষা করতে চিকিৎসকের সাহায্য নিন"],
+        consult: "অন্যান্য হরমোনের ঘাটতি পরীক্ষা করতে হরমোন ডাক্তারের পরামর্শ নিন।"
+      },
+      high: {
+        desc: "আপনার প্রোল্যাকটিনের মাত্রা বেশি। ৩০ থেকে ১০০ ng/mL এর মধ্যের মান মানসিক চাপ, কিছু ওষুধ বা থাইরয়েডের সমস্যার সংকেত হতে পারে।",
+        factors: ["মানসিক রোগের কিছু ওষুধ বা অ্যান্টিডিপ্রেসেন্ট ব্যবহার", "হাইপোথাইরয়েডিজম (থাইরয়েড হরমোনের ঘাটতি)", "শারীরিক বা মানসিক চাপ, অত্যধিক পরিশ্রম", "গর্ভাবস্থা বা স্তন্যদানকাল"],
+        symptoms: ["অনিয়মিত বা বন্ধ মাসিক (নারীদের ক্ষেত্রে)", "স্তন থেকে তরল বা দুধ নিঃসৃত হওয়া", "যৌন ইচ্ছা হ্রাস, পুরুষদের ক্ষেত্রে ইরেক্টাইল ডিসফাংশন"],
+        prevention: ["আপনার গ্রহণ করা ওষুধের তালিকা ডাক্তারের সাথে আলোচনা করুন", "মানসিক চাপ কমানোর চর্চা করুন"],
+        consult: "ডাক্তারের পরামর্শ নিন। থাইরয়েড টেস্ট (TSH) করিয়ে নেওয়া উচিত।"
+      },
+      critical: {
+        desc: "আপনার প্রোল্যাকটিনের মাত্রা মারাত্মকভাবে বেশি (১০০ ng/mL এর ওপরে)। এটি পিটুইটারি গ্রন্থির এক ধরণের টিউমারের (প্রোল্যাকটিনোমা) প্রধান লক্ষণ হতে পারে।",
+        factors: ["পিটুইটারি গ্রন্থির প্রোল্যাকটিনোমা (টিউমার)", "কিডনি বা লিভারের মারাত্মক অকার্যকারিতা"],
+        symptoms: ["মাথাব্যথা, চোখের দৃষ্টি কমে যাওয়া বা ঝাপসা হওয়া (টিউমার চোখের স্নায়ুতে চাপ দেওয়ার কারণে)", "বন্ধ্যাত্ব, স্থায়ীভাবে মাসিক বন্ধ হওয়া", "স্তন থেকে ক্রমাগত তরল নিঃসৃত হওয়া"],
+        prevention: ["ভারী পরিশ্রম এড়িয়ে চলুন", "চোখের কোনো সমস্যাকে অবহেলা করবেন না"],
+        consult: "অবিলম্বে একজন হরমোন বিশেষজ্ঞের (Endocrinologist) পরামর্শ নিন এবং মাথার এমআরআই (MRI of Brain) করতে হবে।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका सीरम प्रोलैक्टिन स्तर स्वस्थ संदर्भ सीमा के भीतर है। यह पिट्यूटरी लैक्टोट्रॉफ़ कोशिकाओं से उचित स्रावी गतिविधि की ओर इशारा करता है।",
+        factors: ["सामान्य हाइपोथैलेमिक-पिट्यूटरी-अधिवृक्क अक्ष विनियमन", "प्रोलैक्टिन-उत्प्रेरण दवा के सेवन का अभाव", "स्वस्थ डोपामाइन विनियमन (जो स्वाभाविक रूप से प्रोलैक्टिन को रोकता है)"],
+        symptoms: ["नियमित प्रजनन चक्र (मादा)", "सामान्य यौन इच्छा और क्षमता (पुरुष)"],
+        prevention: ["नियमित स्वास्थ्य निगरानी जारी रखें", "भारी डोपामाइन-विरोधी दवाओं के अनावश्यक उपयोग से बचें"],
+        consult: "कोई पिट्यूटरी अनुवर्ती आवश्यक नहीं है। यदि आवश्यक हो तो वार्षिक अंतःस्रावी जांच के दौरान दोहराएं।"
+      },
+      low: {
+        desc: "आपका प्रोलैक्टिन स्तर कम है। पैथोलॉजिकल रूप से निम्न स्तर (हाइपोप्रोलैक्टिनीमिया) दुर्लभ हैं और आम तौर पर पिट्��ूटरी ग्रंथि हाइपोफंक्शन का प्रतिनिधित्व करते हैं।",
+        factors: ["शीहान सिंड्रोम (प्रसवोत्तर पिट्यूटरी नेक्रोसिस)", "पैन्हिपोपिट्यूटरिज्म (सामान्यीकृत पिट्यूटरी निष्क्रियता)", "डोपामाइन एगोनिस्ट का अति प्रयोग"],
+        symptoms: ["प्रसव के बाद स्तनपान कराने में असमर्थता (महिलाएं)", "परिवर्तित डिम्बग्रंथि समारोह या प्रतिरक्षा प्रतिक्रिया (बहुत दुर्लभ)"],
+        prevention: ["यदि आप वर्तमान डोपामाइन एगोनिस्ट खुराक ले रहे हैं तो अपने प्रदाता से उनके बारे में चर्चा करें"],
+        consult: "यदि यह अन्य पिट्यूटरी हार्मोन की कमी (उदाहरण के लिए कम टीएसएच, एसीटीएच) के साथ जुड़ा हो तो डॉक्टर से परामर्श लें।"
+      },
+      high: {
+        desc: "आपका प्रोलैक्टिन स्तर ऊंचा है। हल्की से मध्यम ऊंचाई (100 एनजी/एमएल तक) शारीरिक, दवा-प्रेरित हो सकती है, या हल्के पिट्यूटरी जलन का संकेत दे सकती है।",
+        factors: ["कुछ दवाएं (एंटीसाइकोटिक्स, एसएसआरआई एंटीडिप्रेसेंट��स, मेटोक्लोप्रमाइड)", "हाइपोथायरायडिज्म (उच्च टीआरएच प्रोलैक्टिन को उत्तेजित करता है)", "शारीरिक तनाव, गहन व्यायाम, या हाल ही में स्तन उत्तेजना", "गर्भावस्था और स्तनपान (अपेक्षित शारीरिक स्थिति)"],
+        symptoms: ["अनियमित या अनुपस्थित मासिक धर्म (महिलाएं)", "गैलेक्टोरिआ (बिना संकेत के दूध निकलना)", "यौन इच्छा में कमी, स्तंभन दोष (पुरुषों में)", "गाइनेकोमेस्टिया (पुरुष)"],
+        prevention: ["प्रोलैक्टिन बढ़ाने वाली दवाओं की पहचान करने के लिए अपने चिकित्सक से दवा सूचियों पर चर्चा करें", "तीव्र तनावों को प्रबंधित करें"],
+        consult: "अपने चिकित्सक से चर्चा करें. हाइपोथायरायडिज्म का पता लगाने के लिए आमतौर पर पहले थायरॉयड स्क्रीनिंग (टीएसएच) की जांच की जाती है।"
+      },
+      critical: {
+        desc: "आपका प्रोलैक्टिन स्तर गंभीर रूप से उच्च (>100 एनजी/एमएल) है। यह अत्यधिक बढ़ी हुई सांद्रता प्रोलैक्टिन-स्रावित पिट्यूटरी ट्यूमर (प्रोलैक्टिनोमा) के लिए अत्यधिक संदिग्ध है।",
+        factors: ["पिट्यूटरी प्रोलैक्टिनोमा (सूक्ष्म- या मैक्रो-एडेनोमा)", "गंभीर गुर्दे या जिगर की विफलता", "दुर्लभ उच्च खुराक वाली दवा प्रतिक्रियाएँ"],
+        symptoms: ["सिरदर्द, दृश्य क्षेत्र में गड़बड़ी (ऑप्टिक चियास्म पर ट्यूमर के दबाव के कारण)", "गंभीर प्रजनन संबंधी शिथिलता (अमेनोरिया, बांझपन)", "सहज, गंभीर गैलेक्टोरिआ"],
+        prevention: ["भारी शारीरिक तनाव से बचें", "दृश्य गड़बड़ी को नजरअंदाज न करें"],
+        consult: "किसी एंडोक्रिनोलॉजिस्ट को तत्काल चिकित्सीय रेफरल की सलाह दी जाती है। मस्तिष्क/पिट्यूटरी ग्रंथि का एमआरआई आम तौर पर अगला निदान कदम है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-prolactin-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valProlactin").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function analyzeProlactin() {
+    const valProl = parseFloat(document.getElementById("valProlactin").value);
+    const gender = document.getElementById("valGender").value;
+
+    if (isNaN(valProl) || valProl < 0) {
+      alert(currentLang === "en" ? "Please enter a valid prolactin value." : "দয়া করে প্রোল্যাকটিনের সঠিক মান লিখুন।");
+      return;
+    }
+
+    // Ranges: Males Normal 3-15 | Females Normal 3-30 | Elevated > 30 | Critical > 100
+    let min = 3.0;
+    let max = (gender === "male") ? 15.0 : 30.0;
+
+    let statusKey = "normal";
+    let badgeKey = "badgeNormal";
+
+    if (valProl < min) {
+      statusKey = "low";
+      badgeKey = "badgeLow";
+    } else if (valProl > 100.0) {
+      statusKey = "critical";
+      badgeKey = "badgeCritical";
+    } else if (valProl > max) {
+      statusKey = "high";
+      badgeKey = "badgeHigh";
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valProl >= min && valProl <= max) {
+      const range = max - min;
+      pointerPct = range > 0 ? 30 + ((valProl - min) / range) * 30 : 50;
+    } else if (valProl < min) {
+      pointerPct = Math.max(5, (valProl / min) * 25);
+    } else if (valProl > 100.0) {
+      pointerPct = Math.min(95, 85 + ((valProl - 100) / 200) * 10);
+    } else {
+      // between max and 100
+      const range = 100.0 - max;
+      pointerPct = range > 0 ? 60 + ((valProl - max) / range) * 20 : 75;
+    }
+
+    activeReportData = {
+      valProl,
+      min,
+      max,
+      gender,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valProl, gender);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+
+    const genderStr = d.gender === "male" ? 
+      (currentLang === "en" ? "Male" : "পুরুষ") : 
+      (currentLang === "en" ? "Female" : "নারী");
+      
+    document.getElementById("resGenderText").textContent = genderStr;
+    document.getElementById("resProlVal").textContent = d.valProl.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey === "critical") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resProlVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = `< ${d.min.toFixed(0)}`;
+    document.getElementById("tickNormalRange").textContent = `${d.min.toFixed(0)} - ${d.max.toFixed(0)}`;
+    document.getElementById("tickHigh").textContent = `100.0+`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = prolactinInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms ? details.symptoms.map(s => `<li>${s}</li>`).join("") : "<li>N/A</li>";
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valProl, gender) {
+    const genderStr = gender === "male" ? "M" : "F";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valProl,
+      genderStr,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-prolactin-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date} (${item.genderStr})</span>
+        <strong>${item.valProl.toFixed(1)} ng/mL (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const genderStr = activeReportData.gender === "male" ? "Male" : "Female";
+    let t = `--- SERUM PROLACTIN REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Gender: ${genderStr}\n`;
+    t += `Value: ${activeReportData.valProl.toFixed(1)} ng/mL\n`;
+    t += `Reference Range: ${activeReportData.min} - ${activeReportData.max} ng/mL\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `prolactin-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>
