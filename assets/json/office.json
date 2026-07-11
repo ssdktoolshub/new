@@ -1,0 +1,35 @@
+[
+  {
+    "id": "file-compressor",
+    "name": "File Compressor",
+    "category": "📁 File Tools",
+    "description": "Compress files to ZIP.",
+    "icon": "🗜",
+    "url": "tools/file-zip.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "csv-to-excel",
+    "name": "CSV to Excel",
+    "category": "📁 File Tools",
+    "description": "Convert CSV to Excel.",
+    "icon": "📊",
+    "url": "tools/csv-excel.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "file-to-base64",
+    "name": "File to Base64",
+    "category": "📁 File Tools",
+    "description": "Convert file to Base64.",
+    "icon": "🔢",
+    "url": "tools/file-base64.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  }
+]

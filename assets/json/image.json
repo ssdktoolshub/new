@@ -1,0 +1,46 @@
+[
+  {
+    "id": "image-compressor",
+    "name": "Image Compressor",
+    "category": "🖼 Image Tools",
+    "description": "Reduce image size, keep quality.",
+    "icon": "🗜",
+    "url": "tools/img-compress.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "image-resizer",
+    "name": "Image Resizer",
+    "category": "🖼 Image Tools",
+    "description": "Resize images to any size.",
+    "icon": "📐",
+    "url": "tools/img-resize.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "image-converter",
+    "name": "Image Converter",
+    "category": "🖼 Image Tools",
+    "description": "PNG, JPG, WebP converter.",
+    "icon": "🔄",
+    "url": "tools/img-convert.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "favicon-generator",
+    "name": "Favicon Generator",
+    "category": "🖼 Image Tools",
+    "description": "Make favicons from any image.",
+    "icon": "⭐",
+    "url": "tools/favicon.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  }
+]

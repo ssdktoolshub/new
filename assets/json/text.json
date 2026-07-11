@@ -1,0 +1,35 @@
+[
+  {
+    "id": "word-counter",
+    "name": "Word Counter",
+    "category": "🔤 Text Tools",
+    "description": "Count words, characters, sentences.",
+    "icon": "🔢",
+    "url": "tools/word-count.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "case-converter",
+    "name": "Case Converter",
+    "category": "🔤 Text Tools",
+    "description": "UPPER, lower, Title case.",
+    "icon": "🔠",
+    "url": "tools/case.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "text-to-speech",
+    "name": "Text to Speech",
+    "category": "🔤 Text Tools",
+    "description": "Convert text into voice.",
+    "icon": "🗣",
+    "url": "tools/tts.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  }
+]

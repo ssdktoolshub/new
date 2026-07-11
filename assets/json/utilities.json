@@ -1,0 +1,123 @@
+[
+  {
+    "id": "color-picker",
+    "name": "Color Picker",
+    "category": "🎨 Color Tools",
+    "description": "Pick & copy HEX/RGB colors.",
+    "icon": "🎨",
+    "url": "tools/color-picker.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "gradient-generator",
+    "name": "Gradient Generator",
+    "category": "🎨 Color Tools",
+    "description": "Create CSS gradients.",
+    "icon": "🌈",
+    "url": "tools/gradient.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "palette-generator",
+    "name": "Palette Generator",
+    "category": "🎨 Color Tools",
+    "description": "Generate color palettes.",
+    "icon": "🧪",
+    "url": "tools/palette.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "qr-code-generator",
+    "name": "QR Code Generator",
+    "category": "🌐 Web Tools",
+    "description": "Make QR codes instantly.",
+    "icon": "📱",
+    "url": "tools/qr.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "url-encoder",
+    "name": "URL Encoder",
+    "category": "🌐 Web Tools",
+    "description": "Encode/decode URLs.",
+    "icon": "🔗",
+    "url": "tools/url-encode.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "meta-tag-generator",
+    "name": "Meta Tag Generator",
+    "category": "🌐 Web Tools",
+    "description": "Build SEO meta tags.",
+    "icon": "🏷",
+    "url": "tools/meta.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "password-generator",
+    "name": "Password Generator",
+    "category": "🔐 Security Tools",
+    "description": "Strong random passwords.",
+    "icon": "🔑",
+    "url": "tools/password.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "hash-generator",
+    "name": "Hash Generator",
+    "category": "🔐 Security Tools",
+    "description": "MD5 / SHA hashes.",
+    "icon": "#️⃣",
+    "url": "tools/hash.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "password-strength",
+    "name": "Password Strength",
+    "category": "🔐 Security Tools",
+    "description": "Check password strength.",
+    "icon": "🛡",
+    "url": "tools/pass-strength.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "hashtag-generator",
+    "name": "Hashtag Generator",
+    "category": "📱 Social Media Tools",
+    "description": "Generate trending hashtags.",
+    "icon": "#️⃣",
+    "url": "tools/hashtag.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "caption-generator",
+    "name": "Caption Generator",
+    "category": "📱 Social Media Tools",
+    "description": "AI captions for posts.",
+    "icon": "✍️",
+    "url": "tools/caption.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  }
+]

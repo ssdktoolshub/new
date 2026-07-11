@@ -1,0 +1,46 @@
+[
+  {
+    "id": "ai-text-generator",
+    "name": "AI Text Generator",
+    "category": "⚡ AI Tools",
+    "description": "Generate text with AI.",
+    "icon": "🤖",
+    "url": "tools/ai-text.html",
+    "type": "ai",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "ai-summarizer",
+    "name": "AI Summarizer",
+    "category": "⚡ AI Tools",
+    "description": "Summarize long text.",
+    "icon": "📝",
+    "url": "tools/ai-summary.html",
+    "type": "ai",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "background-remover",
+    "name": "Background Remover",
+    "category": "⚡ AI Tools",
+    "description": "Remove image background.",
+    "icon": "🪄",
+    "url": "tools/bg-remove.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "yt-thumbnail-downloader",
+    "name": "YT Thumbnail Downloader",
+    "category": "📱 Social Media Tools",
+    "description": "Download YouTube thumbnails.",
+    "icon": "▶️",
+    "url": "tools/yt-thumb.html",
+    "type": "ai",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  }
+]

@@ -1,0 +1,163 @@
+[
+  {
+    "id": "ai-tools",
+    "name": "AI Tools",
+    "emoji": "⚡",
+    "order": 1,
+    "description": "AI-powered tools."
+  },
+  {
+    "id": "image-tools",
+    "name": "Image Tools",
+    "emoji": "🖼",
+    "order": 2,
+    "description": "Image compression, resizing, and converters."
+  },
+  {
+    "id": "pdf-tools",
+    "name": "PDF Tools",
+    "emoji": "📄",
+    "order": 3,
+    "description": "Manage and edit PDF documents."
+  },
+  {
+    "id": "text-tools",
+    "name": "Text Tools",
+    "emoji": "🔤",
+    "order": 4,
+    "description": "Format, modify, and analyze text."
+  },
+  {
+    "id": "file-tools",
+    "name": "File Tools",
+    "emoji": "📁",
+    "order": 5,
+    "description": "File compression, formats, and utility tools."
+  },
+  {
+    "id": "video-tools",
+    "name": "Video Tools",
+    "emoji": "🎥",
+    "order": 6,
+    "description": "Video editors and converters."
+  },
+  {
+    "id": "audio-tools",
+    "name": "Audio Tools",
+    "emoji": "🔊",
+    "order": 7,
+    "description": "Audio utilities and processors."
+  },
+  {
+    "id": "developer-tools",
+    "name": "Developer Tools",
+    "emoji": "🛠",
+    "order": 8,
+    "description": "Converters, formatters, and coding encoders."
+  },
+  {
+    "id": "web-tools",
+    "name": "Web Tools",
+    "emoji": "🌐",
+    "order": 9,
+    "description": "HTML, CSS, JS, and server-side utilities."
+  },
+  {
+    "id": "seo-tools",
+    "name": "SEO Tools",
+    "emoji": "📊",
+    "order": 10,
+    "description": "Improve your site performance and keywords ranking."
+  },
+  {
+    "id": "social-media-tools",
+    "name": "Social Media Tools",
+    "emoji": "📱",
+    "order": 11,
+    "description": "Generate elements for social profiles."
+  },
+  {
+    "id": "security-tools",
+    "name": "Security Tools",
+    "emoji": "🔐",
+    "order": 12,
+    "description": "Hashes, generators, and encryption utilities."
+  },
+  {
+    "id": "color-tools",
+    "name": "Color Tools",
+    "emoji": "🎨",
+    "order": 13,
+    "description": "Color pickers, generators, and conversion palettes."
+  },
+  {
+    "id": "finance-tools",
+    "name": "Finance Tools",
+    "emoji": "💵",
+    "order": 14,
+    "description": "EMI, loan, tax, and investment calculators."
+  },
+  {
+    "id": "education-tools",
+    "name": "Education Tools",
+    "emoji": "🎓",
+    "order": 15,
+    "description": "Converters, guides, and learning resources."
+  },
+  {
+    "id": "business-tools",
+    "name": "Business Tools",
+    "emoji": "💼",
+    "order": 16,
+    "description": "Invoices, tracking, and organization sheets."
+  },
+  {
+    "id": "marketing-tools",
+    "name": "Marketing Tools",
+    "emoji": "📈",
+    "order": 17,
+    "description": "Traffic planners and conversion estimators."
+  },
+  {
+    "id": "medical-tools",
+    "name": "Medical & Laboratory Tools",
+    "emoji": "🩺",
+    "order": 18,
+    "description": "Clinical pathology test calculators, reference range interpreters."
+  },
+  {
+    "id": "health-calculators",
+    "name": "Health Calculators",
+    "emoji": "🏥",
+    "order": 19,
+    "description": "Evaluate BMI, age, and pregnancy parameters."
+  },
+  {
+    "id": "unit-converters",
+    "name": "Unit Converters",
+    "emoji": "🔄",
+    "order": 20,
+    "description": "Metric and imperial scale multipliers."
+  },
+  {
+    "id": "scientific-calculators",
+    "name": "Scientific Calculators",
+    "emoji": "🔬",
+    "order": 21,
+    "description": "Standard formulas and algebraic parameters."
+  },
+  {
+    "id": "lifestyle-tools",
+    "name": "Lifestyle Tools",
+    "emoji": "🍀",
+    "order": 22,
+    "description": "Fun utilities and personal trackers."
+  },
+  {
+    "id": "utility-tools",
+    "name": "Utility Tools",
+    "emoji": "⚙️",
+    "order": 23,
+    "description": "General daily utilities."
+  }
+]

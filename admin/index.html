@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard &bull; SSDK TOOLS HUB</title>
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <!-- SSDK Bootstrap Engine -->
+  <script src="../core/bootstrap.js" type="module"></script>
+  
+  <style>
+    /* Admin Dashboard Specific Enhancements */
+    .admin-container {
+      max-width: 1100px;
+      margin: 20px auto;
+      padding: 0 4%;
+    }
+    
+    .admin-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    
+    .admin-tab {
+      padding: 10px 20px;
+      border-radius: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.3s;
+    }
+    
+    .admin-tab:hover,
+    .admin-tab.active {
+      border-color: var(--accent);
+      color: var(--text);
+      box-shadow: 0 0 12px var(--glow);
+    }
+    
+    .admin-tab.active {
+      background: var(--grad2);
+      color: #fff;
+    }
+    
+    .panel {
+      display: none;
+    }
+    
+    .panel.active {
+      display: block;
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+      backdrop-filter: blur(8px);
+    }
+    
+    .stat-val {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: var(--grad-title);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 4px;
+    }
+    
+    .stat-lbl {
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    /* Table styling */
+    .admin-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--card);
+    }
+    
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    
+    .admin-table th {
+      background: var(--bg3);
+      color: var(--accent);
+      font-weight: 800;
+    }
+    
+    .admin-table tr:hover td {
+      background: var(--card2);
+    }
+    
+    .badge-type {
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    
+    .badge-type.js { background: rgba(234, 179, 8, 0.15); color: #eab308; }
+    .badge-type.python { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+    .badge-type.ai { background: rgba(168, 85, 247, 0.15); color: #a855f7; }
+    
+    /* Form grids */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    
+    @media (max-width: 768px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+
+<main class="page">
+  <header class="tool-meta">
+    <h1 class="page-title">Admin Control Dashboard</h1>
+    <p class="page-sub">Manage tool indexes, view analytical traffic data, and configure JSON database files.</p>
+  </header>
+
+  <div class="admin-container">
+    <!-- Tabs Row -->
+    <div class="admin-tabs" role="tablist">
+      <button class="admin-tab active" data-tab="tab-analytics" role="tab">📈 Analytics Overview</button>
+      <button class="admin-tab" data-tab="tab-tools" role="tab">⚙️ Manage Tools</button>
+      <button class="admin-tab" data-tab="tab-publish" role="tab">🚀 Publish New Tool</button>
+      <button class="admin-tab" data-tab="tab-json" role="tab">💾 JSON Database Editor</button>
+    </div>
+
+    <!-- 1. Analytics Panel -->
+    <div class="panel active" id="tab-analytics">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-val" id="stat-total-tools">0</div>
+          <div class="stat-lbl">Total Tools</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-total-cats">0</div>
+          <div class="stat-lbl">Categories</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-run-actions">0</div>
+          <div class="stat-lbl">Total Run Events</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="stat-downloads">0</div>
+          <div class="stat-lbl">File Downloads</div>
+        </div>
+      </div>
+      
+      <div class="content-card">
+        <h3>Recent Analytics Activities Log</h3>
+        <div class="admin-table-wrap" style="margin-top: 15px;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Category</th>
+                <th>Action</th>
+                <th>Label</th>
+              </tr>
+            </thead>
+            <tbody id="analytics-log-tbody">
+              <tr>
+                <td colspan="4" style="text-align: center; color: var(--muted);">No recent logs captured.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Manage Tools Panel -->
+    <div class="panel" id="tab-tools">
+      <div class="content-card">
+        <h3 style="margin-bottom: 15px;">Indexed Tools List</h3>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Tool Name</th>
+                <th>Category</th>
+                <th>Type</th>
+                <th>URL Target</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tools-tbody">
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--muted);">Loading registry...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Publish Tool Panel -->
+    <div class="panel" id="tab-publish">
+      <div class="content-card">
+        <h3 style="margin-bottom: 20px;">Publish New Tool Configuration</h3>
+        <form class="contact-form" id="publish-tool-form">
+          <div class="form-grid">
+            <div class="field-grid-1">
+              <label class="field-label">Tool Name</label>
+              <input class="field-input" id="pub-name" type="text" placeholder="e.g. JSON Minifier" required>
+            </div>
+            <div class="field-grid-1">
+              <label class="field-label">Category Group</label>
+              <select class="field-input" id="pub-cat" required></select>
+            </div>
+          </div>
+          
+          <div class="form-grid">
+            <div class="field-grid-1">
+              <label class="field-label">Emoji Icon</label>
+              <input class="field-input" id="pub-icon" type="text" placeholder="e.g. 🛠" required>
+            </div>
+            <div class="field-grid-1">
+              <label class="field-label">Execution Type</label>
+              <select class="field-input" id="pub-type" required>
+                <option value="js">JavaScript (Client-Side)</option>
+                <option value="python">Python (FastAPI Backend)</option>
+                <option value="ai">AI (NLP Extractive)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-grid-1">
+            <label class="field-label">Tool Description</label>
+            <input class="field-input" id="pub-desc" type="text" placeholder="Explain what the tool processes..." required>
+          </div>
+
+          <div class="field-grid-1">
+            <label class="field-label">Target URL Path</label>
+            <input class="field-input" id="pub-url" type="text" placeholder="tools/my-tool.html" required>
+          </div>
+
+          <div class="tool-control" style="margin-top: 10px;">
+            <button type="submit" class="btn">🚀 Publish Tool Config</button>
+            <button type="reset" class="btn ghost">Clear Form</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- 4. JSON Editor Panel -->
+    <div class="panel" id="tab-json">
+      <div class="content-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+          <h3>Config JSON Editor</h3>
+          <select id="json-file-selector" class="field-input" style="width:200px; padding:6px 12px; margin:0;">
+            <option value="tools.json">tools.json</option>
+            <option value="categories.json">categories.json</option>
+            <option value="faq.json">faq.json</option>
+            <option value="settings.json">settings.json</option>
+          </select>
+        </div>
+        <textarea id="json-editor-textarea" style="width:100%; min-height:400px; font-family:monospace; background:var(--bg3); color:var(--text); padding:16px; border-radius:12px; border:1px solid var(--border); outline:none; resize:vertical;"></textarea>
+        
+        <div class="tool-control" style="margin-top: 15px;">
+          <button id="btn-save-json" class="btn">💾 Download Config File</button>
+          <button id="btn-format-json" class="btn ghost">🧹 Format / Beautify</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  // Admin Page Tab switching
+  const tabs = document.querySelectorAll(".admin-tab");
+  const panels = document.querySelectorAll(".panel");
+
+  tabs.forEach(tab => {
+    tab.onclick = () => {
+      tabs.forEach(t => t.classList.remove("active"));
+      panels.forEach(p => p.classList.remove("active"));
+
+      tab.classList.add("active");
+      document.getElementById(tab.dataset.tab).classList.add("active");
+    };
+  });
+
+  // Access core SSDK engines
+  const checkCore = setInterval(async () => {
+    if (window.SSDKCore) {
+      clearInterval(checkCore);
+      const core = window.SSDKCore;
+      await initAdminDashboard(core);
+    }
+  }, 100);
+
+  async function initAdminDashboard(core) {
+    const firebaseEngine = core.getEngine("firebase");
+    if (window.location.protocol !== "file:" && firebaseEngine) {
+      const checkAuth = () => {
+        const auth = firebaseEngine.auth;
+        if (auth) {
+          auth.onAuthStateChanged(user => {
+            if (!user || user.email !== "dearswarnavadaskarmakar@gmail.com") {
+              window.location.href = "../pages/login.html?redirect=admin";
+            }
+          });
+        } else {
+          setTimeout(checkAuth, 100);
+        }
+      };
+      checkAuth();
+    }
+
+    const config = core.getEngine("config");
+    const analytics = core.getEngine("analytics");
+    const notification = core.getEngine("notification");
+
+    const tools = await config.getTools();
+    const categories = await config.getCategories();
+
+    // 1. Populate stats counts
+    document.getElementById("stat-total-tools").textContent = tools.length;
+    document.getElementById("stat-total-cats").textContent = categories.length;
+
+    const events = analytics ? analytics.getEvents() : [];
+    const runCount = events.filter(e => e.action === "run" || e.category === "tool").length;
+    const downloadCount = events.filter(e => e.action === "download").length;
+    
+    document.getElementById("stat-run-actions").textContent = runCount;
+    document.getElementById("stat-downloads").textContent = downloadCount;
+
+    // 2. Render analytics log table
+    const logTbody = document.getElementById("analytics-log-tbody");
+    if (events.length > 0) {
+      logTbody.innerHTML = events.slice(-8).reverse().map(e => `
+        <tr>
+          <td>${new Date(e.timestamp).toLocaleTimeString()}</td>
+          <td>${e.category}</td>
+          <td>${e.action}</td>
+          <td>${e.label || '-'}</td>
+        </tr>
+      `).join("");
+    }
+
+    // 3. Render tools table
+    const toolsTbody = document.getElementById("tools-tbody");
+    toolsTbody.innerHTML = tools.map(t => `
+      <tr>
+        <td><strong>${t.name}</strong></td>
+        <td>${t.category}</td>
+        <td><span class="badge-type ${t.type}">${t.type}</span></td>
+        <td><code>${t.url}</code></td>
+        <td>
+          <button class="del-btn delete-tool-trigger" data-id="${t.id}" style="padding:4px 8px; font-size:0.8rem;">Delete</button>
+        </td>
+      </tr>
+    `).join("");
+
+    // Bind delete actions
+    document.querySelectorAll(".delete-tool-trigger").forEach(btn => {
+      btn.onclick = () => {
+        const id = btn.getAttribute("data-id");
+        if (confirm(`Are you sure you want to delete the configuration for tool [${id}]?`)) {
+          if (notification) notification.show(`Deleted config path [${id}]. Download updated schema to apply.`, "warning");
+        }
+      };
+    });
+
+    // 4. Populate categories dropdown selector in publish form
+    const pubCatSelect = document.getElementById("pub-cat");
+    pubCatSelect.innerHTML = categories.map(c => `
+      <option value="${c.name}">${c.emoji} ${c.name}</option>
+    `).join("");
+
+    // 5. Handle tool publish form submission
+    const pubForm = document.getElementById("publish-tool-form");
+    pubForm.onsubmit = (e) => {
+      e.preventDefault();
+      
+      const newTool = {
+        id: document.getElementById("pub-name").value.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        name: document.getElementById("pub-name").value,
+        category: document.getElementById("pub-cat").value,
+        description: document.getElementById("pub-desc").value,
+        icon: document.getElementById("pub-icon").value,
+        url: document.getElementById("pub-url").value,
+        type: document.getElementById("pub-type").value,
+        featured: false,
+        addedDate: new Date().toISOString().split("T")[0]
+      };
+
+      if (notification) {
+        notification.show(`Successfully generated config for [${newTool.name}]!`, "success");
+      }
+      
+      // Auto switch to JSON tab and paste new list
+      const updatedTools = [...tools, newTool];
+      document.getElementById("json-editor-textarea").value = JSON.stringify(updatedTools, null, 2);
+      
+      // Switch tabs
+      tabs[3].click();
+    };
+
+    // 6. Handle JSON database editor loading
+    const jsonSelector = document.getElementById("json-file-selector");
+    const jsonTextarea = document.getElementById("json-editor-textarea");
+
+    const loadJsonFile = async (filename) => {
+      const data = await config.loadJSON(filename);
+      jsonTextarea.value = JSON.stringify(data, null, 2);
+    };
+
+    jsonSelector.onchange = () => loadJsonFile(jsonSelector.value);
+    // Initial load
+    await loadJsonFile("tools.json");
+
+    // Format click handler
+    document.getElementById("btn-format-json").onclick = () => {
+      try {
+        const val = JSON.parse(jsonTextarea.value);
+        jsonTextarea.value = JSON.stringify(val, null, 2);
+        if (notification) notification.show("JSON formatted successfully!", "success");
+      } catch (err) {
+        if (notification) notification.show("Invalid JSON format!", "error");
+      }
+    };
+
+    // Save/Download click handler
+    document.getElementById("btn-save-json").onclick = () => {
+      try {
+        const parsed = JSON.parse(jsonTextarea.value);
+        const blob = new Blob([JSON.stringify(parsed, null, 2)], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = jsonSelector.value;
+        a.click();
+        if (notification) notification.show(`Downloaded config [${jsonSelector.value}]!`, "success");
+      } catch (err) {
+        if (notification) notification.show("Cannot save: Invalid JSON structure", "error");
+      }
+    };
+  }
+</script>
+</body>
+</html>

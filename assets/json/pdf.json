@@ -1,0 +1,46 @@
+[
+  {
+    "id": "merge-pdf",
+    "name": "Merge PDF",
+    "category": "📄 PDF Tools",
+    "description": "Combine multiple PDFs into one.",
+    "icon": "📑",
+    "url": "tools/pdf-merge.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "split-pdf",
+    "name": "Split PDF",
+    "category": "📄 PDF Tools",
+    "description": "Split a PDF into pages.",
+    "icon": "✂️",
+    "url": "tools/pdf-split.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "image-to-pdf",
+    "name": "Image to PDF",
+    "category": "📄 PDF Tools",
+    "description": "Convert images into a PDF.",
+    "icon": "🖼",
+    "url": "tools/img-to-pdf.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "compress-pdf",
+    "name": "Compress PDF",
+    "category": "📄 PDF Tools",
+    "description": "Shrink PDF file size.",
+    "icon": "🗜",
+    "url": "tools/pdf-compress.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  }
+]

@@ -1,0 +1,70 @@
+{
+  "app": {
+    "name": "SSDK Tools Hub",
+    "version": "2.0.0",
+    "build": "20260711",
+    "defaultLanguage": "en"
+  },
+  "environments": {
+    "development": {
+      "hostnames": ["localhost", "127.0.0.1", "0.0.0.0"],
+      "apiBaseUrl": "http://localhost:8000/api/v1",
+      "assetsUrl": ".",
+      "debug": true
+    },
+    "staging": {
+      "hostnames": ["staging.ssdk-tools.com", "beta.ssdk-tools.com"],
+      "apiBaseUrl": "https://staging-api.ssdk-tools.com/api/v1",
+      "assetsUrl": "https://staging-api.ssdk-tools.com/assets",
+      "debug": true
+    },
+    "production": {
+      "hostnames": ["ssdk-tools.com", "www.ssdk-tools.com"],
+      "apiBaseUrl": "https://api.ssdk-tools.com/api/v1",
+      "assetsUrl": "https://ssdk-tools.com/assets",
+      "debug": false
+    }
+  },
+  "features": {
+    "enableAITools": true,
+    "enableMedicalTools": true,
+    "enableAdminPanel": false,
+    "enableFavorites": true,
+    "enableTrending": true,
+    "enableVoiceSearch": true,
+    "enableUserAccounts": false
+  },
+  "api": {
+    "timeoutMs": 10000,
+    "retryCount": 3,
+    "endpoints": {
+      "tools": "/tools",
+      "categories": "/categories",
+      "search": "/search",
+      "auth": "/auth/login"
+    }
+  },
+  "theme": {
+    "defaultMode": "dark",
+    "primaryColor": "#00f2fe",
+    "accentColor": "#4facfe"
+  },
+  "seo": {
+    "defaultTitle": "SSDK Tools Hub - Free Online Utilities",
+    "defaultDescription": "A comprehensive collection of 5000+ free online tools.",
+    "canonicalBase": "https://ssdk-tools.com"
+  },
+  "security": {
+    "authType": "jwt",
+    "csrfProtection": true
+  },
+  "firebase": {
+    "apiKey": "AIzaSyCmRITivfWsD2YZDijcRh8xqXrwzL3B0e4",
+    "authDomain": "ssdk-tools-hub.firebaseapp.com",
+    "projectId": "ssdk-tools-hub",
+    "storageBucket": "ssdk-tools-hub.firebasestorage.app",
+    "messagingSenderId": "135148967233",
+    "appId": "1:135148967233:web:ca98f8eb2e9a1717877dc0",
+    "measurementId": "G-4Y0CR0BSWQ"
+  }
+}

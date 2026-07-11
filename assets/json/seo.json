@@ -1,0 +1,35 @@
+[
+  {
+    "id": "keyword-density",
+    "name": "Keyword Density",
+    "category": "📊 SEO Tools",
+    "description": "Check keyword density.",
+    "icon": "📈",
+    "url": "tools/keyword.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "robots-txt-generator",
+    "name": "Robots.txt Generator",
+    "category": "📊 SEO Tools",
+    "description": "Generate robots.txt.",
+    "icon": "🤖",
+    "url": "tools/robots.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "sitemap-generator",
+    "name": "Sitemap Generator",
+    "category": "📊 SEO Tools",
+    "description": "Create XML sitemap.",
+    "icon": "🗺",
+    "url": "tools/sitemap.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  }
+]

@@ -1,0 +1,57 @@
+[
+  {
+    "id": "json-formatter",
+    "name": "JSON Formatter",
+    "category": "🛠 Developer Tools",
+    "description": "Format, validate, and minify JSON instantly.",
+    "icon": "🧩",
+    "url": "tools/json-formatter.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "base64-encode-decode",
+    "name": "Base64 Encode/Decode",
+    "category": "🛠 Developer Tools",
+    "description": "Encode or decode Base64 text string.",
+    "icon": "🔁",
+    "url": "tools/base64.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "regex-tester",
+    "name": "Regex Tester",
+    "category": "🛠 Developer Tools",
+    "description": "Test regular expressions live.",
+    "icon": "🔍",
+    "url": "tools/regex.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "uuid-generator",
+    "name": "UUID Generator",
+    "category": "🛠 Developer Tools",
+    "description": "Generate RFC4122 compliant UUIDs.",
+    "icon": "🆔",
+    "url": "tools/uuid.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "python-wasm-runner",
+    "name": "Python WASM Runner",
+    "category": "🛠 Developer Tools",
+    "description": "Execute Python scripts and math packages client-side.",
+    "icon": "🐍",
+    "url": "tools/py-interpreter.html",
+    "type": "python",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  }
+]

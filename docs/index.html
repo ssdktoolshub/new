@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Developer Documentation &bull; SSDK TOOLS HUB</title>
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <!-- SSDK Bootstrap Engine -->
+  <script src="../core/bootstrap.js" type="module"></script>
+  
+  <style>
+    .docs-wrap {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 30px;
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 0 4%;
+    }
+    
+    @media (max-width: 900px) {
+      .docs-wrap { grid-template-columns: 1fr; }
+    }
+    
+    .docs-nav {
+      position: sticky;
+      top: 100px;
+      height: fit-content;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+    
+    .docs-nav h4 {
+      color: var(--accent);
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .docs-nav-link {
+      display: block;
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.3s;
+      text-decoration: none;
+      margin-bottom: 4px;
+    }
+    
+    .docs-nav-link:hover,
+    .docs-nav-link.active {
+      color: var(--text);
+      background: var(--card2);
+    }
+    
+    .docs-nav-link.active {
+      color: #fff;
+      background: var(--grad2);
+    }
+    
+    .docs-content section {
+      margin-bottom: 40px;
+      scroll-margin-top: 100px;
+    }
+    
+    .code-block {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin: 15px 0;
+      position: relative;
+    }
+    
+    .btn-copy-code {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 4px 8px;
+      font-size: 0.72rem;
+      border-radius: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      cursor: pointer;
+    }
+    
+    .btn-copy-code:hover {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+
+<main class="page">
+  <header class="tool-meta">
+    <h1 class="page-title">Developer Hub & SDK Documentation</h1>
+    <p class="page-sub">Learn how to build, test, and ship premium modular utilities on SSDK Tools Hub.</p>
+  </header>
+
+  <div class="docs-wrap">
+    <!-- Left Navigation Menu -->
+    <nav class="docs-nav">
+      <h4>SSDK Core SDK</h4>
+      <a href="#quickstart" class="docs-nav-link active">🚀 Quick Start</a>
+      <a href="#sdkbase" class="docs-nav-link">🛠 Base Tool SDK</a>
+      <a href="#subengines" class="docs-nav-link">🔌 Core Sub-Engines</a>
+      <a href="#pythonapi" class="docs-nav-link">🐍 Python FastAPI APIs</a>
+    </nav>
+
+    <!-- Content Sections -->
+    <div class="docs-content">
+      <!-- 1. Quick Start -->
+      <section id="quickstart">
+        <h2>🚀 Quick Start</h2>
+        <p>SSDK Tools Hub is a database-driven multi-tool platform. To add a new tool to the system, follow these three simple steps:</p>
+        
+        <ol style="margin-left: 20px; line-height: 1.6;">
+          <li>Create your tool page HTML template inside <code>/tools/tool-id.html</code>.</li>
+          <li>Write your tool business logic module inside <code>/modules/tool-id.js</code> extending the <code>SSDKTool</code> base class.</li>
+          <li>Register your tool metadata inside <code>/json/tools.json</code> using the Admin Dashboard.</li>
+        </ol>
+      </section>
+
+      <!-- 2. Base Tool SDK -->
+      <section id="sdkbase">
+        <h2>🛠 Base Tool SDK</h2>
+        <p>Every tool page uses the <code>SSDKTool</code> base class to inherit lifecycle hooks, event handling, and layout binders.</p>
+        
+        <div class="code-block">
+          <button class="btn-copy-code">Copy</button>
+          <pre><code>import { SSDKTool } from "../core/sdk.js";
+
+export default class MyCustomTool extends SSDKTool {
+  async init(toolEngine) {
+    await super.init(toolEngine);
+    console.log("Custom tool initialized!");
+  }
+
+  async run(toolEngine) {
+    this.showProgress(true, "Processing data...");
+    
+    // Grab value from toolInput field
+    const input = this.getInputValue();
+    
+    // Business logic processes
+    const processed = input.trim().split("").reverse().join("");
+    
+    // Set value into toolOutput
+    this.setOutputValue(processed);
+    
+    this.showProgress(false);
+    this.showStatus("✅ Reversal completed successfully!");
+  }
+}</code></pre>
+        </div>
+      </section>
+
+      <!-- 3. Core Sub-Engines -->
+      <section id="subengines">
+        <h2>🔌 Core Sub-Engines</h2>
+        <p>The global system orchestrator <code>window.SSDKCore</code> registers several sub-engines that can be queried from any custom module script:</p>
+        
+        <ul style="margin-left: 20px; line-height: 1.8;">
+          <li><strong><code>config</code></strong>: Load and parse static JSON files (<code>config.loadJSON("faq.json")</code>).</li>
+          <li><strong><code>theme</code></strong>: Toggle themes and variables (<code>theme.toggleTheme()</code>).</li>
+          <li><strong><code>search</code></strong>: Run fuzzy searches against indexes (<code>search.search("query")</code>).</li>
+          <li><strong><code>notification</code></strong>: Display status toasts on-the-fly (<code>notification.show("Done!", "success")</code>).</li>
+          <li><strong><code>analytics</code></strong>: Log telemetry counts (<code>analytics.logEvent("tool", "run", "reverser")</code>).</li>
+          <li><strong><code>firebase</code></strong>: Run Firestore syncing and auth state queries.</li>
+        </ul>
+      </section>
+
+      <!-- 4. Python FastAPI APIs -->
+      <section id="pythonapi">
+        <h2>🐍 Python FastAPI APIs</h2>
+        <p>For resource-heavy tasks (PDF conversions, file compression, image transformations), query the FastAPI backend using the <code>python</code> sub-engine:</p>
+        
+        <div class="code-block">
+          <button class="btn-copy-code">Copy</button>
+          <pre><code>const pythonEngine = this.engine.core.getEngine("python");
+
+// Running JSON payloads
+const result = await pythonEngine.runBackendTask("/v1/ai/summarize", {
+  text: "Raw string inputs",
+  ratio: 0.3
+});
+
+// Running file uploads streams
+const files = document.getElementById("file-upload").files;
+const uploadRes = await pythonEngine.uploadFilesTask("/v1/pdf/merge", Array.from(files), (pct) => {
+  console.log(`Upload progress: ${pct}%`);
+});</code></pre>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  // Quick documentation scroll spy
+  const docLinks = document.querySelectorAll(".docs-nav-link");
+  const sections = document.querySelectorAll(".docs-content section");
+
+  window.addEventListener("scroll", () => {
+    let current = "";
+    sections.forEach(s => {
+      const top = s.offsetTop - 120;
+      if (window.scrollY >= top) {
+        current = s.getAttribute("id");
+      }
+    });
+
+    docLinks.forEach(link => {
+      link.classList.remove("active");
+      if (link.getAttribute("href").substring(1) === current) {
+        link.classList.add("active");
+      }
+    });
+  });
+
+  // Code copy buttons
+  document.querySelectorAll(".btn-copy-code").forEach(btn => {
+    btn.onclick = () => {
+      const code = btn.nextElementSibling.querySelector("code").textContent;
+      navigator.clipboard.writeText(code);
+      btn.textContent = "Copied! ✓";
+      setTimeout(() => btn.textContent = "Copy", 2000);
+    };
+  });
+</script>
+</body>
+</html>

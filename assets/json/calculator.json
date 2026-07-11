@@ -1,0 +1,46 @@
+[
+  {
+    "id": "age-calculator",
+    "name": "Age Calculator",
+    "category": "🧮 Calculators",
+    "description": "Calculate age from birth date.",
+    "icon": "🎂",
+    "url": "tools/age.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "bmi-calculator",
+    "name": "BMI Calculator",
+    "category": "🧮 Calculators",
+    "description": "Check your body mass index.",
+    "icon": "⚖️",
+    "url": "tools/bmi.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "emi-calculator",
+    "name": "EMI Calculator",
+    "category": "🧮 Calculators",
+    "description": "Loan EMI & interest calc.",
+    "icon": "💰",
+    "url": "tools/emi.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  },
+  {
+    "id": "percentage-calc",
+    "name": "Percentage Calc",
+    "category": "🧮 Calculators",
+    "description": "Quick percentage maths.",
+    "icon": "📊",
+    "url": "tools/percent.html",
+    "type": "js",
+    "featured": false,
+    "addedDate": "2026-06-28"
+  }
+]

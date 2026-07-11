@@ -1,0 +1,79 @@
+/* SSDK Tools Hub Centralized Design Tokens */
+
+:root {
+  /* Colors */
+  --primary-color: #7C3AED;
+  --secondary-color: #A855F7;
+  --accent-color: #C084FC;
+  --success-color: #22c55e;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+
+  /* Theme-dependent Backgrounds (Default Dark) */
+  --bg-primary: #0a0e17;
+  --bg-secondary: #0f1423;
+  --bg-tertiary: #171d30;
+  
+  /* Text colors */
+  --text-primary: #f3f4f6;
+  --text-muted: #9ca3af;
+
+  /* Borders & Glows */
+  --glow-color: rgba(124, 58, 237, 0.35);
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-bg-hover: rgba(124, 58, 237, 0.05);
+  --border-color: rgba(124, 58, 237, 0.2);
+
+  /* Typography */
+  --font-family: 'Outfit', 'Segoe UI', system-ui, sans-serif;
+  --font-size-base: 1rem;
+  --font-size-sm: 0.85rem;
+  --font-size-xs: 0.75rem;
+  --font-size-h1: 2.5rem;
+  --font-size-h2: 2rem;
+  --font-size-h3: 1.5rem;
+  --font-size-h4: 1.2rem;
+  
+  /* Button Sizes */
+  --btn-padding-y: 12px;
+  --btn-padding-x: 24px;
+  --btn-font-size: 0.95rem;
+
+  /* Layout, Spacing, and Dimensions */
+  --container-max-width: 1200px;
+  --border-radius-base: 8px;
+  --border-radius-card: 16px;
+  --border-radius-btn: 12px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 14px;
+  --spacing-lg: 20px;
+  --spacing-xl: 24px;
+
+  /* Shadows & Transitions */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --transition-speed: 0.3s;
+  --transition-ease: ease-in-out;
+  
+  /* Z-index layers */
+  --z-index-background: -2;
+  --z-index-particles: -1;
+  --z-index-default: 1;
+  --z-index-navigation: 1000;
+  --z-index-dropdown: 1010;
+  --z-index-progress: 9999;
+}
+
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #f1f5f9;
+  --bg-tertiary: #ffffff;
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
+  --glow-color: rgba(124, 58, 237, 0.15);
+  --card-bg: rgba(124, 58, 237, 0.03);
+  --card-bg-hover: rgba(124, 58, 237, 0.05);
+  --border-color: rgba(124, 58, 237, 0.18);
+}
