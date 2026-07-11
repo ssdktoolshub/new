@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSDK Test Runner &bull; SSDK TOOLS HUB</title>
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <!-- SSDK Bootstrap Engine -->
+  <script src="../core/bootstrap.js" type="module"></script>
+  
+  <style>
+    .test-container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 0 4%;
+    }
+    
+    .test-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .test-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+    
+    .test-item:last-child {
+      border-bottom: none;
+    }
+    
+    .test-name {
+      font-weight: 600;
+    }
+    
+    .test-status {
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+    
+    .test-status.pass {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+    
+    .test-status.fail {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+    
+    .test-error-log {
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #ff6b6b;
+      margin-top: 6px;
+      padding-left: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+
+<main class="page">
+  <header class="tool-meta">
+    <h1 class="page-title">SSDK Test Runner</h1>
+    <p class="page-sub">Interactive client-side testing framework checking core engine integrations.</p>
+  </header>
+
+  <div class="test-container">
+    <div class="test-header-row">
+      <h3 id="test-summary-title">Running SSDK Test Suite...</h3>
+      <button class="btn" id="btn-re-run">Run Tests</button>
+    </div>
+
+    <div class="content-card">
+      <div id="test-results-list">
+        <p style="color:var(--muted)">Waiting for Core Engine initialization...</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  const checkCore = setInterval(async () => {
+    if (window.SSDKCore) {
+      clearInterval(checkCore);
+      await runTestSuite(window.SSDKCore);
+    }
+  }, 100);
+
+  document.getElementById("btn-re-run").onclick = async () => {
+    if (window.SSDKCore) {
+      await runTestSuite(window.SSDKCore);
+    }
+  };
+
+  async function runTestSuite(core) {
+    const listContainer = document.getElementById("test-results-list");
+    const summaryTitle = document.getElementById("test-summary-title");
+    
+    listContainer.innerHTML = "<p style='color:var(--muted)'>Executing test suites...</p>";
+    
+    const tests = [
+      {
+        name: "Test Config Engine (Loads Manifests)",
+        fn: async () => {
+          const config = core.getEngine("config");
+          if (!config) throw new Error("ConfigEngine not registered");
+          const tools = await config.getTools();
+          const cats = await config.getCategories();
+          if (!Array.isArray(tools) || tools.length === 0) throw new Error("Failed to load tools index");
+          if (!Array.isArray(cats) || cats.length === 0) throw new Error("Failed to load categories index");
+          return `Loaded ${tools.length} tools, ${cats.length} categories.`;
+        }
+      },
+      {
+        name: "Test Search Engine (Fuzzy Matching)",
+        fn: async () => {
+          const search = core.getEngine("search");
+          if (!search) throw new Error("SearchEngine not registered");
+          const results = await search.search("json");
+          if (results.length === 0) throw new Error("Failed to match 'json' keyword query");
+          const names = results.map(t => t.name.toLowerCase());
+          if (!names.some(n => n.includes("json"))) throw new Error("Fuzzy match score ordering failed");
+          return `Fuzzy matched ${results.length} tools for 'json'.`;
+        }
+      },
+      {
+        name: "Test Theme Engine (Toggles Properties)",
+        fn: async () => {
+          const theme = core.getEngine("theme");
+          if (!theme) throw new Error("ThemeEngine not registered");
+          const orig = theme.currentTheme;
+          theme.toggleTheme();
+          const toggled = theme.currentTheme;
+          if (toggled === orig) throw new Error("Theme state transition failed");
+          // Revert back
+          theme.toggleTheme();
+          return `Successfully cycled themes. Default: ${orig}.`;
+        }
+      },
+      {
+        name: "Test History Engine (Recently Visited)",
+        fn: async () => {
+          const history = core.getEngine("history");
+          if (!history) throw new Error("HistoryEngine not registered");
+          
+          history.clearHistory();
+          history.addVisited({ id: "test-tool-1", name: "Test Tool 1", icon: "🔧", url: "tools/test.html" });
+          
+          const list = history.getHistory();
+          if (list.length !== 1 || list[0].id !== "test-tool-1") throw new Error("History log append mismatch");
+          return `History logs compiled successfully.`;
+        }
+      },
+      {
+        name: "Test Favorites Engine (State Checks)",
+        fn: async () => {
+          const favs = core.getEngine("favorites");
+          if (!favs) throw new Error("FavoritesEngine not registered");
+          
+          localStorage.removeItem("ssdk-tool-favorites");
+          favs.loadLocalFavorites();
+          
+          await favs.toggleFavorite({ id: "fav-test-tool" });
+          if (!favs.isFavorite("fav-test-tool")) throw new Error("Favorite state toggle check failed");
+          return `Favorites cached and parsed correctly.`;
+        }
+      }
+    ];
+
+    let passedCount = 0;
+    listContainer.innerHTML = "";
+
+    for (const test of tests) {
+      const item = document.createElement("div");
+      item.className = "test-item";
+      
+      const details = document.createElement("div");
+      details.innerHTML = `<span class="test-name">${test.name}</span>`;
+      
+      const badge = document.createElement("span");
+      badge.className = "test-status";
+      
+      try {
+        const msg = await test.fn();
+        badge.textContent = "Pass";
+        badge.classList.add("pass");
+        details.innerHTML += `<div style="font-size:0.8rem; color:var(--muted); margin-top:2px;">${msg}</div>`;
+        passedCount++;
+      } catch (err) {
+        badge.textContent = "Fail";
+        badge.classList.add("fail");
+        details.innerHTML += `<div class="test-error-log">❌ Assert failed: ${err.message}</div>`;
+      }
+      
+      item.appendChild(details);
+      item.appendChild(badge);
+      listContainer.appendChild(item);
+    }
+
+    summaryTitle.textContent = `Tests Completed: ${passedCount} / ${tests.length} Passed`;
+    
+    // Display global notification
+    const notification = core.getEngine("notification");
+    if (notification) {
+      if (passedCount === tests.length) {
+        notification.show("✅ SSDK Core Engine: All tests passed!", "success");
+      } else {
+        notification.show("❌ Test suite found failed assertions", "error");
+      }
+    }
+  }
+</script>
+</body>
+</html>
