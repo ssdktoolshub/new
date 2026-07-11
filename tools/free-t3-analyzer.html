@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free T3 (fT3) Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze Free T3 (fT3) levels online. Evaluate active thyroid hormone levels, detect hyperthyroidism or hypothyroidism, and view clinical insights.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+
+  <!-- html2canvas for PNG export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) { .lab-grid { grid-template-columns: 1fr; } }
+
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255,255,255,0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+
+    .input-wrapper { display: flex; flex-direction: column; gap: 4px; }
+    .input-wrapper label { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+    .input-wrapper input,
+    .input-wrapper select {
+      padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg3); color: var(--text); outline: none;
+      font-size: 0.9rem; transition: all 0.25s;
+    }
+    .input-wrapper input:focus,
+    .input-wrapper select:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--glow); }
+
+    .lang-toggle-container { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+    .lang-btn {
+      background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+      padding: 6px 14px; border-radius: 20px; cursor: pointer;
+      font-size: 0.8rem; font-weight: 700; transition: all 0.3s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 10px var(--glow); }
+
+    .results-display {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px; min-height: 400px;
+    }
+
+    .results-placeholder { text-align: center; padding: 80px 20px; color: var(--muted); }
+    .results-placeholder .icon { font-size: 3.5rem; margin-bottom: 12px; opacity: 0.5; display: block; }
+
+    .report-card { display: flex; flex-direction: column; gap: 16px; }
+
+    .patient-summary {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px;
+      display: flex; justify-content: space-between; font-size: 0.85rem;
+    }
+    .patient-summary span strong { color: var(--accent); }
+
+    .gauge-container {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; text-align: center; position: relative;
+    }
+    .val-large { font-size: 3.2rem; font-weight: 900; line-height: 1.1; margin-bottom: 4px; }
+    .status-label { font-weight: 800; font-size: 1.1rem; text-transform: uppercase; margin-bottom: 16px; }
+
+    .range-slider-bar {
+      height: 16px; border-radius: 8px;
+      background: linear-gradient(to right,
+        var(--low-color) 0%,
+        var(--normal-color) 45%,
+        var(--critical-color) 100%
+      );
+      position: relative; margin-bottom: 10px;
+    }
+    .range-pointer {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #fff; border: 3px solid var(--bg1);
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+    .range-ticks { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); font-weight: 700; }
+
+    .insight-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-top: 14px;
+    }
+    .insight-card h5 { font-size: 0.95rem; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .insight-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+    .insight-card ul { margin-left: 18px; font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+
+    .history-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 16px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: var(--bg3); border-radius: 6px;
+      font-size: 0.75rem; border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245,158,11,0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px; padding: 14px; margin-top: 16px;
+      font-size: 0.8rem; color: #fbbf24; line-height: 1.5;
+    }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding-top: 0 !important; }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon { display: none !important; }
+      .results-display { border: none !important; background: #fff !important; color: #000 !important; min-height: auto !important; padding: 0 !important; }
+      .gauge-container, .insight-card { border: 1px solid #ddd !important; background: #fff !important; color: #000 !important; }
+      .lab-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumb -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Free T3 (fT3) Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze Free Triiodothyronine (fT3) levels to evaluate active thyroid hormone status and thyroid health.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Tool Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🦋 Free T3 Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="pgml" selected>pg/mL</option>
+                <option value="pmoll">pmol/L</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label for="valFT3" id="inputLabel" data-translate="labelFT3">Free T3 Value (pg/mL)</label>
+              <input type="number" step="0.01" id="valFT3" placeholder="e.g. 3.1" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info note -->
+        <div style="font-size:0.78rem; color:var(--muted); padding:8px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:14px; line-height:1.5;">
+          <strong style="color:var(--text);">ℹ️ Note:</strong> <span data-translate="unitNote">Reference range: 2.3 – 4.2 pg/mL (3.53 – 6.45 pmol/L). 1 pg/mL = 1.536 pmol/L.</span>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width:100%; justify-content:center;" onclick="analyzeFT3()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Free T3</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🦋</span>
+          <h4 data-translate="placeholderTitle">Analysis Pending</h4>
+          <p data-translate="placeholderDesc">Enter your Free T3 level and click Analyze to view thyroid interpretation.</p>
+        </div>
+
+        <div class="report-card" id="reportCardSec" style="display:none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Free T3 Analysis</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" title="Copy" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" title="Print" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" title="Save Image" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Free T3 (fT3)</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resFT3Val">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">pg/mL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left:50%;"></div>
+            </div>
+            <div class="range-ticks">
+              <span id="tickLow" style="color:var(--low-color);">&lt; 2.3 pg/mL</span>
+              <span id="tickNormalRange" style="color:var(--normal-color);">2.3 – 4.2 pg/mL</span>
+              <span id="tickHigh" style="color:var(--critical-color);">&gt; 4.2 pg/mL</span>
+            </div>
+          </div>
+
+          <!-- Dynamic insight section -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Free T3</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Free T3 (fT3)?</strong><br><span data-translate="eduA1">Free T3 (Triiodothyronine) is the active form of the T3 thyroid hormone circulating in the blood. Although it makes up only a small fraction of total T3, it is responsible for regulating metabolism, body temperature, and heart rate.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">When is Free T3 tested?</strong><br><span data-translate="eduA2">Free T3 is usually measured to evaluate hyperthyroidism (overactive thyroid) or to monitor patients receiving thyroid hormone therapy. It is particularly helpful in diagnosing T3 Thyrotoxicosis (where TSH is low, fT4 is normal, but fT3 is high).</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What is the relationship between T3, T4, and TSH?</strong><br><span data-translate="eduA3">TSH from the pituitary gland stimulates the thyroid to release T4 (mostly inactive reservoir) and T3 (active hormone). Most T3 is converted from T4 in peripheral tissues. A negative feedback loop ensures that high T3/T4 levels lower TSH, while low T3/T4 levels raise TSH.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Free T3 Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQ Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Medical Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for thyroid evaluation and treatment decisions.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical &amp; Lab Tools",
+      toolTitle: "Free T3 (fT3) Analyzer",
+      toolDesc: "Analyze Free Triiodothyronine (fT3) levels to evaluate active thyroid hormone status and thyroid health.",
+      inputsTitle: "🦋 Free T3 Parameters",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      labelFT3: "Free T3 Value",
+      unitNote: "Reference range: 2.3 – 4.2 pg/mL (3.53 – 6.45 pmol/L). 1 pg/mL = 1.536 pmol/L.",
+      btnAnalyze: "Analyze Free T3",
+      placeholderTitle: "Analysis Pending",
+      placeholderDesc: "Enter your Free T3 level and click Analyze to view thyroid interpretation.",
+      reportTitle: "🔬 Free T3 Analysis",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Free T3 Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for thyroid evaluation and treatment decisions.",
+      titleEdu: "📚 Clinical Pathology Notes: Free T3",
+      eduQ1: "What is Free T3 (fT3)?",
+      eduA1: "Free T3 (Triiodothyronine) is the active form of the T3 thyroid hormone circulating in the blood. Although it makes up only a small fraction of total T3, it is responsible for regulating metabolism, body temperature, and heart rate.",
+      eduQ2: "When is Free T3 tested?",
+      eduA2: "Free T3 is usually measured to evaluate hyperthyroidism (overactive thyroid) or to monitor patients receiving thyroid hormone therapy. It is particularly helpful in diagnosing T3 Thyrotoxicosis (where TSH is low, fT4 is normal, but fT3 is high).",
+      eduQ3: "What is the relationship between T3, T4, and TSH?",
+      eduA3: "TSH from the pituitary gland stimulates the thyroid to release T4 (mostly inactive reservoir) and T3 (active hormone). Most T3 is converted from T4 in peripheral tissues. A negative feedback loop ensures that high T3/T4 levels lower TSH, while low T3/T4 levels raise TSH.",
+      badgeLow: "Low Free T3 (Hypothyroidism / Non-Thyroidal Illness)",
+      badgeNormal: "Normal Free T3 (Euthyroid)",
+      badgeHigh: "High Free T3 (Hyperthyroidism / T3 Thyrotoxicosis)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Management Tips",
+      titleConsult: "When to See a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ফ্রি T3 (fT3) বিশ্লেষক",
+      toolDesc: "সক্রিয় থাইরয়েড হরমোনের মাত্রা মূল্যায়ন করতে ফ্রি ট্রাইআইওডোথাইরোনিন (fT3) এর স্তর বিশ্লেষণ করুন।",
+      inputsTitle: "🦋 ফ্রি T3 প্যারামিটার",
+      clearBtn: "মুছুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelFT3: "ফ্রি T3 মান",
+      unitNote: "স্বাভাবিক মাত্রা: ২.৩ – ৪.২ pg/mL (৩.৫৩ – ৬.৪৫ pmol/L)। ১ pg/mL = ১.৫৩৬ pmol/L।",
+      btnAnalyze: "fT3 বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ অমীমাংসিত",
+      placeholderDesc: "আপনার ফ্রি T3 মান লিখুন এবং থাইরয়েড বিশ্লেষণ দেখতে বিশ্লেষণ বাটনে ক্লিক করুন।",
+      reportTitle: "🔬 ফ্রি T3 বিশ্লেষণ রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক fT3 বিশ্লেষণ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড নেই।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য অবশ্যই ডাক্তারের পরামর্শ নিন।",
+      titleEdu: "📚 ক্লিনিক্যাল নোটস: ফ্রি T3",
+      eduQ1: "ফ্রি T3 (fT3) কী?",
+      eduA1: "ফ্রি T3 (ট্রাইআইওডোথাইরোনিন) হলো রক্তে প্রবাহিত T3 হরমোনের সক্রিয় রূপ। এটি মোট T3-এর একটি ক্ষুদ্র অংশ হলেও এটি শরীরের বিপাকক্রিয়া, তাপমাত্রা এবং হৃদস্পন্দন নিয়ন্ত্রণের জন্য দায়ী।",
+      eduQ2: "ফ্রি T3 কখন পরীক্ষা করা হয়?",
+      eduA2: "সাধারণত হাইপারথাইরয়েডিজম (অতিরিক্ত সক্রিয় থাইরয়েড) মূল্যায়নে বা থাইরয়েড চিকিৎসার অগ্রগতি পর্যবেক্ষণে ফ্রি T3 পরীক্ষা করা হয়। T3 থাইরোটক্সিকোসিস নির্ণয়ে এটি অত্যন্ত গুরুত্বপূর্ণ।",
+      eduQ3: "T3, T4 এবং TSH এর পারস্পরিক সম্পর্ক কী?",
+      eduA3: "পিটুইটারি গ্রন্থি থেকে নির্গত TSH থাইরয়েড গ্রন্থিকে T4 এবং T3 তৈরিতে উদ্দীপিত করে। শরীরের বেশিরভাগ T3 আসলে T4 থেকে রূপান্তরিত হয়ে তৈরি হয়। রক্তে T3/T4 এর মাত্রা বৃদ্ধি পেলে TSH কমে যায়, আর T3/T4 কম হলে TSH বেড়ে যায়।",
+      badgeLow: "কম ফ্রি T3 (হাইপোথাইরয়েডিজম / নন-থাইরয়েডাল অসুস্থতা)",
+      badgeNormal: "স্বাভাবিক ফ্রি T3 (ইউথাইরয়েড)",
+      badgeHigh: "উচ্চ ফ্রি T3 (হাইপারথাইরয়েডিজম / T3 থাইরোটক্সিকোসিস)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "ব্যবস্থাপনা পরামর্শ",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "निःशुल्क T3 (fT3) विश्लेषक",
+      toolDesc: "सक्रिय थायराइड हार्मोन की स्थिति और थायराइड स्वास्थ्य का मूल्यांकन करने के लिए फ्री ट्राईआयोडोथायरोनिन (एफटी3) स्तर का विश्लेषण करें।",
+      inputsTitle: "��� निःशुल्क T3 पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      labelFT3: "निःशुल्क T3 मान",
+      unitNote: "संदर्भ सीमा: 2.3 - 4.2 पीजी/एमएल (3.53 - 6.45 pmol/L)। 1 पीजी/एमएल = 1.536 पीएमओएल/एल।",
+      btnAnalyze: "मुफ़्त T3 का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण लंबित",
+      placeholderDesc: "अपना निःशुल्क T3 स्तर दर्ज करें और थायरॉयड व्याख्या देखने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 निःशुल्क T3 विश्लेषण",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हाल की निःशुल्क T3 व्याख्याएँ",
+      noHistory: "कोई हालिया रन ��िकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। थायरॉयड मूल्यांकन और उपचार निर्णयों के लिए हमेशा एक योग्य चिकित्सक से परामर्श लें।",
+      titleEdu: "📚 क्लिनिकल पैथोलॉजी नोट्स: निःशुल्क T3",
+      eduQ1: "निःशुल्क T3 (fT3) क्या है?",
+      eduA1: "फ्री टी3 (ट्राईआयोडोथायरोनिन) रक्त में प्रसारित होने वाले टी3 थायराइड हार्मोन का सक्रिय रूप है। हालाँकि यह कुल T3 का केवल एक छोटा सा अंश बनाता है, यह चयापचय, शरीर के तापम��न और हृदय गति को विनियमित करने के लिए जिम्मेदार है।",
+      eduQ2: "निःशुल्क T3 का परीक्षण कब किया जाता है?",
+      eduA2: "फ्री टी3 को आमतौर पर हाइपरथायरायडिज्म (अतिसक्रिय थायराइड) का मूल्यांकन करने या थायराइड हार्मोन थेरेपी प्राप्त करने वाले रोगियों की निगरानी करने के लिए मापा जाता है। यह टी3 थायरोट��क्सिकोसिस (जहां टीएसएच कम है, एफटी4 सामान्य है, लेकिन एफटी3 अधिक है) के निदान में विशेष रूप से सहायक है।",
+      eduQ3: "T3, T4 और TSH के बीच क्या संबंध है?",
+      eduA3: "पिट्यूटरी ग्रंथि से टीएसएच थायरॉइड को टी4 (ज्यादातर निष्क्रिय भंडार) और टी3 (सक्रिय हार्मोन) जारी करने के लिए उत्तेजित करता है। अधिकांश T3 परिधीय ऊत���ों में T4 से परिवर्तित होता है। एक नकारात्मक फीडबैक लूप यह सुनिश्चित करता है कि उच्च T3/T4 स्तर TSH को कम करता है, जबकि निम्न T3/T4 स्तर TSH को बढ़ाता है।",
+      badgeLow: "कम मुक्त T3 (हाइपोथायरायडिज्म / गैर-थायराइडल बीमारी)",
+      badgeNormal: "सामान्य मुक्त T3 (यूथायरॉइड)",
+      badgeHigh: "उच्च मुक्त T3 (हाइपरथायरायडिज्म / T3 थायरोटॉक्सिकोसिस)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "प्रबंधन युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is the normal range of Free T3?", a: "The normal reference range for Free T3 is typically 2.3 to 4.2 pg/mL (3.53 to 6.45 pmol/L). Lab values may vary slightly." },
+      { q: "What does low Free T3 mean?", a: "Low Free T3 can point to hypothyroidism (underactive thyroid) or, very commonly, 'Non-Thyroidal Illness Syndrome' where the body reduces metabolism during severe illness, starvation, or major surgery." },
+      { q: "What does elevated Free T3 mean?", a: "Elevated Free T3 is a classic marker of hyperthyroidism. Sometimes in hyperthyroidism, only T3 rises while T4 remains normal (T3 Thyrotoxicosis)." },
+      { q: "How do I convert Free T3 units?", a: "Multiply pg/mL by 1.536 to convert to pmol/L. Conversely, divide pmol/L by 1.536 to convert to pg/mL." }
+    ],
+    bn: [
+      { q: "ফ্রি T3 এর স্বাভাবিক মাত্রা কত?", a: "ফ্রি T3 এর স্বাভাবিক মাত্রা সাধারণত ২.৩ থেকে ৪.২ pg/mL (৩.৫৩ থেকে ৬.৪৫ pmol/L)। বিভিন্ন ল্যাবে এই পরিসীমা সামান্য ভিন্ন হতে পারে।" },
+      { q: "কম ফ্রি T3 কী নির্দেশ করে?", a: "কম ফ্রি T3 হাইপোথাইরয়েডিজম বা নন-থাইরয়েডাল অসুস্থতা নির্দেশ করতে পারে, যেখানে তীব্র অসুস্থতা বা অনাহারের কারণে শরীর বিপাক কমিয়ে দেয়।" },
+      { q: "উচ্চ ফ্রি T3 কী নির্দেশ করে?", a: "উচ্চ ফ্রি T3 হাইপারথাইরয়েডিজমের লক্ষণ। কখনো কখনো হাইপারথাইরয়েডিজমে শুধু T3 বাড়ে এবং T4 স্বাভাবিক থাকে (T3 থাইরোটক্সিকোসিস)।" },
+      { q: "ফ্রি T3 একক কীভাবে পরিবর্তন করব?", a: "pg/mL-কে ১.৫৩৬ দ্বারা গুণ করলে pmol/L পাওয়া যায়। অন্যদিক, pmol/L-কে ১.৫৩৬ দ্বারা ভাগ করলে pg/mL পাওয়া যায়।" }
+    ],
+    hi: [
+      { q: "फ्री T3 की सामान्य सीमा क्या है?", a: "फ्री टी3 के लिए सामान्य संदर्भ सीमा आमतौर पर 2.3 से 4.2 पीजी/एमएल (3.53 से 6.45 पीएमओएल/एल) है। लैब मान थोड़ा भिन्न हो सकते हैं।" },
+      { q: "लो फ्री T3 का क्या मतलब है?", a: "लो फ्री टी3 हाइपोथायरायडिज्म (अंडरएक्टिव थायरॉयड) या, आमत��र पर 'नॉन-थायराइडल इलनेस सिंड्रोम' की ओर इशारा कर सकता है, जहां गंभीर बीमारी, भुखमरी या बड़ी सर्जरी के दौरान शरीर चयापचय को कम कर देता है।" },
+      { q: "एलिवेटेड फ्री T3 का क्या मतलब है?", a: "एलिवेटेड फ्री टी3 हाइपरथायरायडिज्म का एक क्लासिक मार्कर है। कभी-कभी हाइपरथायरायडिज्म में, केवल T3 बढ़ता है जबकि T4 सामान्य रहता है (T3 थायरोटॉक्सिकोसिस)।" },
+      { q: "मैं निःशुल्क T3 इकाइयों को कैसे परिवर्तित करूं?", a: "pmol/L में बदलने के लिए pg/mL को 1.536 से गुणा करें। इसके विपरीत, pg/mL में बदलने के लिए pmol/L को 1.536 से विभाजित करें।" }
+    ]
+  };
+
+  const insights = {
+    en: {
+      low: {
+        desc: "Your Free T3 level is below the normal limit (< 2.3 pg/mL). This indicates a deficiency in active thyroid hormone, which could be due to an underactive thyroid or severe non-thyroidal systemic illness.",
+        factors: ["Hypothyroidism (Primary or Secondary)", "Euthyroid Sick Syndrome (decreased T4 to T3 conversion during critical illness/starvation)", "Severe caloric restriction or fasting", "Medications (propranolol, amiodarone, corticosteroids)"],
+        symptoms: ["Fatigue, lethargy, lack of energy", "Weight gain despite no increase in food", "Cold intolerance (feeling cold when others are warm)", "Dry skin, hair loss, brittle nails", "Constipation, muscle weakness", "Brain fog, memory issues, low mood"],
+        prevention: ["Ensure adequate caloric and nutrient intake (avoid extreme starvation diets)", "Optimize selenium and zinc intake under guidance (essential for T4-to-T3 conversion)", "Review medications with your physician"],
+        consult: "Discuss these results with an endocrinologist or primary physician. They may order TSH and Free T4 tests to differentiate thyroid disease from systemic illness."
+      },
+      normal: {
+        desc: "Your Free T3 level is within the healthy reference range (2.3 – 4.2 pg/mL). Your active thyroid hormone production is balanced.",
+        factors: ["Balanced thyroid hormone synthesis", "Normal conversion of T4 to active T3 in peripheral tissues", "Adequate iodine and nutrient status"],
+        symptoms: ["No classic hypo- or hyperthyroid metabolic symptoms expected."],
+        prevention: ["Consume a balanced diet rich in essential minerals (selenium, zinc, iodine)", "Maintain active lifestyle and manage chronic stress", "Get annual general health assessments"],
+        consult: "No immediate action is needed for Free T3. Correlate with TSH and Free T4 for confirmation of full thyroid health."
+      },
+      high: {
+        desc: "Your Free T3 level is elevated (> 4.2 pg/mL). This indicates excess circulating active thyroid hormone (Hyperthyroidism), speeding up your metabolism.",
+        factors: ["Graves' disease (autoimmune hyperthyroidism)", "Toxic multinodular goiter or toxic adenoma", "T3 Thyrotoxicosis (isolated elevation of T3)", "Over-replacement of thyroid hormone medications", "Thyroiditis (acute phase releasing stored hormone)"],
+        symptoms: ["Palpitations, rapid or irregular heart rate", "Unexplained weight loss despite increased appetite", "Heat intolerance and excessive sweating", "Anxiety, nervousness, hand tremors", "Fatigue, muscle weakness, frequent bowel movements", "Sleep disturbances (insomnia)"],
+        prevention: ["Limit excessive dietary iodine intake (avoid kelp/seaweed supplements)", "Avoid stimulants like excess caffeine", "Adhere strictly to prescribed thyroid medications"],
+        consult: "⚠️ URGENT: Consult an endocrinologist. Elevated Free T3 requires definitive diagnosis (TSH, Free T4, thyroid ultrasound or uptake scan) and management (antithyroid drugs, beta-blockers, or other therapies)."
+      }
+    },
+    bn: {
+      low: {
+        desc: "আপনার ফ্রি T3 স্বাভাবিকের চেয়ে কম (< ২.৩ pg/mL)। এটি থাইরয়েড হরমোনের ঘাটতি নির্দেশ করে, যা হাইপোথাইরয়েডিজম বা কোনো গুরুতর অসুস্থতার কারণে হতে পারে।",
+        factors: ["হাইপোথাইরয়েডিজম (থাইরয়েডের কম কার্যকারিতা)", "ইউথাইরয়েড সিক সিন্ড্রোম (গুরুতর অসুস্থতা বা অনাহারে T4 থেকে T3 রূপান্তর হ্রাস)", "অতিরিক্ত উপবাস বা ক্যালরি নিয়ন্ত্রণ", "কিছু ওষুধের প্রভাব (করটিকোস্টেরয়েড, অ্যামিওডেরোন)"],
+        symptoms: ["ক্লান্তি, অবসাদ, শারীরিক শক্তির অভাব", "কম খাওয়া সত্ত্বেও ওজন বৃদ্ধি পাওয়া", "অতিরিক্ত ঠান্ডা লাগা", "শুষ্ক ত্বক, চুল পড়া, ভঙ্গুর নখ", "কোষ্ঠকাঠিন্য, পেশী দুর্বলতা", "স্মৃতিশক্তি হ্রাস বা বিষণ্ণতা"],
+        prevention: ["পর্যাপ্ত পুষ্টিকর খাবার গ্রহণ করুন (কঠোর ডায়েটিং এড়িয়ে চলুন)", "চিকিৎসকের পরামর্শে সেলেনিয়াম ও জিংক সমৃদ্ধ খাবার গ্রহণ করুন", "আপনার অন্যান্য ওষুধগুলো ডাক্তারকে দিয়ে পরীক্ষা করিয়ে নিন"],
+        consult: "ডাক্তার বা এন্ডোক্রিনোলজিস্টের সাথে পরামর্শ করুন। তারা আপনার TSH এবং ফ্রি T4 পরীক্ষাও করাতে পারেন।"
+      },
+      normal: {
+        desc: "আপনার ফ্রি T3 এর মান স্বাভাবিক সীমার মধ্যে রয়েছে (২.৩ – ৪.২ pg/mL)। এর অর্থ আপনার শরীরের সক্রিয় থাইরয়েড হরমোনের সরবরাহ স্বাভাবিক ও ভারসাম্যপূর্ণ রয়েছে।",
+        factors: ["স্বাভাবিক থাইরয়েড হরমোন উৎপাদন", "T4 থেকে T3 হরমোনে স্বাভাবিক রূপান্তর", "পর্যাপ্ত পুষ্টি এবং আয়োদিনের উপস্থিতি"],
+        symptoms: ["থাইরয়েড হরমোনজনিত কোনো লক্ষণ নেই।"],
+        prevention: ["সুষম খাবার গ্রহণ করুন (যেমন আয়োডিনযুক্ত লবণ, সামুদ্রিক মাছ)", "নিয়মিত ব্যায়াম করুন ও মানসিক চাপ নিয়ন্ত্রণ করুন", "বার্ষিক রুটিন স্বাস্থ্য পরীক্ষা সম্পন্ন করুন"],
+        consult: "এই মুহূর্তে কোনো চিকিৎসার প্রয়োজন নেই। সম্পূর্ণ থাইরয়েড সুস্থতা নিশ্চিত করতে TSH এবং Free T4 এর সাথে মিলিয়ে দেখুন।"
+      },
+      high: {
+        desc: "আপনার ফ্রি T3 এর মান অতিরিক্ত (> ৪.২ pg/mL)। এটি হাইপারথাইরয়েডিজম নির্দেশ করে, যার কারণে শরীরের বিপাকক্রিয়া দ্রুত হয়।",
+        factors: ["গ্রেভস রোগ (অটোইমিউন রোগ)", "টক্সিক মাল্টিনোডুলার গলগণ্ড", "T3 থাইরোটক্সিকোসিস (কেবলমাত্র T3 বৃদ্ধি পাওয়া)", "থাইরয়েড ওষুধের মাত্রাতিরিক্ত সেবন", "থাইরয়েড গ্রন্থির প্রদাহ (থাইরয়েডাইটিস)"],
+        symptoms: ["হৃদকম্পন বৃদ্ধি বা অনিয়মিত হৃদস্পন্দন", "খাবার বেশি খাওয়া সত্ত্বেও ওজন হ্রাস পাওয়া", "গরম সহ্য করতে না পারা এবং অতিরিক্ত ঘাম", "উদ্বেগ, অতিরিক্ত নার্ভাসনেস ও হাত কাঁপুনি", "ক্লান্তি, মাংসপেশী দুর্বলতা, ঘন ঘন মলত্যাগ", "ঘুমের সমস্যা (অনিদ্রা)"],
+        prevention: ["খাদ্যে অতিরিক্ত আয়োডিন এড়িয়ে চলুন (সামুদ্রিক শৈবাল সাপ্লিমেন্ট বর্জন করুন)", "অতিরিক্ত চা-কফি বা ক্যাফেইন জাতীয় পানীয় পরিহার করুন", "ডাক্তারের পরামর্শ অনুযায়ী থাইরয়েড ওষুধ নিয়মমতো সেবন করুন"],
+        consult: "⚠️ জরুরি: অবিলম্বে এন্ডোক্রিনোলজিস্টের পরামর্শ নিন। উচ্চ ফ্রি T3 থাইরয়েড আল্ট্রাসাউন্ড বা আপটেক স্ক্যান এবং অ্যান্টিথাইরয়েড ওষুধের মাধ্যমে চিকিৎসা করা প্রয়োজন।"
+      }
+    },
+    hi: {
+      low: {
+        desc: "आपका मुफ़्त T3 स्तर सामान्य सीमा (<2.3 pg/mL) से नीचे है। यह सक्रिय थायराइड हार्मोन की कमी को इंगित करता है, जो कम सक्रिय थायराइड या गंभीर गैर-थायराइडल प्रणालीगत बीमारी के कारण हो सकता है।",
+        factors: ["हाइपोथायरायडिज्म (प्राथमिक या माध्यमिक)", "यूथायरॉइड सिक सिंड्रोम (गंभीर बीमारी/भुखमरी के दौरान T4 से T3 रू���ांतरण में कमी)", "गंभीर कैलोरी प्रतिबंध या उपवास", "दवाएं (प्रोप्रानोलोल, एमियोडेरोन, कॉर्टिकोस्टेरॉइड्स)"],
+        symptoms: ["थकान, सुस्ती, ऊर्जा की कमी", "भोजन में वृद्धि न करने के बावजूद वजन बढ़ना", "शीत असहिष्णुता (जब दूसरे गर्म हों तो ठंड महसूस होना)", "शुष्क त्वचा, बालों का झड़ना, भंगुर नाखून", "कब्ज, मांसपेशियों में कमजोरी", "दिमागी धुंध, याददाश्त संबंधी समस्याएं, खराब मूड"],
+        prevention: ["पर्याप्त कैलोरी और पोषक तत्वों का सेवन सुनिश्चित करें (अत्यधिक भुखमरी वाले आहार से बचें)", "मार्गदर्शन के तहत सेलेनियम और जिंक का सेवन अनुकूलित करें (T4-से-T3 रूपांतरण के लिए आवश्यक)", "अपने चिकित्सक से दवाओं की समीक्षा करें"],
+        consult: "किसी एंडोक्रिनोलॉजिस्ट या प्राथमिक चिकित्सक से इन परिणामों पर चर्चा करें। वे थायरॉइड रोग को प्रणालीगत बीमारी से अलग करने के लिए टीएसएच और निःशुल्क टी4 परीक्षणों का आदेश दे सकते हैं।"
+      },
+      normal: {
+        desc: "आपका निःशुल्क टी3 स्तर स्वस्थ संदर्भ सीमा (2.3 - 4.2 पीजी/एमएल) के भीतर है। आपका सक्रिय थायराइड हार्मोन उत्पादन संतुलित है।",
+        factors: ["संतुलित थायराइड हार्मोन संश्लेषण", "परिधीय ऊतकों में T4 का सक्रिय T3 में सामान्य रूपांतरण", "पर्याप्त आयोडीन और पोषक तत्व की स्थिति"],
+        symptoms: ["कोई क्लासिक हाइपो- या हाइपरथायराइड मेटाबोलिक लक्षण अपेक्षित नहीं है।"],
+        prevention: ["आवश्यक खनिजों (सेलेनियम, जिंक, आयोडीन) से भरपूर संतुलित आहार लें", "सक्रिय जीवनशैली बनाए रखें और दीर्घकालिक तनाव का प्रबंधन करें", "वार्षिक सामान्य स्वास्थ्य मूल्यांकन प्राप्त करें"],
+        consult: "निःशुल्क T3 के लिए किसी तत्काल कार्रवाई की आवश्यकता नहीं है। पूर्ण थायराइड स्वास्थ्य की पुष्टि के लिए टीएसएच और फ्री टी4 के साथ सहसंबंध बनाएं।"
+      },
+      high: {
+        desc: "आपका निःशुल्क T3 स्तर ऊंचा (>4.2 pg/mL) है। यह सक्रिय थायराइड हार्मोन (हाइपरथायरायडिज्म) के अत्यधिक प्रसार को इंगित करता है, जो आपके चयापचय को तेज करता है।",
+        factors: ["ग्रेव्स रोग (ऑटोइम्यून हाइपरथायरायडिज्म)", "विषाक्त बहुकोशिकीय गण्डमाला या विषाक्त एडेनोमा", "टी3 थायरोटॉक्सिकोसिस (टी3 की पृथक ऊंचाई)", "थायराइड हार्मोन दवाओं का अत्यधिक प्रतिस्थापन", "थायरॉयडिटिस (तीव्र चरण में संग्रहीत हार्मोन जारी करना)"],
+        symptoms: ["धड़कन, तेज़ या अनियमित हृदय गति", "भूख बढ़ने के बावजूद अस्पष्टीकृत वजन कम होना", "गर्मी असहिष्णुता और अत्यधिक पसीना आना", "चिंता, घबराहट, हाथ कांपना", "थकान, मांसपेशियों में कमजोरी, बार-बार मल त्यागना", "नींद में खलल (अनिद्रा)"],
+        prevention: ["आहार में आयोडीन का अत्यधिक सेवन सीमित करें (समुद्री घास/समुद्री शैवाल की खुराक से बचें)", "अत्यधिक कैफीन जैसे उत्तेजक पदार्थों से बचें", "निर्धारित थायराइड दवाओं का सख्ती से पालन करें"],
+        consult: "⚠️ अत्यावश्यक: किसी एंडोक्रिनोलॉजिस्ट से परामर्श लें। एलिवेटेड फ्री टी3 के लिए निश्चित निदान (टीएसएच, फ्री टी4, थायरॉयड अल्ट्रासाउंड या अपटेक स्कैन) और प्रबंधन (एंटीथायरॉइड दवाएं, बीटा-ब्लॉकर्स, या अन्य उपचार) की आवश्यकता होती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-ft3-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "pgml";
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    const btn = document.getElementById("langToggleBtn");
+    if (btn) btn.innerHTML = lang === "bn" ? '🇬🇧 <span>English</span>' : '🇧🇩 <span>Bengali</span>';
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    if (activeReportData) updateReportDisplay();
+  }
+
+  function toggleLanguage() { setLanguage(currentLang === "en" ? "bn" : "en"); }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const label = document.getElementById("inputLabel");
+    const unit = currentUnit === "pgml" ? "pg/mL" : "pmol/L";
+    label.textContent = (currentLang === "en" ? "Free T3 Value" : "ফ্রি T3 মান") + " (" + unit + ")";
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach(faq => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `<div class="faq-q">${faq.q}<span>＋</span></div><div class="faq-a">${faq.a}</div>`;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "300px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valFT3").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function getStatusFromFT3(valPgMl) {
+    if (valPgMl < 2.3) return { key: "low", badge: "badgeLow", color: "low" };
+    if (valPgMl <= 4.2) return { key: "normal", badge: "badgeNormal", color: "normal" };
+    return { key: "high", badge: "badgeHigh", color: "critical" };
+  }
+
+  function calcPointer(valPgMl) {
+    // Normal 2.3 - 4.2
+    if (valPgMl <= 0) return 5;
+    if (valPgMl < 2.3) return 5 + (valPgMl / 2.3) * 40;
+    if (valPgMl <= 4.2) return 45 + ((valPgMl - 2.3) / 1.9) * 30;
+    return Math.min(95, 75 + ((valPgMl - 4.2) / 5.8) * 20);
+  }
+
+  function analyzeFT3() {
+    const rawVal = parseFloat(document.getElementById("valFT3").value);
+    if (isNaN(rawVal) || rawVal < 0) {
+      alert(currentLang === "en" ? "Please enter a valid Free T3 value." : "দয়া করে সঠিক ফ্রি T3 মান লিখুন।");
+      return;
+    }
+
+    let valPgMl = rawVal;
+    let valPmolL = rawVal;
+
+    if (currentUnit === "pmoll") {
+      valPgMl = rawVal / 1.536;
+    } else {
+      valPmolL = rawVal * 1.536;
+    }
+
+    const status = getStatusFromFT3(valPgMl);
+    const pointerPct = calcPointer(valPgMl);
+
+    activeReportData = {
+      rawVal, valPgMl, valPmolL, status, pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+    addToHistory(status.badge, rawVal, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitStr = d.unit === "pgml" ? "pg/mL" : "pmol/L";
+
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resUnitText").textContent = unitStr;
+    document.getElementById("resFT3Val").textContent = d.rawVal.toFixed(2);
+
+    const colorVar = `var(--${d.status.color}-color)`;
+    document.getElementById("resFT3Val").style.color = colorVar;
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.status.badge];
+    statusLabel.style.color = colorVar;
+
+    const ptr = document.getElementById("rangePointer");
+    ptr.style.left = `${d.pointerPct}%`;
+    ptr.style.borderColor = colorVar;
+
+    // Render ticks text in current language/unit
+    if (d.unit === "pmoll") {
+      document.getElementById("tickLow").textContent = "< 3.53 pmol/L";
+      document.getElementById("tickNormalRange").textContent = "3.53 – 6.45 pmol/L";
+      document.getElementById("tickHigh").textContent = "> 6.45 pmol/L";
+    } else {
+      document.getElementById("tickLow").textContent = "< 2.3 pg/mL";
+      document.getElementById("tickNormalRange").textContent = "2.3 – 4.2 pg/mL";
+      document.getElementById("tickHigh").textContent = "> 4.2 pg/mL";
+    }
+
+    // Render insight
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+    const details = insights[currentLang][d.status.key];
+    if (!details) return;
+
+    const card = document.createElement("div");
+    card.className = "insight-card";
+    card.style.borderLeft = `4px solid ${colorVar}`;
+
+    const causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+    const symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+    const tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+    card.innerHTML = `
+      <h5>${translations[currentLang].titleInterpretation}</h5>
+      <p>${details.desc}</p>
+      <div style="font-size: 0.8rem; margin: 10px 0; color: var(--accent);">
+        <strong>Converted Values:</strong> ${d.valPgMl.toFixed(2)} pg/mL (${d.valPmolL.toFixed(2)} pmol/L)
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+          <ul>${causesList}</ul>
+        </div>
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+          <ul>${symptomsList}</ul>
+        </div>
+      </div>
+      <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:10px;">
+        <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+        <ul>${tipsList}</ul>
+      </div>
+      <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+        <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+      </div>
+    `;
+    insightSection.appendChild(card);
+  }
+
+  function addToHistory(badgeKey, val, unit) {
+    const unitStr = unit === "pgml" ? " pg/mL" : " pmol/L";
+    const item = { date: new Date().toLocaleDateString(), badgeKey, val, unitStr, id: Date.now() };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-ft3-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `<span>📅 ${item.date}</span><strong>${item.val.toFixed(2)}${item.unitStr} — ${statusText}</strong>`;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() { window.print(); }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitStr = d.unit === "pgml" ? " pg/mL" : " pmol/L";
+    let t = `--- FREE T3 ANALYSIS REPORT ---\n`;
+    t += `Date: ${d.date}\n`;
+    t += `Free T3 Value: ${d.rawVal.toFixed(2)}${unitStr}\n`;
+    t += `Values in both units: ${d.valPgMl.toFixed(2)} pg/mL / ${d.valPmolL.toFixed(2)} pmol/L\n`;
+    t += `Assessment: ${translations[currentLang][d.status.badge]}\n`;
+    t += `Reference Range: 2.3 – 4.2 pg/mL (3.53 – 6.45 pmol/L)\n`;
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, { backgroundColor: "#0a0e17", scale: 2 }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `fT3-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => { setLanguage(currentLang); });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

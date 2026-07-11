@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text Case Converter &bull; Capitalize Letters Online - SSDK TOOLS HUB</title>
+  <meta name="description" content="Convert text between UPPERCASE, lowercase, Title Case, Sentence Case, Slugify, camelCase, and PascalCase instantly in your browser.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 600px) {
+      .stats-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-card h3 {
+      font-size: 1.2rem;
+      color: var(--accent);
+      margin: 0;
+    }
+    .stat-card span {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .actions-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 900px) {
+      .actions-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    @media (max-width: 600px) {
+      .actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    .action-btn {
+      padding: 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg2);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .action-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Text Case Converter</h1>
+  <p class="page-sub">Convert texts into multiple casing configurations instantly and track keyword statistics.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    
+    <!-- Text Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <h3 id="statChars">0</h3>
+        <span>Characters</span>
+      </div>
+      <div class="stat-card">
+        <h3 id="statCharsNoSp">0</h3>
+        <span>Chars (No Space)</span>
+      </div>
+      <div class="stat-card">
+        <h3 id="statWords">0</h3>
+        <span>Words</span>
+      </div>
+      <div class="stat-card">
+        <h3 id="statLines">0</h3>
+        <span>Lines</span>
+      </div>
+    </div>
+
+    <!-- Inputs & Outputs -->
+    <div class="tool-io" style="display: grid; grid-template-columns: 1fr; gap: 16px; margin-bottom: 16px;">
+      <div class="input-group">
+        <label for="textInput" style="font-weight: 700; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px;">Enter Raw Text</label>
+        <textarea id="textInput" rows="6" placeholder="Type or paste your text here..." oninput="updateStats()"></textarea>
+      </div>
+    </div>
+
+    <!-- Conversion Actions -->
+    <div class="actions-grid">
+      <button class="action-btn" onclick="convertCase('upper')">UPPERCASE</button>
+      <button class="action-btn" onclick="convertCase('lower')">lowercase</button>
+      <button class="action-btn" onclick="convertCase('title')">Title Case</button>
+      <button class="action-btn" onclick="convertCase('sentence')">Sentence case</button>
+      <button class="action-btn" onclick="convertCase('capitalize')">Capitalize Words</button>
+      <button class="action-btn" onclick="convertCase('alternating')">aLtErNaTiNg CaSe</button>
+      <button class="action-btn" onclick="convertCase('camel')">camelCase</button>
+      <button class="action-btn" onclick="convertCase('pascal')">PascalCase</button>
+      <button class="action-btn" onclick="convertCase('slug')">slug-case</button>
+      <button class="action-btn" onclick="convertCase('dot')">dot.case</button>
+    </div>
+
+    <div class="tool-control" style="border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnCopy">📋 Copy Content</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear Text</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Multiple Conversions:</strong> Switch texts instantly between standard casing formats, programming conventions (camelCase, PascalCase), and URL slugs.</li>
+      <li><strong>Complete Analytics:</strong> Tracks character lengths (with and without whitespace), word counts, and line numbers live.</li>
+      <li><strong>Preserves Formatting:</strong> Converts terms inside sentences without corrupting paragraph tabs or line breaks.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-list content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-item">
+      <div class="faq-q">What is camelCase and PascalCase used for?<span>＋</span></div>
+      <div class="faq-a">Both camelCase and PascalCase are variable naming styles used in programming where spaces are removed and words are joined. In <code>camelCase</code>, the first letter is lowercase and subsequent words are capitalized. In <code>PascalCase</code>, every word begins with a capital letter.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How does slugify work?<span>＋</span></div>
+      <div class="faq-a">Slugify (or slug-case) replaces all spaces and special symbols with hyphens (dashes) and makes all letters lowercase. It is commonly used to generate SEO-friendly website URL structures (e.g. <code>my-blog-post-title</code>).</div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  function updateStats() {
+    const txt = $('textInput').value;
+    
+    const chars = txt.length;
+    const charsNoSp = txt.replace(/\s/g, '').length;
+    
+    // Words count (split by spaces/tabs/newlines, filter empties)
+    const words = txt.trim() === '' ? 0 : txt.trim().split(/\s+/).length;
+    
+    // Lines count (split by newline, count elements)
+    const lines = txt === '' ? 0 : txt.split('\n').length;
+
+    $('statChars').textContent = chars.toLocaleString();
+    $('statCharsNoSp').textContent = charsNoSp.toLocaleString();
+    $('statWords').textContent = words.toLocaleString();
+    $('statLines').textContent = lines.toLocaleString();
+  }
+
+  function convertCase(type) {
+    const inputVal = $('textInput').value;
+    if (!inputVal.trim()) {
+      showStatus('Please enter some text first.', true);
+      return;
+    }
+
+    let result = '';
+
+    switch (type) {
+      case 'upper':
+        result = inputVal.toUpperCase();
+        break;
+      case 'lower':
+        result = inputVal.toLowerCase();
+        break;
+      case 'title':
+        result = inputVal.replace(/\w\S*/g, (txt) => {
+          return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+        break;
+      case 'sentence':
+        // Capitalize first letter of every sentence
+        result = inputVal.toLowerCase().replace(/(^\s*|[.!?]\s+)([a-z])/g, (m, p1, p2) => {
+          return p1 + p2.toUpperCase();
+        });
+        break;
+      case 'capitalize':
+        result = inputVal.toLowerCase().replace(/\b[a-z]/g, (m) => m.toUpperCase());
+        break;
+      case 'alternating':
+        result = inputVal.split('').map((char, index) => {
+          return index % 2 === 0 ? char.toLowerCase() : char.toUpperCase();
+        }).join('');
+        break;
+      case 'camel':
+        result = toCamelPascalCase(inputVal, false);
+        break;
+      case 'pascal':
+        result = toCamelPascalCase(inputVal, true);
+        break;
+      case 'slug':
+        result = inputVal
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '') // remove non-alphanumeric except spaces
+          .trim()
+          .replace(/\s+/g, '-'); // replace spaces with dash
+        break;
+      case 'dot':
+        result = inputVal
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .trim()
+          .replace(/\s+/g, '.');
+        break;
+    }
+
+    $('textInput').value = result;
+    updateStats();
+    showStatus(`✅ Text converted to ${type.toUpperCase()}!`);
+  }
+
+  // Helper for programming cases
+  function toCamelPascalCase(str, isPascal) {
+    let clean = str.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+    if (!clean) return '';
+    let parts = clean.split(/\s+/);
+    let mapped = parts.map((p, idx) => {
+      if (idx === 0 && !isPascal) {
+        return p.toLowerCase();
+      }
+      return p.charAt(0).toUpperCase() + p.substring(1).toLowerCase();
+    });
+    return mapped.join('');
+  }
+
+  $('btnCopy').onclick = () => {
+    const text = $('textInput').value;
+    if (!text) {
+      showStatus('No content to copy.', true);
+      return;
+    }
+    navigator.clipboard.writeText(text).then(() => {
+      showStatus('📋 Converted text copied to clipboard!');
+    });
+  };
+
+  $('btnClear').onclick = () => {
+    $('textInput').value = '';
+    updateStats();
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

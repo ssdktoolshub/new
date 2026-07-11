@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diabetes Risk Estimator &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Estimate your risk of developing Type 2 diabetes online. An interactive questionnaire based on standard ADA guidelines with automatic BMI and risk score calculation.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1.8fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+
+    .height-weight-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 500px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 120px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .score-gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .score-val-large {
+      font-size: 3.5rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .score-status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--normal-color) 0%, 
+        var(--high-color) 50%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .score-gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Diabetes Risk Estimator</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Estimate your risk of developing Type 2 diabetes based on age, lifestyle, weight indices, and medical family history.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">📋 Health Questionnaire</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">🗑 Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valAge" data-translate="labelAge">How old are you?</label>
+              <select id="valAge">
+                <option value="0" selected data-translate="ageU40">Under 40 years (0 points)</option>
+                <option value="1" data-translate="age40">40 - 49 years (1 point)</option>
+                <option value="2" data-translate="age50">50 - 59 years (2 points)</option>
+                <option value="3" data-translate="age60">60 years or older (3 points)</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valGender" data-translate="labelGender">Gender</label>
+              <select id="valGender">
+                <option value="female" selected data-translate="genderFemale">Female (0 points)</option>
+                <option value="female_gestational" data-translate="genderFemaleGest">Female with history of Gestational Diabetes (1 point)</option>
+                <option value="male" data-translate="genderMale">Male (1 point)</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valFamily" data-translate="labelFamily">Do you have a parent, brother, or sister with diabetes?</label>
+              <select id="valFamily">
+                <option value="0" selected data-translate="optNo">No (0 points)</option>
+                <option value="1" data-translate="optYes">Yes (1 point)</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valBP" data-translate="labelBP">Have you ever been diagnosed with high blood pressure?</label>
+              <select id="valBP">
+                <option value="0" selected data-translate="optNo">No (0 points)</option>
+                <option value="1" data-translate="optYes">Yes (1 point)</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valActivity" data-translate="labelActivity">Are you physically active? (at least 30 mins, 3 times/week)</label>
+              <select id="valActivity">
+                <option value="0" selected data-translate="optYesActive">Yes (0 points)</option>
+                <option value="1" data-translate="optNoActive">No (1 point)</option>
+              </select>
+            </div>
+
+            <!-- Height & Weight for BMI scoring -->
+            <div class="input-wrapper">
+              <label data-translate="labelBmiGroup">Weight Status Details</label>
+              <div class="height-weight-group">
+                <input type="number" id="valHeight" placeholder="Height (cm)" min="100" max="250" required>
+                <input type="number" id="valWeight" placeholder="Weight (kg)" min="30" max="250" required>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="estimateRisk()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Estimate Risk Score</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">📋</span>
+          <h4 data-translate="placeholderTitle">Risk Assessment Pending</h4>
+          <p data-translate="placeholderDesc">Fill out the clinical risk factors questionnaire, enter height/weight, and click the estimate button.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Diabetes Risk Profile</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelBmiText">Calculated BMI</strong>: <span id="resBmiVal">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="score-gauge-container">
+            <div class="score-val-large" id="resScoreVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" data-translate="labelMaxPoints">points (Max: 10)</div>
+            <div class="score-status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--normal-color);" data-translate="riskLow">Low Risk (<4)</span>
+              <span id="tickModerate" style="color: var(--high-color);" data-translate="riskMod">Mod Risk (4-5)</span>
+              <span id="tickHigh" style="color: var(--critical-color);" data-translate="riskHigh">High Risk (5+)</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Diabetes Risk Screening</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">How is the ADA Diabetes Risk Score designed?</strong><br><span data-translate="eduA1">The American Diabetes Association (ADA) risk test uses a point system to quickly identify asymptomatic individuals who may have prediabetes or undiagnosed Type 2 diabetes. A score of 5 or higher indicates that you are at high risk.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What role does BMI play?</strong><br><span data-translate="eduA2">Excess fat tissue, especially abdominal fat, increases insulin resistance. This means your pancreas has to work harder to produce insulin, eventually leading to exhaustion of insulin-producing cells and onset of Type 2 diabetes.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Diabetes Risk Estimator",
+      toolDesc: "Estimate your risk of developing Type 2 diabetes based on age, lifestyle, weight indices, and medical family history.",
+      inputsTitle: "📋 Health Questionnaire",
+      clearBtn: "Reset",
+      labelAge: "How old are you?",
+      ageU40: "Under 40 years (0 points)",
+      age40: "40 - 49 years (1 point)",
+      age50: "50 - 59 years (2 points)",
+      age60: "60 years or older (3 points)",
+      labelGender: "Gender",
+      genderFemale: "Female (0 points)",
+      genderFemaleGest: "Female with history of Gestational Diabetes (1 point)",
+      genderMale: "Male (1 point)",
+      labelFamily: "Do you have a parent, brother, or sister with diabetes?",
+      optNo: "No (0 points)",
+      optYes: "Yes (1 point)",
+      labelBP: "Have you ever been diagnosed with high blood pressure?",
+      labelActivity: "Are you physically active? (at least 30 mins, 3 times/week)",
+      optYesActive: "Yes (0 points)",
+      optNoActive: "No (1 point)",
+      labelBmiGroup: "Weight Status Details",
+      btnAnalyze: "Estimate Risk Score",
+      placeholderTitle: "Risk Assessment Pending",
+      placeholderDesc: "Fill out the clinical risk factors questionnaire, enter height/weight, and click the estimate button.",
+      reportTitle: "🔬 Diabetes Risk Profile",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelBmiText: "Calculated BMI",
+      labelDate: "Date",
+      labelMaxPoints: "points (Max: 10)",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeLow: "Low Diabetes Risk",
+      badgeModerate: "Moderate Diabetes Risk",
+      badgeHigh: "High Diabetes Risk (ADA Risk Threshold)",
+      riskLow: "Low Risk (<4)",
+      riskMod: "Mod Risk (4-5)",
+      riskHigh: "High Risk (5+)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "High Risk Factors",
+      titleSymptoms: "Early Warning Signs",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ডায়াবেটিস ঝুঁকির অনুমানক",
+      toolDesc: "বয়স, ওজনসূচক বা বিএমআই, পারিবারিক ইতিহাস এবং জীবনযাত্রার ওপর ভিত্তি করে আপনার টাইপ ২ ডায়াবেটিসের ঝুঁকি অনুমান করুন।",
+      inputsTitle: "📋 স্বাস্থ্য প্রশ্নাবলী",
+      clearBtn: "মুছে ফেলুন",
+      labelAge: "আপনার বয়স কত?",
+      ageU40: "৪০ বছরের নিচে (০ পয়েন্ট)",
+      age40: "৪০ - ৪৯ বছর (১ পয়েন্ট)",
+      age50: "৫০ - ৫৯ বছর (২ পয়েন্ট)",
+      age60: "৬০ বছর বা তার বেশি (৩ পয়েন্ট)",
+      labelGender: "লিঙ্গ",
+      genderFemale: "নারী (০ পয়েন্ট)",
+      genderFemaleGest: "গর্ভাবস্থায় ডায়াবেটিসের ইতিহাস থাকা নারী (১ পয়েন্ট)",
+      genderMale: "পুরুষ (১ পয়েন্ট)",
+      labelFamily: "আপনার বাবা-মা, ভাই বা বোনের কি ডায়াবেটিস আছে?",
+      optNo: "না (০ পয়েন্ট)",
+      optYes: "হ্যাঁ (১ পয়েন্ট)",
+      labelBP: "আপনার কি কখনো উচ্চ রক্তচাপ ধরা পড়েছে?",
+      labelActivity: "আপনি কি শারীরিকভাবে সক্রিয়? (সপ্তাহে অন্তত ৩ বার ৩০ মিনিট)",
+      optYesActive: "হ্যাঁ (০ পয়েন্ট)",
+      optNoActive: "না (১ পয়েন্ট)",
+      labelBmiGroup: "ওজন ও উচ্চতার বিবরণ",
+      btnAnalyze: "ঝুঁকি স্কোর হিসাব করুন",
+      placeholderTitle: "ঝুঁকি মূল্যায়ন অমীমাংসিত",
+      placeholderDesc: "স্বাস্থ্য প্রশ্নাবলীর উত্তর দিন, উচ্চতা/ওজন লিখুন এবং অনুমান করুন বোতামটি চাপুন ফলাফল দেখতে।",
+      reportTitle: "🔬 ডায়াবেটিস ঝুঁকির প্রোফাইল",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelBmiText: "হিসাবকৃত বিএমআই",
+      labelDate: "তারিখ",
+      labelMaxPoints: "পয়েন্ট (সর্বোচ্চ: ১০)",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeLow: "ডায়াবেটিসের কম ঝুঁকি",
+      badgeModerate: "ডায়াবেটিসের মাঝারি ঝুঁকি",
+      badgeHigh: "ডায়াবেটিসের উচ্চ ঝুঁকি (এডিএ সীমা)",
+      riskLow: "কম ঝুঁকি (<৪)",
+      riskMod: "মাঝারি ঝুঁকি (৪-৫)",
+      riskHigh: "উচ্চ ঝুঁকি (৫+)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "ঝুঁকির মূল কারণসমূহ",
+      titleSymptoms: "প্রাথমিক সতর্কবার্তা",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "मधुमेह जोखिम अनुमानक",
+      toolDesc: "उम्र, जीवनशैली, वजन सूचकांक और चिकित्सीय पारिवारिक इतिहास के आधार पर टाइप 2 मधुमेह विकसित होने के अपने जोखिम का अनुमान लगाएं।",
+      inputsTitle: "📋 स्वास्थ्य प्रश्नावली",
+      clearBtn: "रीसेट करें",
+      labelAge: "आपकी आयु कितनी है?",
+      ageU40: "40 वर्ष से कम (0 अंक)",
+      age40: "40 - 49 वर्ष (1 अंक)",
+      age50: "50 - 59 वर्ष (2 अंक)",
+      age60: "60 वर्ष या उससे अधिक (3 अंक)",
+      labelGender: "लिंग",
+      genderFemale: "महिला (0 अंक)",
+      genderFemaleGest: "गर्भावधि मधुमेह के इतिहास वाली महिला (1 अंक)",
+      genderMale: "पुरुष (1 अंक)",
+      labelFamily: "क्या आपके माता-पि��ा, भाई या बहन को मधुमेह है?",
+      optNo: "नहीं (0 अंक)",
+      optYes: "हाँ (1 अंक)",
+      labelBP: "क्या आपको कभी उच्च रक्तचाप का निदान हुआ है?",
+      labelActivity: "क्या आप शारीरिक रूप से सक्रिय हैं? (कम से कम 30 मिनट, 3 बार/सप्ताह)",
+      optYesActive: "हाँ (0 अंक)",
+      optNoActive: "नहीं (1 अंक)",
+      labelBmiGroup: "वजन स्थिति विवरण",
+      btnAnalyze: "जोखिम स्कोर का अनुमान लगाएं",
+      placeholderTitle: "जोखिम मूल्यांकन लंबित",
+      placeholderDesc: "नैदानिक ​​जोखिम कारक प्रश्नावली भरें, ऊंचाई/वजन दर्ज करें, और अनुमान बटन पर क्लिक करें।",
+      reportTitle: "🔬 मधुमेह जोखिम प्रोफ़ाइल",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelBmiText: "परिकलित बीएमआई",
+      labelDate: "दिनांक",
+      labelMaxPoints: "अंक (अधिकतम: 10)",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeLow: "मधुमेह का कम जोख���म",
+      badgeModerate: "मध्यम मधुमेह जोखिम",
+      badgeHigh: "उच्च मधुमेह जोखिम (एडीए जोखिम सीमा)",
+      riskLow: "कम जोखिम (<4)",
+      riskMod: "मॉड जोखिम (4-5)",
+      riskHigh: "उच्च जोखिम (5+)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "उच्च जोखिम कारक",
+      titleSymptoms: "प्रारंभिक चेतावनी के संकेत",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Type 2 Diabetes Risk Score?", a: "It is a scoring tool recommended by the ADA to assess your likelihood of having prediabetes or undiagnosed diabetes based on simple lifestyle risk points." },
+      { q: "What score indicates high risk?", a: "A total score of 5 points or higher indicates you are at high risk for developing Type 2 diabetes." },
+      { q: "Why does gender affect the diabetes risk score?", a: "Statistically, men are more likely to have undiagnosed diabetes, often because they develop it at lower BMIs than women." },
+      { q: "How is BMI scored for diabetes risk?", a: "A BMI under 25 adds 0 pts. BMI of 25-29.9 adds 1 pt. BMI of 30-39.9 adds 2 pts. BMI &ge; 40 adds 3 pts." },
+      { q: "Why does high blood pressure raise diabetes risk?", a: "High BP and high blood sugar are part of Metabolic Syndrome, both linked to insulin resistance and arterial stiffness." },
+      { q: "Can a high risk score be reversed?", a: "Yes. High risk scores alert you to take action. Lifestyle changes can reverse insulin resistance and prevent diabetes." },
+      { q: "What are the early signs of diabetes?", a: "Signs include frequent urination, extreme thirst, unexplained weight loss, fatigue, or slow-healing sores." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "টাইপ ২ ডায়াবেটিস ঝুঁকি স্কোর কী?", a: "এটি এডিএ (ADA) দ্বারা প্রস্তাবিত একটি সহজ ঝুঁকির স্কোর যা আপনার জীবনযাত্রার অভ্যাস ও ওজনের ওপর ভিত্তি করে প্রি-ডায়াবেটিস বা ডায়াবেটিসের সম্ভাবনা মূল্যায়ন করে।" },
+      { q: "কত স্কোর হলে উচ্চ ঝুঁকি ধরা হয়?", a: "মোট স্কোর ৫ বা তার বেশি হলে তাকে টাইপ ২ ডায়াবেটিসের জন্য উচ্চ ঝুঁকিপূর্ণ হিসেবে গণ্য করা হয়।" },
+      { q: "লিঙ্গ কেন ডায়াবেটিসের ঝুঁকিকে প্রভাবিত করে?", a: "পরিসংখ্যানগতভাবে, পুরুষদের ক্ষেত্রে ডায়াবেটিস হওয়ার প্রবণতা বেশি দেখা যায়, কারণ তারা নারীদের চেয়ে কম বিএমআই-তেও ডায়াবেটিসে আক্রান্ত হন।" },
+      { q: "ঝুঁকি স্কোরে বিএমআই (BMI) কীভাবে পয়েন্ট যোগ করে?", a: "বিএমআই ২৫ এর নিচে হলে ০ পয়েন্ট। ২৫-২৯.৯ হলে ১ পয়েন্ট। ৩০-৩৯.৯ হলে ২ পয়েন্ট এবং ৪০ এর বেশি হলে ৩ পয়েন্ট যোগ হয়।" },
+      { q: "উচ্চ রক্তচাপ থাকলে ডায়াবেটিসের ঝুঁকি কেন বাড়ে?", a: "উচ্চ রক্তচাপ এবং ডায়াবেটিস উভয়ই মেটাবলিক সিন্ড্রোমের অংশ, যা কোষে ইনসুলিন রেজিস্ট্যান্সের সাথে জড়িত।" },
+      { q: "উচ্চ ঝুঁকি স্কোর কি হ্রাস করা সম্ভব?", a: "হ্যাঁ। ঝুঁকি স্কোর আপনাকে সতর্ক করে। স্বাস্থ্যকর খাদ্য ও নিয়মিত ব্যায়ামের মাধ্যমে ঝুঁকি সম্পূর্ণ কমানো সম্ভব।" },
+      { q: "ডায়াবেটিসের প্রাথমিক লক্ষণগুলো কী কী?", a: "ঘন ঘন প্রস্রাব হওয়া, অতিরিক্ত পানির তৃষ্ণা লাগা, ক্লান্তি, হঠাৎ ওজন কমা বা ক্ষত শুকাতে দেরি হওয়া।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "टाइप 2 मधुमेह जोखिम स्कोर क्या है?", a: "यह एडीए द्वारा अनुशंसित एक स्कोरिंग टूल है जो सरल जीवनशैली जोखिम बिंदुओं के आधार पर प्रीडायबिटीज या अनियंत्रित मधुमेह होने की संभावना का आकलन करता है।" },
+      { q: "कौन सा स्कोर उच्च जोखिम का संकेत देता है?", a: "5 अंक या उससे अधिक का कु��� स्कोर इंगित करता है कि आप टाइप 2 मधुमेह विकसित होने के उच्च जोखिम में हैं।" },
+      { q: "लिंग मधुमेह जोखिम स्कोर को क्यों प्रभावित करता है?", a: "सांख्यिकीय रूप से, पुरुषों में अज्ञात मधुमेह होने की संभावना अधिक होती है, क्योंकि अक्सर यह महिलाओं की तुलना में कम बीएमआई पर विकसित होता है।" },
+      { q: "मधुमेह के जोखिम के लिए बीएमआई का स्कोर कैसे किया जाता है?", a: "25 से कम का बीएमआई 0 अंक जोड़ता है। 25-29.9 का बीएमआई 1 अंक जोड़ता है। 30-39.9 का बीएमआई 2 अंक जोड़ता है। बीएमआई ≥ 40 3 अंक जोड़ता है।" },
+      { q: "उच्च रक्तचाप से मधुमेह का खतरा क्यों बढ़ जाता है?", a: "उच्च रक्तचाप और उच्च रक्त शर्करा मेटाबोलिक सिंड्रोम का हिस्सा हैं, दोनों इंसुलिन प्रतिरोध और धमनी कठोरता से जुड़े हैं।" },
+      { q: "क्या उच्च जोखिम स्कोर को उलटा किया जा सकता है?", a: "हाँ। उच्च जोखिम स्कोर आपको कार्रवाई करने के लिए सचेत करता है। जीवनशैली में बदलाव से इंसुलिन प्रतिरोध को उलटा किया जा सकता है और मधुमेह को रोका जा सकता है।" },
+      { q: "मधुमेह के शुरुआती लक्षण क्या हैं?", a: "लक्षणों में बार-बार पेशाब आना, अत्यधिक प्यास लगना, बिना कारण वजन कम होना, थकान, या घावों का धीमी गति से ठीक होना शामिल हैं।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const riskInsights = {
+    en: {
+      low: {
+        desc: "Your score indicates a Low Risk of developing Type 2 diabetes. Continue maintaining your current active lifestyle and healthy eating habits.",
+        factors: ["Younger age group", "Active exercise habits", "Normal weight range (BMI < 25)"],
+        symptoms: ["Stable insulin response", "Normal metabolic health"],
+        prevention: ["Continue eating vegetables, whole grains, and lean protein", "Stay physically active", "Conduct annual screenings"],
+        consult: "No urgent follow-up required. Schedule regular checks."
+      },
+      prediabetes: {
+        desc: "Your score indicates a Moderate Risk. Some risk factors, like weight or high blood pressure, are putting stress on your metabolic health.",
+        factors: ["Overweight or slightly elevated BMI", "Family history of diabetes", "Mild physical inactivity"],
+        symptoms: ["Asymptomatic", "Occasional mild fatigue"],
+        prevention: ["Increase exercise (walk at least 30 mins daily)", "Reduce carbohydrate and carbohydrate-heavy portion sizes"],
+        consult: "Discuss preventive options and check fasting glucose with your physician."
+      },
+      diabetes: {
+        desc: "Your score indicates a High Risk (score >= 5). You should seek clinical evaluation to check fasting blood sugar or HbA1c to screen for prediabetes or diabetes.",
+        factors: ["Age above 50 or 60", "Obesity or high BMI", "High blood pressure diagnosis", "Sedentary lifestyle"],
+        symptoms: ["Excessive thirst or dry mouth", "Frequent urination", "Unexplained fatigue"],
+        prevention: ["Consult a physician to arrange a screening", "Begin a structured exercise plan", "Start a low-carb diet"],
+        consult: "⚠️ Highly recommended to visit your family doctor to perform an HbA1c screening test."
+      }
+    },
+    bn: {
+      low: {
+        desc: "আপনার ঝুঁকি স্কোর কম নির্দেশ করছে। আপনার বর্তমান স্বাস্থ্যকর ডায়েট ও সচল জীবনযাত্রা বজায় রাখুন।",
+        factors: ["তরুণ বয়স", "সক্রিয় ব্যায়ামের অভ্যাস", "স্বাভাবিক ওজন (বিএমআই ২৫ এর কম)"],
+        symptoms: ["স্বাভাবিক মেটাবলিজম"],
+        prevention: ["সুষম পুষ্টিকর খাবার খাওয়া বজায় রাখুন", "শারীরিকভাবে সচল থাকুন"],
+        consult: "কোনো জরুরি ফলোআপের প্রয়োজন নেই। নিয়মিত রুটিন চেকআপ করান।"
+      },
+      prediabetes: {
+        desc: "আপনার ঝুঁকি স্কোর মাঝারি নির্দেশ করছে। কিছু বিষয়ের ওপর নজর দিলে আপনি ঝুঁকি সম্পূর্ণ দূর করতে পারবেন।",
+        factors: ["সামান্য অতিরিক্ত ওজন", "পারিবারিক ইতিহাস", "অলস জীবনযাপন"],
+        symptoms: ["সাধারণত কোনো লক্ষণ থাকে না"],
+        prevention: ["প্রতিদিন অন্তত ৩০ মিনিট দ্রুত হাঁটার অভ্যাস গড়ে তুলুন", "খাদ্যতালিকায় মিষ্টি ও শর্করা জাতীয় খাবার কমান"],
+        consult: "ডাক্তারের পরামর্শ নিয়ে রক্তের সুগার পরীক্ষা করিয়ে নেওয়া ভালো।"
+      },
+      diabetes: {
+        desc: "আপনার ঝুঁকি স্কোর উচ্চ নির্দেশ করছে (ঝুঁকি স্কোর ৫ বা তার বেশি)। ডায়াবেটিস বা প্রি-ডায়াবেটিস শনাক্ত করতে অবিলম্বে রক্তের ফাস্টিং বা HbA1c পরীক্ষা করা বাঞ্ছনীয়।",
+        factors: ["অতিরিক্ত বয়স (৫০ বা ৬০ এর বেশি)", "স্থূলতা বা অতিরিক্ত বিএমআই", "উচ্চ রক্তচাপ", "অলস জীবনযাপন"],
+        symptoms: ["অতিরিক্ত পানির তৃষ্ণা", "ঘন ঘন প্রস্রাব হওয়া", "ক্লান্তি"],
+        prevention: ["অনতিবিলম্বে রক্তের সুগার পরীক্ষা করান", "নিয়মিত হাঁটা বা ব্যায়াম শুরু করুন", "কম শর্করাযুক্ত ডায়েট অনুসরণ করুন"],
+        consult: "⚠️ অবিলম্বে আপনার ফ্যামিলি ডাক্তারের সাথে যোগাযোগ করে রক্তের সুগার ও HbA1c পরীক্ষা করার পরামর্শ নিন।"
+      }
+    },
+    hi: {
+      low: {
+        desc: "आपका स्कोर टाइप 2 मधुमेह विकसित होने के कम जोखिम को दर्शाता है। अपनी वर्तमान सक्रिय जीवनशैली और स्वस्थ खान-पान की आदतों को बनाए रखें।",
+        factors: ["कम आयु वर्ग", "सक्रिय व्यायाम की आदतें", "सामान्य वजन सीमा (बीएमआई <25)"],
+        symptoms: ["स्थिर इंसुलिन प्रतिक्रिया", "सामान्य चयापचय स्वास्थ्य"],
+        prevention: ["सब्जियाँ, साबुत अनाज और लीन प्रोटीन खाना जारी रखें", "शारीरिक रूप से सक्रिय रहें", "वार्षिक स्क्रीनिंग आयोजित करें"],
+        consult: "किसी तत्काल अनुवर्ती कार्रवाई की आवश्यकता नहीं है. नियमित जांच शेड्यूल करें."
+      },
+      prediabetes: {
+        desc: "आपका स्कोर मध्यम जोखिम दर्शाता है। कुछ जोखिम कारक, जैसे वजन या उच्च रक्तचाप, आपके चयापचय स्वास्थ्य पर दबाव डाल रहे हैं।",
+        factors: ["अधिक वजन या थोड़ा बढ़ा हुआ बीएमआई", "मधुमेह का पारिवारिक इतिहास", "हल्की शारीरिक निष्क्रियता"],
+        symptoms: ["स्पर्शोन्मुख", "कभी-कभी हल्की थकान"],
+        prevention: ["व्यायाम बढ़ाएं (प्रतिदिन कम से कम 30 मिनट टहलें)", "कार्बोहाइड्रेट और कार्बोहाइड्रेट-भारी हिस्से का आकार कम करें"],
+        consult: "निवारक विकल्पों पर चर्चा करें और अपने चिकित्सक से उपवास ग्लूकोज की जांच करें।"
+      },
+      diabetes: {
+        desc: "आपका स्कोर उच्च जोखिम (स्कोर>=5) दर्शाता है। प्रीडायबिटीज या मधुमेह की जांच के लिए आपको फास्टिंग ब्लड शुगर या एचबीए1सी की जांच के लिए चिकित्सीय मूल्यांकन कराना चाहिए।",
+        factors: ["उम्र 50 या 60 से ऊपर", "मोटापा या उच्च बीएमआई", "उच्च रक्तचाप का निदान", "गतिहीन जीवन शैली"],
+        symptoms: ["अत्यधिक प्यास लगना या मुँह सूखना", "बार-बार पेशाब आना", "अस्पष्टीकृत थकान"],
+        prevention: ["स्क्रीनिंग की व्यवस्था करने के लिए चिकित्सक से परामर्श लें", "एक संरचित व्यायाम योजना शुरू करें", "कम कार्ब वाला आहार शुरू करें"],
+        consult: "⚠️ HbA1c स्क्रीनिंग टेस्ट कराने के लिए अपने पारिवारिक डॉक्टर के पास जाने की अत्यधिक अनुशंसा की जाती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-risk-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    // Placeholders inside height/weight
+    const heightInput = document.getElementById("valHeight");
+    const weightInput = document.getElementById("valWeight");
+    if (heightInput && weightInput) {
+      heightInput.placeholder = lang === "bn" ? "উচ্চতা (সেমি)" : "Height (cm)";
+      weightInput.placeholder = lang === "bn" ? "ওজন (কেজি)" : "Weight (kg)";
+    }
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valAge").value = "0";
+    document.getElementById("valGender").value = "female";
+    document.getElementById("valFamily").value = "0";
+    document.getElementById("valBP").value = "0";
+    document.getElementById("valActivity").value = "0";
+    document.getElementById("valHeight").value = "";
+    document.getElementById("valWeight").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function estimateRisk() {
+    const agePts = parseInt(document.getElementById("valAge").value) || 0;
+    const genderVal = document.getElementById("valGender").value;
+    const familyPts = parseInt(document.getElementById("valFamily").value) || 0;
+    const bpPts = parseInt(document.getElementById("valBP").value) || 0;
+    const actPts = parseInt(document.getElementById("valActivity").value) || 0;
+    
+    const height = parseFloat(document.getElementById("valHeight").value);
+    const weight = parseFloat(document.getElementById("valWeight").value);
+
+    if (isNaN(height) || height <= 0 || isNaN(weight) || weight <= 0) {
+      alert(currentLang === "en" ? "Please enter valid height and weight values." : "দয়া করে সঠিক উচ্চতা ও ওজনের মান লিখুন।");
+      return;
+    }
+
+    // Calculate BMI
+    const bmi = weight / ((height / 100) * (height / 100));
+    
+    let bmiPts = 0;
+    if (bmi >= 25 && bmi < 30) bmiPts = 1;
+    else if (bmi >= 30 && bmi < 40) bmiPts = 2;
+    else if (bmi >= 40) bmiPts = 3;
+
+    let genderPts = 0;
+    if (genderVal === "male" || genderVal === "female_gestational") {
+      genderPts = 1;
+    }
+
+    const score = agePts + genderPts + familyPts + bpPts + actPts + bmiPts;
+
+    let statusKey = "normal"; // Maps to low risk (<4)
+    let badgeKey = "badgeLow";
+
+    if (score >= 4 && score <= 5) {
+      statusKey = "prediabetes"; // Maps to moderate risk
+      badgeKey = "badgeModerate";
+    } else if (score > 5) {
+      statusKey = "diabetes"; // Maps to high risk
+      badgeKey = "badgeHigh";
+    }
+
+    // Pointer location (5% - 95%)
+    const pointerPct = Math.min(95, 10 + (score / 10) * 80);
+
+    activeReportData = {
+      score,
+      bmi,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, score);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resBmiVal").textContent = `${d.bmi.toFixed(1)} kg/m²`;
+
+    document.getElementById("resScoreVal").textContent = d.score;
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "normal";
+    else if (d.statusKey === "prediabetes") colorClass = "high";
+    else if (d.statusKey === "diabetes") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resScoreVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = riskInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, score) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      score,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-risk-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.score} points (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- TYPE 2 DIABETES RISK ESTIMATE REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `BMI: ${activeReportData.bmi.toFixed(1)} kg/m²\n`;
+    t += `Calculated Score: ${activeReportData.score}/10 points\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `diabetes-risk-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

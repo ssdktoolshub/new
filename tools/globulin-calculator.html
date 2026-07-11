@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Globulin Calculator &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Calculate serum globulin levels online. Enter Total Protein and Albumin to assess immune and inflammatory status with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--low-color) 0%, 
+        var(--normal-color) 45%, 
+        var(--high-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Globulin Calculator</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Calculate serum globulin levels by subtracting albumin from total protein and evaluate immunological trends.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Serum Protein Levels</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="gdcl" selected>g/dL</option>
+                <option value="gl">g/L</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valTotal" id="labelTotal" data-translate="labelTotalProt">Total Protein</label>
+              <input type="number" step="0.01" id="valTotal" placeholder="e.g. 7.2" min="0" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valAlbumin" id="labelAlbumin" data-translate="labelAlbumin">Albumin</label>
+              <input type="number" step="0.01" id="valAlbumin" placeholder="e.g. 4.2" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="calculateGlobulin()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Calculate Globulin</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Calculation Pending</h4>
+          <p data-translate="placeholderDesc">Enter Total Protein and Albumin levels, then click calculate to display serum Globulin rates.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Serum Globulin Analysis</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong>Total Protein</strong>: <span id="resTotal">-</span></span>
+            <span><strong>Albumin</strong>: <span id="resAlb">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resGlobVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">g/dL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--low-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Serum Globulins</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What are Globulins?</strong><br><span data-translate="eduA1">Globulins are a diverse group of proteins in blood plasma. They are divided into alpha-1, alpha-2, beta, and gamma globulins. The gamma globulins represent antibodies produced by immune system plasma cells.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">How is Globulin calculated?</strong><br><span data-translate="eduA2">Globulin is not measured directly in standard panels. Instead, it is calculated by subtracting measured Albumin from Total Protein:<br><code>Globulin = Total Protein - Albumin</code>.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Globulin Calculator",
+      toolDesc: "Calculate serum globulin levels by subtracting albumin from total protein and evaluate immunological trends.",
+      inputsTitle: "🧬 Serum Protein Levels",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      labelTotalProt: "Total Protein",
+      labelAlbumin: "Albumin",
+      btnAnalyze: "Calculate Globulin",
+      placeholderTitle: "Calculation Pending",
+      placeholderDesc: "Enter Total Protein and Albumin levels, then click calculate to display serum Globulin rates.",
+      reportTitle: "🔬 Serum Globulin Analysis",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Globulin (Healthy Immune Status)",
+      badgeLow: "Low Globulin (Immunodeficiency Risk)",
+      badgeHigh: "Elevated Globulin (Inflammation/Myeloma Risk)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "গ্লোবুলিন ক্যালকুলেটর",
+      toolDesc: "টোটাল প্রোটিন থেকে অ্যালবুমিন বাদ দিয়ে গ্লোবুলিন প্রোটিনের মাত্রা হিসাব করুন এবং রোগ প্রতিরোধ ক্ষমতার অবস্থা পরীক্ষা করুন।",
+      inputsTitle: "🧬 প্রোটিনের মান সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelTotalProt: "টোটাল প্রোটিন",
+      labelAlbumin: "অ্যালবুমিন",
+      btnAnalyze: "গ্লোবুলিন হিসাব করুন",
+      placeholderTitle: "হিসাব অমীমাংসিত",
+      placeholderDesc: "টোটাল প্রোটিন ও অ্যালবুমিনের মান লিখুন, তারপর হিসাব করুন বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 সিরাম গ্লোবুলিন বিশ্লেষণ",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক গ্লোবুলিন (সুস্থ রোগ প্রতিরোধ ক্ষমতা)",
+      badgeLow: "কম গ্লোবুলিন (রোগ প্রতিরোধ ঘাটতির ঝুঁকি)",
+      badgeHigh: "উচ্চ গ্লোবুলিন (ক্রনিক প্রদাহ বা মাইলোমা ঝুঁকি)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "ग्लोबुलिन कैलकुलेटर",
+      toolDesc: "कुल प्रोटीन से एल्ब्यूमिन घटाकर सीरम ग्लोब्युलिन स्तर की गणना करें और प्रतिरक्षाविज्ञानी रुझानों का मूल्यांकन करें।",
+      inputsTitle: "🧬 सीरम प्रोटीन स्��र",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      labelTotalProt: "कुल प्रोटीन",
+      labelAlbumin: "एल्बुमिन",
+      btnAnalyze: "ग्लोबुलिन की गणना करें",
+      placeholderTitle: "गणना लंबित है",
+      placeholderDesc: "कुल प्रोटीन और एल्बुमिन स्तर दर्ज करें, फिर सीरम ग्लोब्युलिन दरें प्रदर्शित करने के लिए गणना पर क्लिक करें।",
+      reportTitle: "🔬 सीरम ग्लोबुलिन विश्लेषण",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य ग्लोब्युलिन (स्वस्थ प्रतिरक्षा स्थिति)",
+      badgeLow: "कम ग्लोब्युलिन (इम्युनोडेफिशिएंसी जोखिम)",
+      badgeHigh: "ऊंचा ग्लोब्युलिन (सूजन/मायलोमा जोखिम)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Globulin?", a: "Globulins are a major group of proteins in blood, including antibodies that fight infections and enzymes." },
+      { q: "What is the normal reference range for Globulin?", a: "Normally: 2.0 - 3.5 g/dL (or 20 - 35 g/L)." },
+      { q: "How is Globulin calculated?", a: "It is calculated by: <code>Globulin = Total Protein - Albumin</code>." },
+      { q: "What causes elevated Globulin?", a: "Chronic infections (hepatitis, HIV), autoimmune diseases (lupus, rheumatoid arthritis), or blood cancers like multiple myeloma." },
+      { q: "What causes low Globulin?", a: "Malnutrition, renal protein loss, or genetic immunodeficiencies where antibody production is low." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "গ্লোবুলিন কী?", a: "গ্লোবুলিন হলো রক্তের প্রধান প্রোটিনগুলোর একটি গ্রুপ, যার মধ্যে রোগ প্রতিরোধী অ্যান্টিবডি অন্তর্ভুক্ত থাকে।" },
+      { q: "গ্লোবুলিনের স্বাভাবিক মাত্রা কত?", a: "স্বাভাবিক মাত্রা: ২.০ - ৩.৫ g/dL (বা ২০ - ৩৫ g/L)।" },
+      { q: "গ্লোবুলিন কীভাবে হিসাব করা হয়?", a: "এটি হিসাবের সূত্র: <code>গ্লোবুলিন = টোটাল প্রোটিন - অ্যালবুমিন</code>।" },
+      { q: "গ্লোবুলিন বৃদ্ধির কারণ কী?", a: "ক্রনিক ইনফেকশন, অটোইমিউন ডিজিজ (যেমন লুপাস, আরএ), অথবা রক্তের ক্যান্সার যেমন মাল্টিপল মাইলোমা।" },
+      { q: "গ্লোবুলিন কমে যাওয়ার কারণ কী?", a: "অপুষ্টি, কিডনি দিয়ে প্রোটিন ঝরে যাওয়া অথবা জন্মগত ইমিউনোডেফিসিয়েন্সি।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "ग्लोब्युलिन क्या है?", a: "ग्लोब्युलिन रक्त में प्रोटीन का एक प्रमुख समूह है, जिसमें एंटीबॉडी भी शामिल हैं जो संक्रमण और एंजाइम से लड़ते हैं।" },
+      { q: "ग्लोबुलिन के लिए सामान्य संदर्भ सीमा क्या है?", a: "सामान्यतः: 2.0 - 3.5 ग्राम/डीएल (या 20 - 35 ग्राम/लीटर)।" },
+      { q: "ग्लोब्युलिन की गणना कैसे की जाती है?", a: "इसकी गणना इस प्रकार की जाती है: <कोड>ग्लोबुलिन = कुल प्रोटीन - एल्बुमिन</कोड>।" },
+      { q: "बढ़े हुए ग्लोब्युलिन का क्या कारण है?", a: "क्रोनिक संक्रमण (हेपेटाइटिस, एचआईवी), ऑटोइम्यून रोग (ल्यूपस, रुमेट��इड गठिया), या मल्टीपल मायलोमा जैसे रक्त कैंसर।" },
+      { q: "ग्लोब्युलिन कम होने का क्या कारण है?", a: "कुपोषण, वृक्क प्रोटीन हानि, या आनुवंशिक प्रतिरक्षाविहीनता जहां एंटीबॉडी का उत्पादन कम होता है।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const globulinInsights = {
+    en: {
+      normal: {
+        desc: "Your calculated globulin level is within the normal reference range. This points to stable immunoglobulin levels and a balanced inflammatory status.",
+        factors: ["Balanced antibody production", "Normal systemic immune response"],
+        symptoms: ["No unusual susceptibility to infections"],
+        prevention: ["Continue standard protein intake", "Engage in moderate physical activities to boost immunity"],
+        consult: "Confirm with annual lipid and protein panel screens."
+      },
+      low: {
+        desc: "Your globulin level is low. This suggests a potential decline in antibody production (immunoglobulins) or systemic protein wasting.",
+        factors: ["Selective immunodeficiencies", "Renal or gastrointestinal protein loss", "Severe malnutrition"],
+        symptoms: ["Frequent or recurrent infections (colds, sinus issues)", "Fatigue"],
+        prevention: ["Prioritize immune-supporting vitamins (vitamin C, zinc)", "Optimize protein calorie intake"],
+        consult: "Consult a doctor to perform a Serum Protein Electrophoresis (SPEP) to evaluate specific globulin fractions."
+      },
+      high: {
+        desc: "Your globulin level is elevated. This is often associated with active chronic inflammation, autoimmune reactions, or plasma cell disorders.",
+        factors: ["Chronic infections (viral or bacterial)", "Autoimmune diseases (Rheumatoid Arthritis, Lupus)", "Multiple Myeloma or monoclonal gammopathy (abnormal plasma cell growth)"],
+        symptoms: ["Joint pain, chronic unexplained fatigue", "Susceptibility to bruising, bone pain if myeloma-related"],
+        prevention: ["Incorporate anti-inflammatory foods (omega-3, green tea, turmeric)", "Avoid smoking and alcohol"],
+        consult: "⚠️ URGENT: Consult your doctor. A Serum Protein Electrophoresis (SPEP) is highly recommended to rule out monoclonal gammopathies."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার হিসাবকৃত গ্লোবুলিনের মাত্রা স্বাভাবিক সীমার মধ্যে রয়েছে। এটি সুস্থ রোগ প্রতিরোধ ক্ষমতা এবং ভারসাম্যপূর্ণ শারীরিক অবস্থা নির্দেশ করে।",
+        factors: ["স্বাভাবিক অ্যান্টিবডি উৎপাদন", "সুস্থ ইমিউন সিস্টেম"],
+        symptoms: ["ঘন ঘন ইনফেকশন না হওয়া"],
+        prevention: ["সুষম খাবার ও পুষ্টি বজায় রাখুন", "নিয়মিত ব্যায়াম করুন"],
+        consult: "বার্ষিক স্বাস্থ্য পরীক্ষার অংশ হিসেবে রুটিন চেকআপ করান।"
+      },
+      low: {
+        desc: "আপনার গ্লোবুলিনের মাত্রা কম। এটি শরীরে অ্যান্টিবডি বা ইমিউনোগ্লোবুলিনের ঘাটতি নির্দেশ করতে পারে।",
+        factors: ["অ্যান্টিবডির অভাব (ইমিউনোডেফিসিয়েন্সি)", "অপুষ্টি বা কিডনি দিয়ে প্রোটিন হ্রাস"],
+        symptoms: ["ঘন ঘন ঠান্ডা লাগা, সাইনাস বা ত্বকের ইনফেকশন", "ক্লান্তি"],
+        prevention: ["ইমিউনিটি বৃদ্ধিকারী পুষ্টি ও জিঙ্ক গ্রহণ করুন"],
+        consult: "ইনফেকশনের প্রবণতা থাকলে ডাক্তারের সাথে কথা বলুন।"
+      },
+      high: {
+        desc: "আপনার গ্লোবুলিনের মাত্রা বেশি। এটি দীর্ঘস্থায়ী ইনফেকশন, অটোইমিউন রোগ বা রক্তের প্লাজমা কোষের কোনো অসঙ্গতির লক্ষণ হতে পারে।",
+        factors: ["দীর্ঘস্থায়ী সংক্রমণ (ভাইরাল বা ব্যাকটেরিয়াল)", "অটোইমিউন ডিজিজ (যেমন লুপাস, বাতব্যথা)", "মাল্টিপল মাইলোমা (রক্তের ক্যান্সার)"],
+        symptoms: ["জয়েন্টে ব্যথা, দীর্ঘস্থায়ী ক্লান্তি", "হাড়ে অনাকাঙ্ক্ষিত ব্যথা"],
+        prevention: ["অ্যান্টি-ইনফ্লেমেটরি বা প্রদাহনাশক খাবার ডায়েটে যোগ করুন"],
+        consult: "⚠️ চিকিৎসকের পরামর্শ নিয়ে সিরাম প্রোটিন ইলেকট্রোফোরেসিস (SPEP) টেস্ট করান।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका परिकलित ग्लोब्युलिन स्तर सामान्य संदर्भ सीमा के भीतर है। यह स्थिर इम्युनोग्लोबुलिन स्तर और एक संतुलित सूजन स्थिति की ओर इशारा करता है।",
+        factors: ["संतुलित एंटीबॉडी उत्पादन", "सामान्य प्रणालीगत प्रतिरक्षा प्रतिक्रिया"],
+        symptoms: ["संक्��मण के प्रति कोई असामान्य संवेदनशीलता नहीं"],
+        prevention: ["मानक प्रोटीन का सेवन जारी रखें", "प्रतिरक्षा को बढ़ावा देने के लिए मध्यम शारीरिक गतिविधियों में संलग्न रहें"],
+        consult: "वार्षिक लिपिड और प्रोटीन पैनल स्क्रीन से पुष्टि करें।"
+      },
+      low: {
+        desc: "आपका ग्लोब्युलिन स्तर कम है. यह एंटीबॉडी उत्पादन (इम्यूनोग्लोबुलिन) या प्रणालीगत प्रोटीन बर्बादी में संभावित गिरावट का सुझाव देता है।",
+        factors: ["चयनात्मक इम्युनोडेफिशिएंसी", "गुर्दे या जठरांत्र संबंधी प्रोटीन की हानि", "��ंभीर कुपोषण"],
+        symptoms: ["बार-बार या आवर्तक संक्रमण (जुकाम, साइनस की समस्या)", "थकान"],
+        prevention: ["प्रतिरक्षा-सहायक विटामिन (विटामिन सी, जिंक) को प्राथमिकता दें", "प्रोटीन कैलोरी सेवन का अनुकूलन करें"],
+        consult: "विशिष्ट ग्लोब्युलिन अंशों का मूल्यांकन करने के लिए सीरम प्रोटीन इलेक्ट्रोफोरेसिस (एसपीईपी) करने के लिए डॉक्टर से परामर्श लें।"
+      },
+      high: {
+        desc: "आपका ग्लोब्युलिन स्तर ऊंचा है। यह अक्सर सक्रिय पुरानी सूजन, ऑटोइम्यून प्रतिक्रियाओं या प्लाज्मा सेल विकारों से जुड़ा होता है।",
+        factors: ["जीर्ण संक्रमण (वायरल या बैक्टीरियल)", "ऑटोइम्यून रोग (संधिशोथ, ल्यूपस)", "मल्टीपल मायलोमा या मोनोक्लोनल गैमोपैथी (असामान्य प्लाज्मा कोशिका वृद्धि)"],
+        symptoms: ["जोड़ों का दर्द, पुरानी अस्पष्टीकृत थकान", "यदि मायलोमा से संबंधित है तो चोट लगने की संभावना, हड्डी में दर्द"],
+        prevention: ["सूजन रोधी खाद्य पदार्थ शामिल करें (ओमेगा-3, हरी चाय, हल्दी)", "धूम्रपान और शराब से बचें"],
+        consult: "⚠️ अत्यावश्यक: अपने डॉक्टर से परामर्श लें। मोनोक्लोनल गैमोपैथियों को दूर करने के लिए सीरम प्रोटीन इलेक्ट्रोफोरेसिस (एसपीईपी) की अत्यधिक अनुशंसा की जाती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-globulin-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "gdcl"; // gdcl, gl
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const totalLabel = document.getElementById("labelTotal");
+    const albLabel = document.getElementById("labelAlbumin");
+    const unitText = currentUnit === "gdcl" ? " (g/dL)" : " (g/L)";
+    
+    totalLabel.textContent = translations[currentLang].labelTotalProt + unitText;
+    albLabel.textContent = translations[currentLang].labelAlbumin + unitText;
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valTotal").value = "";
+    document.getElementById("valAlbumin").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits() {
+    let min = 2.0;
+    let max = 3.5;
+
+    if (currentUnit === "gl") {
+      min = 20;
+      max = 35;
+    }
+    return { min, max };
+  }
+
+  function calculateGlobulin() {
+    const valTotal = parseFloat(document.getElementById("valTotal").value);
+    const valAlb = parseFloat(document.getElementById("valAlbumin").value);
+
+    if (isNaN(valTotal) || valTotal <= 0 || isNaN(valAlb) || valAlb <= 0) {
+      alert(currentLang === "en" ? "Please enter valid protein levels." : "দয়া করে প্রোটিনের সঠিক মান লিখুন।");
+      return;
+    }
+
+    if (valAlb > valTotal) {
+      alert(currentLang === "en" ? "Albumin cannot exceed total protein." : "অ্যালবুমিন টোটাল প্রোটিনের চেয়ে বেশি হতে পারে না।");
+      return;
+    }
+
+    const valGlob = valTotal - valAlb;
+
+    const limits = getReferenceLimits();
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valGlob < limits.min) {
+      statusKey = "low";
+      badgeKey = "badgeLow";
+    } else if (valGlob > limits.max) {
+      statusKey = "high";
+      badgeKey = "badgeHigh";
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valGlob >= limits.min && valGlob <= limits.max) {
+      const range = limits.max - limits.min;
+      pointerPct = range > 0 ? 30 + ((valGlob - limits.min) / range) * 40 : 50;
+    } else if (valGlob < limits.min) {
+      pointerPct = Math.max(5, (valGlob / limits.min) * 25);
+    } else {
+      pointerPct = Math.min(95, 75 + ((valGlob - limits.max) / (limits.max * 0.5)) * 20);
+    }
+
+    activeReportData = {
+      valTotal,
+      valAlb,
+      valGlob,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valGlob, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+
+    const unitText = d.unit === "gdcl" ? " g/dL" : " g/L";
+    document.getElementById("resUnitText").textContent = unitText;
+    document.getElementById("resTotal").textContent = d.valTotal.toFixed(1) + unitText;
+    document.getElementById("resAlb").textContent = d.valAlb.toFixed(1) + unitText;
+
+    document.getElementById("resGlobVal").textContent = d.valGlob.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resGlobVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = `< ${d.limits.min.toFixed(1)}`;
+    document.getElementById("tickNormalRange").textContent = `${d.limits.min.toFixed(1)} - ${d.limits.max.toFixed(1)}`;
+    document.getElementById("tickHigh").textContent = `${d.limits.max.toFixed(1)}+`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = globulinInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, glob, unit) {
+    const unitText = unit === "gdcl" ? " g/dL" : " g/L";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      glob,
+      unitText,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-globulin-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>Globulin: ${item.glob.toFixed(1)}${item.unitText} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const unitText = activeReportData.unit === "gdcl" ? " g/dL" : " g/L";
+    let t = `--- GLOBULIN CALCULATOR REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Calculated Globulin: ${activeReportData.valGlob.toFixed(1)}${unitText}\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `globulin-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

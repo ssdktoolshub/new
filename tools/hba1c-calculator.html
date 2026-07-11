@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HbA1c Calculator &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Calculate and analyze your HbA1c percentage online. Convert average blood glucose levels to HbA1c using the ADAG formula with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--normal-color) 0%, 
+        var(--high-color) 50%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">HbA1c Calculator & Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Estimate your HbA1c percentage from average blood glucose values (ADAG formula) or evaluate your HbA1c test readings.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 HbA1c Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">🗑 Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="calcMode" data-translate="labelMode">Calculation Mode</label>
+              <select id="calcMode" onchange="switchMode()">
+                <option value="fromglucose" selected data-translate="modeFromGlucose">Calculate from Average Glucose</option>
+                <option value="direct" data-translate="modeDirect">Analyze HbA1c Level Directly</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper" id="unitWrapper">
+              <label for="valUnit" data-translate="labelUnit">Glucose Unit</label>
+              <select id="valUnit" onchange="updateLabels()">
+                <option value="mgdl" selected>mg/dL</option>
+                <option value="mmoll">mmol/L</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valInput" id="inputLabel" data-translate="labelAvgGlucose">Average Glucose</label>
+              <input type="number" step="0.1" id="valInput" placeholder="e.g. 135" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="calculateHbA1c()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Calculate & Analyze</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🍬</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your average glucose or direct HbA1c percentage, then click calculate to view health interpretations.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 HbA1c Diagnostics Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelModeSummary">Mode</strong>: <span id="resMode">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resHbVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">%</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickNormal" style="color: var(--normal-color);">&lt; 5.7%</span>
+              <span id="tickPrediabetes" style="color: var(--high-color);">5.7% - 6.4%</span>
+              <span id="tickDiabetes" style="color: var(--critical-color);">6.5%+</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: HbA1c & ADAG Formula</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is HbA1c?</strong><br><span data-translate="eduA1">HbA1c (Glycated Hemoglobin) is formed when glucose in the blood sticks to hemoglobin in red blood cells. Since red cells live for about 3 months, HbA1c represents the weighted average sugar levels over 90-120 days.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is the ADAG conversion formula?</strong><br><span data-translate="eduA2">The ADAG (A1c-Derived Average Glucose) study defined the mathematical relationship between HbA1c and Average Glucose (eAG):<br><code>HbA1c (%) = (eAG mg/dL + 46.7) / 28.7</code>.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What do the percentages represent?</strong><br><span data-translate="eduA3">- **Normal**: Under 5.7%<br>- **Prediabetes**: 5.7% to 6.4% (high risk of developing diabetes)<br>- **Diabetes**: 6.5% or higher.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "HbA1c Calculator",
+      toolDesc: "Estimate your HbA1c percentage from average blood glucose values (ADAG formula) or evaluate your HbA1c test readings.",
+      inputsTitle: "🧬 HbA1c Parameters",
+      clearBtn: "Reset",
+      labelMode: "Calculation Mode",
+      modeFromGlucose: "Calculate from Average Glucose",
+      modeDirect: "Analyze HbA1c Level Directly",
+      labelUnit: "Glucose Unit",
+      labelAvgGlucose: "Average Glucose",
+      labelHba1cPct: "HbA1c Level (%)",
+      btnAnalyze: "Calculate & Analyze",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your average glucose or direct HbA1c percentage, then click calculate to view health interpretations.",
+      reportTitle: "🔬 HbA1c Diagnostics Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelModeSummary: "Mode",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal HbA1c (< 5.7%)",
+      badgePrediabetes: "Prediabetes (5.7% - 6.4%)",
+      badgeDiabetes: "Diabetes Mellitus Threshold (>= 6.5%)",
+      statusNormal: "Normal",
+      statusPrediabetes: "Prediabetes",
+      statusDiabetes: "Diabetes",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "এইচবিএ১সি (HbA1c) ক্যালকুলেটর",
+      toolDesc: "রক্তের শর্করার বিগত ৩ মাসের গড় (ADAG সূত্র) থেকে এইচবিএ১সি পার্সেন্টেজ হিসাব করুন অথবা সরাসরি এইচবিএ১সি রিপোর্ট মূল্যায়ন করুন।",
+      inputsTitle: "🧬 এইচবিএ১সি ইনপুট সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelMode: "ক্যালকুলেশন মোড",
+      modeFromGlucose: "গড় গ্লুকোজ থেকে এইচবিএ১সি",
+      modeDirect: "সরাসরি এইচবিএ১সি বিশ্লেষণ",
+      labelUnit: "গ্লুকোজের ইউনিট",
+      labelAvgGlucose: "গড় গ্লুকোজ",
+      labelHba1cPct: "এইচবিএ১সি মাত্রা (%)",
+      btnAnalyze: "হিসাব ও বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার ৩ মাসের গড় গ্লুকোজ অথবা সরাসরি এইচবিএ১সি (%) লিখুন, তারপর বোতামটি চাপুন ডায়াগনস্টিক দেখতে।",
+      reportTitle: "🔬 এইচবিএ১সি ডায়াগনস্টিক রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelModeSummary: "মোড",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক এইচবিএ১সি (< ৫.৭%)",
+      badgePrediabetes: "প্রি-ডায়াবেটিস (৫.৭% - ৬.৪%)",
+      badgeDiabetes: "ডায়াবেটিস মেলিটাস সীমা (>= ৬.৫%)",
+      statusNormal: "স্বাভাবিক",
+      statusPrediabetes: "প্রি-ডায়াবেটিস",
+      statusDiabetes: "ডায়াবেটিস",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "एचबीए1सी कैलकुलेटर",
+      toolDesc: "औसत रक्त ग्लूकोज मान (ADAG फॉर्मूला) से अपने HbA1c प्रतिशत का अनुमान लगाएं या अपने HbA1c परीक्षण रीडिंग का मूल्यांकन करें।",
+      inputsTitle: "🧬HbA1c पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelMode: "गणना मोड",
+      modeFromGlucose: "औसत ग्लूकोज़ से गणना करें",
+      modeDirect: "HbA1c स्तर का सीधे विश्लेषण करें",
+      labelUnit: "ग्लूकोज इकाई",
+      labelAvgGlucose: "औसत ग्लूकोज",
+      labelHba1cPct: "HbA1c स्तर (%)",
+      btnAnalyze: "गणना एवं विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना औसत ग्लूकोज या प्रत्यक्ष HbA1c प्रतिशत दर्ज करें, फिर स्वास्थ्य व्याख्याएं देखने के लिए गणना पर क्लिक करें।",
+      reportTitle: "🔬 HbA1c डायग्नोस्टिक्स रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelModeSummary: "तरीका",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य HbA1c (<5.7%)",
+      badgePrediabetes: "प्रीडायबिटीज (5.7% - 6.4%)",
+      badgeDiabetes: "मधुमेह मेलिटस सीमा (>=6.5%)",
+      statusNormal: "सामान्य",
+      statusPrediabetes: "प्रीडायबिटीज",
+      statusDiabetes: "मधुमेह",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is HbA1c?", a: "HbA1c is glycated hemoglobin. It measures the average glucose level attached to red blood cells over the last 90-120 days." },
+      { q: "How does this calculator work?", a: "It uses the standard ADAG formula: <code>HbA1c (%) = (Average Glucose mg/dL + 46.7) / 28.7</code> to convert average glucose to HbA1c." },
+      { q: "What is a normal HbA1c percentage?", a: "A normal level is below 5.7%." },
+      { q: "What HbA1c indicates prediabetes?", a: "An HbA1c between 5.7% and 6.4% indicates prediabetes." },
+      { q: "What HbA1c confirms diabetes?", a: "An HbA1c of 6.5% or higher on two separate tests confirms diabetes." },
+      { q: "How often should HbA1c be checked?", a: "Generally, every 3 to 6 months for diabetic patients, or once a year for general screening." },
+      { q: "Can my HbA1c change quickly?", a: "No. Because it depends on red blood cell lifespans, HbA1c changes gradually over weeks to months." },
+      { q: "What causes false high HbA1c?", a: "Iron deficiency anemia, vitamin B12 deficiency, or spleen removal can falsely elevate HbA1c readings." },
+      { q: "What causes false low HbA1c?", a: "Conditions that shorten red blood cell lifespans, like hemolytic anemia, pregnancy, blood loss, or kidney failure." },
+      { q: "Is this tool diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "এইচবিএ১সি (HbA1c) কী?", a: "এইচবিএ১সি হলো গ্লাইকেটেড হিমোগ্লোবিন। এটি রক্তকোষের বিগত ৩ মাসের সুগারের গড় নির্দেশ করে।" },
+      { q: "এই ক্যালকুলেটর কীভাবে হিসাব করে?", a: "এটি স্ট্যান্ডার্ড ADAG সূত্র ব্যবহার করে: <code>HbA1c (%) = (গড় গ্লুকোজ mg/dL + ৪৬.৭) / ২৮.৭</code>।" },
+      { q: "স্বাভাবিক এইচবিএ১সি মাত্রা কত?", a: "৫.৭% এর নিচে থাকলে তা স্বাভাবিক মাত্রা ধরা হয়।" },
+      { q: "প্রি-ডায়াবেটিস এর এইচবিএ১সি সীমা কত?", a: "৫.৭% থেকে ৬.৪% এর মধ্যে থাকলে তাকে প্রি-ডায়াবেটিস বলে।" },
+      { q: "এইচবিএ১সি কত হলে ডায়াবেটিস ধরা হয়?", a: "৬.৫% বা তার বেশি হলে ডায়াবেটিস হিসেবে গণ্য করা হয়।" },
+      { q: "কত দিন পর পর এইচবিএ১সি পরীক্ষা করা উচিত?", a: "ডায়াবেটিস রোগীদের জন্য সাধারণত প্রতি ৩ থেকে ৬ মাস পর পর এবং সাধারণ স্ক্রীনিংয়ের জন্য বছরে একবার।" },
+      { q: "এইচবিএ১সি কি দ্রুত পরিবর্তন হতে পারে?", a: "না। লোহিত রক্তকণিকার গড় আয়ু ৩ মাস হওয়ায়, এটি ধীরে ধীরে কয়েক সপ্তাহ বা মাসে পরিবর্তিত হয়।" },
+      { q: "কোন কোন কারণে এইচবিএ১সি মিথ্যা বেশি দেখাতে পারে?", a: "আয়রন বা ভিটামিন বি১২ এর ঘাটতিজনিত অ্যানিমিয়া বা প্লিহা অপসারণে এইচবিএ১সি বেশি দেখাতে পারে।" },
+      { q: "কোন কোন কারণে এইচবিএ১সি মিথ্যা কম দেখাতে পারে?", a: "লোহিত রক্তকণিকার আয়ু কমে গেলে (যেমন হেমোলাইটিক অ্যানিমিয়া, রক্তক্ষরণ, গর্ভাবস্থা বা কিডনি বিকল)।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "HbA1c क्या है?", a: "HbA1c ग्लाइकेटेड हीमोग्लोबिन है। यह पिछले 90-120 दिनों में लाल रक्त कोशिकाओं से जुड़े औसत ग्लूकोज स्तर को मापता है।" },
+      { q: "यह कैलकुलेटर कैसे काम करता है?", a: "यह औसत ग्लूकोज को HbA1c में परिवर्तित करने के लिए मानक ADAG सूत्र का उपयोग करता है: <कोड>HbA1c (%) = (औसत ग्लूकोज mg/dL + 46.7) / 28.7</code>।" },
+      { q: "सामान्य HbA1c प्रतिशत क्या है?", a: "सामान्य स्तर 5.7% से नीचे है।" },
+      { q: "क्या HbA1c प्रीडायबिटीज का संकेत देता है?", a: "5.7% और 6.4% के बीच HbA1c प्रीडायबिटीज का संकेत देता है।" },
+      { q: "कौन सा HbA1c मधुमेह की पुष्टि करता है?", a: "दो अलग-अलग परीक्षणों में 6.5% या उससे अधिक का HbA1c मधुमेह की पुष्टि करता है।" },
+      { q: "HbA1c की जांच कितनी बार करानी चाहिए?", a: "आम तौर पर, मधुमेह के रोगियों के लिए हर 3 से 6 महीने में, या सामान्य जांच के लिए साल में एक बार।" },
+      { q: "क्या मेरा HbA1c जल्दी बदल सकता है?", a: "नहीं, क्योंकि यह लाल रक्त कोशिका के जीवनकाल पर निर्भर करता है, HbA1c हफ्तों से लेकर महीनों तक धीरे-धीरे बदलता है।" },
+      { q: "झूठी उच्च HbA1c का क्या कारण है?", a: "आयरन की कमी से होने वाला एनीमिया, विटामिन बी12 की कमी, या प्लीहा हटाने से एचबीए1सी रीडिंग गलत तरीके से बढ़ सकती है।" },
+      { q: "गलत निम्न HbA1c का क्या कारण है?", a: "ऐसी स्थितियाँ जो लाल रक्त कोशिका के जीवनकाल को छोटा कर देती हैं, जैसे हेमोलिटिक एनीमिया, गर्भावस्था, रक्त की हानि, या गुर्दे की विफलता।" },
+      { q: "क्या यह उपकरण निदानात्मक है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const sugarInsights = {
+    en: {
+      normal: {
+        desc: "Your HbA1c is within the normal reference limits. This indicates excellent long-term glycemic control and healthy glucose metabolism.",
+        factors: ["Balanced diet rich in whole foods", "Regular physical activity", "Optimal pancreatic insulin secretion"],
+        symptoms: ["No classic symptoms of hyperglycemia", "Stable energy levels"],
+        prevention: ["Maintain a fiber-rich dietary pattern", "Incorporate moderate cardio and strength exercises", "Screen annually"],
+        consult: "Regular annual physicals are recommended to track long-term health."
+      },
+      prediabetes: {
+        desc: "Your HbA1c indicates Prediabetes. Your cells are exhibiting moderate insulin resistance. Taking steps now can halt or reverse progression to Type 2 diabetes.",
+        factors: ["Insulin resistance", "Sedentary lifestyle", "Abdominal weight gain", "Chronic inflammation"],
+        symptoms: ["Usually asymptomatic", "Dark skin patches (Acanthosis Nigricans)"],
+        prevention: ["Restrict sugar, juices, and refined flour", "Aim for 30 minutes of aerobic exercise 5 days a week", "Aim for 5-10% weight loss if overweight"],
+        consult: "Consult your doctor or nutritionist to establish a structured diet and lifestyle plan."
+      },
+      diabetes: {
+        desc: "Your HbA1c meets the threshold for Diabetes Mellitus (>= 6.5%). Medical management is vital to stabilize blood sugars and protect microvascular systems (eyes, kidneys, nerves).",
+        factors: ["Beta-cell dysfunction in pancreas", "Severe tissue insulin resistance", "Long-term elevated glucose averages"],
+        symptoms: ["Frequent urination, excessive thirst, dry mouth", "Blurry vision or slow-healing cuts", "Peripheral numbness or tingling"],
+        prevention: ["Check daily glucose values", "Eat low-glycemic, fiber-loaded meals", "Comply with prescribed clinical medications"],
+        consult: "⚠️ Arrange a clinical consultation with an endocrinologist or diabetologist to initiate therapy."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার এইচবিএ১সি মাত্রা সম্পূর্ণ স্বাভাবিক সীমায় রয়েছে। এটি নির্দেশ করে বিগত ৩ মাসের সুগারের গড় চমৎকার নিয়ন্ত্রণে রয়েছে।",
+        factors: ["সুষম ও ফাইবারযুক্ত খাবার গ্রহণ", "সক্রিয় জীবনযাপন ও নিয়মিত ব্যায়াম", "ইনসুলিনের সঠিক কার্যকারিতা"],
+        symptoms: ["স্বাভাবিক শারীরিক সুস্থতা", "কোনো ক্লান্তি বা ঝাপসা ভাব না থাকা"],
+        prevention: ["আঁশযুক্ত খাবার ও প্রোটিন ডায়েট বজায় রাখুন", "দৈনিক ৩০ মিনিট হাঁটার অভ্যাস রাখুন", "বছরে অন্তত একবার রুটিন চেকআপ করান"],
+        consult: "স্বাস্থ্যের অবস্থা ধরে রাখতে নিয়মিত বার্ষিক স্বাস্থ্য পরীক্ষা করুন।"
+      },
+      prediabetes: {
+        desc: "আপনার এইচবিএ১সি রিপোর্ট প্রি-ডায়াবেটিস নির্দেশ করছে। এর অর্থ আপনার কোষে ইনসুলিন রেজিস্ট্যান্স তৈরি হচ্ছে, তবে এটি সম্পূর্ণ নিরাময়যোগ্য।",
+        factors: ["শরীরের কোষে ইনসুলিন রেজিস্ট্যান্স তৈরি হওয়া", "অলস জীবনযাপন", "অতিরিক্ত মিষ্টি ও কার্বোহাইড্রেট সমৃদ্ধ খাবার খাওয়া", "অতিরিক্ত ওজন"],
+        symptoms: ["সাধারণত কোনো লক্ষণ থাকে না", "ঘাড়, বগল বা শরীরের ভাজের ত্বক কালচে হওয়া"],
+        prevention: ["মিষ্টি পানীয় ও রিফাইন করা চাল-ময়দা খাওয়া কমান", "সপ্তাহে অন্তত ১৫০ মিনিট কায়িক পরিশ্রম বা ব্যায়াম করুন", "শরীরের ওজন ৫-৭% কমানোর চেষ্টা করুন"],
+        consult: "ডায়াবেটিসে রূপান্তর ঠেকাতে ডাক্তারের পরামর্শ নিন এবং বছরে অন্তত দুইবার পরীক্ষা করান।"
+      },
+      diabetes: {
+        desc: "আপনার এইচবিএ১সি এর মান ডায়াবেটিস নির্দেশ করছে (৬.৫% বা তার বেশি)। জটিলতা এড়াতে ডাক্তারের তত্ত্বাবধানে চিকিৎসা ও সুগার নিয়ন্ত্রণ শুরু করা অত্যন্ত জরুরি।",
+        factors: ["অগ্ন্যাশয় থেকে পর্যাপ্ত ইনসুলিন তৈরি না হওয়া", "তীব্র ইনসুলিন রেজিস্ট্যান্স", "দীর্ঘমেয়াদী উচ্চ সুগারের গড়"],
+        symptoms: ["অতিরিক্ত তৃষ্ণা লাগা ও গলা শুকিয়ে যাওয়া", "ঘন ঘন প্রস্রাব হওয়া", "হঠাৎ ওজন কমা", "ক্ষত শুকাতে দেরি হওয়া"],
+        prevention: ["ডাক্তারের পরামর্শ অনুযায়ী নিয়মিত সুগার পরিমাপ করুন", "প্রেসক্রিপশনের ওষুধ বা ইনসুলিন নিয়ম মেনে নিন", "লো-গ্লাইসেমিক ইনডেক্স সমৃদ্ধ খাবার ডায়েটে যুক্ত করুন"],
+        consult: "⚠️ অবিলম্বে একজন ডায়াবেটিস বিশেষজ্ঞ ডাক্তারের পরামর্শ নিয়ে চিকিৎসা শুরু করুন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका HbA1c सामान्य संदर्भ सीमा के भीतर है। यह उत्कृष्ट दीर्घकालिक ग्लाइसेमिक नियंत्रण और स्वस्थ ग्लूकोज चयापचय को इंगित करता है।",
+        factors: ["संपूर्ण खाद्य पदार्थों से भरपूर संतुलित आहार", "नियमित शारीरिक गतिविधि", "इष्टतम अग्नाशय इंसुलिन स���राव"],
+        symptoms: ["हाइपरग्लेसेमिया का कोई क्लासिक लक्षण नहीं", "स्थिर ऊर्जा स्तर"],
+        prevention: ["फाइबर युक्त आहार पैटर्न बनाए रखें", "मध्यम कार्डियो और शक्ति व्यायाम शामिल करें", "सालाना स्क्रीन"],
+        consult: "दीर्घकालिक स्वास्थ्य पर नज़र रखने के लिए नियमित वार्षिक शारीरिक जांच की सिफारिश की जाती है।"
+      },
+      prediabetes: {
+        desc: "आपका HbA1c प्रीडायबिटीज का संकेत देता है। आपकी कोशिकाएं मध्यम इंसुलिन प्रतिरोध प्रदर्शित कर रही हैं। अभी कदम उठाने से टाइप 2 मधुमेह की प्रगति रुक ​​सकती है या उलट सकती है।",
+        factors: ["इंसुलिन प्रतिरोध", "गतिहीन जीवन शैली", "पेट का वजन बढ़ना", "जीर्ण सूजन"],
+        symptoms: ["आमतौर पर स्पर्शोन्मुख", "त्वचा पर गहरे रंग के धब्बे (एकैनथोसिस निगरिकन्स)"],
+        prevention: ["चीनी, जूस और मैदा सीमित रखें", "सप्ताह में 5 दिन 30 मिनट एरोबिक व्यायाम करने का लक्ष्य रखें", "यदि आपका वजन अधिक है तो 5-10% वजन घटाने का लक्ष्य रखें"],
+        consult: "एक संरचित आहार और जीवनशैली योजना स्थापित करने के लिए अपने डॉक्टर या पोषण विशेषज्ञ से परामर्श लें।"
+      },
+      diabetes: {
+        desc: "आपका HbA1c मधुमेह मेलिटस (>= 6.5%) की सीमा को पूरा करता है। रक्त शर्करा को स्थिर करने और माइक्रोवस्कुलर सिस्टम (आंखें, गुर्दे, तंत्रिकाएं) की रक्षा के लिए चिकित्सा प्रबंधन महत्वपूर्ण है।",
+        factors: ["अग्न्याशय में बीटा-कोशिका की शिथिलता", "गंभीर ऊतक इंसुलिन प्रतिरोध", "लंबे समय तक बढ़ा हुआ ग्लूकोज औसत"],
+        symptoms: ["बार-बार पेशाब आना, अत्यधिक प्यास लगना, मुँह सूखना", "धुंधली दृष्टि या धीमी गति से ठीक होने वाले घा��", "परिधीय सुन्नता या झुनझुनी"],
+        prevention: ["दैनिक ग्लूकोज मूल्यों की जाँच करें", "कम ग्लाइसेमिक, फाइबर युक्त भोजन खाएं", "निर्धारित नैदानिक दवाओं का अनुपालन करें"],
+        consult: "⚠️ चिकित्सा शुरू करने के लिए किसी एंडोक्रिनोलॉजिस्ट या मधुमेह विशेषज्ञ के साथ नैदानिक ​​​​परामर्श की व्यवस्था करें।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-a1c-history")) || [];
+  let activeReportData = null;
+  let currentMode = "fromglucose"; // fromglucose, direct
+  let currentUnit = "mgdl"; // mgdl, mmoll
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabels();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchMode() {
+    currentMode = document.getElementById("calcMode").value;
+    const unitWrapper = document.getElementById("unitWrapper");
+    
+    if (currentMode === "fromglucose") {
+      unitWrapper.style.display = "flex";
+    } else {
+      unitWrapper.style.display = "none";
+    }
+    
+    resetForm();
+    updateLabels();
+  }
+
+  function updateLabels() {
+    const label = document.getElementById("inputLabel");
+    const input = document.getElementById("valInput");
+    
+    if (currentMode === "fromglucose") {
+      currentUnit = document.getElementById("valUnit").value;
+      const unitText = currentUnit === "mgdl" ? " (mg/dL)" : " (mmol/L)";
+      label.textContent = translations[currentLang].labelAvgGlucose + unitText;
+      input.placeholder = currentUnit === "mgdl" ? "e.g. 135" : "e.g. 7.5";
+    } else {
+      label.textContent = translations[currentLang].labelHba1cPct;
+      input.placeholder = "e.g. 5.6";
+    }
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valInput").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function calculateHbA1c() {
+    const valInput = parseFloat(document.getElementById("valInput").value);
+
+    if (isNaN(valInput) || valInput <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid numeric value." : "দয়া করে একটি সঠিক ধনাত্মক সংখ্যা লিখুন।");
+      return;
+    }
+
+    let hba1c = 0;
+    if (currentMode === "fromglucose") {
+      let glucoseMgdl = valInput;
+      if (currentUnit === "mmoll") {
+        glucoseMgdl = valInput * 18;
+      }
+      // ADAG formula: HbA1c = (glucose + 46.7) / 28.7
+      hba1c = (glucoseMgdl + 46.7) / 28.7;
+    } else {
+      hba1c = valInput;
+    }
+
+    if (hba1c < 3 || hba1c > 25) {
+      alert(currentLang === "en" ? "HbA1c value seems anomalous. Please double check your input." : "এইচবিএ১সি এর মানটি অসঙ্গতিপূর্ণ দেখাচ্ছে। ইনপুট পুনরায় যাচাই করুন।");
+      return;
+    }
+
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (hba1c >= 5.7 && hba1c < 6.5) {
+      statusKey = "prediabetes";
+      badgeKey = "badgePrediabetes";
+    } else if (hba1c >= 6.5) {
+      statusKey = "diabetes";
+      badgeKey = "badgeDiabetes";
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (hba1c < 5.7) {
+      pointerPct = Math.max(5, (hba1c / 5.7) * 45);
+    } else if (hba1c < 6.5) {
+      pointerPct = 45 + ((hba1c - 5.7) / 0.8) * 25;
+    } else {
+      pointerPct = Math.min(95, 70 + ((hba1c - 6.5) / 5.5) * 25);
+    }
+
+    activeReportData = {
+      valInput,
+      hba1c,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      mode: currentMode,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, hba1c);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+
+    const modeText = d.mode === "fromglucose" ? translations[currentLang].modeFromGlucose : translations[currentLang].modeDirect;
+    document.getElementById("resMode").textContent = modeText;
+    document.getElementById("resHbVal").textContent = d.hba1c.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "prediabetes") colorClass = "high";
+    else if (d.statusKey === "diabetes") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resHbVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = sugarInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, hba1c) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      hba1c,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-a1c-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.hba1c.toFixed(1)}% (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- HbA1c DIAGNOSTIC REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Calculated HbA1c: ${activeReportData.hba1c.toFixed(1)}%\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `hba1c-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

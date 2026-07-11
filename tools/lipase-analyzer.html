@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serum Lipase Analyzer &bull; SSDK CLINICAL TOOLS</title>
+  <meta name="description" content="Evaluate serum Lipase levels online. Assess pancreatic health, acute pancreatitis risks, and lipid-digesting enzyme balances with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--low-color) 0%, 
+        var(--normal-color) 35%, 
+        var(--high-color) 70%,
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Serum Lipase Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze serum lipase levels to evaluate pancreatic health, assess pancreatitis risk, and compare key diagnostic boundaries.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Lipase Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valLipase" data-translate="labelLipase">Serum Lipase (U/L)</label>
+              <input type="number" step="1" id="valLipase" placeholder="e.g. 70" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeLipase()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Lipase</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your serum lipase level (U/L) and click the analyze button to display clinical findings.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Serum Lipase Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Serum Lipase</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resLipVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">U/L</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--low-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Lipase</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Serum Lipase?</strong><br><span data-translate="eduA1">Lipase is a water-soluble enzyme secreted by the pancreas that aids in the digestion of dietary lipids (fats). While trace amounts are found in other body fluids, the diagnostic concentration in blood is heavily pancreatic-specific.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Why is Lipase preferred over Amylase?</strong><br><span data-translate="eduA2">Lipase is highly specific to the pancreas and is not elevated in salivary diseases (unlike amylase). Moreover, lipase remains elevated in the bloodstream longer (often up to 7 to 10 days) after an acute pancreatitis attack, making it highly valuable for delayed evaluations.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What do high Lipase levels signify?</strong><br><span data-translate="eduA3">Elevations above 3 times the upper limit of normal (~300 to 450 U/L) are highly diagnostic of acute pancreatitis. Other causes of moderate elevation include pancreatic duct obstruction, severe kidney disease (due to reduced clearance), or pancreatic pseudocysts.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Serum Lipase Analyzer",
+      toolDesc: "Analyze serum lipase levels to evaluate pancreatic health, assess pancreatitis risk, and compare key diagnostic boundaries.",
+      inputsTitle: "🧬 Lipase Parameters",
+      clearBtn: "Reset",
+      labelLipase: "Serum Lipase (U/L)",
+      btnAnalyze: "Analyze Lipase",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your serum lipase level (U/L) and click the analyze button to display clinical findings.",
+      reportTitle: "🔬 Serum Lipase Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Lipase Level",
+      badgeLow: "Low Lipase Level",
+      badgeBorderline: "Borderline Lipase Level",
+      badgeElevated: "Elevated Lipase Level (High risk)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "লিপেজ বিশ্লেষক",
+      toolDesc: "অগ্ন্যাশয়ের কোনো প্রদাহ বা রোগ চিহ্নিত করতে রক্তের লিপেজ এনজাইমের মাত্রা বিশ্লেষণ এবং ক্লিনিক্যাল সীমানা তুলনা করুন।",
+      inputsTitle: "🧬 লিপেজ পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelLipase: "সিরাম লিপেজ (U/L)",
+      btnAnalyze: "লিপেজ বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "সিরাম লিপেজ এনজাইমের মান (U/L) লিখুন এবং বিশ্লেষণ করুন বোতামে ক্লিক করুন।",
+      reportTitle: "🔬 সিরাম লিপেজ ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক লিপেজ লেভেল",
+      badgeLow: "কম লিপেজ লেভেল",
+      badgeBorderline: "সীমান্তবর্তী বা বর্ডারলাইন লিপেজ লেভেল",
+      badgeElevated: "উচ্চ লিপেজ লেভেল (ঝুঁকিপূর্ণ)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভavy প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "सीरम लाइपेज विश्लेषक",
+      toolDesc: "अग्न्याशय के स्वास्थ्य का मूल्यांकन करने, अग्नाशयशोथ के जोखिम का आकलन करने और प्रमुख नैदानिक ​​सीमाओं की तुलना करने के लिए सीरम लाइपेस स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬 लाइपेज पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelLipase: "सीरम लाइपेज (यू/एल)",
+      btnAnalyze: "लाइपेज का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना सीरम लाइपेज स्तर (यू/एल) दर्ज करें और नैदानिक ​​निष्कर्ष प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 सीरम लाइपेज डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य लाइपेज स्तर",
+      badgeLow: "निम्न लाइपेज स्तर",
+      badgeBorderline: "सीमा रेखा लाइपेज स्तर",
+      badgeElevated: "ऊंचा लाइपेज स्तर (उच्च जोखिम)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is serum lipase?", a: "Lipase is an enzyme produced by the pancreas to digest fats. Blood levels are highly specific to pancreatic function." },
+      { q: "What is the normal reference range for lipase?", a: "The normal range is typically 10 to 140 U/L." },
+      { q: "Why is lipase preferred over amylase?", a: "Lipase is more specific to the pancreas, doesn't rise with salivary disorders, and stays elevated longer in the blood after an acute attack." },
+      { q: "What causes elevated lipase?", a: "Acute pancreatitis, pancreatic duct obstruction, severe kidney disease (reduced excretion), or peptic ulcers." }
+    ],
+    bn: [
+      { q: "সিরাম লিপেজ কী?", a: "লিপেজ হলো অগ্ন্যাশয় থেকে তৈরি এক ধরণের এনজাইম যা চর্বি হজম করতে সাহায্য করে। এর রক্তের মাত্রা অগ্ন্যাশয়ের স্বাস্থ্যের জন্য অত্যন্ত সুনির্দিষ্ট।" },
+      { q: "লিপেজের স্বাভাবিক মাত্রা কত?", a: "স্বাভাবিক মাত্রা সাধারণত ১০ থেকে ১৪০ U/L হয়ে থাকে।" },
+      { q: "এ্যামাইলেজের চেয়ে লিপেজ কেন বেশি নির্ভরযোগ্য?", a: "লিপেজ লালাগ্রন্থির প্রদাহে বাড়ে না এবং অগ্ন্যাশয়ের ইনফেকশন হলে রক্তে বেশি দিন পর্যন্ত বেশি থাকে, যা রোগ নির্ণয়ে সাহায্য করে।" },
+      { q: "লিপেজ বেড়ে যাওয়ার কারণ কী?", a: "তীব্র অগ্ন্যাশয় প্রদাহ (Acute Pancreatitis), অগ্ন্যাশয়ের নালী বন্ধ হওয়া, কিডনির মারাত্মক সমস্যা বা আলসার।" }
+    ],
+    hi: [
+      { q: "सीरम लाइपेज क्या है?", a: "लाइपेज वसा को पचाने के लिए अग्न्याशय द्वारा निर्मित एक एंजाइम है। रक्त का स्तर अग्न्याशय के कार्य के लिए अत्यधिक विशिष्ट होता है।" },
+      { q: "लाइपेज के लिए सामान्य संदर्भ सीमा क्या है?", a: "सामान्य सीमा आम तौर पर 10 से 140 यू/एल होती है।" },
+      { q: "एमाइलेज की तुलना में लाइपेज को प्राथमिकता क्यों दी जाती है?", a: "लाइपेज अग्न्याशय के लिए अधिक विशिष्ट है, लार विकारों के साथ नहीं बढ़ता है, और तीव्र हमले के बाद रक्त में लंबे समय तक ऊंचा रहता है।" },
+      { q: "बढ़े हुए लाइपेज का क्या कारण है?", a: "तीव्र अग्नाशयशोथ, अग्न्याशय वाहिनी में रुकावट, गंभीर गुर्दे की बीमारी (उत्सर्जन में कमी), या पेप्टिक अल्सर।" }
+    ]
+  };
+
+  const lipaseInsights = {
+    en: {
+      normal: {
+        desc: "Your serum lipase level is normal. This suggests healthy lipase synthesis and normal pancreatic physiological function.",
+        factors: ["Proper pancreatic cell function", "Healthy pancreatic ducts", "Normal clearance of enzymes"],
+        symptoms: ["No acute abdominal pain or digestive disturbances"],
+        prevention: ["Continue eating a balanced diet with healthy fats", "Limit alcohol to avoid pancreatic irritation"],
+        consult: "No follow-up required. Discuss results in standard routine metabolic tests."
+      },
+      low: {
+        desc: "Your lipase level is low. While often clinically insignificant, persistently low values can point to advanced damage to lipase-producing pancreatic cells.",
+        factors: ["Chronic pancreatitis (long-term tissue scarring)", "Cystic fibrosis", "Severe pancreatic duct blockages"],
+        symptoms: ["Fatty, foul-smelling stools (steatorrhea)", "Abdominal gas, bloating, and weight loss"],
+        prevention: ["Eat smaller, frequent meals", "Limit heavy fat intake if digestion is poor"],
+        consult: "Consult a gastroenterologist if you exhibit chronic abdominal bloating, fatty stools, or weight loss."
+      },
+      borderline: {
+        desc: "Your lipase level is borderline elevated (140-300 U/L). This points to mild pancreatic irritation or early-stage enzyme accumulation.",
+        factors: ["Mild or early pancreatic irritation", "Gastrointestinal tract inflammation (such as severe peptic ulcers)", "Renal impairment reducing clearance", "Medication side effects (e.g. opiates)"],
+        symptoms: ["Mild abdominal discomfort or bloating", "Nausea or mild indigestion"],
+        prevention: ["Follow a low-fat, bland diet for a few days", "Stay well hydrated and avoid alcohol entirely"],
+        consult: "Speak to a healthcare provider. A retest in a few days or combined testing with amylase may be advised."
+      },
+      high: {
+        desc: "Your lipase level is elevated (>300 U/L). High levels are highly specific to pancreatic cell damage and suggest acute pancreatitis.",
+        factors: ["Acute pancreatitis (pancreatic inflammation)", "Biliary duct obstruction due to gallstones", "Severe renal impairment", "Pancreatic pseudocysts or tumors"],
+        symptoms: ["Severe, sudden upper abdominal pain radiating to the back", "Nausea, vomiting", "Tender abdomen, rapid pulse, fever"],
+        prevention: ["Avoid all solid food and liquids immediately to let the pancreas rest", "Do not consume alcohol under any circumstances"],
+        consult: "Seek immediate medical attention. Levels exceeding 300 U/L require urgent clinical evaluation and supportive care."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার রক্তের লিপেজ মাত্রা স্বাভাবিক রয়েছে। এটি অগ্ন্যাশয়ের সুস্থ কার্যক্ষমতা নির্দেশ করে।",
+        factors: ["অগ্ন্যাশয়ের স্বাভাবিক কার্যক্ষমতা", "সুস্থ অগ্ন্যাশয় নালী"],
+        symptoms: ["পেটে তীব্র ব্যথা বা হজমজনিত অসুবিধা না থাকা"],
+        prevention: ["স্বাস্থ্যকর ফ্যাটযুক্ত সুষম খাবার খান", "অ্যালকোহল ও অতিরিক্ত ক্যাফেইন বর্জন করুন"],
+        consult: "সাধারণ বার্ষিক স্ক্রীনিং এর মাধ্যমে নজর রাখুন।"
+      },
+      low: {
+        desc: "আপনার লিপেজের মাত্রা কম। এটি অগ্ন্যাশয়ের ফ্যাট হজম করার এনজাইম তৈরিতে দীর্ঘমেয়াদী অক্ষমতা নির্দেশ করতে পারে।",
+        factors: ["দীর্ঘস্থায়ী অগ্ন্যাশয় প্রদাহ (Chronic Pancreatitis)", "সিস্টিক ফাইব্রোসিস"],
+        symptoms: ["তৈলাক্ত বা দুর্গন্ধযুক্ত মল", "হজম না হওয়া, অতিরিক্ত পেট ফাঁপা"],
+        prevention: ["কম ফ্যাটযুক্ত সহজে হজমযোগ্য খাবার অল্প অল্প করে বারবার খান"],
+        consult: "দীর্ঘদিন চর্বি হজম না হওয়া ও মলের অসঙ্গতি থাকলে ডাক্তারের পরামর্শ নিন।"
+      },
+      borderline: {
+        desc: "আপনার লিপেজের মাত্রা বর্ডারলাইন বা সামান্য বেশি (১৪০-৩০০ U/L)। এটি অগ্ন্যাশয়ে হালকা জ্বালাপোড়া বা প্রাথমিক কোনো পিত্তনালীর ব্লকেজের লক্ষণ হতে পারে।",
+        factors: ["অগ্ন্যাশয়ের প্রাথমিক প্রদাহ", "পাকস্থলীর তীব্র আলসার বা গ্যাস্ট্রাইটিস", "কিডনির মৃদু কার্যক্ষমতা হ্রাস"],
+        symptoms: ["পেটে মৃদু অস্বস্তি ও পেট ফাঁপা", "হজম না হওয়া, হালকা বমি বমি ভাব"],
+        prevention: ["কয়েকদিন অতিরিক্ত তেল-মশলা ছাড়া একদম হালকা খাবার খান", "অ্যালকোহল ও ধূমপান সম্পূর্ণ বর্জন করুন"],
+        consult: "ডাক্তারের পরামর্শ নিন। কয়েকদিন পর পুনরায় লিপেজ টেস্ট করানো ভালো।"
+      },
+      high: {
+        desc: "আপনার লিপেজের মাত্রা বেশি (৩০০ U/L এর ওপরে)। এটি অগ্ন্যাশয়ের তীব্র প্রদাহ (Acute Pancreatitis) এর অন্যতম সুনির্দিষ্ট সংকেত।",
+        factors: ["তীব্র অগ্ন্যাশয় প্রদাহ (Acute Pancreatitis)", "পিত্তনালীতে গলস্টোন আটকে সম্পূর্ণ বন্ধ হওয়া", "কিডনির মারাত্মক অকার্যকারিতা"],
+        symptoms: ["পেটের মাঝ বরাবর হঠাৎ তীব্র ব্যথা যা পিঠে ছড়িয়ে পড়ে", "ক্রমাগত বমি ও বমি বমি ভাব", "পেটে স্পর্শ করলে ব্যথা লাগা, দ্রুত হৃদস্পন্দন ও জ্বর"],
+        prevention: ["অবিলম্বে খাবার খাওয়া বন্ধ করুন যাতে অগ্ন্যাশয়ের এনজাইম তৈরি না হয় (অগ্ন্যাশয়কে সম্পূর্ণ বিশ্রামে রাখা জরুরি)"],
+        consult: "অবিলম্বে হাসপাতালে বা জরুরি চিকিৎসকের পরামর্শ নিন। ৩০০ U/L এর ওপরে লিপেজের মান অত্যন্ত সতর্কতার সাথে মূল্যায়ন করতে হয়।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका सीरम लाइपेज स्तर सामान्य है। यह स्वस्थ लाइपेज संश्लेषण और सामान्य अग्नाशयी शारीरिक कार्य का सुझाव देता है।",
+        factors: ["अग्न्याशय कोशिका का उचित कार्य", "स्वस्थ अग्न्याशय नलिकाएं", "एंजाइमों की सामान्य निकासी"],
+        symptoms: ["कोई तीव्र पेट दर्द या पाचन संबंधी गड़बड़ी नहीं"],
+        prevention: ["स्वस्थ वसा युक्त संतुलित आहार खाना जारी रखें", "अग्न्याशय की जलन से बचने के लिए शराब का सेवन सीमित करें"],
+        consult: "किसी अनुवर्ती कार्रवाई की आवश्यकता नहीं है. मानक नियमित चयापचय परीक्षणों के परिणामों पर चर्चा करें।"
+      },
+      low: {
+        desc: "आपका लाइपेज स्तर कम है। हालांकि अक्सर चिकित्सकीय रूप से महत्वहीन, लगातार कम मूल्य लाइपेज-उत्पादक अग्न्याशय कोशिकाओं को उन्नत क्षति का संकेत दे सकते हैं।",
+        factors: ["क्रोनिक अग्नाशयशोथ (दीर्घकालिक ऊतक घाव)", "सिस्टिक फाइब्रोसिस", "गंभीर अग्नाशय वाहिनी रुकावट"],
+        symptoms: ["वसायुक्त, दुर्गंधयुक्त मल (स्टीटोरिया)", "पेट में गैस, सूजन और वजन कम होना"],
+        prevention: ["छोटे-छोटे, बार-बार भोजन कर���ं", "यदि पाचन खराब है तो भारी वसा का सेवन सीमित करें"],
+        consult: "यदि आपको लंबे समय से पेट में सूजन, वसायुक्त मल या वजन में कमी दिखाई देती है तो गैस्ट्रोएंटेरोलॉजिस्ट से परामर्श लें।"
+      },
+      borderline: {
+        desc: "आपका लाइपेज स्तर सीमा रेखा से ऊंचा (140-300 यू/एल) है। ��ह हल्के अग्नाशय में जलन या प्रारंभिक चरण के एंजाइम संचय की ओर इशारा करता है।",
+        factors: ["अग्नाशय में हल्की या प्रारंभिक जलन", "जठरांत्र पथ की सूजन (जैसे गंभीर पेप्टिक अल्सर)", "गुर्दे की हानि क्लीयरेंस को कम करती है", "दवा के दुष्प्रभाव (जैसे ओपियेट्स)"],
+        symptoms: ["पेट में हल्की परेशानी या सूजन", "मतली या हल्का अपच"],
+        prevention: ["कुछ दिनों के लिए कम वसा वाला, हल्का आहार लें", "अच्छी तरह हाइड्रेटेड रहें और शराब से पूरी तरह बचें"],
+        consult: "किसी स्वास्थ्य सेवा प्रदाता से बात करें. कुछ दिनों में पुनः परीक्षण या एमाइलेज़ के साथ संयुक्त परीक्षण की सलाह दी जा सकती है।"
+      },
+      high: {
+        desc: "आपका लाइपेज स्तर ऊंचा (>300 यू/एल) है। उच्च स्तर अग्न्याशय कोशिका क्षति के लिए अत्यधिक विशिष्ट हैं और तीव्र अग्नाशयशोथ का सुझाव देते हैं।",
+        factors: ["तीव्र अग्नाशयशोथ (अग्न्याशय की सूजन)", "पित्त पथरी के कारण पित्त नली में रुकावट", "गंभीर गुर्दे की हानि", "अग्नाशयी स्यूडोसिस्ट या ट्यूमर"],
+        symptoms: ["गंभीर, अचानक पेट के ऊपरी हिस्से में दर्द जो पीठ तक फैल जाए", "मतली, उल्टी", "कोमल पेट, तेज़ नाड़ी, बुखार"],
+        prevention: ["अग्न्याशय को आराम देने के लिए तुरंत सभी ठोस भोजन और तरल पदा���्थों से बचें", "किसी भी परिस्थिति में शराब का सेवन न करें"],
+        consult: "तत्काल चिकित्सा सहायता लें। 300 यू/एल से अधिक के स्तर पर तत्काल नैदानिक ​​​​मूल्यांकन और सहायक देखभाल की आवश्यकता होती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-lipase-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valLipase").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function analyzeLipase() {
+    const valLip = parseFloat(document.getElementById("valLipase").value);
+
+    if (isNaN(valLip) || valLip < 0) {
+      alert(currentLang === "en" ? "Please enter a valid lipase value." : "দয়া করে লিপেজের সঠিক মান লিখুন।");
+      return;
+    }
+
+    // Ranges: Normal 10-140 | Borderline 140-300 | Elevated > 300
+    let statusKey = "normal";
+    let badgeKey = "badgeNormal";
+
+    if (valLip < 10) {
+      statusKey = "low";
+      badgeKey = "badgeLow";
+    } else if (valLip >= 10 && valLip <= 140) {
+      statusKey = "normal";
+      badgeKey = "badgeNormal";
+    } else if (valLip > 140 && valLip <= 300) {
+      statusKey = "borderline";
+      badgeKey = "badgeBorderline";
+    } else {
+      statusKey = "high";
+      badgeKey = "badgeElevated";
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valLip < 10) {
+      pointerPct = Math.max(5, (valLip / 10) * 15);
+    } else if (valLip <= 140) {
+      pointerPct = 15 + ((valLip - 10) / 130) * 30; // 15% to 45%
+    } else if (valLip <= 300) {
+      pointerPct = 45 + ((valLip - 140) / 160) * 30; // 45% to 75%
+    } else {
+      pointerPct = Math.min(95, 75 + ((valLip - 300) / 600) * 20); // 75% to 95%
+    }
+
+    activeReportData = {
+      valLip,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valLip);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resLipVal").textContent = d.valLip.toFixed(0);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "borderline") colorClass = "high";
+    else if (d.statusKey === "high") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resLipVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = `< 10 U/L`;
+    document.getElementById("tickNormalRange").textContent = `10 - 140 U/L`;
+    document.getElementById("tickHigh").textContent = `300 U/L+`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = lipaseInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valLip) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valLip,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-lipase-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valLip.toFixed(0)} U/L (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- SERUM LIPASE REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Value: ${activeReportData.valLip.toFixed(0)} U/L\n`;
+    t += `Reference Range: 10 - 140 U/L\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `lipase-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

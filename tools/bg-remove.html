@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Background Remover &bull; Chroma Key - SSDK TOOLS HUB</title>
+  <meta name="description" content="Remove image background colors instantly. Click on the image to sample background color, adjust tolerance levels, and download transparent PNGs.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .canvas-container {
+      width: 100%;
+      min-height: 250px;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      padding: 10px;
+      position: relative;
+    }
+    /* Checkerboard transparency grid */
+    .canvas-container.checkerboard {
+      background-color: #333;
+      background-image: 
+        linear-gradient(45deg, #444 25%, transparent 25%), 
+        linear-gradient(-45deg, #444 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #444 75%), 
+        linear-gradient(-45deg, transparent 75%, #444 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+    canvas {
+      max-width: 100%;
+      max-height: 400px;
+      border-radius: 6px;
+      cursor: crosshair;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+    }
+    .config-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .config-card h3 {
+      font-size: 0.95rem;
+      margin: 0 0 12px;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .slider-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 600px) {
+      .slider-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .slider-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .slider-group input[type="range"] {
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+    .color-picker-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .color-picker-box label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .color-picker-box input[type="color"] {
+      border: none;
+      padding: 0;
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      cursor: pointer;
+      background: none;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Background Remover</h1>
+  <p class="page-sub">Isolate background colors using chroma key algorithms. Click on the image to sample colors dynamically.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    
+    <!-- Controls Config -->
+    <div class="config-card" id="controlsCard" style="display: none;">
+      <h3>Isolation Parameters</h3>
+      
+      <div class="color-picker-box">
+        <label for="keyColor">Target Color:</label>
+        <input type="color" id="keyColor" value="#ffffff" oninput="removeBackground()">
+        <span style="font-size:0.75rem; color:var(--muted); font-weight:bold;">
+          💡 Tip: Click anywhere on the image preview to sample its color!
+        </span>
+      </div>
+
+      <div class="slider-row">
+        <div class="slider-group">
+          <label>Tolerance: <strong id="tolVal" style="color:var(--accent);">20%</strong></label>
+          <input type="range" id="tolerance" min="1" max="100" value="20" oninput="$('tolVal').textContent=this.value+'%'; removeBackground();">
+        </div>
+        <div class="slider-group">
+          <label>Edge Smoothing: <strong id="smthVal" style="color:var(--accent);">5%</strong></label>
+          <input type="range" id="smoothing" min="0" max="50" value="5" oninput="$('smthVal').textContent=this.value+'%'; removeBackground();">
+        </div>
+      </div>
+
+      <label class="chk-container" style="margin-bottom: 12px;">
+        <input type="checkbox" id="showCheckerboard" checked onchange="toggleCheckerboard()">
+        <span>Show Transparency Checkerboard</span>
+      </label>
+
+      <div style="border-top: 1px solid var(--border); padding-top: 14px; margin-top: 12px;">
+        <h4 style="font-size: 0.85rem; margin-top: 0; margin-bottom: 8px;">Replace Background</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end;">
+          <div class="slider-group">
+            <label for="bgType">Background Type</label>
+            <select id="bgType" onchange="toggleBgType()" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); outline: none; font-size: 0.8rem; cursor: pointer;">
+              <option value="none" selected>Transparent (None)</option>
+              <option value="color">Solid Color</option>
+              <option value="gradient">Gradient Presets</option>
+              <option value="image">Custom Image</option>
+            </select>
+          </div>
+          
+          <!-- Solid Color Option -->
+          <div class="slider-group" id="bgReplColorGroup" style="display: none;">
+            <label for="bgReplColor">Solid Color</label>
+            <input type="color" id="bgReplColor" value="#3498db" oninput="removeBackground()" style="border: none; padding: 0; width: 100%; height: 38px; border-radius: 6px; cursor: pointer; background: none;">
+          </div>
+
+          <!-- Gradient Preset Option -->
+          <div class="slider-group" id="bgReplGradGroup" style="display: none;">
+            <label for="bgReplGrad">Gradient Preset</label>
+            <select id="bgReplGrad" onchange="removeBackground()" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); outline: none; font-size: 0.8rem; cursor: pointer;">
+              <option value="sunset">🌅 Sunset Glow</option>
+              <option value="ocean">🌊 Ocean Wave</option>
+              <option value="neon">🌿 Neon Jungle</option>
+            </select>
+          </div>
+
+          <!-- Custom Image Option -->
+          <div class="slider-group" id="bgReplImageGroup" style="display: none;">
+            <label for="bgReplImage">Upload Background</label>
+            <input type="file" id="bgReplImage" accept="image/*" onchange="loadCustomBgImage(event)" style="font-size: 0.75rem;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Playground IO -->
+    <div class="tool-io" style="display: grid; grid-template-columns: 1fr; gap: 24px;">
+      
+      <!-- Upload Zone -->
+      <div id="uploadContainer">
+        <h4 style="margin-bottom: 8px;">Upload Image</h4>
+        <div id="dropZone" style="border: 2px dashed var(--border); padding: 35px 24px; border-radius: 12px; text-align: center; cursor: pointer; background: var(--bg2); transition: 0.3s; margin-bottom: 16px;">
+          <span style="font-size: 2.8rem; display: block; margin-bottom: 8px;">🖼</span>
+          <p style="font-size: 0.9rem; color: var(--muted); margin: 0;">Drag & drop your image here, or <span style="color: var(--accent); font-weight: 700;">browse</span></p>
+          <input type="file" id="imageInput" accept="image/*" style="display: none;">
+        </div>
+      </div>
+
+      <!-- Canvas Preview wrapper -->
+      <div id="canvasWrapper" style="display: none; text-align: center;">
+        <h4 style="margin-bottom: 8px;">Image Preview</h4>
+        <div class="canvas-container checkerboard" id="canvasBox">
+          <canvas id="activeCanvas"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnDownload" style="display: none; background: var(--grad2);">⬇️ Download Transparent PNG</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b; display: none;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none; text-align: center;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Eyedropper Sampling:</strong> Tap directly onto the image canvas to instantly select and match the background color channel.</li>
+      <li><strong>Tolerance & Smoothing Sliders:</strong> Refine edge thresholds to handle background variations and smooth out pixel steps.</li>
+      <li><strong>Lossless PNG Output:</strong> Preserves transparency mapping and exports high-definition images locally.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-list content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-item">
+      <div class="faq-q">What type of backgrounds work best?<span>＋</span></div>
+      <div class="faq-a">Chroma keying works best on images with solid, clean backgrounds (like green screens or solid studio backdrops) where there is a clear color contrast between the subject and the background.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">How does eyedropper sampling work?<span>＋</span></div>
+      <div class="faq-a">When you click on the image canvas, the tool samples the exact RGB value of the pixel under your cursor and sets it as the key color. This makes background extraction extremely fast for non-standard background colors.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  let loadedImg = null;
+  let customBgImg = null;
+  
+  // Keep offline canvas structures
+  const bgCanvas = document.createElement('canvas');
+  const bgCtx = bgCanvas.getContext('2d');
+  
+  const isolatedCanvas = document.createElement('canvas');
+  const isolatedCtx = isolatedCanvas.getContext('2d');
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  function toggleCheckerboard() {
+    const check = $('showCheckerboard').checked;
+    if (check) {
+      $('canvasBox').classList.add('checkerboard');
+    } else {
+      $('canvasBox').classList.remove('checkerboard');
+    }
+  }
+
+  function toggleBgType() {
+    const type = $('bgType').value;
+    $('bgReplColorGroup').style.display = type === 'color' ? 'block' : 'none';
+    $('bgReplGradGroup').style.display = type === 'gradient' ? 'block' : 'none';
+    $('bgReplImageGroup').style.display = type === 'image' ? 'block' : 'none';
+    removeBackground();
+  }
+
+  function loadCustomBgImage(e) {
+    if (e.target.files.length) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          customBgImg = img;
+          removeBackground();
+          showStatus('✅ Background image loaded and applied!');
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Handle Drag & Drop
+  const dropZone = $('dropZone');
+  dropZone.onclick = () => $('imageInput').click();
+
+  dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--accent)';
+  };
+  dropZone.ondragleave = () => {
+    dropZone.style.borderColor = 'var(--border)';
+  };
+  dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files.length) {
+      loadImage(e.dataTransfer.files[0]);
+    }
+  };
+  $('imageInput').onchange = (e) => {
+    if (e.target.files.length) {
+      loadImage(e.target.files[0]);
+    }
+  };
+
+  function loadImage(file) {
+    if (!file.type.startsWith('image/')) {
+      showStatus('Please select a valid image file.', true);
+      return;
+    }
+    
+    showStatus('Loading image...');
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        loadedImg = img;
+        
+        // Setup canvases
+        const canvas = $('activeCanvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        bgCanvas.width = img.naturalWidth;
+        bgCanvas.height = img.naturalHeight;
+        bgCtx.drawImage(img, 0, 0);
+
+        $('uploadContainer').style.display = 'none';
+        $('controlsCard').style.display = 'block';
+        $('canvasWrapper').style.display = 'block';
+
+        $('btnDownload').style.display = 'inline-flex';
+        $('btnClear').style.display = 'inline-flex';
+
+        // Auto sample top-left pixel color as initial key background guess
+        const topLeftPixel = bgCtx.getImageData(0, 0, 1, 1).data;
+        $('keyColor').value = rgbToHex(topLeftPixel[0], topLeftPixel[1], topLeftPixel[2]);
+
+        removeBackground();
+        showStatus('✅ Image loaded! Sample key color or adjust tolerance.');
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Convert RGB components to HEX string
+  function rgbToHex(r, g, b) {
+    const toHex = (c) => c.toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+
+  // Convert HEX string to RGB components
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return [r, g, b];
+  }
+
+  // Eyedropper Color sampling on canvas click
+  $('activeCanvas').onclick = (e) => {
+    if (!loadedImg) return;
+    const canvas = $('activeCanvas');
+    const rect = canvas.getBoundingClientRect();
+    
+    // Scale client coordinates to canvas dimensions
+    const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width));
+    const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height));
+
+    // Get color from original unedited canvas
+    const pixel = bgCtx.getImageData(x, y, 1, 1).data;
+    const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
+    $('keyColor').value = hex;
+
+    removeBackground();
+    showStatus(`Sampled color ${hex} as key background!`);
+  };
+
+  // Perform Chroma key background removal and layering
+  function removeBackground() {
+    if (!loadedImg) return;
+    
+    const canvas = $('activeCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // 1. Draw foreground to isolated mask canvas
+    isolatedCanvas.width = canvas.width;
+    isolatedCanvas.height = canvas.height;
+    isolatedCtx.drawImage(bgCanvas, 0, 0);
+
+    const keyColorHex = $('keyColor').value;
+    const [keyR, keyG, keyB] = hexToRgb(keyColorHex);
+    
+    const tolerance = parseInt($('tolerance').value);
+    const smoothing = parseInt($('smoothing').value);
+
+    const imgData = isolatedCtx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imgData.data;
+    const maxDist = 441.67;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i+1];
+      const b = data[i+2];
+
+      const dist = Math.sqrt(Math.pow(r - keyR, 2) + Math.pow(g - keyG, 2) + Math.pow(b - keyB, 2));
+      const distPct = (dist / maxDist) * 100;
+
+      if (distPct < tolerance) {
+        data[i+3] = 0; // Fully transparent
+      } else if (distPct < tolerance + smoothing && smoothing > 0) {
+        // Soft edges linear alpha gradient
+        const alpha = ((distPct - tolerance) / smoothing) * 255;
+        data[i+3] = Math.round(alpha);
+      }
+    }
+    isolatedCtx.putImageData(imgData, 0, 0);
+
+    // 2. Render selected background layers to active canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const bgType = $('bgType').value;
+    if (bgType === 'color') {
+      ctx.fillStyle = $('bgReplColor').value;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else if (bgType === 'gradient') {
+      const gradPreset = $('bgReplGrad').value;
+      let grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      if (gradPreset === 'sunset') {
+        grad.addColorStop(0, '#f6d365');
+        grad.addColorStop(1, '#fda085');
+      } else if (gradPreset === 'ocean') {
+        grad.addColorStop(0, '#a1c4fd');
+        grad.addColorStop(1, '#c2e9fb');
+      } else if (gradPreset === 'neon') {
+        grad.addColorStop(0, '#11998e');
+        grad.addColorStop(1, '#38ef7d');
+      }
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else if (bgType === 'image' && customBgImg) {
+      const scale = Math.max(canvas.width / customBgImg.width, canvas.height / customBgImg.height);
+      const w = customBgImg.width * scale;
+      const h = customBgImg.height * scale;
+      const x = (canvas.width - w) / 2;
+      const y = (canvas.height - h) / 2;
+      ctx.drawImage(customBgImg, x, y, w, h);
+    }
+
+    // 3. Render foreground mask on top
+    ctx.drawImage(isolatedCanvas, 0, 0);
+  }
+
+  $('btnDownload').onclick = () => {
+    const canvas = $('activeCanvas');
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'isolated-bg-replaced.png';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showStatus('✅ Image downloaded successfully!');
+    }, 'image/png');
+  };
+
+  $('btnClear').onclick = () => {
+    loadedImg = null;
+    customBgImg = null;
+    $('imageInput').value = '';
+    $('bgReplImage').value = '';
+    $('tolerance').value = 20;
+    $('tolVal').textContent = '20%';
+    $('smoothing').value = 5;
+    $('smthVal').textContent = '5%';
+    $('bgType').value = 'none';
+    toggleBgType();
+    
+    $('uploadContainer').style.display = 'block';
+    $('controlsCard').style.display = 'none';
+    $('canvasWrapper').style.display = 'none';
+
+    $('btnDownload').style.display = 'none';
+    $('btnClear').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

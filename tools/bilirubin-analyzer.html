@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bilirubin Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate Total, Direct, and Indirect Bilirubin levels online. Differentiate between hemolytic, hepatocellular, and obstructive jaundice with unit conversion.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .bilirubin-summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .bili-box {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+
+    .bili-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .bili-val {
+      font-size: 1.4rem;
+      font-weight: 900;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .bili-box, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Bilirubin Analyzer (Total, Direct, Indirect)</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze Total, Direct, and Indirect Bilirubin levels to evaluate jaundice, hemolysis, or biliary tract blockages.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧪 Bilirubin Inputs</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="mgdl" selected>mg/dL</option>
+                <option value="umoll">µmol/L</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valTotal" id="labelTotal" data-translate="labelTotalBili">Total Bilirubin</label>
+              <input type="number" step="0.01" id="valTotal" placeholder="e.g. 1.0" min="0" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valDirect" id="labelDirect" data-translate="labelDirectBili">Direct (Conjugated) Bilirubin</label>
+              <input type="number" step="0.01" id="valDirect" placeholder="e.g. 0.2" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeBilirubin()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Bilirubin</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter Total and Direct Bilirubin values and click analyze to display fractionations.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Bilirubin Fractionation Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test Type</strong>: Serum Bilirubin Fractionation</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="bilirubin-summary-grid">
+            <div class="bili-box">
+              <div class="bili-title" data-translate="lblTotalBox">Total</div>
+              <div class="bili-val" id="resTotalVal">-</div>
+              <div style="font-size:0.65rem; color:var(--muted);" id="unitText1">-</div>
+            </div>
+            <div class="bili-box">
+              <div class="bili-title" data-translate="lblDirectBox">Direct</div>
+              <div class="bili-val" id="resDirectVal" style="color: var(--low-color);">-</div>
+              <div style="font-size:0.65rem; color:var(--muted);" id="unitText2">-</div>
+            </div>
+            <div class="bili-box">
+              <div class="bili-title" data-translate="lblIndirectBox">Indirect</div>
+              <div class="bili-val" id="resIndirectVal" style="color: var(--high-color);">-</div>
+              <div style="font-size:0.65rem; color:var(--muted);" id="unitText3">-</div>
+            </div>
+          </div>
+
+          <div style="background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:12px; text-align:center; font-weight:800; font-size:0.95rem; text-transform:uppercase;" id="resStatusLabel">
+            -
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Bilirubin & Jaundice</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Bilirubin?</strong><br><span data-translate="eduA1">Bilirubin is a yellowish pigment formed during the normal breakdown of red blood cells. It travels in blood to the liver, where it is conjugated (made water-soluble) and excreted in bile.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is the difference between Direct and Indirect Bilirubin?</strong><br><span data-translate="eduA2">- **Indirect (Unconjugated) Bilirubin**: The form that travels in blood to the liver. High levels suggest hemolysis (red cell destruction) or liver processing issues.<br>- **Direct (Conjugated) Bilirubin**: The form processed by the liver to be excreted in bile. High levels suggest biliary tract blockages or hepatocellular injury.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Bilirubin Analyzer",
+      toolDesc: "Analyze Total, Direct, and Indirect Bilirubin levels to evaluate jaundice, hemolysis, or biliary tract blockages.",
+      inputsTitle: "🧪 Bilirubin Inputs",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      labelTotalBili: "Total Bilirubin",
+      labelDirectBili: "Direct (Conjugated) Bilirubin",
+      btnAnalyze: "Analyze Bilirubin",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter Total and Direct Bilirubin values and click analyze to display fractionations.",
+      reportTitle: "🔬 Bilirubin Fractionation Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test Type",
+      labelDate: "Date",
+      lblTotalBox: "Total",
+      lblDirectBox: "Direct",
+      lblIndirectBox: "Indirect",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Bilirubin Levels",
+      badgeUnconjugated: "Unconjugated Hyperbilirubinemia (Hemolytic Jaundice)",
+      badgeConjugated: "Conjugated Hyperbilirubinemia (Obstructive/Biliary Jaundice)",
+      badgeMixed: "Mixed Hyperbilirubinemia (Hepatocellular Jaundice)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "বিলিরুবিন বিশ্লেষক",
+      toolDesc: "রক্তের টোটাল, ডাইরেক্ট ও ইনডাইরেক্ট বিলিরুবিনের মাত্রা বিশ্লেষণ করে জন্ডিস ও পিত্তনালীর ব্লকেজ পরীক্ষা করুন।",
+      inputsTitle: "🧪 বিলিরুবিন ইনপুট সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelTotalBili: "টোটাল বিলিরুবিন",
+      labelDirectBili: "ডাইরেক্ট (কনজুগেটেড) বিলিরুবিন",
+      btnAnalyze: "বিলিরুবিন বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "টোটাল ও ডাইরেক্ট বিলিরুবিন এর মান লিখুন এবং বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 বিলিরুবিন ভগ্নাংশ রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষার ধরন",
+      labelDate: "তারিখ",
+      lblTotalBox: "টোটাল",
+      lblDirectBox: "ডাইরেক্ট",
+      lblIndirectBox: "ইনডাইরেক্ট",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক বিলিরুবিন মাত্রা",
+      badgeUnconjugated: "ইনকনজুগেটেড হাইপারবিলিরুবিনেমিয়া (হেমোলাইটিক জন্ডিস)",
+      badgeConjugated: "কনজুগেটেড হাইপারবিলিরুবিনেমিয়া (অবস্ট্রাক্টিভ বা পিত্তনালীর জন্ডিস)",
+      badgeMixed: "মিশ্র হাইপারবিলিরুবিনেমিয়া (হেপাটোসেলুলার জন্ডিস)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "बिलीरुबिन विश्लेषक",
+      toolDesc: "पीलिया, हेमोलिसिस, या पित्त पथ की रुकावटों का मूल्यांकन करने के लिए कुल, प्रत्यक्ष और अप्रत्यक्ष बिलीरुबिन स्तरों का विश्लेषण करें।",
+      inputsTitle: "🧪 बि���ीरुबिन इनपुट",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      labelTotalBili: "कुल बिलीरुबिन",
+      labelDirectBili: "प्रत्यक्ष (संयुग्मित) बिलीरुबिन",
+      btnAnalyze: "बिलीरुबिन का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "कुल और प्रत्यक्ष बिलीरुबिन मान दर्ज करें और अंशों को प्रदर्शित करने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 बिलीरुबिन फ्रैक्शनेशन रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण प्रकार",
+      labelDate: "दिनांक",
+      lblTotalBox: "कुल",
+      lblDirectBox: "प्रत्यक्ष",
+      lblIndirectBox: "अप्रत्यक्ष",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य बिलीरुबिन स्तर",
+      badgeUnconjugated: "असंयुग्मित हाइपरबिलिरुबिनमिया (हेमोलिटिक पीलिया)",
+      badgeConjugated: "संयुग्मित हाइपरबिलिरुबिनमिया (अवरोधक/पित्त पीलिया)",
+      badgeMixed: "मिश्रित हाइपरबिलिरुबिनमिया (हेपेटोसेलुलर पीलिया)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Bilirubin?", a: "Bilirubin is a brownish-yellow pigment created by the breakdown of hemoglobin in old red blood cells." },
+      { q: "What is a normal bilirubin level?", a: "Total: 0.2 - 1.2 mg/dL. Direct: 0.0 - 0.3 mg/dL." },
+      { q: "How is Indirect Bilirubin calculated?", a: "It is calculated by subtracting Direct Bilirubin from Total Bilirubin: <code>Indirect = Total - Direct</code>." },
+      { q: "What are the symptoms of high bilirubin?", a: "The classic symptom is Jaundice (yellowing of the skin and whites of the eyes), dark urine, and pale stool." },
+      { q: "How are mg/dL and µmol/L converted?", a: "Multiply mg/dL by 17.1 to get µmol/L. Divide µmol/L by 17.1 to get mg/dL." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "বিলিরুবিন কী?", a: "বিলিরুবিন হলো রক্তে লোহিত রক্তকণিকার ভাঙনের ফলে সৃষ্ট হলুদ-বাদামি রঞ্জক পদার্থ।" },
+      { q: "বিলিরুবিনের স্বাভাবিক মাত্রা কত?", a: "টোটাল: ০.২ - ১.২ mg/dL। ডাইরেক্ট: ০.০ - ০.৩ mg/dL।" },
+      { q: "ইনডাইরেক্ট বিলিরুবিন কীভাবে হিসাব করা হয়?", a: "টোটাল বিলিরুবিন থেকে ডাইরেক্ট বিলিরুবিন বাদ দিয়ে এটি পাওয়া যায়: <code>ইনডাইরেক্ট = টোটাল - ডাইরেক্ট</code>।" },
+      { q: "উচ্চ বিলিরুবিনের লক্ষণ কী কী?", a: "প্রধান লক্ষণ হলো জন্ডিস (চোখ ও ত্বক হলুদ হওয়া), প্রস্রাবের রং অতিরিক্ত গাড় হওয়া এবং ফ্যাকাশে মল।" },
+      { q: "mg/dL এবং µmol/L কীভাবে রূপান্তর করা হয়?", a: "mg/dL কে ১৭.১ দিয়ে গুণ করলে µmol/L পাওয়া যায়। µmol/L কে ১৭.১ দিয়ে ভাগ করলে mg/dL পাওয়া যায়।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "बिलीरुबिन क्या है?", a: "बिलीरुबिन एक भूरा-पीला रंगद्रव्य है जो पुरानी लाल रक्त कोशिकाओं में हीमोग्लोबिन के टूटने से बनता है।" },
+      { q: "सामान्य बिलीरुबिन स्तर क्या है?", a: "कुल: 0.2 - 1.2 मिलीग्राम/डीएल। प्रत्यक्ष: 0.0 - 0.3 मिलीग्राम/डीएल।" },
+      { q: "अप्रत्यक्ष बिलीरुबिन की गणना कैसे की जाती है?", a: "इसकी गणना कुल बिलीरुबिन से प्रत्यक्ष बिलीरुबिन को घटाकर की जाती है: <कोड>अप्रत्यक्ष = कुल - प्रत्यक्ष</कोड>।" },
+      { q: "उच्च बिलीरुबिन के लक्षण क्या हैं?", a: "क्लासिक लक्षण पीलिया (त्वचा और आंखों के सफेद भाग का पीला पड़ना), गहरे रंग का मूत्र और पीला मल है।" },
+      { q: "mg/dL और µmol/L को कैसे परिवर्तित किया जाता है?", a: "µmol/L प्राप्त करने के लिए mg/dL को 17.1 से गुणा करें। mg/dL प्राप्त करने के लिए µmol/L को 17.1 से विभाजित करें।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const bilirubinInsights = {
+    en: {
+      normal: {
+        desc: "Your bilirubin levels are completely normal. This indicates healthy red blood cell turnover and optimal liver clearance.",
+        factors: ["Normal rate of hemolysis", "Optimal conjugation in liver", "Clear biliary excretion pathways"],
+        symptoms: ["No clinical signs of jaundice"],
+        prevention: ["Maintain healthy liver-friendly habits", "Avoid excess toxic substances"],
+        consult: "No special follow-up needed. Retest during annual panels."
+      },
+      unconjugated: {
+        desc: "You have Unconjugated Hyperbilirubinemia (hemolytic jaundice). Your indirect bilirubin is disproportionately high, suggesting either accelerated red cell destruction or processing issues in the liver cells.",
+        factors: ["Hemolytic anemia (rapid breakdown of RBCs)", "Gilbert's Syndrome (harmless genetic reduction of conjugation enzyme)", "Neonatal jaundice physiology"],
+        symptoms: ["Mild yellowing of whites of eyes", "Fatigue or pale skin in case of anemia"],
+        prevention: ["Avoid extreme fasting or severe dehydration, which triggers Gilbert's flares", "Monitor CBC parameters for anemia"],
+        consult: "Consult your doctor. A Complete Blood Count (CBC) and Reticulocyte count are often done next."
+      },
+      conjugated: {
+        desc: "You have Conjugated Hyperbilirubinemia (obstructive/biliary jaundice). Your direct bilirubin is highly elevated, indicating that the liver conjugates bilirubin successfully but cannot excrete it due to blockages in bile ducts.",
+        factors: ["Gallstones in the common bile duct", "Biliary tract inflammation or strictures", "Pancreatic head tumors blocking biliary flow"],
+        symptoms: ["Painless progressive jaundice", "Very dark, tea-colored urine", "Pale or clay-colored stools"],
+        prevention: ["Adopt a low-fat, gallstone-preventative diet", "Avoid high cholesterol foods"],
+        consult: "⚠️ URGENT: Consult a doctor immediately. An abdominal ultrasound or MRI (MRCP) is typically indicated to check for blockages."
+      },
+      mixed: {
+        desc: "You have Mixed Hyperbilirubinemia (hepatocellular jaundice). Both direct and indirect fractions are elevated, indicating direct damage to the liver cells causing leakage of both processed and unprocessed bilirubin.",
+        factors: ["Viral hepatitis (A, B, or C)", "Alcoholic or non-alcoholic steatohepatitis (fatty liver)", "Drug-induced liver injury (DILI)"],
+        symptoms: ["Jaundice, dark urine", "Nausea, vomiting, loss of appetite", "Right upper quadrant abdominal pain"],
+        prevention: ["Avoid alcohol and acetaminophen completely", "Rest and follow healthy liver recovery diet"],
+        consult: "⚠️ URGENT: Seek medical advice. Liver enzyme tests (ALT, AST) are necessary to diagnose hepatocellular damage."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার বিলিরুবিনের মাত্রা সম্পূর্ণ স্বাভাবিক সীমার মধ্যে রয়েছে। এটি সুস্থ লোহিত রক্তকণিকা এবং যকৃতের ছাঁকন ক্ষমতা নির্দেশ করে।",
+        factors: ["স্বাভাবিক রক্তকোষের বিপাক", "লিভারের স্বাভাবিক কার্যকারিতা"],
+        symptoms: ["জন্ডিসের কোনো লক্ষণ না থাকা"],
+        prevention: ["স্বাস্থ্যকর ডায়েট বজায় রাখুন"],
+        consult: "বার্ষিক স্বাস্থ্য পরীক্ষা করান।"
+      },
+      unconjugated: {
+        desc: "আপনার রিপোর্টে ইনকনজুগেটেড হাইপারবিলিরুবিনেমিয়া (হেমোলাইটিক জন্ডিস) নির্দেশ করছে। রক্তের ইনডাইরেক্ট বিলিরুবিন অতিরিক্ত বেশি, যা লোহিত রক্তকণিকা দ্রুত ভাঙার কারণে হতে পারে।",
+        factors: ["হেমোলাইটিক অ্যানিমিয়া (রক্তশূন্যতা)", "গিলবার্ট সিন্ড্রোম (লিভার এনজাইমের মৃদু জিনগত অভাব)"],
+        symptoms: ["চোখের সাদা অংশ সামান্য হলুদ হওয়া", "রক্তস্বল্পতার ক্লান্তি"],
+        prevention: ["দীর্ঘ উপবাস বা পানিশূন্যতা পরিহার করুন"],
+        consult: "রক্তের সিবিসি (CBC) টেস্ট করার জন্য ডাক্তারের পরামর্শ নিন।"
+      },
+      conjugated: {
+        desc: "আপনার রিপোর্টে কনজুগেটেড হাইপারবিলিরুবিনেমিয়া (অবস্ট্রাক্টিভ বা পিত্তনালীর জন্ডিস) নির্দেশ করছে। ডাইরেক্ট বিলিরুবিন মারাত্মক উচ্চ, যা পিত্তনালীতে ব্লকেজের কারণে হতে পারে।",
+        factors: ["পিত্তথলি বা পিত্তনালীতে পাথর (Gallstones)", "পিত্তনালীতে প্রদাহ"],
+        symptoms: ["ত্বক ও চোখ হলুদ হওয়া (জন্ডিস)", "অতিরিক্ত গাড় লাল প্রস্রাব", "ফ্যাকাশে বা মাটির রঙের মল"],
+        prevention: ["চর্বিযুক্ত খাবার পরিহার করুন"],
+        consult: "⚠️ অবিলম্বে চিকিৎসকের শরণাপন্ন হোন এবং পিত্তনালীর আল্ট্রাসাউন্ড টেস্ট করান।"
+      },
+      mixed: {
+        desc: "আপনার রিপোর্টে মিশ্র হাইপারবিলিরুবিনেমিয়া (হেপাটোসেলুলার জন্ডিস) নির্দেশ করছে। ডাইরেক্ট ও ইনডাইরেক্ট উভয় বিলিরুবিনই বেশি, যা লিভারের কোষের ক্ষতির কারণে ঘটে থাকে।",
+        factors: ["ভাইরাল হেপাটাইটিস", "অ্যালকোহল বা চর্বিজনিত লিভারের ক্ষত", "ওষুধের পার্শ্বপ্রতিক্রিয়া"],
+        symptoms: ["জন্ডিস ও ক্লান্তি", "বমি বমি ভাব, ক্ষুধামন্দা", "পেটের ডান পাশে ব্যথা"],
+        prevention: ["অবিলম্বে সম্পূর্ণ অ্যালকোহল ও অপ্রয়োজনীয় ওষুধ সেবন বন্ধ করুন"],
+        consult: "⚠️ অবিলম্বে একজন গ্যাস্ট্রোএন্টারোলজিস্ট ডাক্তারের পরামর্শ নিন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका बिलीरुबिन स्तर पूरी तरह से सामान्य है। यह स्वस्थ लाल रक्त कोशिका कारोबार और इष्टतम यकृत निकासी को इंगित करता है।",
+        factors: ["हेमोलिसिस की सामान्य दर", "जिगर में इष्टतम संयुग्मन", "पित्त उत्सर्जन मार्ग साफ़ करें"],
+        symptoms: ["पीलिया का कोई नैदानिक लक्षण नहीं"],
+        prevention: ["स्वस्थ लीवर-अनुकूल आदतें बनाए रखें", "अधिक विषैले पदार्थों से बचें"],
+        consult: "किसी विशेष अनुवर्ती कार्रवाई की आवश्यकता नहीं है. वार्षिक पैनल के दौरान पुनः परीक्षण करें."
+      },
+      unconjugated: {
+        desc: "आपको अनकॉन्जुगेटेड हाइपरबिलिरुबिनमिया (हेमोलिटिक पीलिया) है। आपका अप्रत्यक्ष बिलीरुबिन असंगत रूप से उच्च है, जो या तो त्वरित लाल कोशिका विनाश या यकृत कोशिकाओं में प्रसंस्करण समस्याओं का सुझाव देता है।",
+        factors: ["हेमोलिटिक एनीमिया (आरबीसी का तेजी से टूटना)", "गिल्बर्ट सिंड्रोम (संयुग्मन एंजाइम की हानिरहित आनुवंशिक कमी)", "नवजात पीलिया शरीर क्रिया विज्ञान"],
+        symptoms: ["आँखों के सफ़ेद भाग का हल्का पीला पड़ना", "एनीमिया की स्थिति में थकान या त्वचा का पीला पड़ना"],
+        prevention: ["अत्यधिक उपवास या गंभीर निर्जलीकरण से बचें, जो गिल्बर्ट फ्लेयर्स को ट्रिगर करता है", "एनीमिया के लिए सीबीसी मापदंडों की निगरानी करें"],
+        consult: "अपने डॉक्टर से सलाह लें. इसके बाद अक्सर पूर्ण रक्त गणना (सीबीसी) और रेटिकुलोसाइट गिनती की जाती है।"
+      },
+      conjugated: {
+        desc: "आपको संयुग्मित हाइपरबिलिरुबिनमिया (अवरोधक/पित्त संबंधी पीलिया) है। आपका प्रत्यक्ष बिलीरुबिन अत्यधिक ऊंचा है, जो दर्शाता है कि यकृत बिलीरुबिन को सफलतापूर्वक संयुग्मित करता है लेकिन पित्त नलिकाओं में रुकावटों के कारण इसे उत्सर्जित नहीं कर सकता है।",
+        factors: ["सामान्य पित्त नली में पित्ताशय की पथरी", "पित्त पथ की सूजन या सिकुड़न", "अग्न्याशय के सिर के ट्यूमर पित्त प्रवाह को अवरुद्ध कर रहे हैं"],
+        symptoms: ["दर्द रहित प्रगतिशील पीलिया", "बहुत गहरा, चाय के रंग का पेशाब", "पीला या मिट्टी के रंग का मल"],
+        prevention: ["कम वसायुक्त, पित्त पथरी-निवारक आहार अपनाएँ", "उच्च कोलेस्ट्रॉल वाले खाद्य पदार्थों से बचें"],
+        consult: "⚠️ अत्यावश्यक: तुरंत डॉक्टर से परामर्श लें। रुकावटों की जांच के लिए आमतौर पर पेट का अल्ट्रासाउंड या एमआरआई (एमआरसीपी) का संकेत दिया जाता है।"
+      },
+      mixed: {
+        desc: "आपको मिश्रित हाइपरबिलिरुबिनमिया (हेपैटोसेलुलर पीलिया) है। प्रत्यक्ष और अप्रत्यक्ष दोनों अंश बढ़े हुए हैं, जो यकृत कोशिकाओं को सीधे नुकसान का संकेत देते हैं, जिससे संसाधित और असंसाधित बिलीरुबिन दोनों का रिसाव होता है।",
+        factors: ["वायरल हेपेटाइटिस (ए, बी, या सी)", "अल्कोहलिक या गैर अल्कोहलिक स्टीटोहेपेटाइटिस (वसायुक्त यकृत)", "दवा-प्रेरित जिगर की चोट (डीआईएलआई)"],
+        symptoms: ["पीलिया, गहरे रंग का मूत्र", "मतली, उल्टी, भूख न लगना", "दाहिने ऊपरी चतुर्थांश पेट में दर्द"],
+        prevention: ["शराब और एसिटामिनोफेन ���े पूरी तरह बचें", "आराम करें और स्वस्थ लीवर रिकवरी आहार का पालन करें"],
+        consult: "⚠️ अत्यावश्यक: चिकित्सीय सलाह लें। हेपेटोसेल्यूलर क्षति का निदान करने के लिए लिवर एंजाइम परीक्षण (एएलटी, एएसटी) आवश्यक हैं।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-bilirubin-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "mgdl"; // mgdl, umoll
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const totalLabel = document.getElementById("labelTotal");
+    const directLabel = document.getElementById("labelDirect");
+    const unitText = currentUnit === "mgdl" ? " (mg/dL)" : " (µmol/L)";
+    
+    totalLabel.textContent = translations[currentLang].labelTotalBili + unitText;
+    directLabel.textContent = translations[currentLang].labelDirectBili + unitText;
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valTotal").value = "";
+    document.getElementById("valDirect").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function analyzeBilirubin() {
+    const valTotal = parseFloat(document.getElementById("valTotal").value);
+    const valDirect = parseFloat(document.getElementById("valDirect").value);
+
+    if (isNaN(valTotal) || valTotal <= 0 || isNaN(valDirect) || valDirect < 0) {
+      alert(currentLang === "en" ? "Please enter valid Bilirubin values." : "দয়া করে বিলিরুবিনের সঠিক মান লিখুন।");
+      return;
+    }
+
+    if (valDirect > valTotal) {
+      alert(currentLang === "en" ? "Direct bilirubin cannot exceed total bilirubin." : "ডাইরেক্ট বিলিরুবিন টোটাল বিলিরুবিনের চেয়ে বেশি হতে পারে না।");
+      return;
+    }
+
+    const valIndirect = valTotal - valDirect;
+
+    // Convert to mg/dL for standardized reference checking
+    let tMgdl = valTotal;
+    let dMgdl = valDirect;
+    if (currentUnit === "umoll") {
+      tMgdl = valTotal / 17.1;
+      dMgdl = valDirect / 17.1;
+    }
+
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (tMgdl >= 1.2) {
+      // Jaundice threshold met, classify dominance
+      const directPct = (dMgdl / tMgdl) * 100;
+      if (directPct > 50) {
+        statusKey = "conjugated";
+        badgeKey = "badgeConjugated";
+      } else if (directPct < 20) {
+        statusKey = "unconjugated";
+        badgeKey = "badgeUnconjugated";
+      } else {
+        statusKey = "mixed";
+        badgeKey = "badgeMixed";
+      }
+    }
+
+    activeReportData = {
+      valTotal,
+      valDirect,
+      valIndirect,
+      statusKey,
+      badgeKey,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valTotal, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+
+    const unitText = d.unit === "mgdl" ? " mg/dL" : " µmol/L";
+    document.getElementById("unitText1").textContent = unitText;
+    document.getElementById("unitText2").textContent = unitText;
+    document.getElementById("unitText3").textContent = unitText;
+
+    document.getElementById("resTotalVal").textContent = d.valTotal.toFixed(2);
+    document.getElementById("resDirectVal").textContent = d.valDirect.toFixed(2);
+    document.getElementById("resIndirectVal").textContent = d.valIndirect.toFixed(2);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "normal") colorClass = "normal";
+    else if (d.statusKey === "unconjugated") colorClass = "low";
+    else if (d.statusKey === "conjugated") colorClass = "critical";
+    else if (d.statusKey === "mixed") colorClass = "high";
+    
+    statusLabel.style.color = getStatusColor(d.statusKey);
+    statusLabel.style.border = `1px solid ${getStatusColor(d.statusKey)}`;
+    statusLabel.style.background = getStatusBg(d.statusKey);
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = bilirubinInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid ${getStatusColor(d.statusKey)}`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function getStatusColor(statusKey) {
+    if (statusKey === "normal") return "var(--normal-color)";
+    if (statusKey === "unconjugated") return "var(--low-color)";
+    if (statusKey === "mixed") return "var(--high-color)";
+    return "var(--critical-color)";
+  }
+
+  function getStatusBg(statusKey) {
+    if (statusKey === "normal") return "rgba(16, 185, 129, 0.05)";
+    if (statusKey === "unconjugated") return "rgba(59, 130, 246, 0.05)";
+    if (statusKey === "mixed") return "rgba(245, 158, 11, 0.05)";
+    return "rgba(239, 68, 68, 0.05)";
+  }
+
+  function addToHistory(badgeKey, total, unit) {
+    const unitText = unit === "mgdl" ? " mg/dL" : " µmol/L";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      total,
+      unitText,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-bilirubin-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>Total: ${item.total.toFixed(2)}${item.unitText} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const unitText = activeReportData.unit === "mgdl" ? " mg/dL" : " µmol/L";
+    let t = `--- BILIRUBIN DIAGNOSTIC REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Total Bilirubin: ${activeReportData.valTotal.toFixed(2)}${unitText}\n`;
+    t += `Direct Bilirubin: ${activeReportData.valDirect.toFixed(2)}${unitText}\n`;
+    t += `Indirect Bilirubin: ${activeReportData.valIndirect.toFixed(2)}${unitText}\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `bilirubin-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

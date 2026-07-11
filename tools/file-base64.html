@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File to Base64 Converter &bull; Encode Assets - SSDK TOOLS HUB</title>
+  <meta name="description" content="Convert images, documents, videos, and audio files into Base64 encoded data URIs and HTML embed elements instantly. 100% secure client-side conversion.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .result-group {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .result-group h4 {
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .result-group textarea {
+      width: 100%;
+      height: 80px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      padding: 8px;
+      background: var(--bg3);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      resize: none;
+      outline: none;
+    }
+    .preview-box {
+      max-width: 100%;
+      max-height: 180px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      padding: 10px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">File to Base64 Encoder</h1>
+  <p class="page-sub">Convert any media asset or document into a Base64 string or HTML inline embed code instantly.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 24px; align-items: start;">
+      
+      <!-- Left: File Upload & Info -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Upload Asset File</h4>
+        <div id="dropZone" style="border: 2px dashed var(--border); padding: 35px 24px; border-radius: 12px; text-align: center; cursor: pointer; background: var(--bg2); transition: 0.3s; margin-bottom: 16px;">
+          <span style="font-size: 2.8rem; display: block; margin-bottom: 8px;">📁</span>
+          <p style="font-size: 0.9rem; color: var(--muted); margin: 0;">Drag & drop your file here, or <span style="color: var(--accent); font-weight: 700;">browse</span></p>
+          <input type="file" id="fileInput" style="display: none;">
+        </div>
+
+        <div id="fileInfoBox" style="display: none; padding: 14px; border-radius: 10px; background: var(--bg3); border: 1px solid var(--border);">
+          <h4 style="margin-bottom: 4px; color: var(--text);">File Parameters</h4>
+          <p id="infoName" style="font-weight: bold; font-size: 0.85rem; word-break: break-all; margin: 4px 0;"></p>
+          <p style="font-size: 0.8rem; color: var(--muted); margin: 0;">
+            Size: <span id="infoSize">-</span> | Type: <strong id="infoType" style="color: var(--accent);">-</strong>
+          </p>
+          
+          <!-- Media Preview (if applicable) -->
+          <div class="preview-box" id="mediaPreview" style="display: none;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Base64 Outputs -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 250px; display: flex; flex-direction: column; justify-content: center;">
+        
+        <div id="outputsWrapper" style="display: none;">
+          <!-- Data URI Output -->
+          <div class="result-group">
+            <h4>Data URI Schema <button class="btn-small" onclick="copyText('outDataUri')">Copy</button></h4>
+            <textarea id="outDataUri" readonly></textarea>
+          </div>
+
+          <!-- Raw Base64 Output -->
+          <div class="result-group">
+            <h4>Raw Base64 Code <button class="btn-small" onclick="copyText('outRaw')">Copy</button></h4>
+            <textarea id="outRaw" readonly></textarea>
+          </div>
+
+          <!-- Embed Tag Output -->
+          <div class="result-group">
+            <h4 id="embedTitle">HTML Embed Element <button class="btn-small" onclick="copyText('outEmbed')">Copy</button></h4>
+            <textarea id="outEmbed" readonly></textarea>
+          </div>
+        </div>
+
+        <div id="outputsPlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Select a local document, image, or audio track to generate Base64 outputs.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b; margin: 0 auto; display: none;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none; text-align: center;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>MIME Auto-detection:</strong> Directly extracts media profiles to assemble correct prefix data headings.</li>
+      <li><strong>Embed Code Generator:</strong> Auto-formats tag blocks (e.g. <code>&lt;img&gt;</code> for graphics, <code>&lt;audio&gt;</code> for tracks, or download tags for PDFs).</li>
+      <li><strong>100% Client-Side:</strong> Conversions are performed locally in browser thread loops. Large files are encoded quickly.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-list content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-item">
+      <div class="faq-q">What is a Base64 Data URI?<span>＋</span></div>
+      <div class="faq-a">A Data URI is a URI scheme that allows you to embed small files inline directly inside HTML, CSS, or JavaScript code. Instead of referencing an external file path (like <code>&lt;img src="image.png"&gt;</code>), you write the image data inside the code block.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">When should I use Base64 encoding?<span>＋</span></div>
+      <div class="faq-a">Base64 encoding is excellent for embedding tiny icons, fonts, or sound effects directly into stylesheets or scripts. It reduces the number of HTTP requests your page makes, making it load faster. However, because Base64 increases file size by ~33%, you should avoid using it for large images or videos.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  // Handle Drag & Drop
+  const dropZone = $('dropZone');
+  dropZone.onclick = () => $('fileInput').click();
+
+  dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--accent)';
+  };
+  dropZone.ondragleave = () => {
+    dropZone.style.borderColor = 'var(--border)';
+  };
+  dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files.length) {
+      encodeFile(e.dataTransfer.files[0]);
+    }
+  };
+  $('fileInput').onchange = (e) => {
+    if (e.target.files.length) {
+      encodeFile(e.target.files[0]);
+    }
+  };
+
+  function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  function encodeFile(file) {
+    showStatus('Encoding file...');
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUri = e.target.result;
+      const rawBase64 = dataUri.substring(dataUri.indexOf(',') + 1);
+      
+      // Update File Info
+      $('infoName').textContent = file.name;
+      $('infoSize').textContent = formatBytes(file.size);
+      $('infoType').textContent = file.type || 'application/octet-stream';
+      
+      // Render Preview
+      const preview = $('mediaPreview');
+      preview.innerHTML = '';
+      preview.style.display = 'none';
+
+      let embedTag = '';
+      let embedLabel = 'HTML Embed Code';
+
+      if (file.type.startsWith('image/')) {
+        preview.style.display = 'flex';
+        const img = document.createElement('img');
+        img.src = dataUri;
+        img.style.maxWidth = '100%';
+        img.style.maxHeight = '160px';
+        img.style.borderRadius = '4px';
+        preview.appendChild(img);
+
+        embedTag = `<img src="${dataUri}" alt="${file.name}">`;
+        embedLabel = 'HTML Image Tag';
+      } else if (file.type.startsWith('audio/')) {
+        preview.style.display = 'flex';
+        const aud = document.createElement('audio');
+        aud.controls = true;
+        aud.src = dataUri;
+        aud.style.width = '100%';
+        preview.appendChild(aud);
+
+        embedTag = `<audio controls src="${dataUri}"></audio>`;
+        embedLabel = 'HTML Audio Tag';
+      } else if (file.type === 'text/css') {
+        embedTag = `background-image: url("${dataUri}");`;
+        embedLabel = 'CSS Background Rule';
+      } else {
+        embedTag = `<a href="${dataUri}" download="${file.name}">Download ${file.name}</a>`;
+        embedLabel = 'HTML Anchor Link';
+      }
+
+      // Populate text areas
+      $('outDataUri').value = dataUri;
+      $('outRaw').value = rawBase64;
+      $('outEmbed').value = embedTag;
+      $('embedTitle').firstChild.textContent = embedLabel + ' ';
+
+      $('fileInfoBox').style.display = 'block';
+      $('outputsPlaceholder').style.display = 'none';
+      $('outputsWrapper').style.display = 'block';
+      $('btnClear').style.display = 'inline-flex';
+
+      showStatus('✅ File successfully converted to Base64!');
+    };
+    reader.onerror = () => {
+      showStatus('❌ Failed to read the file.', true);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  window.copyText = (areaId) => {
+    const el = $(areaId);
+    el.select();
+    navigator.clipboard.writeText(el.value).then(() => {
+      showStatus('📋 String copied to clipboard!');
+    });
+  };
+
+  $('btnClear').onclick = () => {
+    $('fileInput').value = '';
+    $('outDataUri').value = '';
+    $('outRaw').value = '';
+    $('outEmbed').value = '';
+    $('mediaPreview').innerHTML = '';
+    $('mediaPreview').style.display = 'none';
+    $('fileInfoBox').style.display = 'none';
+    $('outputsPlaceholder').style.display = 'block';
+    $('outputsWrapper').style.display = 'none';
+    $('btnClear').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creatinine Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate serum creatinine levels online. Determine kidney filtration efficiency with customized ranges by age and gender, bilingual support, and unit conversion.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--low-color) 0%, 
+        var(--normal-color) 40%, 
+        var(--high-color) 75%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Creatinine Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze serum creatinine levels to evaluate kidney filtration efficacy, custom-adjusted by age and gender.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Creatinine Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="patientAge" data-translate="labelAge">Age (Years)</label>
+              <input type="number" id="patientAge" min="1" max="120" value="30" required>
+            </div>
+            
+            <div class="input-wrapper">
+              <label for="patientGender" data-translate="labelGender">Gender</label>
+              <select id="patientGender">
+                <option value="male" selected data-translate="genderMale">Male</option>
+                <option value="female" data-translate="genderFemale">Female</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="mgdl" selected>mg/dL</option>
+                <option value="umoll">µmol/L</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valCreatinine" id="inputLabel" data-translate="labelCreatinine">Serum Creatinine</label>
+              <input type="number" step="0.01" id="valCreatinine" placeholder="e.g. 0.9" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeCreatinine()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Creatinine</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧬</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your age, gender, and creatinine value, then click analyze to display diagnostic kidney evaluations.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Creatinine Analysis Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelAge">Age</strong>: <span id="resAge">-</span></span>
+            <span><strong data-translate="labelGender">Gender</strong>: <span id="resGender">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resCreatVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">mg/dL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--low-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Serum Creatinine</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Creatinine?</strong><br><span data-translate="eduA1">Creatinine is a waste product generated from the normal wear and tear of muscles. Healthy kidneys filter creatinine out of the blood and excrete it in urine. Elevated levels point to reduced kidney filtration capability.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Why do reference ranges differ by gender?</strong><br><span data-translate="eduA2">Creatinine production is directly proportional to skeletal muscle mass. Because adult men typically have more muscle mass than women, their normal reference ranges are slightly higher.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Creatinine Analyzer",
+      toolDesc: "Analyze serum creatinine levels to evaluate kidney filtration efficacy, custom-adjusted by age and gender.",
+      inputsTitle: "🧬 Creatinine Parameters",
+      clearBtn: "Reset",
+      labelAge: "Age (Years)",
+      labelGender: "Gender",
+      genderMale: "Male",
+      genderFemale: "Female",
+      labelUnit: "Measurement Unit",
+      labelCreatinine: "Serum Creatinine",
+      btnAnalyze: "Analyze Creatinine",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your age, gender, and creatinine value, then click analyze to display diagnostic kidney evaluations.",
+      reportTitle: "🔬 Creatinine Analysis Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Renal Filtration",
+      badgeLow: "Low Creatinine (Low Muscle/Protein)",
+      badgeHigh: "Elevated Creatinine (Kidney Strain)",
+      badgeCriticalHigh: "CRITICAL HIGH (Renal Impairment)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ক্রিয়েটিনিন বিশ্লেষক",
+      toolDesc: "রক্তের সিরাম ক্রিয়েটিনিনের মাত্রা বিশ্লেষণ করে কিডনির কার্যকারিতা পরীক্ষা করুন। বয়স ও লিঙ্গ ভিত্তিক কাস্টমাইজড ফলাফল পান।",
+      inputsTitle: "🧬 ক্রিয়েটিনিনের পরিমাপক সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelAge: "বয়স (বছর)",
+      labelGender: "লিঙ্গ",
+      genderMale: "পুরুষ",
+      genderFemale: "নারী",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelCreatinine: "সিরাম ক্রিয়েটিনিন",
+      btnAnalyze: "ক্রিয়েটিনিন বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার বয়স, লিঙ্গ এবং ক্রিয়েটিনিন এর মান লিখুন, তারপর বিশ্লেষণ বোতামটি চাপুন রিপোর্টের সামারি দেখতে।",
+      reportTitle: "🔬 ক্রিয়েটিনিন বিশ্লেষণ রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক কিডনি পরিস্রাবণ",
+      badgeLow: "কম ক্রিয়েটিনিন (পেশী বা প্রোটিনের স্বল্পতা)",
+      badgeHigh: "উচ্চ ক্রিয়েটিনিন (কিডনির ওপর চাপ)",
+      badgeCriticalHigh: "মারাত্মক ঝুঁকিপূর্ণ উচ্চ ক্রিয়েটিনিন (কিডনি বিকলতা)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "क्रिएटिनिन विश्लेषक",
+      toolDesc: "किडनी निस्पंदन प्रभावकारिता का मूल्यांकन करने के लिए सीरम क्रिएटिनिन स्तर का विश्लेषण करें, उम्र और लिंग के अनुसार कस्टम-समायोजित।",
+      inputsTitle: "🧬 क्र���एटिनिन पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelAge: "आयु (वर्ष)",
+      labelGender: "लिंग",
+      genderMale: "पुरुष",
+      genderFemale: "स्त्री",
+      labelUnit: "मापन इकाई",
+      labelCreatinine: "सीरम क्रिएटिनिन",
+      btnAnalyze: "क्रिएटिनिन का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपनी उम्र, लिंग और क्रिएटिनिन मान दर्ज करें, फिर डायग्नोस्टिक किडनी मूल्यांकन प्रदर्शित करने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 क्रिएटिनिन विश्लेषण रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "तारीख",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों ���ा निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य वृक्क निस्पंदन",
+      badgeLow: "कम क्रिएटिनिन (कम मांसपेशी/प्रोटीन)",
+      badgeHigh: "बढ़ा हुआ क्रिएटिनिन (किडनी स्ट्रेन)",
+      badgeCriticalHigh: "गंभीर उच्च (गुर्दे की क्षति)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Serum Creatinine?", a: "Creatinine is a chemical waste product created by muscle metabolism. Healthy kidneys filter it from the blood and pass it out in urine." },
+      { q: "What is a normal creatinine range?", a: "For adult males: 0.6 - 1.2 mg/dL. For adult females: 0.5 - 1.1 mg/dL. For children: 0.2 - 0.7 mg/dL." },
+      { q: "What causes elevated creatinine?", a: "High levels indicate kidney dysfunction, dehydration, high protein intake, muscle injury, or certain medications." },
+      { q: "What causes low creatinine?", a: "Low levels are commonly associated with low muscle mass, malnutrition, pregnancy, or severe liver disease." },
+      { q: "How are mg/dL and µmol/L converted?", a: "Multiply mg/dL by 88.4 to get µmol/L. Divide µmol/L by 88.4 to get mg/dL." },
+      { q: "What are symptoms of high creatinine?", a: "Symptoms include fatigue, swelling in legs or face, changes in urination frequency, nausea, and shortness of breath." },
+      { q: "How does dehydration affect creatinine?", a: "Dehydration reduces blood flow to the kidneys, causing temporary spikes in serum creatinine levels." },
+      { q: "Does eating red meat raise creatinine?", a: "Yes. Cooking converts creatine in meat to creatinine, causing temporary spikes in blood tests if consumed shortly before." },
+      { q: "How can I lower my creatinine levels?", a: "Stay well-hydrated, manage blood pressure/diabetes, avoid NSAID pain relievers, and reduce excessive red meat consumption." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "সিরাম ক্রিয়েটিনিন কী?", a: "ক্রিয়েটিনিন হলো পেশীর বিপাকের ফলে তৈরি একটি রাসায়নিক বর্জ্য। সুস্থ কিডনি রক্ত থেকে এটি ফিল্টার করে প্রস্রাবের মাধ্যমে বের করে দেয়।" },
+      { q: "ক্রিয়েটিনিনের স্বাভাবিক মাত্রা কত?", a: "প্রাপ্তবয়স্ক পুরুষ: ০.৬ - ১.২ mg/dL। প্রাপ্তবয়স্ক নারী: ০.৫ - ১.১ mg/dL। শিশুদের ক্ষেত্রে: ০.২ - ০.৭ mg/dL।" },
+      { q: "ক্রিয়েটিনিন বৃদ্ধির কারণ কী?", a: "উচ্চ মাত্রা কিডনি বৈকল্য, ডিহাইড্রেশন বা পানিশূন্যতা, উচ্চ প্রোটিন গ্রহণ, বা কিডনি ক্ষতিকারক ওষুধ সেবন নির্দেশ করে।" },
+      { q: "ক্রিয়েটিনিন কমে যাওয়ার কারণ কী?", a: "পেশী হ্রাস বা ক্ষয়, অপুষ্টি, গর্ভাবস্থা বা গুরুতর যকৃতের (লিভার) রোগ।" },
+      { q: "mg/dL এবং µmol/L কীভাবে রূপান্তর করা হয়?", a: "mg/dL কে ৮৮.৪ দিয়ে গুণ করলে µmol/L পাওয়া যায়। µmol/L কে ৮৮.৪ দিয়ে ভাগ করলে mg/dL পাওয়া যায়।" },
+      { q: "ক্রিয়েটিনিন বৃদ্ধির লক্ষণগুলো কী কী?", a: "ক্লান্তি, পা বা মুখ ফুলে যাওয়া (Edema), প্রস্রাবের পরিমাণ কমে যাওয়া, বমি বমি ভাব এবং শ্বাসকষ্ট।" },
+      { q: "ডিহাইড্রেশন কি ক্রিয়েটিনিন বাড়াতে পারে?", a: "হ্যাঁ। শরীরে পানির অভাব হলে কিডনিতে রক্তপ্রবাহ কমে যায়, যা সাময়িকভাবে ক্রিয়েটিনিন বাড়িয়ে দেয়।" },
+      { q: "লাল মাংস খেলে কি ক্রিয়েটিনিন বাড়ে?", a: "হ্যাঁ। মাংস রান্নার সময় ক্রিয়েটিন ক্রিয়েটিনিনে রূপান্তরিত হয়, যা পরীক্ষার আগে খেলে সাময়িকভাবে রক্তে ক্রিয়েটিনিন বাড়াতে পারে।" },
+      { q: "কীভাবে ক্রিয়েটিনিন নিয়ন্ত্রণ করা যায়?", a: "পর্যাপ্ত পানি পান করুন, ডায়াবেটিস ও রক্তচাপ নিয়ন্ত্রণে রাখুন, ডাক্তারের পরামর্শ ছাড়া ব্যথানাশক ওষুধ সেবন পরিহার করুন।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "सीरम क्रिएटिनिन क्या है?", a: "क्रिएटिनिन मांसपेशियों के चयापचय द्वारा निर्मित एक रासायनिक अपशिष्ट उत्पाद है। स्वस्थ गुर्दे इसे रक्त से फ़िल्टर करते हैं और मूत्र के माध्यम से बाहर निकाल देते हैं।" },
+      { q: "सामान्य क्रिएटिनिन रेंज क्या है?", a: "वयस्क पुरुषों के लिए: 0.6 - 1.2 मिलीग्राम/डीएल। वयस्क महिलाओं के लिए: 0.5 - 1.1 मिलीग्राम/डीएल। बच्चों के लिए: 0.2 - 0.7 मिलीग्राम/डीएल।" },
+      { q: "क्रिएटिनिन बढ़ने का क्या कारण है?", a: "उच्च स्तर गुर्दे की शिथिलता, निर्जलीकरण, उच्च प्रोटीन सेवन, मांसपेशियों की चोट या कुछ दवाओं का संकेत देते हैं।" },
+      { q: "क्रिएटिनिन कम होने का क्या कारण है?", a: "निम्न स्तर आमतौर पर कम मांसपेशियों, कुपोषण, गर्भावस्था या गंभीर यकृत रोग से जुड़े होते हैं।" },
+      { q: "mg/dL और µmol/L को कैसे परिवर्तित किया जाता है?", a: "µmol/L प्राप्त करने के लिए mg/dL को 88.4 से गुणा करें। mg/dL प्राप्त करने के लिए µmol/L को 88.4 से विभाजित करें।" },
+      { q: "हाई क्रिएटिनिन के लक्षण क्या हैं?", a: "लक्षणों में थकान, पैरों या चेहरे में सूजन, पेशाब की आवृत्ति में बदलाव, मतली और सांस की तकलीफ शामिल हैं।" },
+      { q: "निर्जलीकरण क्रिएटिनिन को कैसे प्रभावित करता है?", a: "निर्जलीकरण गुर्दे में रक्त के प्रवाह को कम कर देता है, जिससे सीरम क्रिएटिनिन के स्तर में अस्थायी वृद्धि होती है।" },
+      { q: "क्या रेड मीट खाने से क्रिएटिनिन बढ़ता है?", a: "हाँ। खाना पकाने से मांस में मौजूद क्रिएटिन क्रिएटिनिन ���ें परिवर्तित हो जाता है, जिससे थोड़ी देर पहले सेवन करने पर रक्त परीक्षण में अस्थायी वृद्धि होती है।" },
+      { q: "मैं अपना क्रिएटिनिन स्तर कैसे कम कर सकता हूँ?", a: "अच्छी तरह से हाइड्रेटेड रहें, रक्तचाप/मधुमेह का प्रबंधन करें, एनएसएआईडी दर्द निवारक दवाओं से बचें और अत्यधिक लाल मांस का सेवन कम करें।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const creatinineInsights = {
+    en: {
+      normal: {
+        desc: "Your serum creatinine level is within the normal reference range for your age and gender. This indicates healthy kidney filtration performance and stable muscle protein metabolism.",
+        factors: ["Adequate kidney clearance", "Healthy muscle mass baseline", "Stable hydration levels"],
+        symptoms: ["Normal fluid balance", "Healthy urination frequency"],
+        prevention: ["Maintain consistent hydration daily", "Avoid excessive use of NSAID pain relievers", "Keep blood pressure in check"],
+        consult: "Regular annual health checks are recommended to monitor long-term trends."
+      },
+      low: {
+        desc: "Your creatinine level is below normal. This is typically not a sign of kidney disease, but rather reflects low muscle mass or lower protein intake.",
+        factors: ["Low muscle mass (commonly in elderly or sedentary individuals)", "Malnutrition or protein-deficient diet", "Pregnancy (dilutes blood plasma)"],
+        symptoms: ["Mild muscle weakness if muscle loss is present", "No symptoms in most cases"],
+        prevention: ["Ensure adequate dietary protein intake", "Incorporate strength training to build muscle mass"],
+        consult: "Discuss with your doctor if you have experienced sudden unexplained weight loss or muscle weakness."
+      },
+      high: {
+        desc: "Your creatinine level is elevated. This suggest that the kidneys may be filtering waste at a slower rate than normal, or there is acute muscle breakdown/dehydration.",
+        factors: ["Dehydration (reduces kidney perfusion)", "High protein diet or intense recent training", "Kidney stress or early nephropathy", "Use of nephrotoxic drugs (NSAIDs like Ibuprofen)"],
+        symptoms: ["Mild fatigue or lethargy", "Slight fluid retention (puffiness under eyes)", "Changes in urine color"],
+        prevention: ["Drink 2-3 liters of water daily", "Limit red meat and creatine supplements", "Avoid auto-medication with pain relievers"],
+        consult: "Consult your doctor to evaluate kidney function (eGFR or clearance test) and verify hydration status."
+      },
+      criticalHigh: {
+        desc: "Your creatinine level is critically high. This represents moderate-to-severe renal impairment or acute kidney injury (AKI). Immediate clinical evaluation is essential.",
+        factors: ["Chronic kidney disease (CKD)", "Acute kidney injury (AKI) from blockages or infections", "Severe prolonged dehydration"],
+        symptoms: ["Severe swelling in ankles, legs, or face", "Significantly decreased urine output", "Nausea, vomiting, or metallic taste in mouth", "Shortness of breath"],
+        prevention: ["Do not engage in heavy exercise", "Strictly avoid high protein foods until seeing a physician", "Review all medications immediately"],
+        consult: "⚠️ Seek immediate medical evaluation or visit a nephrologist. Further blood work and kidney ultrasound are typically required."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার সিরাম ক্রিয়েটিনিন মাত্রা আপনার বয়স ও লিঙ্গের জন্য নির্ধারিত স্বাভাবিক সীমার মধ্যে রয়েছে। এটি সুস্থ কিডনি এবং সঠিক শারীরিক বিপাক নির্দেশ করে।",
+        factors: ["কিডনির স্বাভাবিক পরিস্রাবণ ক্ষমতা", "স্বাভাবিক পেশীর গঠন", "সঠিক পানিশূন্যতা মুক্ত অবস্থা"],
+        symptoms: ["স্বাভাবিক প্রস্রাবের বেগ", "শরীরে ফোলা ভাব না থাকা"],
+        prevention: ["প্রতিদিন পর্যাপ্ত তরল বা পানি পান করুন", "ডাক্তারের পরামর্শ ছাড়া ব্যথানাশক ওষুধ খাওয়া বন্ধ রাখুন", "রক্তচাপ স্বাভাবিক রাখুন"],
+        consult: "দীর্ঘমেয়াদী রক্তস্বাস্থ্য ট্র্যাক করতে বছরে অন্তত একবার রুটিন ব্লাড স্ক্রীনিং করা ভালো।"
+      },
+      low: {
+        desc: "আপনার ক্রিয়েটিনিন মাত্রা স্বাভাবিকের চেয়ে কম। এটি সাধারণত কিডনির রোগ নির্দেশ করে না, বরং পেশীর স্বল্পতা বা খাবারে প্রোটিনের অভাব প্রকাশ করে।",
+        factors: ["পেশীর ঘাটতি (বিশেষ করে প্রবীণদের)", "অপুষ্টি বা খাবারে পর্যাপ্ত প্রোটিনের অভাব", "গর্ভাবস্থা (রক্ত তরল হওয়ার কারণে)"],
+        symptoms: ["পেশীর দুর্বলতা", "অধিকাংশ ক্ষেত্রে কোনো উপসর্গ থাকে না"],
+        prevention: ["খাদ্যতালিকায় পুষ্টিকর প্রোটিন যুক্ত করুন", "পেশী গঠনে হালকা ব্যায়াম বা শক্তি বৃদ্ধির ব্যায়াম করুন"],
+        consult: "হঠাৎ ওজন কমে যাওয়া বা অতিরিক্ত দুর্বলতা থাকলে ডাক্তারের পরামর্শ নিন।"
+      },
+      high: {
+        desc: "আপনার ক্রিয়েটিনিন মাত্রা স্বাভাবিকের চেয়ে বেশি। এর অর্থ কিডনির ফিল্টার করার ক্ষমতা কিছুটা কমেছে, অথবা এটি তীব্র পানিশূন্যতা ও পেশী ভাঙার সংকেত হতে পারে।",
+        factors: ["পানিশূন্যতা বা ডিহাইড্রেশন", "অতিরিক্ত প্রোটিন বা জিম সাপ্লিমেন্ট গ্রহণ", "কিডনির ওপর মৃদু চাপ", "কিডনির ক্ষতি করতে পারে এমন ব্যথানাশক ওষুধ সেবন"],
+        symptoms: ["হালকা ক্লান্তি বা দুর্বলতা", "শরীরে সামান্য পানি জমা (চোখের নিচে ফোলা ভাব)", "প্রস্রাবের রঙের পরিবর্তন"],
+        prevention: ["প্রতিদিন ২-৩ লিটার পানি পান করুন", "অতিরিক্ত লাল মাংস খাওয়া কমান", "ব্যথানাশক ওষধ সেবন পরিহার করুন"],
+        consult: "কিডনির কার্যকারিতার সঠিক চিত্র পেতে eGFR বা ক্লিয়ারেন্স টেস্ট করাতে ডাক্তারের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার ক্রিয়েটিনিন মাত্রা মারাত্মক বেশি। এটি কিডনির গুরুতর অকার্যকারিতা বা তীব্র কিডনি আঘাতের (AKI) সংকেত দেয়। অবিলম্বে চিকিৎসা প্রয়োজন।",
+        factors: ["ক্রনিক কিডনি ডিজিজ (CKD)", "হঠাৎ কিডনিতে আঘাত (AKI)", "দীর্ঘস্থায়ী তীব্র ডিহাইড্রেশন"],
+        symptoms: ["পা, মুখ বা চোখ অতিরিক্ত ফুলে যাওয়া", "প্রস্রাবের পরিমাণ আশঙ্কাজনকভাবে কমে যাওয়া", "বমি বমি ভাব, মুখে ধাতব স্বাদ পাওয়া", "শ্বাসকষ্ট"],
+        prevention: ["ভারী শারীরিক পরিশ্রম বন্ধ রাখুন", "ডাক্তার দেখানোর আগে অতিরিক্ত প্রোটিনযুক্ত খাবার পরিহার করুন", "ওষুধের তালিকা চিকিৎসকের দ্বারা পুনঃমূল্যায়ন করান"],
+        consult: "⚠️ অবিলম্বে একজন কিডনি রোগ বিশেষজ্ঞ (Nephrologist) ডাক্তারের পরামর্শ নিন অথবা হাসপাতালের জরুরি বিভাগে যান।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका सीरम क्रिएटिनिन स्तर आपकी उम्र और लिंग के लिए सामान्य संदर्भ सीमा के भीतर है। यह स्वस्थ किडनी निस्पंदन प्रदर्शन और स्थिर मांसपेशी प्रोटीन चयापचय को इंगित करता है।",
+        factors: ["पर्याप्त किडनी क्लीयरेंस", "स्वस्थ मांसपेशी द्रव्यमान आधार रेखा", "स्थिर जलयोजन स्तर"],
+        symptoms: ["सामान्य द्रव संतुलन", "स्वस्थ पेशाब आवृत्ति"],
+        prevention: ["रोजाना लगातार जलयोजन बनाए रखें", "एनएसएआईडी दर्द निवारक दवाओं के अत्यधिक उपयोग से बचें", "रक्तचाप नियंत्रित रखें"],
+        consult: "दीर्घकालिक रुझानों पर नजर रखने के लिए नियमित वार्षिक स्वास्थ्य जांच की सिफारिश की जाती है।"
+      },
+      low: {
+        desc: "आपका क्रिएटिनिन स्तर सामान्य से नीचे है. यह आम तौर पर गुर्दे की बीमारी का संकेत नहीं है, बल्कि कम मांसपेशियों या कम प्रोटीन सेवन को दर्शाता है।",
+        factors: ["कम मांसपेशी द्रव्यमान (आमतौर पर बुजुर्ग या गतिहीन व्यक्तियों में)", "कुपोषण या प्रोटीन की कमी वाला आहार", "गर्भावस्था (रक्त प्लाज्मा को पतला करता है)"],
+        symptoms: ["यदि मांसपेशियों में हानि हो तो हल्की म���ंसपेशियों में कमजोरी", "अधिकांश मामलों में कोई लक्षण नहीं"],
+        prevention: ["पर्याप्त आहार प्रोटीन का सेवन सुनिश्चित करें", "मांसपेशियों के निर्माण के लिए शक्ति प्रशिक्षण शामिल करें"],
+        consult: "यदि आपको अचानक अस्पष्टीकृत वजन घट���ने या मांसपेशियों में कमजोरी का अनुभव हुआ है तो अपने डॉक्टर से चर्चा करें।"
+      },
+      high: {
+        desc: "आपका क्रिएटिनिन स्तर बढ़ा हुआ है। इससे पता चलता है कि गुर्दे सामान्य से धीमी गति से अपशिष्ट को फ़िल्टर कर रहे हैं, या तीव्र मांसपेशी टूटने/निर्जलीकरण हो रहा है।",
+        factors: ["निर्जलीकरण (गुर्दे का छिड़काव कम कर देता है)", "उच्च प्रोटीन आहार या गहन हालिया प्रशिक्षण", "गुर्दे का तनाव या प्रारंभिक नेफ्रोपैथी", "नेफ्रोटॉक्सिक दवाओं (एनएसएआईडी जैसे इबुप्रोफेन) का उपयोग"],
+        symptoms: ["हल्क��� थकान या सुस्ती", "थोड़ा द्रव प्रतिधारण (आंखों के नीचे सूजन)", "पेशाब के रंग में बदलाव"],
+        prevention: ["प्रतिदिन 2-3 लीटर पानी पियें", "लाल मांस और क्रिएटिन की खुराक सीमित करें", "दर्द निवारक दवाओं के साथ स्वतः दवा लेने से बचें"],
+        consult: "किडनी की कार्यक्षमता (ईजीएफआर या क्लीयरेंस टेस्ट) का मूल्यांकन करने और जलयोजन स्थिति को सत्यापित करने के लिए अपने डॉक्टर से परामर्श लें।"
+      },
+      criticalHigh: {
+        desc: "आपका क्रिएटिनिन स्तर गंभीर रूप से उच्च है। यह मध्यम से गंभीर गुर्दे की हानि या तीव्र गुर्दे ��ी चोट (एकेआई) का प्रतिनिधित्व करता है। तत्काल नैदानिक ​​मूल्यांकन आवश्यक है.",
+        factors: ["क्रोनिक किडनी रोग (सीकेडी)", "रुकावटों या संक्रमण से तीव्र गुर्दे की चोट (एकेआई)।", "लंबे समय तक गंभीर निर्जलीकरण"],
+        symptoms: ["टखनों, टांगों या चेहरे पर गंभीर सूजन", "मूत्र उत्पादन में उल्लेखनीय रूप से कमी आई", "मतली, उल्टी, या मुंह में धातु जैसा स्वाद", "सांस की तकलीफ"],
+        prevention: ["भारी व्यायाम न क��ें", "डॉक्टर से मिलने तक उच्च प्रोटीन वाले खाद्य पदार्थों से सख्ती से बचें", "सभी दवाओं की तुरंत समीक्षा करें"],
+        consult: "⚠️ तत्काल चिकित्सा मूल्यांकन लें या नेफ्रोलॉजिस्ट से मिलें। आमतौर पर आगे रक्त परीक्षण और किडनी अल्ट्रासाउंड की आवश्यकता होती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-creatinine-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "mgdl"; // mgdl, umoll
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const label = document.getElementById("inputLabel");
+    const unitText = currentUnit === "mgdl" ? " (mg/dL)" : " (µmol/L)";
+    label.textContent = translations[currentLang].labelCreatinine + unitText;
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valCreatinine").value = "";
+    document.getElementById("patientAge").value = "30";
+    document.getElementById("patientGender").value = "male";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits(age, gender) {
+    // Normal limits in mg/dL
+    let min = 0.6;
+    let max = 1.2;
+    let criticalMax = 2.0;
+
+    if (age < 12) {
+      min = 0.2;
+      max = 0.7;
+      criticalMax = 1.2;
+    } else if (gender === "female") {
+      min = 0.5;
+      max = 1.1;
+      criticalMax = 1.8;
+    }
+
+    if (currentUnit === "umoll") {
+      return {
+        min: min * 88.4,
+        max: max * 88.4,
+        criticalMax: criticalMax * 88.4
+      };
+    }
+
+    return { min, max, criticalMax };
+  }
+
+  function analyzeCreatinine() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    const valCreatinine = parseFloat(document.getElementById("valCreatinine").value);
+
+    if (isNaN(valCreatinine) || valCreatinine <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid Creatinine value." : "দয়া করে ক্রিয়েটিনিনের একটি সঠিক মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits(age, gender);
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valCreatinine < limits.min) {
+      statusKey = "low";
+      badgeKey = "badgeLow";
+    } else if (valCreatinine > limits.max) {
+      if (valCreatinine >= limits.criticalMax) {
+        statusKey = "criticalHigh";
+        badgeKey = "badgeCriticalHigh";
+      } else {
+        statusKey = "high";
+        badgeKey = "badgeHigh";
+      }
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valCreatinine >= limits.min && valCreatinine <= limits.max) {
+      const range = limits.max - limits.min;
+      pointerPct = range > 0 ? 40 + ((valCreatinine - limits.min) / range) * 20 : 50;
+    } else if (valCreatinine < limits.min) {
+      pointerPct = Math.max(5, 5 + (valCreatinine / limits.min) * 35);
+    } else {
+      const range = limits.criticalMax - limits.max;
+      pointerPct = range > 0 ? Math.min(95, 60 + ((valCreatinine - limits.max) / range) * 35) : 80;
+    }
+
+    activeReportData = {
+      age,
+      gender,
+      valCreatinine,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valCreatinine, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resAge").textContent = d.age;
+    document.getElementById("resGender").textContent = d.gender === "male" ? translations[currentLang].genderMale : translations[currentLang].genderFemale;
+    document.getElementById("resDate").textContent = d.date;
+
+    const unitText = d.unit === "mgdl" ? " mg/dL" : " µmol/L";
+    document.getElementById("resUnitText").textContent = unitText;
+    document.getElementById("resCreatVal").textContent = d.valCreatinine.toFixed(2);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey.startsWith("critical")) colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resCreatVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Update Ticks values visually
+    document.getElementById("tickLow").textContent = `< ${d.limits.min.toFixed(1)}`;
+    document.getElementById("tickNormalRange").textContent = `${d.limits.min.toFixed(1)} - ${d.limits.max.toFixed(1)}`;
+    document.getElementById("tickHigh").textContent = `${d.limits.criticalMax.toFixed(1)}+`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = creatinineInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valCreatinine, unit) {
+    const unitText = unit === "mgdl" ? " mg/dL" : " µmol/L";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valCreatinine,
+      unitText,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-creatinine-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valCreatinine.toFixed(2)}${item.unitText} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const unitText = activeReportData.unit === "mgdl" ? " mg/dL" : " µmol/L";
+    let t = `--- CREATININE DIAGNOSTIC REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Age: ${activeReportData.age} | Gender: ${activeReportData.gender}\n`;
+    t += `Value: ${activeReportData.valCreatinine.toFixed(2)}${unitText} (Ref: ${activeReportData.limits.min.toFixed(1)}-${activeReportData.limits.max.toFixed(1)}${unitText})\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `creatinine-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

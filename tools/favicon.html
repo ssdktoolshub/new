@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Favicon Generator &bull; Create ICO & PNG Favicons - SSDK TOOLS HUB</title>
+  <meta name="description" content="Free online Favicon Generator helps you convert PNG, JPG, or WebP images into standard favicon.ico files and Apple Touch icons instantly.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .favicon-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .favicon-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .favicon-box img {
+      margin: 10px 0;
+      border: 1px dashed var(--border);
+      background-image: linear-gradient(45deg, #1f1f1f 25%, transparent 25%),
+                        linear-gradient(-45deg, #1f1f1f 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #1f1f1f 75%),
+                        linear-gradient(-45deg, transparent 75%, #1f1f1f 75%);
+      background-size: 10px 10px;
+      background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Favicon Generator</h1>
+  <p class="page-sub">Generate standard favicon.ico shortcuts and Apple Touch PNG icons from any custom image locally.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 24px; align-items: start;">
+      
+      <!-- Left: Upload -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Upload Base Image</h4>
+        <div id="dropZone" style="border: 2px dashed var(--border); padding: 30px; border-radius: 12px; text-align: center; cursor: pointer; background: var(--bg2); transition: 0.3s; margin-bottom: 16px;">
+          <span style="font-size: 2.2rem; display: block; margin-bottom: 6px;">📁</span>
+          <p style="font-size: 0.85rem; color: var(--muted); margin: 0;">Drag & drop image here, or <span style="color: var(--accent); font-weight: 700;">browse</span></p>
+          <input type="file" id="imageInput" accept="image/*" style="display: none;">
+        </div>
+        <p id="fileDetails" style="font-size: 0.8rem; color: var(--muted); font-weight: 700;"></p>
+      </div>
+
+      <!-- Right: Generated sizes -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 280px; display: flex; flex-direction: column; justify-content: center;">
+        
+        <div id="faviconOutputSec" style="display: none;">
+          <h4 style="margin-bottom: 4px; text-align: center;">Compiled Favicon Sizes</h4>
+          <p style="font-size: 0.75rem; color: var(--muted); text-align: center; margin-bottom: 12px;">Click download next to each icon to save individual files.</p>
+          
+          <div class="favicon-grid">
+            <!-- 16x16 -->
+            <div class="favicon-box">
+              <span style="font-size: 0.7rem; font-weight: 800; color: var(--muted);">16 x 16 px</span>
+              <img id="fav16" style="width: 16px; height: 16px; object-fit: contain;">
+              <button class="preset-btn" id="btnDl16" style="padding: 4px 8px; font-size: 0.7rem; width: 100%;">DL PNG</button>
+            </div>
+            <!-- 32x32 -->
+            <div class="favicon-box">
+              <span style="font-size: 0.7rem; font-weight: 800; color: var(--muted);">32 x 32 px</span>
+              <img id="fav32" style="width: 32px; height: 32px; object-fit: contain;">
+              <button class="preset-btn" id="btnDl32" style="padding: 4px 8px; font-size: 0.7rem; width: 100%;">DL PNG</button>
+            </div>
+            <!-- 48x48 -->
+            <div class="favicon-box">
+              <span style="font-size: 0.7rem; font-weight: 800; color: var(--muted);">48 x 48 px</span>
+              <img id="fav48" style="width: 48px; height: 48px; object-fit: contain;">
+              <button class="preset-btn" id="btnDl48" style="padding: 4px 8px; font-size: 0.7rem; width: 100%;">DL PNG</button>
+            </div>
+            <!-- Apple Touch 180x180 -->
+            <div class="favicon-box">
+              <span style="font-size: 0.7rem; font-weight: 800; color: var(--muted);">Apple Touch</span>
+              <img id="fav180" style="width: 48px; height: 48px; object-fit: contain;">
+              <button class="preset-btn" id="btnDl180" style="padding: 4px 8px; font-size: 0.7rem; width: 100%;">DL PNG</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="outputPlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Generated icons will be displayed here.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnGen" style="display: none;">⭐ Generate Favicon Bundle</button>
+      <button class="btn" id="btnDownloadIco" style="display: none; background: var(--grad2);">⬇️ Download favicon.ico</button>
+      <button class="btn ghost" id="btnClear" style="display: none; border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Features Section -->
+  <div class="content-card">
+    <h3>Standard HTML Headers for Favicons</h3>
+    <p>Copy and paste these tags into your HTML <code>&lt;head&gt;</code> to integrate the generated assets:</p>
+    <textarea readonly style="width:100%; min-height:90px; font-family:monospace; font-size:0.8rem; padding:10px; border-radius:8px; background:var(--bg2); border:1px solid var(--border); color:var(--text); resize:none; margin-top:8px;">
+&lt;link rel="icon" href="/favicon.ico" type="image/x-icon"&gt;
+&lt;link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"&gt;
+&lt;link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"&gt;
+&lt;link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"&gt;</textarea>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  let loadedImg = null;
+  let originalFile = null;
+  let compiledIcoBlob = null;
+  let icoBlobUrl = null;
+  
+  const blobUrls = {};
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  // Handle Drag & Drop
+  const dropZone = $('dropZone');
+  dropZone.onclick = () => $('imageInput').click();
+
+  dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--accent)';
+  };
+  dropZone.ondragleave = () => {
+    dropZone.style.borderColor = 'var(--border)';
+  };
+  dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files.length) {
+      loadImage(e.dataTransfer.files[0]);
+    }
+  };
+  $('imageInput').onchange = (e) => {
+    if (e.target.files.length) {
+      loadImage(e.target.files[0]);
+    }
+  };
+
+  function loadImage(file) {
+    if (!file.type.startsWith('image/')) {
+      showStatus('Please select a valid image file.', true);
+      return;
+    }
+    originalFile = file;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        loadedImg = img;
+        
+        $('btnGen').style.display = 'inline-flex';
+        $('btnClear').style.display = 'inline-flex';
+        $('btnDownloadIco').style.display = 'none';
+        
+        $('faviconOutputSec').style.display = 'none';
+        $('outputPlaceholder').style.display = 'block';
+
+        $('fileDetails').textContent = `📁 Base File: ${file.name} (${img.width}x${img.height} px)`;
+        showStatus('✅ Image uploaded! Click Generate Favicon Bundle.');
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Compile ICO Header & PNG Entry
+  function buildIcoFile(pngBytes, callback) {
+    const header = new Uint8Array([
+      0, 0, 1, 0, 1, 0, // Header
+      32, 32, 0, 0, 1, 0, 32, 0, // 32x32 size entry
+      pngBytes.length & 0xff,
+      (pngBytes.length >> 8) & 0xff,
+      (pngBytes.length >> 16) & 0xff,
+      (pngBytes.length >> 24) & 0xff,
+      22, 0, 0, 0 // Offset = 22 (header size)
+    ]);
+    const blob = new Blob([header, pngBytes], { type: 'image/x-icon' });
+    callback(blob);
+  }
+
+  // Generate Favicons
+  $('btnGen').onclick = () => {
+    if (!loadedImg) return;
+    showStatus('Generating favicon formats...');
+
+    const sizes = [16, 32, 48, 180];
+    
+    // Revoke previous URLs
+    Object.keys(blobUrls).forEach(size => {
+      window.URL.revokeObjectURL(blobUrls[size]);
+      delete blobUrls[size];
+    });
+
+    // Draw and render sizes
+    sizes.forEach(size => {
+      const canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(loadedImg, 0, 0, size, size);
+
+      canvas.toBlob((blob) => {
+        const url = window.URL.createObjectURL(blob);
+        blobUrls[size] = url;
+        
+        // Update DOM displays
+        const imgEl = $(`fav${size}`);
+        if (imgEl) imgEl.src = url;
+
+        // If it's the 32x32 canvas, compile it to .ico too
+        if (size === 32) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const pngBytes = new Uint8Array(e.target.result);
+            buildIcoFile(pngBytes, (icoBlob) => {
+              compiledIcoBlob = icoBlob;
+              if (icoBlobUrl) window.URL.revokeObjectURL(icoBlobUrl);
+              icoBlobUrl = window.URL.createObjectURL(icoBlob);
+              $('btnDownloadIco').style.display = 'inline-flex';
+            });
+          };
+          reader.readAsArrayBuffer(blob);
+        }
+      }, 'image/png');
+    });
+
+    $('outputPlaceholder').style.display = 'none';
+    $('faviconOutputSec').style.display = 'block';
+    showStatus('✅ Favicon bundle compiled successfully!');
+  };
+
+  // DL Buttons binding
+  const bindDl = (btnId, size) => {
+    $(btnId).onclick = () => {
+      const url = blobUrls[size];
+      if (!url) return;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `favicon-${size}x${size}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
+  };
+  bindDl('btnDl16', 16);
+  bindDl('btnDl32', 32);
+  bindDl('btnDl48', 48);
+  bindDl('btnDl180', 180);
+
+  // Download compiled ICO
+  $('btnDownloadIco').onclick = () => {
+    if (!icoBlobUrl) return;
+    const a = document.createElement('a');
+    a.href = icoBlobUrl;
+    a.download = 'favicon.ico';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showStatus('⬇️ favicon.ico saved successfully!');
+  };
+
+  $('btnClear').onclick = () => {
+    loadedImg = null;
+    originalFile = null;
+    compiledIcoBlob = null;
+    if (icoBlobUrl) {
+      window.URL.revokeObjectURL(icoBlobUrl);
+      icoBlobUrl = null;
+    }
+    Object.keys(blobUrls).forEach(size => {
+      window.URL.revokeObjectURL(blobUrls[size]);
+      delete blobUrls[size];
+    });
+
+    $('imageInput').value = '';
+    $('fileDetails').textContent = '';
+    $('outputPlaceholder').style.display = 'block';
+    $('faviconOutputSec').style.display = 'none';
+    
+    $('btnGen').style.display = 'none';
+    $('btnDownloadIco').style.display = 'none';
+    $('btnClear').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ Accordions
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

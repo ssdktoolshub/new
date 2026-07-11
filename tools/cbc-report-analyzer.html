@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CBC Report Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze your Complete Blood Count (CBC) lab report online. Check hemoglobin, WBC, platelets, and RBC indices with dynamic reference ranges, risk meters, and full English/Bengali bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- CDNs for screenshot and PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #ef4444;
+      --critical-color: #7f1d1d;
+      --border-color: #f59e0b;
+    }
+
+    /* Laboratory Dashboard Override */
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Form Fields Grid */
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .fields-category h4 {
+      font-size: 0.85rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      font-weight: 700;
+      border-left: 3px solid var(--accent);
+      padding-left: 8px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    /* Translation Toggle */
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    /* Results layout */
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+      position: relative;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .overall-status {
+      padding: 16px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+      border-left: 6px solid var(--border);
+      background: rgba(255,255,255,0.01);
+    }
+
+    .overall-status.status-normal { border-left-color: var(--normal-color); color: var(--normal-color); }
+    .overall-status.status-low { border-left-color: var(--low-color); color: var(--low-color); }
+    .overall-status.status-high { border-left-color: var(--high-color); color: var(--high-color); }
+    .overall-status.status-critical { border-left-color: var(--critical-color); color: var(--critical-color); background: rgba(127, 29, 29, 0.05); }
+
+    /* Results Table Grid */
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    .results-table th, .results-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .results-table th {
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    .results-table tr:hover td {
+      background: rgba(255, 255, 255, 0.01);
+    }
+
+    /* Range Gauge Bar */
+    .gauge-bar-wrapper {
+      width: 100%;
+      min-width: 100px;
+      background: rgba(255, 255, 255, 0.05);
+      height: 8px;
+      border-radius: 4px;
+      position: relative;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    .gauge-fill {
+      height: 100%;
+      border-radius: 4px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      transition: width 0.5s ease;
+    }
+
+    .gauge-fill.normal { background: var(--normal-color); }
+    .gauge-fill.low { background: var(--low-color); }
+    .gauge-fill.high { background: var(--high-color); }
+    .gauge-fill.critical { background: var(--critical-color); }
+
+    .status-badge {
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+    
+    .status-badge.normal { background: rgba(16, 185, 129, 0.15); color: var(--normal-color); }
+    .status-badge.low { background: rgba(59, 130, 246, 0.15); color: var(--low-color); }
+    .status-badge.high { background: rgba(239, 68, 68, 0.15); color: var(--high-color); }
+    .status-badge.critical { background: rgba(127, 29, 29, 0.2); color: #f87171; border: 1px solid var(--high-color); }
+
+    /* Risk Meter Box */
+    .risk-meter-box {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 10px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+    }
+
+    .risk-progress-bar {
+      height: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 8px;
+      position: relative;
+    }
+
+    .risk-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--normal-color), var(--border-color), var(--high-color));
+      transition: width 0.6s cubic-bezier(0.1, 0.8, 0.1, 1);
+    }
+
+    /* Interpretation Cards */
+    .insight-section {
+      margin-top: 16px;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.9rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* Reference Tables */
+    .ref-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      margin-top: 8px;
+    }
+    
+    .ref-table th, .ref-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .ref-table th {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    /* Recent History Panel */
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-card h4 {
+      font-size: 0.85rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    /* Warning/Disclaimer Box */
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .results-table th, .results-table td {
+        border-bottom: 1px solid #ddd !important;
+        color: #000 !important;
+      }
+      .patient-summary, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .overall-status {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Title Metadata -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">CBC Report Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze your Complete Blood Count (CBC) lab report online. Check counts and indices with interactive hospital-grade indicators.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Main interactive panel -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs panel -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🩸 Patient & Report Parameters</h3>
+          <button class="btn-icon" id="btnResetFields" onclick="resetForm()" data-translate="clearBtn" title="Reset fields">🗑 Reset</button>
+        </div>
+
+        <!-- Section 1: Demographics -->
+        <div class="fields-category">
+          <h4 data-translate="catDemographics">Demographics</h4>
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="patientAge" data-translate="labelAge">Age (Years)</label>
+              <input type="number" id="patientAge" min="1" max="120" value="30" required>
+            </div>
+            <div class="input-wrapper">
+              <label for="patientGender" data-translate="labelGender">Gender</label>
+              <select id="patientGender" onchange="checkGenderDetails()">
+                <option value="male" selected data-translate="genderMale">Male</option>
+                <option value="female" data-translate="genderFemale">Female</option>
+                <option value="pregnant" data-translate="genderPregnant">Pregnant Female</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: RBC & Hemoglobin Parameters -->
+        <div class="fields-category">
+          <h4 data-translate="catRBC">Red Blood Cells (RBC) & Oxygen Parameters</h4>
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valHb" data-translate="labelHb">Hemoglobin (Hb) [g/dL]</label>
+              <input type="number" step="0.1" id="valHb" placeholder="e.g. 14.2" min="1" max="30">
+            </div>
+            <div class="input-wrapper">
+              <label for="valRBC" data-translate="labelRBC">RBC Count [10^6/µL]</label>
+              <input type="number" step="0.01" id="valRBC" placeholder="e.g. 4.8" min="0.5" max="10">
+            </div>
+            <div class="input-wrapper">
+              <label for="valPCV" data-translate="labelPCV">Hematocrit (PCV) [%]</label>
+              <input type="number" step="0.1" id="valPCV" placeholder="e.g. 42" min="10" max="70">
+            </div>
+            <div class="input-wrapper">
+              <label for="valMCV" data-translate="labelMCV">MCV [fL]</label>
+              <input type="number" step="0.1" id="valMCV" placeholder="e.g. 90" min="40" max="150">
+            </div>
+            <div class="input-wrapper">
+              <label for="valMCH" data-translate="labelMCH">MCH [pg]</label>
+              <input type="number" step="0.1" id="valMCH" placeholder="e.g. 30" min="10" max="50">
+            </div>
+            <div class="input-wrapper">
+              <label for="valMCHC" data-translate="labelMCHC">MCHC [g/dL]</label>
+              <input type="number" step="0.1" id="valMCHC" placeholder="e.g. 33.5" min="20" max="45">
+            </div>
+            <div class="input-wrapper">
+              <label for="valRDW" data-translate="labelRDW">RDW [%]</label>
+              <input type="number" step="0.1" id="valRDW" placeholder="e.g. 13.0" min="5" max="30">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: WBC & Immunity Differential Parameters -->
+        <div class="fields-category">
+          <h4 data-translate="catWBC">White Blood Cells (WBC) & Differential</h4>
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valWBC" data-translate="labelWBC">WBC Count [cells/µL]</label>
+              <input type="number" id="valWBC" placeholder="e.g. 7500" min="100" max="100000">
+            </div>
+            <div class="input-wrapper">
+              <label for="valNeut" data-translate="labelNeut">Neutrophils [%]</label>
+              <input type="number" step="1" id="valNeut" placeholder="e.g. 60" min="0" max="100">
+            </div>
+            <div class="input-wrapper">
+              <label for="valLymph" data-translate="labelLymph">Lymphocytes [%]</label>
+              <input type="number" step="1" id="valLymph" placeholder="e.g. 30" min="0" max="100">
+            </div>
+            <div class="input-wrapper">
+              <label for="valMono" data-translate="labelMono">Monocytes [%]</label>
+              <input type="number" step="0.1" id="valMono" placeholder="e.g. 5.0" min="0" max="100">
+            </div>
+            <div class="input-wrapper">
+              <label for="valEosin" data-translate="labelEosin">Eosinophils [%]</label>
+              <input type="number" step="0.1" id="valEosin" placeholder="e.g. 3.0" min="0" max="100">
+            </div>
+            <div class="input-wrapper">
+              <label for="valBaso" data-translate="labelBaso">Basophils [%]</label>
+              <input type="number" step="0.1" id="valBaso" placeholder="e.g. 0.5" min="0" max="100">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: Platelet count -->
+        <div class="fields-category">
+          <h4 data-translate="catPLT">Platelets</h4>
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valPLT" data-translate="labelPLT">Platelet Count [cells/µL]</label>
+              <input type="number" id="valPLT" placeholder="e.g. 250000" min="1000" max="2000000">
+            </div>
+          </div>
+        </div>
+
+        <!-- Calculate Trigger -->
+        <div class="tool-control" style="margin-top: 10px;">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeCBCReport()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Blood Report</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results & Diagnosis Preview panel -->
+      <div class="results-display" id="resultsPanel">
+        <!-- Placeholder on load -->
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🩸</span>
+          <h4 data-translate="placeholderTitle">Report Analysis Pending</h4>
+          <p data-translate="placeholderDesc">Enter patient details and report values in the input parameters, then click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Report Container -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Diagnostics Laboratory Analysis Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn" title="Copy results">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn" title="Print report">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn" title="Download report image">🖼️</button>
+            </div>
+          </div>
+
+          <!-- Patient details -->
+          <div class="patient-summary">
+            <span><strong data-translate="labelAge">Age</strong>: <span id="resAge">-</span></span>
+            <span><strong data-translate="labelGender">Gender</strong>: <span id="resGender">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <!-- Overall Status -->
+          <div class="overall-status" id="resOverallStatus">-</div>
+
+          <!-- Detailed Parameters Table -->
+          <div style="overflow-x: auto;">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th data-translate="thParam">Parameter</th>
+                  <th data-translate="thValue">Value</th>
+                  <th data-translate="thRef">Normal Reference</th>
+                  <th data-translate="thStatus">Status</th>
+                </tr>
+              </thead>
+              <tbody id="resTableBody">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Risk Meter -->
+          <div class="risk-meter-box">
+            <div style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:700;">
+              <span data-translate="riskScore">Overall Hematological Risk Index</span>
+              <span id="riskPctVal">0%</span>
+            </div>
+            <div class="risk-progress-bar">
+              <div class="risk-progress-fill" id="riskFill"></div>
+            </div>
+            <p style="font-size:0.75rem; color:var(--muted); margin-top:8px;" data-translate="riskDesc">This index represents the percentage of blood parameters sitting outside their normal reference ranges.</p>
+          </div>
+
+          <!-- Diagnostic insights details -->
+          <div class="insight-section" id="insightSection">
+            <!-- Dynamic insights cards -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Dynamic Reference Range tables -->
+  <section class="content-card">
+    <h3 data-translate="titleRefRange">📋 Standard CBC Reference Ranges Table</h3>
+    <p style="font-size: 0.8rem; color:var(--muted); margin-bottom: 12px;" data-translate="subRefRange">Reference ranges vary based on patient age, gender, and clinical state (like pregnancy).</p>
+    <div style="overflow-x: auto;">
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th data-translate="thParam">Parameter</th>
+            <th data-translate="refMale">Adult Male</th>
+            <th data-translate="refFemale">Adult Female</th>
+            <th data-translate="refPregnant">Pregnant Women</th>
+            <th data-translate="refChildren">Children</th>
+            <th data-translate="thUnit">Unit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-translate="labelHb">Hemoglobin (Hb)</td>
+            <td>13.8 – 17.2</td>
+            <td>12.1 – 15.1</td>
+            <td>11.0 – 14.0</td>
+            <td>11.0 – 16.0</td>
+            <td>g/dL</td>
+          </tr>
+          <tr>
+            <td data-translate="labelRBC">RBC Count</td>
+            <td>4.7 – 6.1</td>
+            <td>4.2 – 5.4</td>
+            <td>3.5 – 5.0</td>
+            <td>4.0 – 5.2</td>
+            <td>10^6/µL</td>
+          </tr>
+          <tr>
+            <td data-translate="labelWBC">WBC Count</td>
+            <td colspan="3">4,500 – 11,000</td>
+            <td>5,000 – 19,000</td>
+            <td>cells/µL</td>
+          </tr>
+          <tr>
+            <td data-translate="labelPCV">Hematocrit (PCV)</td>
+            <td>40.7 – 50.3</td>
+            <td>36.1 – 44.3</td>
+            <td>33.0 – 42.0</td>
+            <td>32.0 – 44.0</td>
+            <td>%</td>
+          </tr>
+          <tr>
+            <td data-translate="labelPLT">Platelets</td>
+            <td colspan="4">150,000 – 450,000</td>
+            <td>cells/µL</td>
+          </tr>
+          <tr>
+            <td data-translate="labelMCV">MCV</td>
+            <td colspan="4">80.0 – 100.0</td>
+            <td>fL</td>
+          </tr>
+          <tr>
+            <td data-translate="labelMCH">MCH</td>
+            <td colspan="4">27.0 – 33.0</td>
+            <td>pg</td>
+          </tr>
+          <tr>
+            <td data-translate="labelMCHC">MCHC</td>
+            <td colspan="4">32.0 – 36.0</td>
+            <td>g/dL</td>
+          </tr>
+          <tr>
+            <td data-translate="labelRDW">RDW</td>
+            <td colspan="4">11.5 – 14.5</td>
+            <td>%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Understanding CBC</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is a Complete Blood Count (CBC) test?</strong><br><span data-translate="eduA1">A CBC is a comprehensive blood test measuring three primary cells: Red Blood Cells (carrying oxygen), White Blood Cells (fighting infection), and Platelets (forming clots). It provides key details on hematological health and is crucial in detecting nutritional deficiencies, toxicities, anemias, and immunological responses.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Why do doctors order a CBC?</strong><br><span data-translate="eduA2">It is requested during routine wellness checkups, prior to surgical operations, or when evaluating clinical symptoms like unexplained weakness, persistent fatigue, fever, bruising, inflammation, or bone marrow distress.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What are RBC Indices (MCV, MCH, MCHC)?</strong><br><span data-translate="eduA3">These are calculated ratios reflecting size and color properties of red blood cells. MCV (Mean Cell Volume) represents the size of RBCs, MCH (Mean Cell Hemoglobin) indicates the mass of hemoglobin per cell, and MCHC (Mean Cell Hemoglobin Concentration) reflects cellular hemoglobin concentration. Together with RDW (Red Cell Distribution Width), they differentiate microcytic, macrocytic, and normocytic anemias.</span></p>
+    </div>
+  </section>
+
+  <!-- History Stack Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- Accordion FAQ section -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer">
+      <!-- Dynamic FAQs -->
+    </div>
+  </section>
+
+  <!-- Medical Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice, clinical examinations, or lab consultations. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  // Language Mappings Object
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "CBC Report Analyzer",
+      toolDesc: "Analyze your Complete Blood Count (CBC) lab report online. Check counts and indices with interactive hospital-grade indicators.",
+      inputsTitle: "🩸 Patient & Report Parameters",
+      clearBtn: "Reset",
+      catDemographics: "Demographics",
+      labelAge: "Age (Years)",
+      labelGender: "Gender",
+      genderMale: "Male",
+      genderFemale: "Female",
+      genderPregnant: "Pregnant Female",
+      catRBC: "Red Blood Cells (RBC) & Oxygen Parameters",
+      labelHb: "Hemoglobin (Hb) [g/dL]",
+      labelRBC: "RBC Count [10^6/µL]",
+      labelPCV: "Hematocrit (PCV) [%]",
+      labelMCV: "MCV [fL]",
+      labelMCH: "MCH [pg]",
+      labelMCHC: "MCHC [g/dL]",
+      labelRDW: "RDW [%]",
+      catWBC: "White Blood Cells (WBC) & Differential",
+      labelWBC: "WBC Count [cells/µL]",
+      labelNeut: "Neutrophils [%]",
+      labelLymph: "Lymphocytes [%]",
+      labelMono: "Monocytes [%]",
+      labelEosin: "Eosinophils [%]",
+      labelBaso: "Basophils [%]",
+      catPLT: "Platelets",
+      labelPLT: "Platelet Count [cells/µL]",
+      btnAnalyze: "Analyze Blood Report",
+      placeholderTitle: "Report Analysis Pending",
+      placeholderDesc: "Enter patient details and report values in the input parameters, then click the analyze button to display medical summaries.",
+      reportTitle: "🔬 Diagnostics Laboratory Analysis Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      thParam: "Parameter",
+      thValue: "Value",
+      thRef: "Normal Reference",
+      thStatus: "Status",
+      thUnit: "Unit",
+      riskScore: "Overall Hematological Risk Index",
+      riskDesc: "This index represents the percentage of blood parameters sitting outside their normal reference ranges.",
+      titleRefRange: "📋 Standard CBC Reference Ranges Table",
+      subRefRange: "Reference ranges vary based on patient age, gender, and clinical state (like pregnancy).",
+      refMale: "Adult Male",
+      refFemale: "Adult Female",
+      refPregnant: "Pregnant Women",
+      refChildren: "Children",
+      titleEdu: "📚 Clinical Pathology Notes: Understanding CBC",
+      eduQ1: "What is a Complete Blood Count (CBC) test?",
+      eduA1: "A CBC is a comprehensive blood test measuring three primary cells: Red Blood Cells (carrying oxygen), White Blood Cells (fighting infection), and Platelets (forming clots). It provides key details on hematological health and is crucial in detecting nutritional deficiencies, toxicities, anemias, and immunological responses.",
+      eduQ2: "Why do doctors order a CBC?",
+      eduA2: "It is requested during routine wellness checkups, prior to surgical operations, or when evaluating clinical symptoms like unexplained weakness, persistent fatigue, fever, bruising, inflammation, or bone marrow distress.",
+      eduQ3: "What are RBC Indices (MCV, MCH, MCHC)?",
+      eduA3: "These are calculated ratios reflecting size and color properties of red blood cells. MCV (Mean Cell Volume) represents the size of RBCs, MCH (Mean Cell Hemoglobin) indicates the mass of hemoglobin per cell, and MCHC (Mean Cell Hemoglobin Concentration) reflects cellular hemoglobin concentration. Together with RDW (Red Cell Distribution Width), they differentiate microcytic, macrocytic, and normocytic anemias.",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice, clinical examinations, or lab consultations. Always discuss anomalous reports with your doctor.",
+      statusNormal: "Normal Blood Profile",
+      statusAbnormal: "Anomalous Values Detected",
+      statusCritical: "CRITICAL LAB LIMITS DETECTED",
+      badgeNormal: "Normal",
+      badgeLow: "Low",
+      badgeHigh: "High",
+      badgeCriticalLow: "Critical Low",
+      badgeCriticalHigh: "Critical High"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "সিবিসি রিপোর্ট বিশ্লেষক",
+      toolDesc: "অনলাইনে আপনার কমপ্লিট ব্লাড কাউন্ট (CBC) ল্যাব রিপোর্ট বিশ্লেষণ করুন। ইন্টারেক্টিভ হসপিটাল-গ্রেড ইন্ডিকেটর দিয়ে রক্তকণিকা ও সূচকগুলো পরীক্ষা করুন।",
+      inputsTitle: "🩸 রোগী ও রিপোর্টের পরিমাপক সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      catDemographics: "রোগীর বিবরণ",
+      labelAge: "বয়স (বছর)",
+      labelGender: "লিঙ্গ",
+      genderMale: "পুরুষ",
+      genderFemale: "নারী",
+      genderPregnant: "গর্ভবতী নারী",
+      catRBC: "লোহিত রক্তকণিকা (RBC) ও অক্সিজেন পরিমাপক",
+      labelHb: "হিমোগ্লোবিন (Hb) [g/dL]",
+      labelRBC: "লোহিত রক্তকণিকা (RBC) [10^6/µL]",
+      labelPCV: "হেমাটোক্রিট (PCV) [%]",
+      labelMCV: "এমসিভি (MCV) [fL]",
+      labelMCH: "এমসিএইচ (MCH) [pg]",
+      labelMCHC: "এমসিএইচসি (MCHC) [g/dL]",
+      labelRDW: "আরডিডব্লিউ (RDW) [%]",
+      catWBC: "শ্বেত রক্তকণিকা (WBC) ও ডিফারেনশিয়াল",
+      labelWBC: "শ্বেত রক্তকণিকা (WBC) [cells/µL]",
+      labelNeut: "নিউট্রোফিল [%]",
+      labelLymph: "লিম্ফোসাইট [%]",
+      labelMono: "মনোসাইট [%]",
+      labelEosin: "ইওসিনোফিল [%]",
+      labelBaso: "বেসোফিল [%]",
+      catPLT: "প্লেটলেটস (অণুচক্রিকা)",
+      labelPLT: "প্লেটলেট কাউন্ট [cells/µL]",
+      btnAnalyze: "রিপোর্ট বিশ্লেষণ করুন",
+      placeholderTitle: "রিপোর্ট বিশ্লেষণ অমীমাংসিত",
+      placeholderDesc: "ইনপুট বক্সে রোগীর তথ্য ও রিপোর্টের মানগুলো লিখুন, তারপর ল্যাব রিপোর্টের সামারি দেখতে বিশ্লেষণ বোতামটি চাপুন।",
+      reportTitle: "🔬 ডায়াগনস্টিকস ল্যাবরেটরি বিশ্লেষণ রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      thParam: "প্যারামিটার",
+      thValue: "মান",
+      thRef: "স্বাভাবিক সীমা",
+      thStatus: "অবস্থা",
+      thUnit: "ইউনিট",
+      riskScore: "সামগ্রিক হেমাটোলজিক্যাল রিস্ক ইনডেক্স",
+      riskDesc: "এই সূচকটি স্বাভাবিক সীমার বাইরে থাকা রক্তের উপাদানগুলোর শতকরা হার নির্দেশ করে।",
+      titleRefRange: "📋 প্রমিত সিবিসি স্বাভাবিক রেফারেন্স টেবিল",
+      subRefRange: "রেফারেন্স সীমা রোগীর বয়স, লিঙ্গ এবং শারীরিক অবস্থা (যেমন গর্ভাবস্থা) অনুযায়ী পরিবর্তিত হয়।",
+      refMale: "প্রাপ্তবয়স্ক পুরুষ",
+      refFemale: "প্রাপ্তবয়স্ক নারী",
+      refPregnant: "গর্ভবতী নারী",
+      refChildren: "শিশু",
+      titleEdu: "📚 ক্লিনিক্যাল প্যাথলজি নোট: সিবিসি ধারণা",
+      eduQ1: "কমপ্লিট ব্লাড কাউন্ট (সিবিসি) টেস্ট কী?",
+      eduA1: "সিবিসি হলো একটি ব্যাপক রক্ত পরীক্ষা যা তিনটি প্রধান রক্তকণিকা পরিমাপ করে: লোহিত রক্তকণিকা (অক্সিজেন বহনকারী), শ্বেত রক্তকণিকা (সংক্রমণ প্রতিরোধকারী) এবং অণুচক্রিকা (রক্ত জমাট বাঁধতে সাহায্যকারী)। এটি রক্তের সামগ্রিক স্বাস্থ্যের মূল চিত্র প্রদান করে এবং রক্তস্বল্পতা, ইনফেকশন এবং লিউকেমিয়া শনাক্ত করতে অত্যন্ত গুরুত্বপূর্ণ।",
+      eduQ2: "চিকিৎসকরা কেন সিবিসি পরীক্ষা করতে বলেন?",
+      eduA2: "সাধারণ শারীরিক পরীক্ষা, অস্ত্রোপচারের প্রস্তুতি বা ব্যাখ্যাতীত ক্লান্তি, দুর্বলতা, জ্বর, কালশিটে দাগ পড়া, প্রদাহ বা অস্থিমজ্জার সমস্যা মূল্যায়নের জন্য চিকিৎসকেরা এই টেস্টের পরামর্শ দেন।",
+      eduQ3: "লোহিত রক্তকণিকার সূচক (MCV, MCH, MCHC) কী?",
+      eduA3: "এগুলো হলো লোহিত রক্তকণিকার আকার এবং হিমোগ্লোবিনের ঘনত্ব পরিমাপক অনুপাত। MCV (Mean Cell Volume) দ্বারা রক্তকণিকার আকার, MCH (Mean Cell Hemoglobin) দ্বারা প্রতি কণিকায় হিমোগ্লোবিনের পরিমাণ এবং MCHC (Mean Cell Hemoglobin Concentration) দ্বারা কোষে হিমোগ্লোবিনের ঘনত্ব প্রকাশ পায়। RDW সহ এই সূচকগুলো রক্তস্বল্পতার ধরন নির্ধারণে সাহায্য করে।",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শ, সরাসরি পরীক্ষা বা ল্যাব টেস্টের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য আপনার ডাক্তারের সাথে পরামর্শ করুন।",
+      statusNormal: "স্বাভাবিক রক্তের রিপোর্ট",
+      statusAbnormal: "অস্বাভাবিক মান সনাক্তকরণ",
+      statusCritical: "জরুরী বা ঝুঁকিপূর্ণ ল্যাব সীমার উপস্থিতি",
+      badgeNormal: "স্বাভাবিক",
+      badgeLow: "কম",
+      badgeHigh: "বেশি",
+      badgeCriticalLow: "মারাত্মক কম",
+      badgeCriticalHigh: "মারাত্মক বেশি"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "सीबीसी रिपोर्ट विश्लेषक",
+      toolDesc: "अपनी संपूर्ण रक्त गणना (सीबीसी) लैब रिपोर्ट का ऑनलाइन विश्लेषण करें। इंटरैक्टिव अस्पताल-ग्रेड संकेतकों के साथ गिनती और सूचकांक की जाँच करें।",
+      inputsTitle: "🩸 रोगी और रिपोर्ट पैरामीटर",
+      clearBtn: "रीसेट करें",
+      catDemographics: "जनसांख्यिकी",
+      labelAge: "आयु (वर्ष)",
+      labelGender: "लिंग",
+      genderMale: "पुरुष",
+      genderFemale: "स्त्री",
+      genderPregnant: "गर्भवती महिला",
+      catRBC: "लाल रक्त कोशिकाएं (आरबीसी) और ऑक्सीजन पैरामीटर",
+      labelHb: "हीमोग्लोबिन (एचबी) [जी/डीएल]",
+      labelRBC: "आरबीसी गणना [10^6/µL]",
+      labelPCV: "हेमाटोक्रिट (पीसीवी) [%]",
+      labelMCV: "एमसीवी [एफएल]",
+      labelMCH: "एमसीएच [पृष्ठ]",
+      labelMCHC: "एमसीएचसी [जी/डीएल]",
+      labelRDW: "आरडीडब्ल्यू [%]",
+      catWBC: "श्वेत रक्त कोशिकाएं (डब्ल्यूबीसी) और विभेदक",
+      labelWBC: "WBC गणना [कोशिकाएं/µL]",
+      labelNeut: "न्यूट्रोफिल [%]",
+      labelLymph: "लिम्फोसाइट्स [%]",
+      labelMono: "मोनोसाइट्स [%]",
+      labelEosin: "ईोसिनोफिल्स [%]",
+      labelBaso: "बेसोफिल्स [%]",
+      catPLT: "प्लेटलेट्स",
+      labelPLT: "प्लेटलेट गणना [कोशिकाएं/µL]",
+      btnAnalyze: "रक्त रिपोर्ट का विश्लेषण करें",
+      placeholderTitle: "रिपोर्ट विश्लेषण लंबित",
+      placeholderDesc: "इनपुट पैरामीटर में रोगी विवरण और रिपोर्ट मान दर्ज करें, फिर चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 डायग्नोस्टिक्स प्रयोगशाला विश्लेषण रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "दिनांक",
+      thParam: "पैरामीटर",
+      thValue: "मूल्य",
+      thRef: "सामान्य संदर्भ",
+      thStatus: "स्थिति",
+      thUnit: "इकाई",
+      riskScore: "समग्र हेमटोलॉजिकल जोखिम सूचकांक",
+      riskDesc: "यह सूचकांक उनकी सामान्य संदर्भ सीमा से बाहर बैठे रक्त मापदंडों के प्रतिशत को दर्शाता है।",
+      titleRefRange: "📋 मानक सीबीसी संदर्भ रेंज तालिका",
+      subRefRange: "रोगी की उम्र, लिंग और नैदानिक ​​स्थिति (जैसे गर्भावस्था) के आधार पर संदर्भ सीमाएँ भिन्न होती हैं।",
+      refMale: "वयस्क पुरुष",
+      refFemale: "वयस्क महिला",
+      refPregnant: "गर्भवती महिलाएं",
+      refChildren: "बच्चे",
+      titleEdu: "📚 क्लिनिकल पैथोलॉजी नोट्स: सीबीसी को समझना",
+      eduQ1: "पूर्ण रक्त गणना (सीबीसी) परीक्षण क्या है?",
+      eduA1: "सीबीसी एक व्यापक रक्त परीक्षण है जो तीन प्राथमिक कोशिकाओं को मापता है: लाल रक्त कोशिकाएं (ऑक्सीजन ले जाने वाली), सफेद रक्त कोशिकाएं (संक्रमण से लड़ने वाली), और प्लेटलेट्स (थक्के बनाने वाली)। यह हेमटोलॉजिकल स्वास्थ्य पर महत्वपूर्ण विवरण प्रदान करता है और पोषण संबंधी कमियों, विषाक्तता, एनीमिया और प्रतिरक्षाविज्ञानी प्रतिक्रियाओं का पता लगाने में महत्वपूर्ण है।",
+      eduQ2: "डॉक्टर सीबीसी का आदेश क्यों देते हैं?",
+      eduA2: "नियमित स्वास्थ्य जांच के दौरान, सर्जिकल ऑपरेशन से पहले, या अस्पष्ट कमजोरी, लगातार थकान, बुखार, चोट, सूजन, या अस्थि मज्जा संकट जैसे नैदानिक ​​लक्षणों का मूल्यांकन करते समय इसका अनुरोध किया जाता है।",
+      eduQ3: "आरबीसी सूचकांक (एमसीवी, एमसीएच, एमसीएचसी) क्या हैं?",
+      eduA3: "ये लाल रक्त कोशिकाओं के आकार और रंग गुणों को दर्शाते हुए अनुपात की गणना करते हैं। एमसीवी (मीन सेल वॉल्यूम) आरबीसी के आकार को दर्शाता है, एमसीएच (मीन सेल हीमोग्लोबिन) प्रति सेल हीमोग्लोबिन के द्रव्यमान को इंगित करता है, और एमसीएचसी (मीन सेल हीमोग्लोबिन एकाग्रता) सेलुलर हीमोग्लोबिन एकाग्रता को दर्शाता है। आरडीडब्ल्यू (रेड सेल डिस्ट्रीब्यूशन विड्थ) के साथ मिलकर, वे माइक्रोसाइटिक, मैक्रोसाइटिक और नॉरमोसाइटिक एनीमिया को अलग करते हैं।",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह, नैदानिक ​​​​परीक्षाओं या प्रयोगशाला परामर्शों का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      statusNormal: "सामान्य ���क्त प्रोफ़ाइल",
+      statusAbnormal: "असंगत मानों का पता चला",
+      statusCritical: "महत्वपूर्ण प्रयोगशाला सीमाओं का पता लगाया गया",
+      badgeNormal: "सामान्य",
+      badgeLow: "नीचा",
+      badgeHigh: "ऊँचा",
+      badgeCriticalLow: "गंभीर निम्न",
+      badgeCriticalHigh: "क्रिटिकल हाई"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is a CBC test?", a: "A Complete Blood Count (CBC) evaluates overall health and screens for issues like anemia, infection, inflammation, bleeding disorders, or leukemia." },
+      { q: "Do I need to fast before a CBC test?", a: "No. Fasting is generally not required for a CBC test alone, unless your blood sample will be used for other tests like blood glucose or lipids." },
+      { q: "What causes low Hemoglobin?", a: "Low hemoglobin (anemia) is commonly caused by iron deficiency, vitamin B12 or folate deficiency, chronic blood loss, kidney diseases, or bone marrow disorders." },
+      { q: "What causes high WBC count?", a: "A high White Blood Cell count (leukocytosis) often points to infections, physical stress, tissue damage, inflammatory conditions, allergic reactions, or leukemia." },
+      { q: "What is Hematocrit (PCV)?", a: "Hematocrit or Packed Cell Volume represents the proportion of your blood composed of red blood cells. Low PCV usually indicates anemia, while high levels point to dehydration." },
+      { q: "Why is Platelet Count important?", a: "Platelets are cell fragments vital for blood clotting. Low platelet counts (thrombocytopenia) lead to easy bruising and bleeding risks; high counts increase thrombosis (clotting) risks." },
+      { q: "What are MCV, MCH, and MCHC?", a: "These are RBC indices. MCV measures size. MCH measures weight of hemoglobin per RBC. MCHC measures density of hemoglobin. They help identify types of anemia." },
+      { q: "What is RDW?", a: "Red Cell Distribution Width (RDW) measures the variation in red blood cell size. High variation (high RDW) is often an early indicator of iron deficiency anemia." },
+      { q: "How does pregnancy affect CBC reference ranges?", a: "During pregnancy, blood volume expands, causing a natural dilution effect. This lowers normal ranges for Hemoglobin, RBC count, and Hematocrit." },
+      { q: "What does the differential WBC count show?", a: "It measures the percentages of 5 types of WBCs: Neutrophils (fight bacteria), Lymphocytes (fight viruses/immune), Monocytes (clean debris), Eosinophils (allergies/parasites), and Basophils (allergic release)." },
+      { q: "Can stress increase my WBC count?", a: "Yes. Intense physical exertion, psychological stress, severe injuries, or acute anxiety can trigger transient increases in WBC counts." },
+      { q: "What should I do if my Platelet count is below 50,000?", a: "This is a critical low limit (severe thrombocytopenia) presenting immediate bleeding risks. You should seek urgent clinical medical evaluation." },
+      { q: "What does high RBC count mean?", a: "High RBC (erythrocytosis) is associated with dehydration, smoking, chronic obstructive pulmonary disease (COPD), high altitude residence, or polycythemia vera." },
+      { q: "Are pediatric reference ranges different?", a: "Yes. Infants and children have significantly higher WBC reference ranges and different Hemoglobin distributions compared to adults." },
+      { q: "Is this analyzer a replacement for clinical diagnosis?", a: "No. This tool acts purely as an educational reference. It cannot account for individual baselines or diagnostic symptoms. Consult a clinician." }
+    ],
+    bn: [
+      { q: "সিবিসি (CBC) টেস্ট কী?", a: "কমপ্লিট ব্লাড কাউন্ট (সিবিসি) সামগ্রিক স্বাস্থ্য পরীক্ষা করতে এবং অ্যানিমিয়া, ইনফেকশন, এলার্জি, রক্তপাতজনিত রোগ বা লিউকেমিয়ার মতো সমস্যা শনাক্ত করতে ব্যবহৃত হয়।" },
+      { q: "সিবিসি পরীক্ষার আগে কি খালি পেটে থাকতে হয়?", a: "না। শুধু সিবিসি টেস্টের জন্য সাধারণত খালি পেটে থাকার প্রয়োজন হয় না, তবে রক্তের নমুনা অন্য কোনো পরীক্ষার (যেমন সুগার বা লিপিড) সাথে নেওয়া হলে খালি পেটে থাকতে হতে পারে।" },
+      { q: "কম হিমোগ্লোবিনের কারণ কী?", a: "কম হিমোগ্লোবিনের (রক্তস্বল্পতা) সাধারণ কারণগুলোর মধ্যে রয়েছে আয়রনের ঘাটতি, ভিটামিন বি-১২ বা ফোলেটের অভাব, অতিরিক্ত রক্তক্ষরণ, কিডনি সমস্যা বা অস্থিমজ্জার ত্রুটি।" },
+      { q: "শ্বেত রক্তকণিকা (WBC) বৃদ্ধির কারণ কী?", a: "শ্বেত রক্তকণিকার উচ্চ হার (লিউকোসাইটোসিস) সাধারণত শরীরের কোনো সংক্রমণ (ইনফেকশন), অতিরিক্ত শারীরিক চাপ, কোষের ক্ষতি, এলার্জি বা লিউকেমিয়া নির্দেশ করে।" },
+      { q: "হেমাটোক্রিট (PCV) কী?", a: "হেমাটোক্রিট বা প্যাকড সেল ভলিউম রক্তে লোহিত রক্তকণিকার শতকরা অনুপাত প্রকাশ করে। কম পিসিভি রক্তস্বল্পতা এবং উচ্চ পিসিভি সাধারণত পানিশূন্যতা বোঝায়।" },
+      { q: "প্লেটলেট (অণুচক্রিকা) গণনা কেন গুরুত্বপূর্ণ?", a: "প্লেটলেট রক্ত জমাট বাঁধতে সাহায্য করে। কম প্লেটলেট (থ্রম্বোসাইটোপেনিয়া) সহজে রক্তপাত ঘটায় এবং খুব বেশি প্লেটলেট রক্তনালীতে রক্ত জমাট বাঁধার (থ্রম্বোসিস) ঝুঁকি বাড়ায়।" },
+      { q: "MCV, MCH এবং MCHC কী?", a: "এগুলো হলো লোহিত রক্তকণিকার সূচক। MCV আকার মাপে, MCH কোষে হিমোগ্লোবিনের ভর মাপে এবং MCHC হিমোগ্লোবিনের ঘনত্ব মাপে। এগুলো রক্তস্বল্পতার ধরণ বুঝতে সাহায্য করে।" },
+      { q: "RDW কী?", a: "রেড সেল ডিস্ট্রিবিউশন উইডথ (RDW) লোহিত রক্তকণিকার আকারের তারতম্য পরিমাপ করে। এর বেশি তারতম্য (উচ্চ আরডিডব্লিউ) আয়রনের ঘাটতিজনিত রক্তস্বল্পতার প্রাথমিক লক্ষণ।" },
+      { q: "গর্ভাবস্থা কীভাবে সিবিসি পরীক্ষার রেফারেন্স সীমা পরিবর্তন করে?", a: "গর্ভাবস্থায় রক্তের তরল অংশ (প্লাজমা) বৃদ্ধি পায়, যার ফলে রক্ত কিছুটা পাতলা হয়। এজন্য হিমোগ্লোবিন, আরবিসি কাউন্ট এবং হেমাটোক্রিটের স্বাভাবিক সীমা কিছুটা কমে যায়।" },
+      { q: "ডিফারেনশিয়াল ডব্লিউবিসি কাউন্ট কী দেখায়?", a: "এটি ৫ ধরনের শ্বেত রক্তকণিকার শতকরা হার দেখায়: নিউট্রোফিল (ব্যাকটেরিয়া প্রতিরোধে), লিম্ফোসাইট (ভাইরাস ও রোগ প্রতিরোধে), মনোসাইট (বর্জ্য পরিষ্কারে), ইওসিনোফিল (এলার্জি/পরজীবী ধ্বংসে), এবং বেসোফিল (এলার্জি প্রতিক্রিয়ায়)।" },
+      { q: "মানসিক চাপ কি শ্বেত রক্তকণিকা বাড়িয়ে দিতে পারে?", a: "হ্যাঁ। অতিরিক্ত শারীরিক পরিশ্রম, তীব্র মানসিক চাপ, মারাত্মক আঘাত বা তীব্র উদ্বেগ সাময়িকভাবে শ্বেত রক্তকণিকার পরিমাণ বাড়াতে পারে।" },
+      { q: "প্লেটলেট কাউন্ট ৫০,০০০ এর নিচে হলে কী করা উচিত?", a: "এটি একটি মারাত্মক ঝুঁকিপূর্ণ সীমা (তীব্র থ্রম্বোসাইটোপেনিয়া) যা সহজে রক্তপাতের ঝুঁকি বাড়ায়। আপনার অবিলম্বে একজন চিকিৎসকের শরণাপন্ন হওয়া উচিত।" },
+      { q: "উচ্চ লোহিত রক্তকণিকা (RBC) কী নির্দেশ করে?", a: "উচ্চ আরবিসি কাউন্ট সাধারণত পানিশূন্যতা (ডিহাইড্রেশন), ধূমপান, ক্রনিক অবস্ট্রাকটিভ পালমোনারি ডিজিজ (COPD), বা পলিসাইথেমিয়া ভেরা নামক রোগের কারণে হতে পারে।" },
+      { q: "শিশুদের রেফারেন্স সীমা কি বড়দের চেয়ে আলাদা?", a: "হ্যাঁ। নবজাতক এবং শিশুদের শ্বেত রক্তকণিকার স্বাভাবিক সীমা এবং হিমোগ্লোবিনের পরিমাণ বড়দের তুলনায় অনেক বেশি বা আলাদা হতে পারে।" },
+      { q: "এই টুলটি কি ডাক্তারের পরামর্শের বিকল্প হতে পারে?", a: "না। এই টুলটি শুধুমাত্র শিক্ষামূলক উদ্দেশ্যে তৈরি। এটি রোগীর অন্যান্য লক্ষণ বিবেচনা করতে পারে না, তাই রিপোর্টের ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নেওয়া আবশ্যক।" }
+    ],
+    hi: [
+      { q: "सीबीसी परीक्षण क्या है?", a: "पूर्ण रक्त गणना (सीबीसी) समग्र स्वास्थ्य का मूल्यांकन करती है और एनीमिया, संक्रमण, सूजन, रक्तस्राव विकार या ल्यूकेमिया जैसे मुद्दों की जांच करती है।" },
+      { q: "क्या मुझे सीबीसी परीक्षण से पहले उपवास करने की आवश्यकता है?", a: "नहीं, आमतौर पर अकेले सीबीसी परीक्षण के लिए उपवास की आवश्यकता नहीं होती है, जब तक कि आपके रक्त के नमूने का उपयोग रक्त ग्लूकोज या लिपिड जैसे अन्य परीक्षणों के लिए नहीं किया जाएगा।" },
+      { q: "हीमोग्लोबिन कम होने का क्या कारण है?", a: "कम हीमोग्लोबिन (एनीमिया) आमतौर पर आयरन की कमी, विटामिन बी 12 या फोलेट की कमी, पुरानी रक्त हानि, गुर्दे की बीमारियों या अस्थि मज्जा विकारों के कारण होता है।" },
+      { q: "उच्च WBC गिनती का क्या कारण है?", a: "उच्च श्वेत रक्त कोशिका गिनती (ल्यूकोसाइटोसिस) अक्सर संक्रमण, शारीरिक तनाव, ऊतक क्षति, सूजन की स्थिति, एलर्जी प्रतिक्रिया या ल्यूकेमिया की ओर इशारा करती है।" },
+      { q: "हेमाटोक्रिट (पीसीवी) क्या है?", a: "हेमाटोक्रिट या पैक्ड सेल वॉल्यूम आपके रक्त में लाल रक्त कोशिकाओं के अनुपात को दर्शाता है। कम पीसीवी आमतौर पर एनीमिया का संकेत देता है, जबकि उच्च स्तर निर्जलीकरण का संकेत देता है।" },
+      { q: "प्लेटलेट काउंट क्यों महत्वपूर्ण है?", a: "प्लेटलेट्स रक्त के थक्के जमने के लिए महत्वपूर्ण कोशिका टुकड़े हैं। कम प्लेटलेट काउंट (थ्रोम्बोसाइटोपेनिया) से आसानी से चोट लगने और रक्तस्राव का खतरा होता है; उच्च गिनती से थ्रोम्बोसिस (थक्के जमने) का खतरा बढ़ जाता है।" },
+      { q: "एमसीवी, एमसीएच और एमसीएचसी क्या हैं?", a: "ये आरबी���ी सूचकांक हैं। एमसीवी आकार मापता है। एमसीएच प्रति आरबीसी हीमोग्लोबिन का वजन मापता है। एमसीएचसी हीमोग्लोबिन के घनत्व को मापता है। वे एनीमिया के प्रकारों की पहचान करने में मदद करते हैं।" },
+      { q: "आरडीडब्ल्यू क्या है?", a: "��ाल कोशिका वितरण चौड़ाई (आरडीडब्ल्यू) लाल रक्त कोशिका के आकार में भिन्नता को मापती है। उच्च भिन्नता (उच्च आरडीडब्ल्यू) अक्सर आयरन की कमी वाले एनीमिया का प्रारंभिक संकेतक होता है।" },
+      { q: "गर्भावस्था सीबीसी संदर्भ सीमा को कैसे प्रभावित करती है?", a: "गर्भावस्था के दौरान, रक्त की मात्रा बढ़ जाती है, जिससे प्राकृतिक प���लापन प्रभाव पड़ता है। इससे हीमोग्लोबिन, आरबीसी गिनती और हेमाटोक्रिट की सामान्य सीमा कम हो जाती है।" },
+      { q: "विभेदक WBC गणना क्या दर्शाती है?", a: "यह 5 प्रकार के WBCs के प्रतिशत को मापता है: न्यूट्रोफिल (बैक्टीरिया से लड़ें), लिम्फोसाइट्स (वायरस/प्रतिरक्षा से लड़ें), मोनोसाइट्स (स्वच्छ मलबा), ईोसिनोफिल्स (एलर्जी/परजीवी), और बेसोफि��्स (एलर्जी रिलीज)।" },
+      { q: "क्या तनाव से मेरी WBC गिनती बढ़ सकती है?", a: "हाँ। तीव्र शारीरिक परिश्रम, मनोवैज्ञानिक तनाव, गंभीर चोटें, या तीव्र चिंता WBC गिनती में क्षणिक वृद्धि को ट्रिगर कर सकती है।" },
+      { q: "यदि मेरी प्लेटलेट गिनती 50,000 से कम है तो मुझे क्या करना चाहिए?", a: "यह एक गंभीर निम्न सीम��� (गंभीर थ्रोम्बोसाइटोपेनिया) है जो तत्काल रक्तस्राव का जोखिम पेश करती है। आपको तत्काल नैदानिक ​​चिकित्सीय मूल्यांकन कराना चाहिए।" },
+      { q: "उच्च आरबीसी गिनती का क्या मतलब है?", a: "उच्च आरबीसी (एरिथ्रोसाइटोसिस) निर्जलीकरण, धूम्रपान, क्रॉनिक ऑब्सट्रक्टिव पल्मोनरी डिजीज (सीओपीडी), उच्च ऊंचाई पर निवास, या पॉलीसिथेमिया वेरा से ���ुड़ा हुआ है।" },
+      { q: "क्या बाल चिकित्सा संदर्भ श्रेणियाँ भिन्न हैं?", a: "हाँ। वयस्कों की तुलना में शिशुओं और बच्चों में WBC संदर्भ सीमा और हीमोग्लोबिन वितरण काफी अधिक होता है।" },
+      { q: "क्या यह विश्लेषक नैदानिक ​​निदान का प��रतिस्थापन है?", a: "नहीं, यह उपकरण पूरी तरह से एक शैक्षिक संदर्भ के रूप में कार्य करता है। यह व्यक्तिगत आधार रेखाओं या नैदानिक ​​लक्षणों का हिसाब नहीं दे सकता। किसी चिकित्सक से परामर्श लें." }
+    ]
+  };
+
+  const cbcInsights = {
+    en: {
+      Hb: {
+        low: "Low Hemoglobin (Anemia): May indicate iron deficiency, Vitamin B12 deficiency, bone marrow suppression, or internal blood loss. Common symptoms include fatigue, pale skin, and shortness of breath. Tip: Consume iron-rich foods (spinach, red meat) and consult a physician.",
+        high: "High Hemoglobin (Erythrocytosis): Can be associated with dehydration, heavy smoking, chronic hypoxia (COPD), or rarely, polycythemia vera. Ensure adequate hydration and speak to a physician to evaluate pulmonary conditions."
+      },
+      WBC: {
+        low: "Low WBC (Leukopenia): May indicate bone marrow disease, autoimmune conditions, viral infections, or medication side effects. Increases vulnerability to infections. Tip: Practice strict hygiene and seek medical advice.",
+        high: "High WBC (Leukocytosis): Often points to bacterial infections, inflammation, severe physical/emotional stress, leukemia, or tissue damage. Consult a physician for further infection screening."
+      },
+      PLT: {
+        low: "Low Platelets (Thrombocytopenia): May indicate bone marrow failures, dengue fever, viral infections, splenomegaly, or autoimmune clearance. Critical danger of bruising/bleeding. Rest and consult a doctor immediately.",
+        high: "High Platelets (Thrombocytosis): Associated with acute inflammation, iron deficiency, infection, or myeloproliferative disorders. Increases clotting risks."
+      },
+      RBC: {
+        low: "Low RBC Count: Closely tied with anemia, malnutrition, kidney disease, or blood loss. Consult a doctor.",
+        high: "High RBC Count: Commonly caused by high altitudes, chronic hypoxia, severe dehydration, or erythropoietin abuse."
+      },
+      PCV: {
+        low: "Low Hematocrit (PCV): Reflects low volume of red cells (anemia or overhydration).",
+        high: "High Hematocrit (PCV): Strongly indicates dehydration or polycythemia."
+      }
+    },
+    bn: {
+      Hb: {
+        low: "কম হিমোগ্লোবিন (রক্তস্বল্পতা): এটি আয়রনের ঘাটতি, ভিটামিন বি১২ এর অভাব বা অভ্যন্তরীণ রক্তক্ষরণ নির্দেশ করতে পারে। সাধারণ লক্ষণের মধ্যে রয়েছে ক্লান্তি ও ফ্যাকাশে ত্বক। পরামর্শ: আয়রন সমৃদ্ধ খাবার (পালং শাক, লাল মাংস) খান এবং ডাক্তারের সাথে পরামর্শ করুন।",
+        high: "উচ্চ হিমোগ্লোবিন: এটি পানিশূন্যতা, অতিরিক্ত ধূমপান, সিওপিডি (COPD) বা পলিসাইথেমিয়া ভেরার সাথে সম্পর্কিত হতে পারে। পর্যাপ্ত পানি পান করুন এবং চিকিৎসকের পরামর্শ নিন।"
+      },
+      WBC: {
+        low: "কম শ্বেত রক্তকণিকা (লিউকোপেনিয়া): এটি অস্থিমজ্জার সমস্যা, ভাইরাল সংক্রমণ বা কোনো ওষুধের প্রতিক্রিয়ার কারণে হতে পারে। এতে শরীরে রোগ প্রতিরোধ ক্ষমতা কমে যায়। স্বাস্থ্যবিধি মেনে চলুন এবং ডাক্তারের পরামর্শ নিন।",
+        high: "উচ্চ শ্বেত রক্তকণিকা: এটি সাধারণত শরীরে ব্যাকটেরিয়াজনিত ইনফেকশন, প্রদাহ, মানসিক চাপ বা লিউকেমিয়া নির্দেশ করে। ইনফেকশন শনাক্ত করতে ডাক্তারের সাহায্য নিন।"
+      },
+      PLT: {
+        low: "কম প্লেটলেট (থ্রম্বোসাইটোপেনিয়া): এটি অস্থিমজ্জার ত্রুটি, ডেঙ্গু জ্বর, ভাইরাল ইনফেকশন বা এলার্জির কারণে হতে পারে। এর ফলে রক্তপাতের মারাত্মক ঝুঁকি তৈরি হয়। অবিলম্বে ডাক্তারের শরণাপন্ন হোন।",
+        high: "উচ্চ প্লেটলেট: এটি ইনফেকশন, প্রদাহ বা কোনো মাইলোপ্রোলিফারেটিভ ডিসঅর্ডারের কারণে হতে পারে, যা রক্ত জমাট বাঁধার ঝুঁকি বাড়ায়।"
+      },
+      RBC: {
+        low: "কম আরবিসি কাউন্ট: রক্তস্বল্পতা, পুষ্টির অভাব বা দীর্ঘস্থায়ী কিডনি রোগের সাথে এটি যুক্ত হতে পারে। চিকিৎসকের শরণাপন্ন হোন।",
+        high: "উচ্চ আরবিসি কাউন্ট: সাধারণত ডিহাইড্রেশন, ধূমপান বা উচ্চ উচ্চতায় বসবাসের কারণে এটি হতে পারে।"
+      },
+      PCV: {
+        low: "কম হেমাটোক্রিট (পিসিভি): এটি রক্তে লোহিত রক্তকণিকার কম অনুপাত (রক্তস্বল্পতা) প্রকাশ করে।",
+        high: "উচ্চ হেমাটোক্রিট (পিসিভি): এটি মূলত পানিশূন্যতা বা অতিরিক্ত আরবিসি ঘনত্বের উপস্থিতি বোঝায়।"
+      }
+    },
+    hi: {
+      Hb: {
+        low: "कम हीमोग्लोबिन (एनीमिया): आयरन की कमी, विटामिन बी12 की कमी, अस्थि मज्जा दमन या आंतरिक रक्त हानि का संकेत हो सकता है। सामान्य लक्षणों में थकान, पीली त्वचा और सांस लेने में तकलीफ शामिल हैं। सुझाव: आयरन युक्त खाद्य पदार्थ (पालक, लाल मांस) का सेवन करें और चिकित्सक से परामर्श लें।",
+        high: "उच्च हीमोग्लोबिन (एरिथ्रोसाइटोसिस): निर्जलीकर��, भारी धूम्रपान, क्रोनिक हाइपोक्सिया (सीओपीडी), या शायद ही कभी, पॉलीसिथेमिया वेरा से जुड़ा हो सकता है। पर्याप्त जलयोजन सुनिश्चित करें और फुफ्फुसीय स्थितियों का मूल्यांकन करने के लिए चिकित्सक से बात करें।"
+      },
+      WBC: {
+        low: "निम्न WBC (ल्यूकोपेनिया): अस्थि मज्जा रोग, ऑटोइम्यून स्थितियों, वायरल संक्रमण या दवा के दुष्प्रभावों का संकेत दे सकता है। संक्रमण के प्रति संवेदनशीलता बढ़ जाती है। सुझाव: सख्त स्वच्छता अपनाएं और चिकित्सकीय सलाह लें।",
+        high: "उच्च WBC (ल्यूकोसाइटोसिस): अक्सर जीवाणु संक्रमण, सूजन, गंभीर शारीरिक/भावनात्मक तनाव, ल्यूकेमिया, या ऊतक क्षति की ओर इशारा करता है। आगे की संक्रमण जांच के लिए चिकित्सक से परामर्श लें।"
+      },
+      PLT: {
+        low: "कम प्लेटलेट्स (थ्रोम्बोसाइटोपेनिया): अस्थि मज्जा विफलता, डेंगू बुखार, वायरल संक्रमण, स्प्लेनोमेगाली, या ऑटोइम्यून क्लीयरेंस का संकेत दे सकता है। चोट/खून बहने का गंभीर खतरा। आराम करें और तुरंत डॉक्टर से सलाह लें।",
+        high: "उच्च प्लेटलेट्स (थ्रोम्बोसाइटोसिस): तीव्र सूजन, आयरन की कमी, संक्रमण, या मायलोप्रोलिफेरेटिव विकारों से जुड़ा हुआ। थक्के जमने का खतरा बढ़ जाता है।"
+      },
+      RBC: {
+        low: "कम आरबीसी गणना: एनीमिया, कुपोषण, गुर्दे की बीमारी, या रक्त हानि से निकटता से जुड़ा हुआ है। एक डॉक्टर से परामर्श।",
+        high: "उच्च आरबीसी गणना: आमतौर पर उच्च ऊंचाई, क्रोनिक हाइपोक्सिया, गंभीर ���िर्जलीकरण, या एरिथ्रोपोइटिन के दुरुपयोग के कारण होता है।"
+      },
+      PCV: {
+        low: "कम हेमाटोक्रिट (पीसीवी): लाल कोशिकाओं की कम मात्रा (एनीमिया या ओवरहाइड्रेशन) को दर्शाता है।",
+        high: "उच्च हेमाटोक्रिट (पीसीवी): दृढ़ता से निर्जलीकरण या पॉलीसिथेमिया का संकेत देता है।"
+      }
+    }
+  };
+
+  // State Management
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-cbc-history")) || [];
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    // Update active button state
+     else {
+        btn.innerHTML = '🇧🇩 <span>Bengali</span>';
+      }
+    }
+
+    // Update all data-translate elements
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    // Re-render FAQs & Recent history in selected language
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    // If output is visible, refresh table translation
+    const reportCard = document.getElementById("reportCardSec");
+    if (reportCard.style.display !== "none") {
+      updateActiveReportLanguage();
+    }
+  }
+
+  function toggleLanguage() {
+    const nextLang = currentLang === "en" ? "bn" : "en";
+    setLanguage(nextLang);
+  }
+
+  // Render FAQ Accordions
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq, index) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  // Change unit descriptions or details on gender selection (e.g. showing pregnancy details)
+  function checkGenderDetails() {
+    const gender = document.getElementById("patientGender").value;
+    // Auto adapt reference parameters if needed
+  }
+
+  function resetForm() {
+    document.getElementById("patientAge").value = "30";
+    document.getElementById("patientGender").value = "male";
+    document.getElementById("valHb").value = "";
+    document.getElementById("valRBC").value = "";
+    document.getElementById("valPCV").value = "";
+    document.getElementById("valMCV").value = "";
+    document.getElementById("valMCH").value = "";
+    document.getElementById("valMCHC").value = "";
+    document.getElementById("valRDW").value = "";
+    document.getElementById("valWBC").value = "";
+    document.getElementById("valNeut").value = "";
+    document.getElementById("valLymph").value = "";
+    document.getElementById("valMono").value = "";
+    document.getElementById("valEosin").value = "";
+    document.getElementById("valBaso").value = "";
+    document.getElementById("valPLT").value = "";
+    
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  // Define Reference Ranges dynamically based on patient profile
+  function getReferenceRanges(age, gender) {
+    const ranges = {
+      Hb: { min: 13.8, max: 17.2, criticalMin: 7.0, criticalMax: 20.0 },
+      RBC: { min: 4.7, max: 6.1, criticalMin: 2.5, criticalMax: 7.5 },
+      WBC: { min: 4500, max: 11000, criticalMin: 2000, criticalMax: 30000 },
+      PCV: { min: 40.7, max: 50.3, criticalMin: 20.0, criticalMax: 60.0 },
+      PLT: { min: 150000, max: 450000, criticalMin: 50000, criticalMax: 1000000 },
+      MCV: { min: 80.0, max: 100.0, criticalMin: 60.0, criticalMax: 120.0 },
+      MCH: { min: 27.0, max: 33.0, criticalMin: 18.0, criticalMax: 40.0 },
+      MCHC: { min: 32.0, max: 36.0, criticalMin: 26.0, criticalMax: 40.0 },
+      RDW: { min: 11.5, max: 14.5, criticalMin: 9.0, criticalMax: 20.0 }
+    };
+
+    // Adjust for children
+    if (age < 12) {
+      ranges.Hb.min = 11.0; ranges.Hb.max = 16.0;
+      ranges.RBC.min = 4.0; ranges.RBC.max = 5.2;
+      ranges.WBC.min = 5000; ranges.WBC.max = 19000;
+      ranges.PCV.min = 32.0; ranges.PCV.max = 44.0;
+    } else {
+      // Adjust for adults genders
+      if (gender === "female") {
+        ranges.Hb.min = 12.1; ranges.Hb.max = 15.1;
+        ranges.RBC.min = 4.2; ranges.RBC.max = 5.4;
+        ranges.PCV.min = 36.1; ranges.PCV.max = 44.3;
+      } else if (gender === "pregnant") {
+        ranges.Hb.min = 11.0; ranges.Hb.max = 14.0;
+        ranges.RBC.min = 3.5; ranges.RBC.max = 5.0;
+        ranges.PCV.min = 33.0; ranges.PCV.max = 42.0;
+      }
+    }
+    return ranges;
+  }
+
+  let activeReportData = null; // Store last run data for translation swaps
+
+  function analyzeCBCReport() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    
+    // Read input values
+    const inputs = {
+      Hb: parseFloat(document.getElementById("valHb").value),
+      RBC: parseFloat(document.getElementById("valRBC").value),
+      PCV: parseFloat(document.getElementById("valPCV").value),
+      MCV: parseFloat(document.getElementById("valMCV").value),
+      MCH: parseFloat(document.getElementById("valMCH").value),
+      MCHC: parseFloat(document.getElementById("valMCHC").value),
+      RDW: parseFloat(document.getElementById("valRDW").value),
+      WBC: parseFloat(document.getElementById("valWBC").value),
+      Neut: parseFloat(document.getElementById("valNeut").value),
+      Lymph: parseFloat(document.getElementById("valLymph").value),
+      Mono: parseFloat(document.getElementById("valMono").value),
+      Eosin: parseFloat(document.getElementById("valEosin").value),
+      Baso: parseFloat(document.getElementById("valBaso").value),
+      PLT: parseFloat(document.getElementById("valPLT").value)
+    };
+
+    // Reference ranges
+    const ref = getReferenceRanges(age, gender);
+
+    // Calculate parameter status & details
+    let parametersAnalyzed = [];
+    let abnormalCount = 0;
+    let criticalCount = 0;
+
+    const checkStatus = (val, paramId, unit) => {
+      if (isNaN(val) || val === null) return null;
+      
+      const r = ref[paramId] || { min: 0, max: 100, criticalMin: 0, criticalMax: 100000 };
+      let status = "normal"; // normal, low, high, critical-low, critical-high
+      
+      if (val < r.min) {
+        status = val <= r.criticalMin ? "critical-low" : "low";
+        abnormalCount++;
+        if (status === "critical-low") criticalCount++;
+      } else if (val > r.max) {
+        status = val >= r.criticalMax ? "critical-high" : "high";
+        abnormalCount++;
+        if (status === "critical-high") criticalCount++;
+      }
+
+      // Calculate position relative to range limits for gauge visualization
+      let gaugePct = 50; // default middle
+      if (val >= r.min && val <= r.max) {
+        // normal scale: 30% to 70% width
+        const range = r.max - r.min;
+        gaugePct = range > 0 ? 30 + ((val - r.min) / range) * 40 : 50;
+      } else if (val < r.min) {
+        // low scale: 0% to 30%
+        const range = r.min - r.criticalMin;
+        gaugePct = range > 0 ? Math.max(5, ((val - r.criticalMin) / range) * 25) : 15;
+      } else {
+        // high scale: 70% to 95%
+        const range = r.criticalMax - r.max;
+        gaugePct = range > 0 ? Math.min(95, 70 + ((val - r.max) / range) * 25) : 85;
+      }
+
+      return {
+        id: paramId,
+        value: val,
+        unit: unit,
+        refMin: r.min,
+        refMax: r.max,
+        status: status,
+        gaugePct: gaugePct
+      };
+    };
+
+    // Map each standard test
+    const hbReport = checkStatus(inputs.Hb, "Hb", "g/dL");
+    const rbcReport = checkStatus(inputs.RBC, "RBC", "10^6/µL");
+    const wbcReport = checkStatus(inputs.WBC, "WBC", "cells/µL");
+    const pcvReport = checkStatus(inputs.PCV, "PCV", "%");
+    const pltReport = checkStatus(inputs.PLT, "PLT", "cells/µL");
+    const mcvReport = checkStatus(inputs.MCV, "MCV", "fL");
+    const mchReport = checkStatus(inputs.MCH, "MCH", "pg");
+    const mchcReport = checkStatus(inputs.MCHC, "MCHC", "g/dL");
+    const rdwReport = checkStatus(inputs.RDW, "RDW", "%");
+
+    const activeList = [hbReport, rbcReport, wbcReport, pcvReport, pltReport, mcvReport, mchReport, mchcReport, rdwReport].filter(x => x !== null);
+
+    if (activeList.length === 0) {
+      alert("Please enter at least one pathological report value.");
+      return;
+    }
+
+    // Determine overall diagnostic summary status
+    let overallClass = "status-normal";
+    let overallTextKey = "statusNormal";
+    
+    if (criticalCount > 0) {
+      overallClass = "status-critical";
+      overallTextKey = "statusCritical";
+    } else if (abnormalCount > 0) {
+      overallClass = "status-high";
+      overallTextKey = "statusAbnormal";
+    }
+
+    // Calculate Risk Percentage (Abnormal count / Total parameters active)
+    const riskPct = Math.round((abnormalCount / activeList.length) * 100);
+
+    // Save active report data
+    activeReportData = {
+      age,
+      gender,
+      date: new Date().toLocaleDateString(),
+      overallClass,
+      overallTextKey,
+      riskPct,
+      list: activeList,
+      inputs // original inputs
+    };
+
+    // Render results
+    updateActiveReportLanguage();
+
+    // Show Results Panel
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    // Add to Local History
+    addToHistory(overallTextKey, riskPct);
+  }
+
+  function updateActiveReportLanguage() {
+    if (!activeReportData) return;
+
+    const data = activeReportData;
+    
+    // Set Demographics summary text
+    document.getElementById("resAge").textContent = data.age;
+    const genderKey = data.gender === "male" ? "genderMale" : data.gender === "female" ? "genderFemale" : "genderPregnant";
+    document.getElementById("resGender").textContent = translations[currentLang][genderKey];
+    document.getElementById("resDate").textContent = data.date;
+
+    // Set overall status
+    const statusText = translations[currentLang][data.overallTextKey];
+    const statusDiv = document.getElementById("resOverallStatus");
+    statusDiv.className = `overall-status ${data.overallClass}`;
+    statusDiv.textContent = statusText;
+
+    // Set Risk Meter
+    document.getElementById("riskPctVal").textContent = `${data.riskPct}%`;
+    document.getElementById("riskFill").style.width = `${data.riskPct}%`;
+
+    // Populate parameters table
+    const tableBody = document.getElementById("resTableBody");
+    tableBody.innerHTML = "";
+
+    data.list.forEach(p => {
+      const tr = document.createElement("tr");
+      
+      // Translate parameter name
+      const paramNameKey = `label${p.id}`;
+      const paramName = translations[currentLang][paramNameKey] || p.id;
+
+      // Status Badge translation
+      let badgeClass = "normal";
+      let badgeTextKey = "badgeNormal";
+      if (p.status === "low") { badgeClass = "low"; badgeTextKey = "badgeLow"; }
+      else if (p.status === "high") { badgeClass = "high"; badgeTextKey = "badgeHigh"; }
+      else if (p.status === "critical-low") { badgeClass = "critical"; badgeTextKey = "badgeCriticalLow"; }
+      else if (p.status === "critical-high") { badgeClass = "critical"; badgeTextKey = "badgeCriticalHigh"; }
+
+      const badgeText = translations[currentLang][badgeTextKey];
+
+      tr.innerHTML = `
+        <td>
+          <strong>${paramName}</strong>
+          <div class="gauge-bar-wrapper">
+            <div class="gauge-fill ${badgeClass}" style="width: ${p.gaugePct}%"></div>
+          </div>
+        </td>
+        <td><strong>${p.value}</strong> <span style="font-size:0.75rem; color:var(--muted);">${p.unit}</span></td>
+        <td>${p.refMin} – ${p.refMax}</td>
+        <td><span class="status-badge ${badgeClass}">${badgeText}</span></td>
+      `;
+      tableBody.appendChild(tr);
+    });
+
+    // Populate interpretation cards
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    // Add main diagnostic interpretation card
+    const interpretationDiv = document.createElement("div");
+    interpretationDiv.className = "insight-card";
+    
+    // Dynamic medical advice translation
+    let medTitle = currentLang === "en" ? "📋 Medical Analysis Overview" : "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ";
+    let medText = "";
+    
+    if (data.riskPct === 0) {
+      medText = currentLang === "en" 
+        ? "Your CBC profile parameters sit completely within the normal biological limits. This reflects robust hematological health, adequate oxygen transport capacity, healthy clotting function, and no signs of acute infection or hematological distress. Maintain a balanced diet, stay hydrated, and continue regular checkups."
+        : "আপনার রক্তের সিবিসি প্রোফাইলের সমস্ত প্যারামিটার সম্পূর্ণ স্বাভাবিক সীমার মধ্যে রয়েছে। এটি সুস্থ রক্তকণিকা গঠন, পর্যাপ্ত অক্সিজেন পরিবহন ক্ষমতা, সঠিক রক্ত জমাট বাঁধার ক্রিয়া এবং সংক্রমণ বা রক্তজনিত কোনো ঝুঁকি না থাকার প্রমাণ। সুষম খাদ্য গ্রহণ করুন ও পর্যাপ্ত পানি পান করুন।";
+    } else {
+      medText = currentLang === "en"
+        ? "One or more blood index metrics are outside standard reference ranges. This may indicate potential physiological variations, iron deficiencies, bacterial/viral infections, or dehydration. Note that minor deviations can happen due to stress, transient diet changes, or specific individual baselines. A medical evaluation by a general physician is recommended to interpret these alongside physical symptoms."
+        : "এক বা একাধিক রক্তের উপাদান প্রমিত স্বাভাবিক সীমার বাইরে রয়েছে। এটি শরীরে রক্তস্বল্পতা, আয়রনের অভাব, কোনো ব্যাকটেরিয়াল/ভাইরাল সংক্রমণ বা পানিশূন্যতার সংকেত দিতে পারে। মনে রাখবেন যে মানসিক চাপ, সাময়িক খাদ্য পরিবর্তন বা ব্যক্তিগত শারীরিক ভিন্নতার কারণেও সামান্য তারতম্য হতে পারে। সঠিক পর্যবেক্ষণের জন্য একজন চিকিৎসকের পরামর্শ নিন।";
+    }
+
+    interpretationDiv.innerHTML = `
+      <h5>${medTitle}</h5>
+      <p>${medText}</p>
+    `;
+    insightSection.appendChild(interpretationDiv);
+
+    // Scan parameters for clinical warnings
+    data.list.forEach(p => {
+      if (p.status !== "normal") {
+        const key = p.status.includes("low") ? "low" : "high";
+        const details = cbcInsights[currentLang][p.id] ? cbcInsights[currentLang][p.id][key] : null;
+        
+        if (details) {
+          const card = document.createElement("div");
+          card.className = "insight-card";
+          card.style.borderLeft = `4px solid ${p.status.includes("low") ? "var(--low-color)" : "var(--high-color)"}`;
+          
+          const paramNameKey = `label${p.id}`;
+          const paramName = translations[currentLang][paramNameKey] || p.id;
+          
+          card.innerHTML = `
+            <h5>⚠️ ${paramName} - ${p.status.includes("low") ? (currentLang === "en" ? "Low Level Alert" : "স্বল্পতার সতর্কতা") : (currentLang === "en" ? "High Level Alert" : "অতিরিক্ততার সতর্কতা")}</h5>
+            <p>${details}</p>
+          `;
+          insightSection.appendChild(card);
+        }
+      }
+    });
+  }
+
+  // LocalStorage History
+  function addToHistory(overallTextKey, riskPct) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      statusKey: overallTextKey,
+      risk: riskPct,
+      id: Date.now()
+    };
+    
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    
+    localStorage.setItem("ssdk-cbc-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.statusKey] || item.statusKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${statusText} (Risk: ${item.risk}%)</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  // --- Print & Save PDF Reports ---
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    
+    let text = `--- CBC LABORATORY REPORT ANALYSIS ---\n`;
+    text += `Date: ${activeReportData.date}\n`;
+    text += `Age: ${activeReportData.age} | Gender: ${activeReportData.gender}\n`;
+    text += `Overall Assessment: ${translations[currentLang][activeReportData.overallTextKey]}\n`;
+    text += `Hematological Risk Index: ${activeReportData.riskPct}%\n\n`;
+    text += `Parameters Analyzed:\n`;
+    
+    activeReportData.list.forEach(p => {
+      const paramNameKey = `label${p.id}`;
+      const paramName = translations[currentLang][paramNameKey] || p.id;
+      const statusText = translations[currentLang][`badge${p.status.charAt(0).toUpperCase() + p.status.slice(1).replace("-","")}`] || p.status;
+      text += `- ${paramName}: ${p.value} ${p.unit} (Ref: ${p.refMin}-${p.refMax}) [${statusText}]\n`;
+    });
+    
+    navigator.clipboard.writeText(text).then(() => {
+      alert(currentLang === "en" ? "Report text copied to clipboard!" : "রিপোর্টের টেক্সট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `cbc-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  // Favorite toggle logic
+  function toggleFavorite() {
+    const btn = document.getElementById("toolFavBtn");
+    const isFav = btn.classList.toggle("on");
+    // Hook into favorites engine if present
+    const favEngine = window.SSDKCore ? window.SSDKCore.getEngine("favorites") : null;
+    if (favEngine) {
+      // Platform integrated action
+    }
+  }
+
+  // Initialize Language on startup
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

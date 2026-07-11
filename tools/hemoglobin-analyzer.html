@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hemoglobin (Hb) Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze your Hemoglobin (Hb) levels online. Check for anemia, dehydration, or polycythemia with dynamic reference ranges, gauges, and full English/Bengali bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #ef4444;
+      --critical-color: #7f1d1d;
+      --border-color: #f59e0b;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Form Card */
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    /* Results */
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    /* Custom Gauge display for single hemoglobin parameter */
+    .hb-gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hb-val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .hb-status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* Range Bar */
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--critical-color) 0%, 
+        var(--low-color) 25%, 
+        var(--normal-color) 50%, 
+        var(--border-color) 75%, 
+        var(--high-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    /* History */
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .hb-gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Hemoglobin (Hb) Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze your blood Hemoglobin (Hb) level. Check for anemia, iron levels, or dehydration with dynamic range calculations.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🩸 Hemoglobin Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">🗑 Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="patientAge" data-translate="labelAge">Age (Years)</label>
+              <input type="number" id="patientAge" min="1" max="120" value="30" required>
+            </div>
+            
+            <div class="input-wrapper">
+              <label for="patientGender" data-translate="labelGender">Gender</label>
+              <select id="patientGender">
+                <option value="male" selected data-translate="genderMale">Male</option>
+                <option value="female" data-translate="genderFemale">Female</option>
+                <option value="pregnant" data-translate="genderPregnant">Pregnant Female</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valHb" data-translate="labelHb">Hemoglobin Value (g/dL)</label>
+              <input type="number" step="0.1" id="valHb" placeholder="e.g. 14.5" min="1" max="30" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeHemoglobin()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Hemoglobin Level</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🩸</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your age, gender, and Hemoglobin value, then click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Hemoglobin Diagnostics Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelAge">Age</strong>: <span id="resAge">-</span></span>
+            <span><strong data-translate="labelGender">Gender</strong>: <span id="resGender">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="hb-gauge-container">
+            <div class="hb-val-large" id="resHbVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">g/dL</div>
+            <div class="hb-status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickCriticalLow" style="color: var(--low-color);">7.0 (Crit)</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">13.8 - 17.2</span>
+              <span id="tickCriticalHigh" style="color: var(--high-color);">20.0 (Crit)</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Hemoglobin (Hb)</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Hemoglobin?</strong><br><span data-translate="eduA1">Hemoglobin is the iron-rich protein in red blood cells that binds oxygen in the lungs and carries it to tissues and organs throughout the body. It also returns carbon dioxide from tissues back to the lungs.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">How is it measured?</strong><br><span data-translate="eduA2">It is measured in grams per deciliter (g/dL). Low levels indicate that your blood has lower oxygen-carrying capacity (anemia), while high levels indicate erythrocytosis or dehydration.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What affects Hemoglobin levels?</strong><br><span data-translate="eduA3">Nutritional intake of iron and vitamins, kidney health (which produces erythropoietin), hydration status, chronic pulmonary conditions, smoking, and blood loss due to various factors.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Hemoglobin (Hb) Analyzer",
+      toolDesc: "Analyze your blood Hemoglobin (Hb) level. Check for anemia, iron levels, or dehydration with dynamic range calculations.",
+      inputsTitle: "🩸 Hemoglobin Parameters",
+      clearBtn: "Reset",
+      labelAge: "Age (Years)",
+      labelGender: "Gender",
+      genderMale: "Male",
+      genderFemale: "Female",
+      genderPregnant: "Pregnant Female",
+      labelHb: "Hemoglobin Value (g/dL)",
+      btnAnalyze: "Analyze Hemoglobin Level",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your age, gender, and Hemoglobin value, then click the analyze button to display medical summaries.",
+      reportTitle: "🔬 Hemoglobin Diagnostics Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Level",
+      badgeLow: "Mild Anemia (Low Hb)",
+      badgeModerate: "Moderate Anemia",
+      badgeCriticalLow: "CRITICAL SEVERE ANEMIA",
+      badgeHigh: "High Hemoglobin (Erythrocytosis)",
+      badgeCriticalHigh: "CRITICAL HIGH HEMOGLOBIN",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "হিমোগ্লোবিন (Hb) বিশ্লেষক",
+      toolDesc: "আপনার রক্তের হিমোগ্লোবিন (Hb) এর মাত্রা বিশ্লেষণ করুন। রক্তস্বল্পতা, আয়রনের মাত্রা বা পানিশূন্যতার ঝুঁকি ইন্টারেক্টিভ সূচকের সাহায্যে পরীক্ষা করুন।",
+      inputsTitle: "🩸 হিমোগ্লোবিনের পরিমাপক সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelAge: "বয়স (বছর)",
+      labelGender: "লিঙ্গ",
+      genderMale: "পুরুষ",
+      genderFemale: "নারী",
+      genderPregnant: "গর্ভবতী নারী",
+      labelHb: "হিমোগ্লোবিন মান (g/dL)",
+      btnAnalyze: "হিমোগ্লোবিন বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার বয়স, লিঙ্গ এবং হিমোগ্লোবিনের মান লিখুন, তারপর বিশ্লেষণ বোতামটি চাপুন রিপোর্টের সামারি দেখতে।",
+      reportTitle: "🔬 হিমোগ্লোবিন ডায়াগনস্টিক রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক হিমোগ্লোবিন",
+      badgeLow: "মৃদু রক্তস্বল্পতা (কম হিমোগ্লোবিন)",
+      badgeModerate: "মাঝারি রক্তস্বল্পতা",
+      badgeCriticalLow: "মারাত্মক ঝুঁকিপূর্ণ রক্তস্বল্পতা",
+      badgeHigh: "উচ্চ হিমোগ্লোবিন (ইরিথ্রোসাইটোসিস)",
+      badgeCriticalHigh: "মারাত্মক অতিরিক্ত হিমোগ্লোবিন",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "हीमोग्लोबिन (एचबी) विश्लेषक",
+      toolDesc: "अपने रक्त हीमोग्लोबिन (एचबी) स्तर का विश्लेषण करें। डायनेमिक रेंज गणना के साथ एनीमिया, आयरन के स्तर या निर्जलीकरण की जाँच करें।",
+      inputsTitle: "🩸 हीमोग्लोबिन पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelAge: "आयु (वर्ष)",
+      labelGender: "लिंग",
+      genderMale: "पुरुष",
+      genderFemale: "स्त्री",
+      genderPregnant: "गर्भवती महिला",
+      labelHb: "हीमोग्लोबिन मान (जी/डीएल)",
+      btnAnalyze: "हीमोग्लोबिन स्तर का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपनी आयु, लिंग और हीमोग्लोबिन मान दर्ज करें, फिर चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 हीमोग्लोबिन डायग्नोस्टिक्स रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "तारीख",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों ��ा निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य स्तर",
+      badgeLow: "हल्का एनीमिया (कम एचबी)",
+      badgeModerate: "मध्यम एनीमिया",
+      badgeCriticalLow: "गंभीर गंभीर रक्ताल्पता",
+      badgeHigh: "उच्च हीमोग्लोबिन (एरिथ्रोसाइटोसिस)",
+      badgeCriticalHigh: "गंभीर उच्च हीमोग्लोबिन",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Hemoglobin (Hb)?", a: "Hemoglobin is an iron-containing protein present inside red blood cells responsible for binding oxygen and distributing it to all tissues in the body." },
+      { q: "What is a normal Hemoglobin range?", a: "Standard normal levels are 13.8 - 17.2 g/dL for adult males, 12.1 - 15.1 g/dL for adult females, and 11.0 - 14.0 g/dL for pregnant women." },
+      { q: "What are symptoms of low Hemoglobin?", a: "Symptoms include constant fatigue, unexplained weakness, cold feet/hands, pale skin, shortness of breath, headache, or heart palpitations." },
+      { q: "How can I raise low Hemoglobin naturally?", a: "By consuming iron-rich foods (red meat, spinach, lentils), Vitamin C rich foods to boost absorption (oranges, lemons), and avoiding calcium or tea near meals." },
+      { q: "What causes high Hemoglobin?", a: "Common causes include dehydration, heavy smoking, chronic obstructive pulmonary disease (COPD), high altitude living, or bone marrow disorders like Polycythemia Vera." },
+      { q: "What are symptoms of high Hemoglobin?", a: "Symptoms include headache, itching after a warm shower, skin redness/flushing, dizziness, or blurred vision." },
+      { q: "How does dehydration affect Hemoglobin levels?", a: "When you are dehydrated, the fluid volume of your blood decreases, causing red blood cells and hemoglobin to appear artificially high." },
+      { q: "How does pregnancy change normal ranges?", a: "Pregnancy increases blood plasma volume, diluting red blood cells. Thus, lower hemoglobin levels (down to 11.0 g/dL) are considered normal during pregnancy." },
+      { q: "Is a level of 9.0 g/dL considered dangerously low?", a: "A level of 9.0 g/dL indicates moderate anemia. While not an immediate emergency, you should consult a doctor to evaluate the cause." },
+      { q: "When is low Hemoglobin considered a medical emergency?", a: "A level below 7.0 g/dL is a critical emergency (severe anemia) that may require a blood transfusion. Seek immediate hospital care." },
+      { q: "Does tea or coffee affect iron absorption?", a: "Yes. Tannins in tea and polyphenols in coffee bind to non-heme iron (plant-based iron), significantly reducing its absorption in the gut." },
+      { q: "Are iron supplements safe?", a: "Yes, but they should only be taken when recommended by a doctor. Excess iron can cause constipation, nausea, or iron toxicity (hemochromatosis)." },
+      { q: "Can heavy periods cause low Hemoglobin?", a: "Yes. Heavy menstrual bleeding is one of the most common causes of iron deficiency anemia in premenopausal women." },
+      { q: "Can physical exercise increase Hemoglobin?", a: "Regular endurance exercise increases red blood cell production over time to support oxygen demands, slightly improving hemoglobin levels." },
+      { q: "Is this analyzer 100% accurate?", a: "This analyzer evaluates entered numbers against standard reference criteria for educational use only. It cannot replace a clinician's medical review." }
+    ],
+    bn: [
+      { q: "হিমোগ্লোবিন (Hb) কী?", a: "হিমোগ্লোবিন হলো লোহিত রক্তকণিকার ভেতরে থাকা আয়রন সমৃদ্ধ প্রোটিন যা ফুসফুস থেকে অক্সিজেন গ্রহণ করে শরীরের সমস্ত টিস্যু ও কোষে পৌঁছে দেয়।" },
+      { q: "হিমোগ্লোবিনের স্বাভাবিক মাত্রা কত?", a: "স্বাভাবিক মাত্রা হলো প্রাপ্তবয়স্ক পুরুষদের জন্য ১৩.৮ - ১৭.২ g/dL, প্রাপ্তবয়স্ক নারীদের জন্য ১২.১ - ১৫.১ g/dL এবং গর্ভবতী নারীদের জন্য ১১.০ - ১৪.০ g/dL।" },
+      { q: "কম হিমোগ্লোবিনের লক্ষণগুলো কী কী?", a: "সাধারণ লক্ষণের মধ্যে রয়েছে অতিরিক্ত ক্লান্তি, দুর্বলতা, হাত-পা ঠান্ডা হয়ে যাওয়া, ফ্যাকাশে চামড়া, শ্বাসকষ্ট, মাথাব্যথা এবং বুক ধড়ফড় করা।" },
+      { q: "প্রাকৃতিক উপায়ে কীভাবে হিমোগ্লোবিনের মাত্রা বাড়ানো যায়?", a: "আয়রন সমৃদ্ধ খাবার (লাল মাংস, পালং শাক, ডাল), আয়রন শোষণ বাড়ানোর জন্য ভিটামিন সি যুক্ত খাবার (কমলা, লেবু) খেয়ে এবং খাওয়ার সময় চা বা ক্যালসিয়াম এড়ানোর মাধ্যমে।" },
+      { q: "হিমোগ্লোবিন বাড়ার কারণ কী?", a: "হিমোগ্লোবিন বাড়ার সাধারণ কারণ হলো ডিহাইড্রেশন বা পানিশূন্যতা, অতিরিক্ত ধূমপান, ক্রনিক লাং ডিজিজ (COPD), বা অতিরিক্ত উচ্চতায় বসবাস।" },
+      { q: "হিমোগ্লোবিন বেশি হলে কী লক্ষণ দেখা যায়?", a: "মাথাব্যথা, কুসুম গরম পানিতে গোসলের পর চুলকানি, ত্বক লালচে হয়ে যাওয়া, মাথা ঘোরানো বা চোখে ঝাপসা দেখা।" },
+      { q: "পানিশূন্যতা কীভাবে হিমোগ্লোবিনের মাত্রাকে প্রভাবিত করে?", a: "শরীরে পানির পরিমাণ কমে গেলে রক্তে তরল পদার্থের অনুপাত কমে যায়, যার ফলে হিমোগ্লোবিন ও আরবিসি কৃত্রিমভাবে বেশি দেখায়।" },
+      { q: "গর্ভাবস্থায় হিমোগ্লোবিনের সীমার কী পরিবর্তন হয়?", a: "গর্ভাবস্থায় রক্তের তরল অংশ (প্লাজমা) বৃদ্ধি পাওয়ার কারণে লোহিত রক্তকণিকা কিছুটা পাতলা হয়ে যায়। তাই এই সময় ১১.০ g/dL পর্যন্ত হিমোগ্লোবিনকে স্বাভাবিক ধরা হয়।" },
+      { q: "হিমোগ্লোবিন ৯.০ g/dL হলে কি তা বিপজ্জনক?", a: "হিমোগ্লোবিন ৯.০ g/dL হওয়া মানে মাঝারি ধরনের রক্তস্বল্পতা। এটি তাৎক্ষণিক জরুরি অবস্থা না হলেও কারণ নির্ণয়ে ডাক্তারের পরামর্শ নেওয়া উচিত।" },
+      { q: "কখন কম হিমোগ্লোবিন জরুরি অবস্থা হিসেবে ধরা হয়?", a: "হিমোগ্লোবিন ৭.০ g/dL এর নিচে নেমে গেলে তা মারাত্মক রক্তস্বল্পতা ও জরুরি অবস্থা হিসেবে ধরা হয়, যার জন্য রক্ত দেওয়ার প্রয়োজন হতে পারে।" },
+      { q: "চা বা কফি কি আয়রন শোষণকে ব্যাহত করে?", a: "হ্যাঁ। চায়ে থাকা ট্যানিন ও কফিতে থাকা পলিফেনল উদ্ভিজ্জ আয়রনের সাথে যুক্ত হয়ে পরিপাকতন্ত্রে আয়রন শোষণ কমিয়ে দেয়।" },
+      { q: "আয়রন সাপ্লিমেন্ট খাওয়া কি নিরাপদ?", a: "হ্যাঁ, তবে ডাক্তারের পরামর্শ অনুযায়ী খাওয়া উচিত। অতিরিক্ত আয়রন কোষ্ঠকাঠিন্য, বমি বমি ভাব বা শরীরে আয়রনের বিষক্রিয়া (হেমোক্রোমাটোসিস) ঘটাতে পারে।" },
+      { q: "অতিরিক্ত মাসিক কি হিমোগ্লোবিন কমায়?", a: "হ্যাঁ। অতিরিক্ত ঋতুস্রাব বা মাসিক প্রজননক্ষম নারীদের মধ্যে আয়রনের ঘাটতিজনিত রক্তস্বল্পতার অন্যতম প্রধান কারণ।" },
+      { q: "শারীরিক পরিশ্রম কি হিমোগ্লোবিন বাড়াতে পারে?", a: "নিয়মিত অ্যারোবিক ব্যায়াম করলে শরীর অক্সিজেন সরবরাহ সচল রাখতে লোহিত রক্তকণিকা উৎপাদন বাড়ায়, যা হিমোগ্লোবিনের মাত্রা কিছুটা বৃদ্ধি করে।" },
+      { q: "এই বিশ্লেষকটি কি শতভাগ সঠিক?", a: "এই টুলটি স্ট্যান্ডার্ড রেফারেন্স সীমার উপর ভিত্তি করে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। এটি ডাক্তারের রোগ নির্ণয়ের বিকল্প নয়।" }
+    ],
+    hi: [
+      { q: "हीमोग्लोबिन (एचबी) क्या है?", a: "हीमोग्लोबिन एक आयरन युक्त प्रोटीन है जो लाल रक्त कोशिकाओं के अंदर मौजूद होता है जो ऑक्सीजन को बांधने और इसे शरीर के सभी ऊतकों में वितरित करने के लिए जिम्मेदार होता है।" },
+      { q: "सामान्य हीमोग्लोबिन सीमा क्या है?", a: "मानक सामान्य स्तर वयस्क पुरुषों के लिए 13.8 - 17.2 ग्राम/डीएल, वयस्क महिलाओं के लिए 12.1 - 15.1 ग्राम/डीएल और गर्भवती महिलाओं के लिए 11.0 - 14.0 ग्राम/डीएल है।" },
+      { q: "कम हीमोग्लोबिन के लक्षण क्या हैं?", a: "लक्षणों में लगातार थकान, अस्पष्ट कमजोरी, ठंडे पैर/हाथ, पीली त्वचा, सांस लेने में तकलीफ, सिरदर्द या दिल की धड़कन शामिल हैं।" },
+      { q: "मैं कम हीमोग्लोबिन को प्राकृतिक रूप से कैसे बढ़ा सकता हूँ?", a: "आयरन से भरपूर खाद्य पदार्थ (लाल मांस, पालक, दाल), अवशोषण को बढ़ावा देने के लिए विटामिन सी से भरपूर खाद्य पदार्थ (संतरा, नींबू) का सेवन करें और भोजन के साथ कैल्शियम या चाय से परहेज करें।" },
+      { q: "उच्च हीमोग्लोबिन का क्या कारण है?", a: "सामान्य कारणों में निर्जलीकरण, भारी धूम्रपान, क्रॉनिक ऑब्सट्रक्टिव पल्मोनरी डिजीज (सीओपीडी), उच्च ऊंचाई पर रहना, या पॉलीसिथेमिया वेरा जैसे अस्थि मज्जा विकार शामिल हैं।" },
+      { q: "उच्च हीमोग्लोबिन के लक्षण क्या हैं?", a: "लक्षणों में सिरदर्द, गर्म स्नान के बाद खुजली, त्वचा का लाल ह��ना/लाल होना, चक्कर आना या धुंधली दृष्टि शामिल हैं।" },
+      { q: "निर्जलीकरण हीमोग्लोबिन के स्तर को कैसे प्रभावित करता है?", a: "जब आप निर्जलित होते हैं, तो आपके रक्त में तरल पदार्थ की मात्रा कम हो जाती है, जिससे लाल रक्त कोशिकाएं और हीमोग्लोबिन कृत्रिम रूप से उच्च दिखाई देने लगते हैं।" },
+      { q: "गर्भावस्था सामान्य सीमाएँ कैसे बदलती है?", a: "गर्भावस्था से रक्त प्लाज्मा की मात्रा बढ़ जाती है, जिससे लाल रक्त कोशिकाएं कमजोर हो जाती हैं। इस प्रकार, गर्भावस्था के दौरान कम हीमोग्लोबिन स्तर (11.0 ग्राम/डीएल से नीचे) को सामान्य माना जाता है।" },
+      { q: "क्या 9.0 ग्राम/डीएल का स्तर खतरनाक ��ूप से कम माना जाता है?", a: "9.0 ग्राम/डीएल का स्तर मध्यम एनीमिया का संकेत देता है। हालांकि यह तत्काल आपातकालीन स्थिति नहीं है, आपको कारण का मूल्यांकन करने के लिए डॉक्टर से परामर्श लेना चाहिए।" },
+      { q: "कम हीमोग्लोबिन को कब चिकित्सीय आपातकाल माना जाता है?", a: "7.0 ग्राम/डीएल से नीचे का स्तर एक गंभीर आपातकालीन स्थिति (गंभीर एनीमिया) है जिसके लिए रक्त आधान की आवश्यकता हो सकती है। तुरंत अस्पताल में देखभाल लें।" },
+      { q: "क्या चाय या कॉफ़ी आयरन के अवशोषण को प्रभावित करती है?", a: "हाँ। चाय में टैनिन और कॉफी में पॉलीफेनोल्स गैर-हीम आयरन (पौधे-आधारित आयरन) से बंधते हैं, जिससे आंत में इसका अवशोषण काफी कम हो जाता है।" },
+      { q: "क्या आयरन सप्लीमेंट सुरक्षित हैं?", a: "हां, लेकिन इन्हें केवल डॉक्टर द्वारा अनुशंसित किए जाने पर ही लिया जाना चाहिए। अतिरिक्त आयरन से कब्ज, मतली या आयरन विषाक्तता (हेमोक्रोमैटोसिस) हो सकती है।" },
+      { q: "क्या भारी माहवारी के कारण हीमोग्लोबिन कम हो सकता है?", a: "हाँ। भारी मासिक धर्म रक्तस्राव प्रीमेनोपॉज़ल महिलाओं में आयरन की कमी वाले एनीमिया के सबसे आम कारणों में से एक है।" },
+      { q: "क्या शारीरिक व्यायाम से हीमोग्लोबिन बढ़ सकता है?", a: "नियमित सहनशक्ति व्यायाम समय के साथ ऑक्सीजन की मांग को पूरा करने के लिए लाल रक्त कोशिका के उत्पादन को बढ़ाता है, जिससे हीमोग्लोबिन के स्तर में थोड़ा सुधार होता है।" },
+      { q: "क्या यह विश्लेषक 100% सट��क है?", a: "यह विश्लेषक केवल शैक्षिक उपयोग के लिए मानक संदर्भ मानदंडों के विरुद्ध दर्ज संख्याओं का मूल्यांकन करता है। यह किसी चिकित्सक की चिकित्सा समीक्षा का स्थान नहीं ले सकता।" }
+    ]
+  };
+
+  const hbInsights = {
+    en: {
+      normal: {
+        desc: "Your Hemoglobin level is completely within the normal range for your demographic profile. This indicates excellent oxygen transport capacity, healthy red blood cell production, and proper nutritional balance. Maintain your healthy habits by consuming a balanced diet containing leafy greens, iron, and vitamin-rich foods.",
+        causes: ["Healthy bone marrow function", "Adequate dietary iron intake", "Proper hydration levels"],
+        symptoms: ["Good energy levels", "No unexplained fatigue", "Healthy skin tone"],
+        prevention: ["Eat a diet rich in iron and Vitamin C", "Stay hydrated throughout the day", "Exercise regularly to support circulation"],
+        consult: "Regular annual health screenings are recommended to monitor long-term trends."
+      },
+      low: {
+        desc: "Your Hemoglobin level is below the normal limit, indicating Mild to Moderate Anemia. This means your tissues may not be receiving optimal oxygen delivery, which commonly leads to tiredness. The most frequent causes are dietary deficiencies or blood loss.",
+        causes: ["Iron deficiency (most common)", "Vitamin B12 or Folate deficiency", "Chronic blood loss (e.g., heavy periods)", "Chronic inflammatory conditions"],
+        symptoms: ["Constant fatigue and weakness", "Pale or yellowish skin", "Dizziness or lightheadedness", "Shortness of breath with minimal exertion"],
+        prevention: ["Increase dietary iron (red meat, spinach, lentils, beans)", "Pair iron-rich foods with Vitamin C (oranges, bell peppers) to boost absorption", "Avoid drinking tea or coffee during meals", "Consult your physician regarding iron supplementation"],
+        consult: "Schedule a consultation with your general physician to test your iron stores (ferritin) and identify the underlying cause."
+      },
+      criticalLow: {
+        desc: "Your Hemoglobin is severely low (under 7.0 g/dL). This is a CRITICAL medical state indicating severe anemia. Your organs are at risk of oxygen deprivation, which can strain your heart.",
+        causes: ["Severe acute blood loss", "Active hemolytic anemia (destruction of red cells)", "Aplastic anemia or bone marrow failure", "Advanced kidney disease affecting erythropoietin production"],
+        symptoms: ["Extreme fatigue and lethargy", "Chest pain or rapid heart rate", "Shortness of breath even at rest", "Dizziness or fainting"],
+        prevention: ["Avoid strenuous activities to prevent heart strain", "Do not start self-supplementation without emergency clinical protocols"],
+        consult: "⚠️ Seek immediate medical attention or visit an emergency room. A blood transfusion or urgent clinical diagnosis may be required."
+      },
+      high: {
+        desc: "Your Hemoglobin is higher than standard normal limits. This means your blood might be thicker than usual, which can increase circulatory strain.",
+        causes: ["Dehydration (causes temporary concentration)", "Heavy smoking", "Chronic low oxygen levels (COPD, sleep apnea)", "Living at high altitudes"],
+        symptoms: ["Headaches or dizziness", "Flushed or red skin tone", "Blurred vision", "Pruritus (itching), particularly after hot showers"],
+        prevention: ["Drink plenty of water immediately to restore blood volume", "Limit or stop smoking tobacco", "Seek evaluation for sleep or breathing disorders"],
+        consult: "Consult your doctor to rule out chronic pulmonary conditions or check if you need a referral to a hematologist."
+      },
+      criticalHigh: {
+        desc: "Your Hemoglobin is critically high (at or above 20.0 g/dL). This increases blood viscosity dramatically, posing clotting risks.",
+        causes: ["Polycythemia Vera (rare bone marrow disease)", "Severe chronic carbon monoxide poisoning (heavy smokers)", "Extreme dehydration"],
+        symptoms: ["Severe headaches or chest discomfort", "Confusion or extreme dizziness", "Redness in palms and face", "Numbness in hands or feet"],
+        prevention: ["Avoid iron supplements or red meat", "Rehydrate immediately with fluids"],
+        consult: "⚠️ Contact a doctor urgently. A therapeutic phlebotomy (drawing blood to lower concentration) is often clinically required."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার হিমোগ্লোবিনের মাত্রা সম্পূর্ণ স্বাভাবিক সীমার মধ্যে রয়েছে। এটি শরীরের চমৎকার অক্সিজেন পরিবহন ক্ষমতা, সঠিক রক্তকণিকা উৎপাদন এবং পুষ্টির সুষম অবস্থাকে নির্দেশ করে। সবুজ শাকসবজি এবং আয়রনসমৃদ্ধ সুষম খাদ্য খাওয়ার অভ্যাস বজায় রাখুন।",
+        causes: ["অস্থিমজ্জার সঠিক কার্যকারিতা", "খাদ্যে পর্যাপ্ত আয়রন গ্রহণ", "পর্যাপ্ত পানি পানের অভ্যাস"],
+        symptoms: ["শারীরিক সতেজতা ও শক্তি", "অতিরিক্ত ক্লান্তির অনুপস্থিতি", "ত্বকের স্বাভাবিক রঙ"],
+        prevention: ["আয়রন ও ভিটামিন সি সমৃদ্ধ খাবার খান", "সারাদিনে পর্যাপ্ত পানি পান করুন", "রক্ত সঞ্চালন স্বাভাবিক রাখতে নিয়মিত হালকা ব্যায়াম করুন"],
+        consult: "দীর্ঘমেয়াদী স্বাস্থ্য ট্র্যাক করতে বছরে অন্তত একবার রুটিন ব্লাড স্ক্রীনিং করা ভালো।"
+      },
+      low: {
+        desc: "আপনার হিমোগ্লোবিনের মান স্বাভাবিকের চেয়ে কম, যা মৃদু থেকে মাঝারি মানের রক্তস্বল্পতা (Anemia) নির্দেশ করে। এর ফলে শরীরের টিস্যুগুলো পর্যাপ্ত অক্সিজেন পায় না, যার কারণে প্রায়ই ক্লান্তি অনুভূত হয়।",
+        causes: ["আয়রনের ঘাটতি (সবচেয়ে সাধারণ কারণ)", "ভিটামিন বি১২ বা ফোলেটের অভাব", "ক্রনিক রক্তক্ষরণ (যেমন মাসিকের সময় অতিরিক্ত রক্তপাত)", "কিডনি বা লিভারের দীর্ঘস্থায়ী রোগ"],
+        symptoms: ["সবসময় ক্লান্তি ও দুর্বলতা অনুভব করা", "ত্বক ফ্যাকাশে বা হলদেটে হয়ে যাওয়া", "মাথা ঘোরানো বা হালকা লাগা", "সামান্য পরিশ্রমে শ্বাসকষ্ট"],
+        prevention: ["খাদ্যে আয়রনের পরিমাণ বাড়ান (লাল মাংস, পালং শাক, ডাল, শিম)", "আয়রন শোষণ বাড়াতে টক জাতীয় ফল (ভিটামিন সি) খান", "খাবার খাওয়ার সময় চা বা কফি খাওয়া এড়ান", "প্রয়োজনে ডাক্তারের পরামর্শে আয়রন সাপ্লিমেন্ট শুরু করুন"],
+        consult: "রক্তস্বল্পতার সঠিক কারণ ও শরীরে আয়রনের সঞ্চয় (ফেরিটিন) পরীক্ষা করতে ডাক্তারের পরামর্শ নিন।"
+      },
+      criticalLow: {
+        desc: "আপনার হিমোগ্লোবিনের মাত্রা মারাত্মক কম (৭.০ g/dL এর নিচে)। এটি একটি জরুরী বা ঝুঁকিপূর্ণ রক্তস্বল্পতার অবস্থা, যা হৃদযন্ত্রের উপর মারাত্মক চাপ সৃষ্টি করে।",
+        causes: ["তীব্র বা আকস্মিক রক্তক্ষরণ", "লোহিত রক্তকণিকা দ্রুত ভেঙে যাওয়া (হেমোলাইটিক অ্যানিমিয়া)", "অস্থিমজ্জার অকার্যকারিতা", "উন্নত কিডনি রোগ"],
+        symptoms: ["তীব্র দুর্বলতা ও শয্যাশায়ী অবস্থা", "বুকে ব্যথা বা দ্রুত হৃদস্পন্দন", "বিশ্রামরত অবস্থাতেও শ্বাসকষ্ট", "মাথা ঘুরে পড়ে যাওয়া"],
+        prevention: ["হৃৎপিণ্ডের উপর চাপ এড়াতে ভারী কাজ একেবারেই করবেন না", "জরুরি ক্লিনিক্যাল প্রটোকল ছাড়া নিজে থেকে কোনো ওষুধ শুরু করবেন না"],
+        consult: "⚠️ অবিলম্বে কোনো হাসপাতালের জরুরি বিভাগে যোগাযোগ করুন। জরুরি রক্ত সঞ্চালন (Blood Transfusion) বা তাৎক্ষণিক চিকিৎসার প্রয়োজন হতে পারে।"
+      },
+      high: {
+        desc: "আপনার হিমোগ্লোবিনের মাত্রা স্বাভাবিক সীমার চেয়ে বেশি। এর অর্থ আপনার রক্ত স্বাভাবিকের চেয়ে কিছুটা ঘন হতে পারে, যা রক্ত সঞ্চালনে অতিরিক্ত চাপ ফেলে।",
+        causes: ["পানিশূন্যতা (রক্ত ঘন হয়ে যাওয়া)", "অতিরিক্ত ধূমপান", "ফুসফুসের দীর্ঘস্থায়ী রোগ (COPD) বা স্লিপ অ্যাপনিয়া", "উচ্চ পার্বত্য অঞ্চলে বসবাস"],
+        symptoms: ["মাথাব্যথা বা মাথা ঘোরানো", "ত্বক অতিরিক্ত লালচে দেখাবে", "চোখে ঝাপসা দেখা", "গরম পানিতে গোসলের পর শরীরে চুলকানি"],
+        prevention: ["রক্তের তরলতা ফেরাতে অবিলম্বে পর্যাপ্ত পানি পান করুন", "ধূমপানের অভ্যাস পরিহার করুন", "শ্বাসকষ্ট বা ঘুমের সমস্যার সঠিক চিকিৎসা নিন"],
+        consult: "হিমোগ্লোবিন বেশি থাকার সঠিক কারণ নির্ণয় ও ফুসফুসের কার্যকারিতা পরীক্ষা করতে একজন চিকিৎসকের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার হিমোগ্লোবিন মারাত্মক বেশি (২০.০ g/dL বা তার বেশি)। এটি রক্তকে অত্যন্ত ঘন করে তোলে, যা রক্তনালীতে রক্ত জমাট বাঁধার (Clotting) ঝুঁকি বৃদ্ধি করে।",
+        causes: ["পলিসাইথেমিয়া ভেরা (অস্থিমজ্জার রোগ)", "ভারী ধূমপান ও বিষাক্ত গ্যাসের প্রভাব", "তীব্র ডিহাইড্রেশন"],
+        symptoms: ["তীব্র মাথাব্যথা বা বুকে অস্বস্তি", "মানসিক বিভ্রান্তি বা তীব্র মাথা ঘোরানো", "হাত ও পায়ের পাতায় অবশ ভাব", "মুখ ও চোখের চারপাশ লালচে হওয়া"],
+        prevention: ["আয়রন যুক্ত খাবার বা লাল মাংস পরিহার করুন", "প্রচুর তরল খাবার পান করুন"],
+        consult: "⚠️ জরুরি ভিত্তিতে ডাক্তারের সাথে যোগাযোগ করুন। রক্তের ঘনত্ব কমাতে থেরাপিউটিক ফ্লেবোটমি (শরীর থেকে অতিরিক্ত রক্ত বের করা) করার প্রয়োজন হতে পারে।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका हीमोग्लोबिन स्तर आपकी जनसांख्यिकीय प्रोफ़ाइल के लिए पूरी तरह से सामान्य सीमा के भीतर है। यह उत्कृष्ट ऑक्सीजन परिवहन क्षमता, स्वस्थ लाल रक्त कोशिका उत्पादन और उचित पोषण संतुलन को इंगित करता है। पत्तेदार साग, आयरन और विटामिन युक्त खाद्य पदार्थों से युक्त संतुलित आहार का सेवन करके अपनी स्वस्थ आदतें बनाए रखें।",
+        causes: ["स्वस्थ अस्थि मज्जा कार्य", "पर्याप्त आहार आयरन का सेवन", "उचित जलयोजन स्तर"],
+        symptoms: ["अच्छा ऊर्जा स्तर", "कोई अस्पष्टीकृत थकान नहीं", "स्वस्थ त्वचा टोन"],
+        prevention: ["आयरन और विटामिन सी से भरपूर आहार लें", "पूरे दिन हाइड्रेटेड रहें", "परिसंचरण को बनाए रखने के लिए नियमित रूप से व्यायाम करें"],
+        consult: "दीर्घकालिक रुझानों पर नज़र रखने के लिए नियमित वार्षिक स्वास्थ्य जांच की सिफारिश की जाती है।"
+      },
+      low: {
+        desc: "आपका हीमोग्लोबिन स्तर सामान्य सीमा से नीचे है, जो हल्के से मध्यम एनीमिया का संकेत देता है। इसका मतलब है कि आपके ऊतकों को इष्टतम ऑक्सीजन वितरण नहीं मिल रहा है, जिससे आमतौर पर थकान होती है। सबसे आम कारण आहार संबंधी कमी या खून की कमी है।",
+        causes: ["आयरन की कमी (सबसे आम)", "विटामिन बी12 या फोलेट की कमी", "दीर्घकालिक रक्त हानि (जैसे, भारी मासिक धर्म)", "जीर्ण सूजन की स्थिति"],
+        symptoms: ["लगातार थकान और कमजोरी", "पीली या पीली त्वचा", "चक्कर आना या चक्कर आना", "न्यूनतम परिश्रम से सांस फूलना"],
+        prevention: ["आहार में आयरन बढ़ाएँ (लाल मांस, पालक, दाल, बीन्स)", "अवशोषण को बढ़ावा देने के लिए आयरन युक्त खाद्य पदार्थों को विटामिन सी (संतरा, शिमला मिर्च) के साथ मिलाएं", "भोजन के दौरान चाय या कॉफी पीने से बचें", "आयरन अनुपूरण के संबंध में अपने चिकित्सक से परामर्श लें"],
+        consult: "अपने आयरन भंडार (फेरिटिन) का परीक्षण करने और अंतर्निहित कारण की पहचान करने के लिए अपने सामान्य चिकित्सक से परामर्श लें।"
+      },
+      criticalLow: {
+        desc: "आपका हीमोग्लोबिन बहुत कम (7.0 ग्राम/डीएल से कम) है। यह एक गंभीर चिकित्सीय स्थिति है जो गंभीर एनीमिया का संकेत देती है। आपके अंगों को ऑक्सीजन क�� कमी का खतरा है, जो आपके दिल पर दबाव डाल सकता है।",
+        causes: ["गंभीर तीव्र रक्त हानि", "सक्रिय हेमोलिटिक एनीमिया (लाल कोशिकाओं का विनाश)", "अप्लास्टिक एनीमिया या अस्थि मज्जा विफलता", "उन्नत गुर्दे की बीमारी ए���िथ्रोपोइटिन उत्पादन को प्रभावित कर रही है"],
+        symptoms: ["अत्यधिक थकान और सुस्ती", "सीने में दर्द या तेज़ हृदय गति", "आराम करने पर भी सांस फूलना", "चक्कर आना या बेहोशी होना"],
+        prevention: ["हृदय तनाव को रोकने के लिए ज़ोरदार गतिविधियों से बचें", "आपातकालीन नैदानिक प्रोटोकॉल के बिना स्व-पूरक शुरू न करें"],
+        consult: "⚠️ तत्काल चिकित्सा सहायता लें या आपातकालीन कक्ष में जाएँ। रक्त आधान या तत्काल नैदानिक ​​निदान की आवश्यकता हो सकती है।"
+      },
+      high: {
+        desc: "आपका हीमोग्लोबिन मानक सामान्य सीमा से अधिक है। इसका मतलब है कि आपका रक्त सामान्य से अधिक गाढ़ा हो सकता है, जिससे परिसंचरण तनाव बढ़ सकता है।",
+        causes: ["निर्जलीकरण (अस्थायी एकाग्रता का कारण बनता है)", "भारी धूम्रपान", "क्रोनिक निम्न ऑक्सीजन स्तर (सीओपीडी, स्लीप एपनिया)", "ऊँचे ऊँचे स्थानों पर रहना"],
+        symptoms: ["सिरदर्द या चक्कर आना", "दमकती या लाल त्वचा का रंग", "धुंधली दृष्टि", "प्रुरिटस (खुजली), खासकर गर्म पानी से नहाने के बाद"],
+        prevention: ["रक्त की मात्रा बहाल करने के लिए तुरंत खूब सारा पानी पियें", "तम्बाकू धूम्रपान सीमित करें या बंद करें", "नींद या सांस संबंधी विकारों के लिए मूल्यांकन की तलाश करें"],
+        consult: "पुरानी फुफ्फुसीय स्थितियों का पता लगाने के लिए या यह जांचने के लिए कि क्या आपको हेमेटोलॉजिस्ट के पास रेफरल की आवश्यकता है, अपने डॉक्टर से परामर्श लें।"
+      },
+      criticalHigh: {
+        desc: "आपका हीमोग्लोबिन गंभीर रूप से उच्च (20.0 ग्राम/डीएल या उससे ऊपर) है। इससे रक्त की चिपचिपाहट नाटकीय रूप से बढ़ जाती है, जिससे थक्के जमने का खतरा पैदा हो जाता है।",
+        causes: ["पॉलीसिथेमिया वेरा (दुर्लभ अस्थि मज्जा रोग)", "गंभीर क्रोनिक कार्बन मोनोऑक्साइड विषाक्तता (भारी धूम्रपान करने वाले)", "अत्यधिक निर्जलीकरण"],
+        symptoms: ["गंभीर सिरदर्द या सीने में तकलीफ", "भ्रम या अत्यधिक चक्कर आना", "हथेलियों और चेहरे पर लालिमा", "हाथ या पैर सुन्न हो जाना"],
+        prevention: ["आयरन सप्लीमेंट या लाल मांस से बचें", "तरल पदार्थों से तुरंत पुनर्जलीकरण करें"],
+        consult: "⚠️ तुरंत डॉक्टर से संपर्क करें। एक चिकित्सीय फ़्लेबोटॉमी (कम सांद्रता में रक्त खींचना) अक्सर चिकित्सकीय रूप से आवश्यक होती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-hb-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateActiveTicks();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("patientAge").value = "30";
+    document.getElementById("patientGender").value = "male";
+    document.getElementById("valHb").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits(age, gender) {
+    let limits = { min: 13.8, max: 17.2, criticalMin: 7.0, criticalMax: 20.0 };
+
+    if (age < 12) {
+      limits.min = 11.0; limits.max = 16.0;
+    } else {
+      if (gender === "female") {
+        limits.min = 12.1; limits.max = 15.1;
+      } else if (gender === "pregnant") {
+        limits.min = 11.0; limits.max = 14.0;
+      }
+    }
+    return limits;
+  }
+
+  function updateActiveTicks() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    const limits = getReferenceLimits(age, gender);
+    
+    document.getElementById("tickNormalRange").textContent = `${limits.min} - ${limits.max} (${currentLang === "en" ? "Normal" : "স্বাভাবিক"})`;
+  }
+
+  // Bind change listeners to update normal range preview dynamically
+  document.getElementById("patientAge").oninput = updateActiveTicks;
+  document.getElementById("patientGender").onchange = updateActiveTicks;
+
+  function analyzeHemoglobin() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    const valHb = parseFloat(document.getElementById("valHb").value);
+
+    if (isNaN(valHb) || valHb <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid Hemoglobin value." : "দয়া করে একটি সঠিক হিমোগ্লোবিনের মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits(age, gender);
+    let statusKey = "normal"; // normal, low, criticalLow, high, criticalHigh
+    let badgeKey = "badgeNormal";
+
+    if (valHb < limits.min) {
+      if (valHb <= limits.criticalMin) {
+        statusKey = "criticalLow";
+        badgeKey = "badgeCriticalLow";
+      } else if (valHb < 10.0) {
+        statusKey = "low";
+        badgeKey = "badgeModerate";
+      } else {
+        statusKey = "low";
+        badgeKey = "badgeLow";
+      }
+    } else if (valHb > limits.max) {
+      if (valHb >= limits.criticalMax) {
+        statusKey = "criticalHigh";
+        badgeKey = "badgeCriticalHigh";
+      } else {
+        statusKey = "high";
+        badgeKey = "badgeHigh";
+      }
+    }
+
+    // Gauge positioning calculation
+    let pointerPct = 50;
+    if (valHb >= limits.min && valHb <= limits.max) {
+      // Normal scale map to 40% - 60%
+      const range = limits.max - limits.min;
+      pointerPct = range > 0 ? 40 + ((valHb - limits.min) / range) * 20 : 50;
+    } else if (valHb < limits.min) {
+      // Low scale map to 5% - 40%
+      const range = limits.min - limits.criticalMin;
+      pointerPct = range > 0 ? Math.max(5, 5 + ((valHb - limits.criticalMin) / range) * 35) : 20;
+    } else {
+      // High scale map to 60% - 95%
+      const range = limits.criticalMax - limits.max;
+      pointerPct = range > 0 ? Math.min(95, 60 + ((valHb - limits.max) / range) * 35) : 80;
+    }
+
+    activeReportData = {
+      age,
+      gender,
+      date: new Date().toLocaleDateString(),
+      valHb,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    // Add to history stack
+    addToHistory(badgeKey, valHb);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resAge").textContent = d.age;
+    const genderKey = d.gender === "male" ? "genderMale" : d.gender === "female" ? "genderFemale" : "genderPregnant";
+    document.getElementById("resGender").textContent = translations[currentLang][genderKey];
+    document.getElementById("resDate").textContent = d.date;
+
+    document.getElementById("resHbVal").textContent = d.valHb.toFixed(1);
+    
+    // Status Badge & Label
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey.startsWith("critical")) colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resHbVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Diagnostic insights
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = hbInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.causes.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valHb) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valHb,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-hb-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valHb.toFixed(1)} g/dL (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- HEMOGLOBIN (Hb) DIAGNOSTIC REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Age: ${activeReportData.age} | Gender: ${activeReportData.gender}\n`;
+    t += `Value: ${activeReportData.valHb} g/dL (Ref: ${activeReportData.limits.min}-${activeReportData.limits.max})\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `hemoglobin-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

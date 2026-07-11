@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Social Media Hashtag Generator &bull; Tag Maker - SSDK TOOLS HUB</title>
+  <meta name="description" content="Generate relevant, trending social hashtags instantly. Search key topics or enter custom terms to get popular and niche tags for Instagram, TikTok, and YouTube.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .results-section {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+      margin-top: 20px;
+    }
+    @media (max-width: 900px) {
+      .results-section {
+        grid-template-columns: 1fr;
+      }
+    }
+    .tag-pool-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+    .tag-pool-card h3 {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tag-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .hashtag-pill {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    .hashtag-pill:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: scale(1.03);
+    }
+    .hashtag-pill.selected {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .selection-box {
+      background: var(--bg3);
+      border: 2px dashed var(--accent);
+      border-radius: 12px;
+      padding: 16px;
+      position: sticky;
+      top: 80px;
+    }
+    .counter-badge {
+      font-size: 0.7rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Hashtag Generator</h1>
+  <p class="page-sub">Retrieve popular, niche, and related tags for social media posts. Click tags to curate your custom clipboard list.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    
+    <!-- Topic input -->
+    <div style="margin-bottom: 20px;">
+      <h4 style="margin-bottom: 8px;">Enter Topic Keyword</h4>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="tagKeyword" placeholder="e.g. travel, fitness, tech, fashion" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); outline: none;">
+        <button class="btn" id="btnGenerate">⚡ Generate</button>
+      </div>
+    </div>
+
+    <!-- Results layout -->
+    <div id="resultsWrapper" style="display: none;" class="results-section">
+      
+      <!-- Left Column: Pools of generated tags -->
+      <div>
+        <div class="tag-pool-card">
+          <h3>Popular Tags <button class="btn-small" onclick="copyAll('popPool')">Copy All</button></h3>
+          <div class="tag-grid" id="popPool"></div>
+        </div>
+
+        <div class="tag-pool-card">
+          <h3>Niche Tags <button class="btn-small" onclick="copyAll('nichePool')">Copy All</button></h3>
+          <div class="tag-grid" id="nichePool"></div>
+        </div>
+
+        <div class="tag-pool-card">
+          <h3>Related Tags <button class="btn-small" onclick="copyAll('relPool')">Copy All</button></h3>
+          <div class="tag-grid" id="relPool"></div>
+        </div>
+      </div>
+
+      <!-- Right Column: Curated selections board -->
+      <div>
+        <div class="selection-box">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h4 style="margin: 0; font-size: 0.95rem;">Curated Tags Queue</h4>
+            <span class="counter-badge" id="queueCount">0 / 30 tags</span>
+          </div>
+
+          <!-- Prefix/Suffix inputs -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <label for="customPrefix" style="font-size: 0.72rem; font-weight: bold; color: var(--muted);">Custom Prefix</label>
+              <input type="text" id="customPrefix" placeholder="e.g. My post..." oninput="updateQueueText()" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); font-size: 0.75rem; outline: none;">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <label for="customSuffix" style="font-size: 0.72rem; font-weight: bold; color: var(--muted);">Custom Suffix</label>
+              <input type="text" id="customSuffix" placeholder="e.g. @username" oninput="updateQueueText()" style="padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); font-size: 0.75rem; outline: none;">
+            </div>
+          </div>
+          
+          <textarea id="curatedTagsList" readonly style="width: 100%; height: 160px; font-family: monospace; font-size: 0.8rem; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); resize: none; outline: none;" placeholder="Click tags in the left grids to add them to your clipboard selection..."></textarea>
+          
+          <div style="display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap;">
+            <button class="btn" id="btnCopySelected" style="flex: 1.5; padding: 10px 0; background: var(--grad2);">📋 Copy Selected</button>
+            <button class="btn ghost" id="btnShuffle" onclick="shuffleQueue()" style="flex: 1; padding: 10px 0; border-color: var(--accent); color: var(--accent);">🎲 Shuffle</button>
+            <button class="btn ghost" id="btnClearSelected" style="flex: 1; padding: 10px 0; border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="placeholderBox" style="text-align: center; border: 1px dashed var(--border); border-radius: 12px; padding: 40px; background: var(--bg3);">
+      <p style="color: var(--muted); font-size: 0.85rem; margin: 0;">Enter a keyword topic to generate hashtag buckets.</p>
+    </div>
+
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none; text-align: center;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Interactive Selection Queue:</strong> Click individual tag pills to toggle additions to your curated copy list dynamically.</li>
+      <li><strong>Smart Topic Classifier:</strong> Features dedicated databases for travel, tech, fitness, food, music, photography, marketing, and art.</li>
+      <li><strong>Procedural Fallback generator:</strong> Inputs outside pre-mapped lists trigger procedural suffix variations, ensuring matches are always yielded.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-list content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-item">
+      <div class="faq-q">How many hashtags should I use on Instagram?<span>＋</span></div>
+      <div class="faq-a">Instagram allows up to 30 hashtags per post. While some creators maximize this limit to capture wide searches, many social media managers recommend using **5 to 15 relevant, mixed-density hashtags** (combining popular, niche, and branded tags) to keep posts clean and target audiences precisely.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Why should I mix popular and niche hashtags?<span>＋</span></div>
+      <div class="faq-a">Popular hashtags (like <code>#travel</code>) have massive search volumes but high competition, meaning your post gets buried instantly. Niche hashtags (like <code>#travelbloggerslife</code>) have lower search volume but highly engaged users, giving your content a better chance to rank in "Top Posts" and gain quality views.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  // Curated Hashtag database
+  const tagDb = {
+    travel: {
+      pop: ['travel', 'travelphotography', 'travelgram', 'instatravel', 'traveling', 'traveller'],
+      niche: ['travelblogger', 'traveltheworld', 'traveladdict', 'adventureculture', 'backpackerlife'],
+      rel: ['explore', 'wanderlust', 'vacation', 'beautifuldestinations', 'adventuretime', 'sunsetphotography']
+    },
+    tech: {
+      pop: ['technology', 'tech', 'software', 'programming', 'developer', 'coding'],
+      niche: ['webdevelopment', 'javascriptdeveloper', 'aiengineering', 'datasciencelife', 'techstartup'],
+      rel: ['javascript', 'python', 'htmlcss', 'computerscience', 'github', 'uiuxdesign']
+    },
+    fitness: {
+      pop: ['fitness', 'gym', 'workout', 'motivation', 'fit', 'training', 'healthy'],
+      niche: ['fitnessmotivation', 'gymmotivation', 'fitlife', 'bodybuildinglifestyle', 'crossfittraining'],
+      rel: ['nutrition', 'healthyfood', 'cardio', 'weightlossjourney', 'personaltrainer', 'healthylifestyle']
+    },
+    food: {
+      pop: ['food', 'foodporn', 'foodie', 'instafood', 'foodphotography', 'yummy', 'delicious'],
+      niche: ['foodblogger', 'healthyrecipes', 'homecookedmeal', 'veganfoodshare', 'dessertlovers'],
+      rel: ['cooking', 'baking', 'gourmet', 'brunchtime', 'dinnerideas', 'recipepost']
+    },
+    fashion: {
+      pop: ['fashion', 'ootd', 'style', 'fashionblogger', 'instafashion', 'fashionista'],
+      niche: ['streetstyleinspo', 'minimaliststyle', 'vintageclothing', 'sustainablefashion', 'outfitideas'],
+      rel: ['accessories', 'shoes', 'beautybloggers', 'apparel', 'runwayfashion', 'wardrobestaples']
+    },
+    photography: {
+      pop: ['photography', 'photooftheday', 'instagood', 'naturephotography', 'portraitphotography', 'travelphotography'],
+      niche: ['streetphotography', 'landscapehunters', 'blackandwhiteart', 'lensculture', 'visualsoflife'],
+      rel: ['camera', 'canon', 'nikon', 'photoshop', 'editingskills', 'lightroompreset']
+    },
+    business: {
+      pop: ['business', 'entrepreneur', 'marketing', 'success', 'startup', 'motivation'],
+      niche: ['entrepreneurshiplife', 'digitalmarketingtips', 'smallbusinessowner', 'businesscoaching', 'salesgrowth'],
+      rel: ['strategy', 'finance', 'branding', 'mindset', 'leadershipdev', 'networkingevent']
+    }
+  };
+
+  let selectedTags = new Set();
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  $('btnGenerate').onclick = () => {
+    const inputVal = $('tagKeyword').value.trim().toLowerCase().replace(/#/g, '');
+    if (!inputVal) {
+      showStatus('Please enter a keyword topic.', true);
+      return;
+    }
+
+    showStatus('Hashtag buckets generated!');
+
+    let popTags = [];
+    let nicheTags = [];
+    let relTags = [];
+
+    // Check if keyword matches a database entry
+    let matchedKey = Object.keys(tagDb).find(k => inputVal.includes(k) || k.includes(inputVal));
+
+    if (matchedKey) {
+      popTags = tagDb[matchedKey].pop;
+      nicheTags = tagDb[matchedKey].niche;
+      relTags = tagDb[matchedKey].rel;
+    } else {
+      // Procedural suffix fallback generator
+      const cleanWord = inputVal.replace(/[^a-z0-9]/g, '');
+      
+      popTags = [
+        cleanWord,
+        `${cleanWord}photography`,
+        `${cleanWord}gram`,
+        `insta${cleanWord}`,
+        `${cleanWord}ing`,
+        `best${cleanWord}`
+      ];
+      nicheTags = [
+        `${cleanWord}blogger`,
+        `${cleanWord}life`,
+        `${cleanWord}lovers`,
+        `${cleanWord}addict`,
+        `${cleanWord}world`
+      ];
+      relTags = [
+        `explore${cleanWord}`,
+        `${cleanWord}tips`,
+        `${cleanWord}community`,
+        `${cleanWord}design`,
+        `${cleanWord}daily`,
+        `${cleanWord}inspiration`
+      ];
+    }
+
+    renderPool('popPool', popTags);
+    renderPool('nichePool', nicheTags);
+    renderPool('relPool', relTags);
+
+    $('placeholderBox').style.display = 'none';
+    $('resultsWrapper').style.display = 'grid';
+  };
+
+  function renderPool(poolId, tagsArray) {
+    const container = $(poolId);
+    container.innerHTML = '';
+    
+    tagsArray.forEach(tag => {
+      const tagText = '#' + tag;
+      const pill = document.createElement('div');
+      pill.className = 'hashtag-pill' + (selectedTags.has(tagText) ? ' selected' : '');
+      pill.textContent = tagText;
+      
+      pill.onclick = () => {
+        if (selectedTags.has(tagText)) {
+          selectedTags.delete(tagText);
+          pill.classList.remove('selected');
+        } else {
+          if (selectedTags.size >= 30) {
+            showStatus('⚠️ Instagram limit of 30 tags reached.', true);
+            return;
+          }
+          selectedTags.add(tagText);
+          pill.classList.add('selected');
+        }
+        updateQueueText();
+      };
+      
+      container.appendChild(pill);
+    });
+  }
+
+  function updateQueueText() {
+    const listArea = $('curatedTagsList');
+    const arr = Array.from(selectedTags);
+    const prefix = $('customPrefix').value.trim();
+    const suffix = $('customSuffix').value.trim();
+    
+    let text = arr.join(' ');
+    if (prefix) text = prefix + ' ' + text;
+    if (suffix) text = text + ' ' + suffix;
+    
+    listArea.value = text.trim();
+    $('queueCount').textContent = `${selectedTags.size} / 30 tags`;
+  }
+
+  window.shuffleQueue = () => {
+    if (selectedTags.size === 0) {
+      showStatus('Queue is empty. Add some tags to shuffle.', true);
+      return;
+    }
+    const arr = Array.from(selectedTags);
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    selectedTags = new Set(arr);
+    updateQueueText();
+    showStatus('🎲 Selected hashtags shuffled randomly!');
+  };
+
+  window.copyAll = (poolId) => {
+    const pills = document.querySelectorAll(`#${poolId} .hashtag-pill`);
+    const tags = Array.from(pills).map(p => p.textContent);
+    
+    if (tags.length === 0) return;
+    
+    navigator.clipboard.writeText(tags.join(' ')).then(() => {
+      showStatus('📋 All tags in this category copied to clipboard!');
+    });
+  };
+
+  $('btnCopySelected').onclick = () => {
+    const val = $('curatedTagsList').value.trim();
+    if (!val) {
+      showStatus('Curate list is empty. Click tags first.', true);
+      return;
+    }
+    navigator.clipboard.writeText(val).then(() => {
+      showStatus('📋 Curated tags selection copied to clipboard!');
+    });
+  };
+
+  $('btnClearSelected').onclick = () => {
+    selectedTags.clear();
+    $('customPrefix').value = '';
+    $('customSuffix').value = '';
+    updateQueueText();
+    // Un-select all pills currently visible
+    document.querySelectorAll('.hashtag-pill.selected').forEach(p => p.classList.remove('selected'));
+    showStatus('Curated list cleared.');
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

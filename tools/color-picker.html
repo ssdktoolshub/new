@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Color Picker &amp; Palette Generator &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Free online Color Picker with CMYK, color blindness simulator, WCAG contrast checker, gradient generator, palette export, and color history. Pick, convert, and design instantly.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+
+  <style>
+    /* ─── Layout helpers ─── */
+    .cp-grid {
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 28px;
+      align-items: start;
+    }
+    @media (max-width: 768px) {
+      .cp-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ─── Color display block ─── */
+    .color-block {
+      width: 100%;
+      height: 100px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.15);
+      transition: background-color 0.3s;
+      position: relative;
+    }
+
+    /* ─── Value rows ─── */
+    .value-input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+    .value-input-row label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      width: 52px;
+      flex-shrink: 0;
+    }
+    .value-input-row input[type="text"] {
+      flex: 1;
+      padding: 9px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-family: monospace;
+      font-size: 0.88rem;
+    }
+    .copy-btn {
+      padding: 9px 12px;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover { background: var(--bg3); }
+
+    /* ─── Palette panel ─── */
+    .palette-sec-title {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin: 14px 0 6px;
+      letter-spacing: 0.5px;
+    }
+    .palette-row {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .palette-box {
+      height: 46px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-family: monospace;
+      font-weight: 700;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      color: #fff;
+    }
+    .palette-box:hover { transform: translateY(-3px) scale(1.05); }
+
+    /* ─── Section card (nested) ─── */
+    .inner-card {
+      background: var(--bg3);
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .section-label {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 10px;
+    }
+
+    /* ─── Color History ─── */
+    .history-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .history-swatch {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+      flex-shrink: 0;
+    }
+    .history-swatch:hover { transform: scale(1.15); border-color: var(--accent); }
+    .history-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+      margin-right: 4px;
+    }
+    .history-empty {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* ─── Color Blindness Simulator ─── */
+    .cb-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 600px) {
+      .cb-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    .cb-swatch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .cb-swatch-box {
+      width: 100%;
+      height: 54px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .cb-swatch-label {
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    /* ─── Contrast Checker ─── */
+    .contrast-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 480px) {
+      .contrast-grid { grid-template-columns: 1fr; }
+    }
+    .contrast-picker-group label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .contrast-picker-group input[type="color"] {
+      width: 100%;
+      height: 48px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      background: none;
+      outline: none;
+      padding: 2px;
+    }
+    .contrast-ratio-display {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--accent);
+      margin: 6px 0 10px;
+      font-family: 'Outfit', sans-serif;
+    }
+    .wcag-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .wcag-badge {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border: 1px solid var(--border);
+    }
+    .wcag-badge.pass { background: rgba(0,200,100,0.15); color: #00cc66; border-color: #00cc6644; }
+    .wcag-badge.fail { background: rgba(255,80,80,0.13); color: #ff5555; border-color: #ff555544; }
+    .contrast-preview {
+      border-radius: 10px;
+      padding: 16px 20px;
+      border: 1px solid var(--border);
+    }
+    .contrast-preview-text {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .contrast-preview-large {
+      font-size: 1.5rem;
+      font-weight: 800;
+    }
+
+    /* ─── Gradient Generator ─── */
+    .gradient-preview {
+      width: 100%;
+      height: 70px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+    .gradient-code-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .gradient-code-row input[type="text"] {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-family: monospace;
+      font-size: 0.82rem;
+      outline: none;
+    }
+    .gradient-type-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    /* ─── Export Section ─── */
+    .export-textarea {
+      width: 100%;
+      min-height: 110px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-family: monospace;
+      font-size: 0.82rem;
+      resize: vertical;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .export-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .export-tab {
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--muted);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .export-tab.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* ─── Status message ─── */
+    #statusMsg {
+      margin-top: 12px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      display: none;
+    }
+
+    /* ─── Misc ─── */
+    .tool-row-btns {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Color Picker &amp; Palette Builder</h1>
+  <p class="page-sub">Pick colors, convert color spaces (HEX, RGB, HSL, CMYK), simulate color blindness, check WCAG contrast, generate gradients, and export palettes.</p>
+
+  <!-- ══════════════════════════════════════════
+       COLOR HISTORY BAR
+  ══════════════════════════════════════════ -->
+  <div class="content-card" style="padding: 14px 18px;">
+    <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span class="history-label">🕓 Recent Colors</span>
+      <div class="history-bar" id="historyBar" style="flex:1; margin-bottom:0; padding:8px 12px;">
+        <span class="history-empty" id="historyEmpty">No colors saved yet — pick a color and click Save Color.</span>
+      </div>
+      <button class="btn" id="btnSaveColor" style="white-space:nowrap;">💾 Save Color</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       MAIN TOOL PLAYGROUND
+  ══════════════════════════════════════════ -->
+  <div class="content-card tool-playground">
+    <div class="cp-grid">
+
+      <!-- Left Column: Picker + Coordinates -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Select Base Color</h4>
+        <div style="display: flex; gap: 14px; align-items: center; margin-bottom: 18px;">
+          <input type="color" id="pickerInput" value="#cf1d38"
+            style="width: 72px; height: 72px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; background: none; outline: none; padding: 0; flex-shrink:0;">
+          <div id="colorDisplayBlock" class="color-block" style="background-color: #cf1d38;"></div>
+        </div>
+
+        <h4 style="margin-bottom: 8px;">Color Coordinates</h4>
+        <div class="value-input-row">
+          <label>HEX</label>
+          <input type="text" id="inputHex" value="#cf1d38">
+          <button class="copy-btn" id="btnCopyHex">📋</button>
+        </div>
+        <div class="value-input-row">
+          <label>RGB</label>
+          <input type="text" id="inputRgb" value="rgb(207, 29, 56)">
+          <button class="copy-btn" id="btnCopyRgb">📋</button>
+        </div>
+        <div class="value-input-row">
+          <label>HSL</label>
+          <input type="text" id="inputHsl" value="hsl(351, 75%, 46%)">
+          <button class="copy-btn" id="btnCopyHsl">📋</button>
+        </div>
+        <div class="value-input-row">
+          <label>CMYK</label>
+          <input type="text" id="inputCmyk" value="" readonly>
+          <button class="copy-btn" id="btnCopyCmyk">📋</button>
+        </div>
+
+        <hr class="section-divider">
+
+        <!-- Color Blindness Simulator -->
+        <h4 style="margin-bottom:8px;">🧑‍🦯 Color Blindness Simulator</h4>
+        <p style="font-size:0.75rem; color:var(--muted); margin-bottom:12px;">Approximate simulation using matrix transforms.</p>
+        <div class="cb-grid" id="cbGrid">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <!-- Right Column: Palettes -->
+      <div class="inner-card" style="min-height: 330px;">
+        <h4 style="margin-bottom: 4px;">Dynamic Palettes</h4>
+        <p style="font-size: 0.75rem; color: var(--muted); margin-bottom: 12px;">Click any swatch to copy its HEX value.</p>
+
+        <div class="palette-sec-title">Monochromatic Scheme</div>
+        <div class="palette-row" id="paletteMono"></div>
+
+        <div class="palette-sec-title">Analogous Scheme</div>
+        <div class="palette-row" id="paletteAnalogous"></div>
+
+        <div class="palette-sec-title">Complementary &amp; Triad Scheme</div>
+        <div class="palette-row" id="paletteComp"></div>
+
+        <hr class="section-divider" style="margin:16px 0 12px;">
+
+        <!-- Export Palette -->
+        <h4 style="margin-bottom:8px;">📦 Export Palette</h4>
+        <div class="export-tabs">
+          <button class="export-tab active" id="tabCss" onclick="switchExportTab('css')">CSS Variables</button>
+          <button class="export-tab" id="tabJson" onclick="switchExportTab('json')">JSON</button>
+        </div>
+        <textarea class="export-textarea" id="exportOutput" readonly></textarea>
+        <div style="margin-top:8px;">
+          <button class="copy-btn" id="btnCopyExport" style="width:100%; padding:10px; font-size:0.85rem; border-radius:8px;">📋 Copy Export</button>
+        </div>
+      </div>
+
+    </div><!-- /cp-grid -->
+
+    <!-- Tool Controls -->
+    <div class="tool-row-btns">
+      <button class="btn" id="btnRandom">🎲 Random Color</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Reset</button>
+    </div>
+    <p id="statusMsg"></p>
+  </div><!-- /tool-playground -->
+
+  <!-- ══════════════════════════════════════════
+       WCAG CONTRAST RATIO CHECKER
+  ══════════════════════════════════════════ -->
+  <div class="content-card">
+    <h3 style="margin-bottom:4px;">⚖️ WCAG Contrast Ratio Checker</h3>
+    <p style="font-size:0.78rem; color:var(--muted); margin-bottom:16px;">Select foreground &amp; background colors to calculate accessibility compliance.</p>
+
+    <div class="contrast-grid">
+      <div class="contrast-picker-group">
+        <label>Foreground (Text) Color</label>
+        <input type="color" id="contrastFg" value="#ffffff">
+      </div>
+      <div class="contrast-picker-group">
+        <label>Background Color</label>
+        <input type="color" id="contrastBg" value="#cf1d38">
+      </div>
+    </div>
+
+    <div class="section-label">Contrast Ratio</div>
+    <div class="contrast-ratio-display" id="contrastRatioDisplay">—</div>
+
+    <div class="wcag-badges" id="wcagBadges">
+      <!-- populated by JS -->
+    </div>
+
+    <div class="section-label" style="margin-top:12px;">Live Text Preview</div>
+    <div class="contrast-preview" id="contrastPreview">
+      <div class="contrast-preview-text" id="contrastPreviewNormal">Normal text (16px) — The quick brown fox.</div>
+      <div class="contrast-preview-large" id="contrastPreviewLarge">Large text (24px) — Design matters.</div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       CSS GRADIENT GENERATOR
+  ══════════════════════════════════════════ -->
+  <div class="content-card">
+    <h3 style="margin-bottom:4px;">🎨 CSS Gradient Generator</h3>
+    <p style="font-size:0.78rem; color:var(--muted); margin-bottom:16px;">Instantly generates linear and radial gradients from the current base color.</p>
+
+    <div class="gradient-type-label">Linear Gradient Preview</div>
+    <div class="gradient-preview" id="gradLinearPreview"></div>
+    <div class="gradient-code-row">
+      <input type="text" id="gradLinearCode" readonly>
+      <button class="copy-btn" id="btnCopyLinear">📋</button>
+    </div>
+
+    <div class="gradient-type-label" style="margin-top:10px;">Radial Gradient Preview</div>
+    <div class="gradient-preview" id="gradRadialPreview"></div>
+    <div class="gradient-code-row">
+      <input type="text" id="gradRadialCode" readonly>
+      <button class="copy-btn" id="btnCopyRadial">📋</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       FEATURE INFO CARD
+  ══════════════════════════════════════════ -->
+  <div class="content-card">
+    <h3>Design Palette Types</h3>
+    <ul>
+      <li><strong>Monochromatic:</strong> Adjusts lightness values of a single hue — great for clean, consistent UI designs.</li>
+      <li><strong>Analogous:</strong> Adjacent colors on the 360° color wheel for harmonious, low-contrast blends.</li>
+      <li><strong>Complementary &amp; Triad:</strong> Colors opposite (180°) or at 120° intervals for vibrant, high-contrast contrasts.</li>
+      <li><strong>CMYK:</strong> Cyan-Magenta-Yellow-Key (Black) model used in print design. Computed from RGB values.</li>
+      <li><strong>WCAG Contrast:</strong> AA requires ≥4.5:1 (normal) or ≥3:1 (large text). AAA requires ≥7:1 (normal).</li>
+    </ul>
+  </div>
+
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  /* ────────────────────────────────────────
+     UTILITY HELPERS
+  ──────────────────────────────────────── */
+  const $ = id => document.getElementById(id);
+  let currentHex = '#cf1d38';
+  let currentExportTab = 'css';
+  // Palette store for export
+  let paletteStore = { mono: [], analogous: [], triad: [] };
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.style.display = 'none'; }, 2200);
+  }
+
+  function hexToRgb(hex) {
+    const h = hex.replace('#', '');
+    return {
+      r: parseInt(h.slice(0,2), 16),
+      g: parseInt(h.slice(2,4), 16),
+      b: parseInt(h.slice(4,6), 16)
+    };
+  }
+
+  function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2,'0')).join('');
+  }
+
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r,g,b), min = Math.min(r,g,b);
+    let h, s, l = (max+min)/2;
+    if (max === min) {
+      h = s = 0;
+    } else {
+      const d = max - min;
+      s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+      switch(max){
+        case r: h = (g-b)/d + (g<b?6:0); break;
+        case g: h = (b-r)/d + 2; break;
+        case b: h = (r-g)/d + 4; break;
+      }
+      h /= 6;
+    }
+    return { h: Math.round(h*360), s: Math.round(s*100), l: Math.round(l*100) };
+  }
+
+  function hslToHex(h, s, l) {
+    l /= 100;
+    const a = s * Math.min(l, 1-l) / 100;
+    const f = n => {
+      const k = (n + h/30) % 12;
+      const color = l - a * Math.max(Math.min(k-3, 9-k, 1), -1);
+      return Math.round(255*color).toString(16).padStart(2,'0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  }
+
+  function rgbToCmyk(r, g, b) {
+    if (r===0 && g===0 && b===0) return {c:0, m:0, y:0, k:100};
+    const rf = r/255, gf = g/255, bf = b/255;
+    const k = 1 - Math.max(rf, gf, bf);
+    const c = (1 - rf - k) / (1 - k);
+    const m = (1 - gf - k) / (1 - k);
+    const y = (1 - bf - k) / (1 - k);
+    return {
+      c: Math.round(c*100),
+      m: Math.round(m*100),
+      y: Math.round(y*100),
+      k: Math.round(k*100)
+    };
+  }
+
+  function getLuminance(r, g, b) {
+    const toLinear = v => {
+      v /= 255;
+      return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+    };
+    return 0.2126*toLinear(r) + 0.7152*toLinear(g) + 0.0722*toLinear(b);
+  }
+
+  function getContrastRatio(hex1, hex2) {
+    const {r:r1,g:g1,b:b1} = hexToRgb(hex1);
+    const {r:r2,g:g2,b:b2} = hexToRgb(hex2);
+    const L1 = getLuminance(r1,g1,b1);
+    const L2 = getLuminance(r2,g2,b2);
+    const lighter = Math.max(L1,L2), darker = Math.min(L1,L2);
+    return (lighter + 0.05) / (darker + 0.05);
+  }
+
+  function brightness(r, g, b) {
+    return (r*299 + g*587 + b*114) / 1000;
+  }
+
+  /* ────────────────────────────────────────
+     COLOR BLINDNESS MATRICES
+     (Brettel / Viénot approximations)
+  ──────────────────────────────────────── */
+  const CB_MATRICES = {
+    'Normal':       [[1,0,0],[0,1,0],[0,0,1]],
+    'Protanopia':   [[0.567,0.433,0],[0.558,0.442,0],[0,0.242,0.758]],
+    'Deuteranopia': [[0.625,0.375,0],[0.7,0.3,0],[0,0.3,0.7]],
+    'Tritanopia':   [[0.95,0.05,0],[0,0.433,0.567],[0,0.475,0.525]],
+    'Achromatopsia':[[0.299,0.587,0.114],[0.299,0.587,0.114],[0.299,0.587,0.114]]
+  };
+
+  function applyColorBlindMatrix(r, g, b, matrix) {
+    const [rm, gm, bm] = matrix;
+    return {
+      r: Math.round(rm[0]*r + rm[1]*g + rm[2]*b),
+      g: Math.round(gm[0]*r + gm[1]*g + gm[2]*b),
+      b: Math.round(bm[0]*r + bm[1]*g + bm[2]*b)
+    };
+  }
+
+  /* ────────────────────────────────────────
+     LIGHTER VARIANT (for gradients)
+  ──────────────────────────────────────── */
+  function lighterVariant(hex, amount = 30) {
+    const {r,g,b} = hexToRgb(hex);
+    const hsl = rgbToHsl(r,g,b);
+    return hslToHex(hsl.h, hsl.s, Math.min(95, hsl.l + amount));
+  }
+
+  /* ────────────────────────────────────────
+     COLOR HISTORY (localStorage)
+  ──────────────────────────────────────── */
+  const HISTORY_KEY = 'ssdk_color_history';
+  const MAX_HISTORY = 8;
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+    catch(e) { return []; }
+  }
+
+  function saveHistory(arr) {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
+  }
+
+  function addToHistory(hex) {
+    let hist = loadHistory();
+    hex = hex.toLowerCase();
+    hist = hist.filter(h => h !== hex);
+    hist.unshift(hex);
+    if (hist.length > MAX_HISTORY) hist = hist.slice(0, MAX_HISTORY);
+    saveHistory(hist);
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const bar = $('historyBar');
+    const hist = loadHistory();
+    bar.innerHTML = '';
+    if (hist.length === 0) {
+      bar.innerHTML = '<span class="history-empty" id="historyEmpty">No colors saved yet — pick a color and click Save Color.</span>';
+      return;
+    }
+    hist.forEach(hex => {
+      const sw = document.createElement('div');
+      sw.className = 'history-swatch';
+      sw.style.backgroundColor = hex;
+      sw.title = hex.toUpperCase();
+      sw.onclick = () => updateColorUI(hex);
+      bar.appendChild(sw);
+    });
+  }
+
+  /* ────────────────────────────────────────
+     PALETTE BUILDER
+  ──────────────────────────────────────── */
+  function createPaletteBox(hex, onClickSetBase = false) {
+    const el = document.createElement('div');
+    el.className = 'palette-box';
+    el.style.backgroundColor = hex;
+    el.textContent = hex.toUpperCase();
+    const {r,g,b} = hexToRgb(hex);
+    el.style.color = brightness(r,g,b) > 128 ? '#1a1a1a' : '#ffffff';
+    el.onclick = () => {
+      if (onClickSetBase) {
+        updateColorUI(hex);
+      } else {
+        navigator.clipboard.writeText(hex).then(() => showStatus(`📋 Copied: ${hex.toUpperCase()}`));
+      }
+    };
+    return el;
+  }
+
+  function generatePalettes(h, s, l) {
+    // Monochromatic
+    const monoHexes = [];
+    [l-20, l-10, l, l+10, l+20].forEach(stepL => {
+      const safeL = Math.max(5, Math.min(95, stepL));
+      monoHexes.push(hslToHex(h, s, safeL));
+    });
+    paletteStore.mono = monoHexes;
+    const monoBox = $('paletteMono');
+    monoBox.innerHTML = '';
+    monoHexes.forEach(hex => monoBox.appendChild(createPaletteBox(hex)));
+
+    // Analogous
+    const anaHexes = [];
+    [h-40, h-20, h, h+20, h+40].forEach(stepH => {
+      anaHexes.push(hslToHex((stepH+360)%360, s, l));
+    });
+    paletteStore.analogous = anaHexes;
+    const anaBox = $('paletteAnalogous');
+    anaBox.innerHTML = '';
+    anaHexes.forEach(hex => anaBox.appendChild(createPaletteBox(hex)));
+
+    // Complementary & Triad
+    const triadHexes = [];
+    [h, (h+120)%360, (h+180)%360, (h+240)%360, (h+300)%360].forEach(stepH => {
+      triadHexes.push(hslToHex(stepH, s, l));
+    });
+    paletteStore.triad = triadHexes;
+    const compBox = $('paletteComp');
+    compBox.innerHTML = '';
+    triadHexes.forEach(hex => compBox.appendChild(createPaletteBox(hex)));
+
+    // Update export output
+    updateExportOutput();
+  }
+
+  /* ────────────────────────────────────────
+     COLOR BLINDNESS SIMULATOR
+  ──────────────────────────────────────── */
+  function updateColorBlindness(hex) {
+    const {r,g,b} = hexToRgb(hex);
+    const grid = $('cbGrid');
+    grid.innerHTML = '';
+    Object.entries(CB_MATRICES).forEach(([label, matrix]) => {
+      const sim = applyColorBlindMatrix(r,g,b,matrix);
+      const simHex = rgbToHex(sim.r, sim.g, sim.b);
+      const wrapper = document.createElement('div');
+      wrapper.className = 'cb-swatch';
+      wrapper.innerHTML = `
+        <div class="cb-swatch-box" style="background:${simHex};" title="${simHex}"></div>
+        <div class="cb-swatch-label">${label}<br><span style="font-family:monospace;font-size:0.65rem;">${simHex.toUpperCase()}</span></div>
+      `;
+      grid.appendChild(wrapper);
+    });
+  }
+
+  /* ────────────────────────────────────────
+     CONTRAST CHECKER
+  ──────────────────────────────────────── */
+  function updateContrast() {
+    const fg = $('contrastFg').value;
+    const bg = $('contrastBg').value;
+    const ratio = getContrastRatio(fg, bg);
+    const ratioStr = ratio.toFixed(2) + ':1';
+
+    $('contrastRatioDisplay').textContent = ratioStr;
+
+    const checks = [
+      { label: 'AA Normal (≥4.5:1)',  pass: ratio >= 4.5 },
+      { label: 'AA Large (≥3:1)',     pass: ratio >= 3   },
+      { label: 'AAA Normal (≥7:1)',   pass: ratio >= 7   }
+    ];
+
+    const badgesEl = $('wcagBadges');
+    badgesEl.innerHTML = '';
+    checks.forEach(c => {
+      const badge = document.createElement('span');
+      badge.className = 'wcag-badge ' + (c.pass ? 'pass' : 'fail');
+      badge.textContent = (c.pass ? '✅ ' : '❌ ') + c.label;
+      badgesEl.appendChild(badge);
+    });
+
+    // Live preview
+    const preview = $('contrastPreview');
+    preview.style.backgroundColor = bg;
+    $('contrastPreviewNormal').style.color = fg;
+    $('contrastPreviewLarge').style.color = fg;
+  }
+
+  /* ────────────────────────────────────────
+     GRADIENT GENERATOR
+  ──────────────────────────────────────── */
+  function updateGradients(hex) {
+    const light = lighterVariant(hex, 30);
+
+    const linearCSS = `background: linear-gradient(135deg, ${hex}, ${light});`;
+    const radialCSS = `background: radial-gradient(circle, ${light}, ${hex});`;
+
+    $('gradLinearPreview').style.cssText = linearCSS;
+    $('gradLinearCode').value = linearCSS;
+
+    $('gradRadialPreview').style.cssText = radialCSS;
+    $('gradRadialCode').value = radialCSS;
+  }
+
+  /* ────────────────────────────────────────
+     EXPORT PALETTE
+  ──────────────────────────────────────── */
+  function switchExportTab(tab) {
+    currentExportTab = tab;
+    ['css','json'].forEach(t => {
+      $('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t===tab);
+    });
+    updateExportOutput();
+  }
+
+  function updateExportOutput() {
+    const { mono, analogous, triad } = paletteStore;
+    let output = '';
+    if (currentExportTab === 'css') {
+      const allColors = [
+        ...mono.map((h,i) => `--mono-${i+1}: ${h};`),
+        ...analogous.map((h,i) => `--analogous-${i+1}: ${h};`),
+        ...triad.map((h,i) => `--triad-${i+1}: ${h};`)
+      ];
+      output = ':root {\n  ' + allColors.join('\n  ') + '\n}';
+    } else {
+      const obj = { mono, analogous, triad };
+      output = JSON.stringify(obj, null, 2);
+    }
+    $('exportOutput').value = output;
+  }
+
+  /* ────────────────────────────────────────
+     MAIN UPDATE FUNCTION
+  ──────────────────────────────────────── */
+  function updateColorUI(hex) {
+    if (!/^#[0-9A-Fa-f]{6}$/.test(hex)) return;
+    currentHex = hex.toLowerCase();
+
+    $('pickerInput').value = hex;
+    $('colorDisplayBlock').style.backgroundColor = hex;
+    $('inputHex').value = hex;
+
+    const {r,g,b} = hexToRgb(hex);
+    $('inputRgb').value = `rgb(${r}, ${g}, ${b})`;
+
+    const hsl = rgbToHsl(r,g,b);
+    $('inputHsl').value = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+
+    const cmyk = rgbToCmyk(r,g,b);
+    $('inputCmyk').value = `C:${cmyk.c}% M:${cmyk.m}% Y:${cmyk.y}% K:${cmyk.k}%`;
+
+    generatePalettes(hsl.h, hsl.s, hsl.l);
+    updateColorBlindness(hex);
+    updateGradients(hex);
+
+    // Sync the contrast bg picker with the main color
+    $('contrastBg').value = hex;
+    updateContrast();
+  }
+
+  /* ────────────────────────────────────────
+     EVENT BINDINGS
+  ──────────────────────────────────────── */
+  $('pickerInput').oninput = e => updateColorUI(e.target.value);
+
+  $('inputHex').oninput = e => {
+    let val = e.target.value.trim();
+    if (!val.startsWith('#')) val = '#' + val;
+    if (/^#[0-9A-Fa-f]{6}$/.test(val)) updateColorUI(val);
+  };
+
+  $('btnRandom').onclick = () => {
+    const hex = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+    updateColorUI(hex);
+  };
+
+  $('btnClear').onclick = () => updateColorUI('#cf1d38');
+
+  $('btnSaveColor').onclick = () => {
+    addToHistory(currentHex);
+    showStatus(`💾 Saved ${currentHex.toUpperCase()} to history!`);
+  };
+
+  // Copy buttons
+  const bindCopy = (btnId, inputId, label) => {
+    $(btnId).onclick = () => {
+      navigator.clipboard.writeText($(inputId).value)
+        .then(() => showStatus(`📋 Copied ${label} to clipboard!`))
+        .catch(() => showStatus('Copy failed — try manually.', true));
+    };
+  };
+  bindCopy('btnCopyHex', 'inputHex', 'HEX');
+  bindCopy('btnCopyRgb', 'inputRgb', 'RGB');
+  bindCopy('btnCopyHsl', 'inputHsl', 'HSL');
+  bindCopy('btnCopyCmyk', 'inputCmyk', 'CMYK');
+
+  $('btnCopyLinear').onclick = () => {
+    navigator.clipboard.writeText($('gradLinearCode').value)
+      .then(() => showStatus('📋 Linear gradient CSS copied!'));
+  };
+  $('btnCopyRadial').onclick = () => {
+    navigator.clipboard.writeText($('gradRadialCode').value)
+      .then(() => showStatus('📋 Radial gradient CSS copied!'));
+  };
+  $('btnCopyExport').onclick = () => {
+    navigator.clipboard.writeText($('exportOutput').value)
+      .then(() => showStatus('📋 Palette export copied!'));
+  };
+
+  // Contrast pickers
+  $('contrastFg').oninput = updateContrast;
+  $('contrastBg').oninput = updateContrast;
+
+  // FAQ accordion (if any)
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => q.parentElement.classList.toggle('open');
+  });
+
+  /* ────────────────────────────────────────
+     INIT
+  ──────────────────────────────────────── */
+  renderHistory();
+  updateColorUI('#cf1d38');
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

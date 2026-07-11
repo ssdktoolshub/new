@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Base64 Converter & File Encoder &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Free Base64 converter helps you encode plain text or binary files to Base64 strings/Data URIs, and decode strings back into downloadable files instantly.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Base64 File & Text Converter</h1>
+  <p class="page-sub">Encode text/files to Base64 strings, or decode Base64 inputs back into binary files and view live previews.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    
+    <!-- Mode Selector Tabs -->
+    <div class="auth-tabs" style="max-width: 320px; margin: 0 auto 20px;">
+      <button class="auth-tab active" id="tabTextMode">📝 Text Converter</button>
+      <button class="auth-tab" id="tabFileMode">📁 File Encoder/Decoder</button>
+    </div>
+
+    <!-- 1. Text Mode Panel -->
+    <div id="panelTextMode">
+      <div class="tool-io" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <div>
+          <h4 style="margin-bottom: 8px;">Input Text</h4>
+          <textarea id="textInput" placeholder="Enter text to encode or Base64 string to decode..." style="min-height: 250px;"></textarea>
+        </div>
+        <div>
+          <h4 style="margin-bottom: 8px;">Output Result</h4>
+          <div id="textOutput" class="tool-output-box" style="min-height: 250px; max-height: 250px; overflow-y: auto;">Result will appear here...</div>
+        </div>
+      </div>
+      
+      <div class="tool-control" style="margin-top: 16px;">
+        <button class="btn" id="btnTextEncode">🔁 Encode Text</button>
+        <button class="btn" id="btnTextDecode">🔓 Decode Base64</button>
+        <button class="btn ghost" id="btnTextCopy">📋 Copy Output</button>
+        <button class="btn ghost" id="btnTextClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear</button>
+      </div>
+    </div>
+
+    <!-- 2. File Mode Panel -->
+    <div id="panelFileMode" style="display: none;">
+      <div class="tool-io" style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; align-items: start;">
+        
+        <!-- Left: Upload & Decoding input -->
+        <div>
+          <h4 style="margin-bottom: 8px;">Option A: Encode File to Base64</h4>
+          <div id="dropZone" style="border: 2px dashed var(--border); padding: 24px; border-radius: 12px; text-align: center; cursor: pointer; background: var(--bg2); transition: 0.3s; margin-bottom: 16px;">
+            <span style="font-size: 2.2rem; display: block; margin-bottom: 6px;">📁</span>
+            <p style="font-size: 0.85rem; color: var(--muted); margin: 0;">Drag & drop any file here, or <span style="color: var(--accent); font-weight: 700;">browse</span></p>
+            <input type="file" id="fileInput" style="display: none;">
+          </div>
+          
+          <h4 style="margin-bottom: 8px;">Option B: Decode Base64 to File</h4>
+          <textarea id="fileB64Input" placeholder="Paste Base64 Data URL or raw string here to decode back to binary file..." style="min-height: 120px; font-family: monospace; font-size: 0.8rem;"></textarea>
+          
+          <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <div style="flex: 1;">
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--muted); display: block; margin-bottom: 4px;">Target Filename</label>
+              <input type="text" id="decodeFilename" placeholder="decoded-file" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); outline: none;">
+            </div>
+            <div style="width: 120px;">
+              <label style="font-size: 0.75rem; font-weight: 700; color: var(--muted); display: block; margin-bottom: 4px;">Extension</label>
+              <input type="text" id="decodeExtension" placeholder="e.g. png, pdf" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); outline: none;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Base64 String Output & Decoded Media Preview -->
+        <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 310px; overflow: hidden; width: 100%;">
+          
+          <!-- Encoded File String Output -->
+          <div id="fileEncodeOutputSec" style="display: none;">
+            <h4 style="margin-bottom: 6px;">Base64 String Output</h4>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+              <input type="checkbox" id="checkDataUri" checked style="width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer;">
+              <label for="checkDataUri" style="font-size: 0.8rem; font-weight: 600; color: var(--muted); cursor: pointer;">Include Data URI Prefix</label>
+            </div>
+            <textarea id="fileB64Output" readonly style="min-height: 180px; font-family: monospace; font-size: 0.8rem; background: var(--bg2); resize: none;"></textarea>
+          </div>
+
+          <!-- Decoded File Preview -->
+          <div id="fileDecodePreviewSec" style="text-align: center; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div id="previewBox" style="width: 100%; max-height: 220px; display: flex; justify-content: center; align-items: center; overflow: hidden; margin-bottom: 12px; background: rgba(0,0,0,0.15); border-radius: 8px; display: none;">
+              <!-- Dynamic preview tags will load here -->
+            </div>
+            <p id="previewStatus" style="color: var(--muted); font-size: 0.85rem; margin: 0; padding: 30px;">Upload a file, or paste Base64 data to decode and view preview.</p>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+        <button class="btn" id="btnFileEncode" style="display: none;">🔁 Encode Uploaded File</button>
+        <button class="btn" id="btnFileDecode" style="display: none; background: var(--grad2);">🔓 Decode & Download File</button>
+        <button class="btn ghost" id="btnFileCopy" style="display: none;">📋 Copy Base64 String</button>
+        <button class="btn ghost" id="btnFileClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear Workspace</button>
+      </div>
+    </div>
+
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Features Section -->
+  <div class="content-card">
+    <h3>Advanced Base64 Features</h3>
+    <ul>
+      <li><strong>Binary File Encoding:</strong> Encode files up to 10MB (images, fonts, PDFs, documents) into standard Base64 Data URIs.</li>
+      <li><strong>Auto Mime Detection:</strong> Decodes full Data URL strings and automatically populates the correct filename extension (e.g. `.jpg`, `.pdf`).</li>
+      <li><strong>Media Previews:</strong> Instantly inspect and play decoded image or audio streams inside the browser.</li>
+      <li><strong>Unicode UTF-8 Support:</strong> Handles international characters and emojis safely without corrupting string offsets.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">What is a Base64 Data URI?<span>＋</span></div>
+        <div class="faq-a">A Data URI is a Base64 string prefixed with metadata like `data:image/png;base64,`. This prefix informs the browser how to interpret the binary stream, allowing you to embed files directly inside HTML or CSS configs.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Is the file data safe?<span>＋</span></div>
+        <div class="faq-a">Yes. Your files are processed entirely client-side. The file binary is read locally in your browser memory and converted without transferring any bytes over the network.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+  
+  let currentFileB64 = '';
+  let currentFileMime = '';
+  let decodedBlobUrl = null;
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  // --- Tab Mode Switch ---
+  $('tabTextMode').onclick = () => {
+    $('tabTextMode').classList.add('active');
+    $('tabFileMode').classList.remove('active');
+    $('panelTextMode').style.display = 'block';
+    $('panelFileMode').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  $('tabFileMode').onclick = () => {
+    $('tabFileMode').classList.add('active');
+    $('tabTextMode').classList.remove('active');
+    $('panelFileMode').style.display = 'block';
+    $('panelTextMode').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // --- 1. Text Converter Logic ---
+  function utob(str) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+
+  function btou(str) {
+    return decodeURIComponent(escape(atob(str)));
+  }
+
+  $('btnTextEncode').onclick = () => {
+    const input = $('textInput').value;
+    if (!input) {
+      showStatus('Please enter some text to encode.', true);
+      return;
+    }
+    try {
+      const encoded = utob(input);
+      $('textOutput').textContent = encoded;
+      $('textOutput').style.color = 'var(--text)';
+      showStatus('✅ Text encoded successfully!');
+    } catch (e) {
+      $('textOutput').textContent = e.message;
+      $('textOutput').style.color = '#ff6b6b';
+      showStatus('❌ Encoding failed.', true);
+    }
+  };
+
+  $('btnTextDecode').onclick = () => {
+    const input = $('textInput').value.trim();
+    if (!input) {
+      showStatus('Please enter a Base64 string to decode.', true);
+      return;
+    }
+    try {
+      const decoded = btou(input);
+      $('textOutput').textContent = decoded;
+      $('textOutput').style.color = 'var(--text)';
+      showStatus('✅ Base64 decoded successfully!');
+    } catch (e) {
+      $('textOutput').textContent = e.message + "\n\nMake sure the input is a valid Base64 string.";
+      $('textOutput').style.color = '#ff6b6b';
+      showStatus('❌ Decoding failed. Invalid Base64 structure.', true);
+    }
+  };
+
+  $('btnTextCopy').onclick = () => {
+    const output = $('textOutput').textContent;
+    if (!output || output.startsWith('Invalid Character') || output.startsWith('The string')) {
+      showStatus('No valid output text available to copy.', true);
+      return;
+    }
+    navigator.clipboard.writeText(output).then(() => {
+      showStatus('📋 Output copied to clipboard!');
+    });
+  };
+
+  $('btnTextClear').onclick = () => {
+    $('textInput').value = '';
+    $('textOutput').textContent = 'Result will appear here...';
+    $('statusMsg').style.display = 'none';
+  };
+
+
+  // --- 2. File Encoder/Decoder Logic ---
+  const dropZone = $('dropZone');
+  dropZone.onclick = () => $('fileInput').click();
+
+  dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--accent)';
+  };
+  dropZone.ondragleave = () => {
+    dropZone.style.borderColor = 'var(--border)';
+  };
+  dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files.length) {
+      handleUploadedFile(e.dataTransfer.files[0]);
+    }
+  };
+  $('fileInput').onchange = (e) => {
+    if (e.target.files.length) {
+      handleUploadedFile(e.target.files[0]);
+    }
+  };
+
+  function handleUploadedFile(file) {
+    if (file.size > 10 * 1024 * 1024) {
+      showStatus('File size exceeds 10MB limit. Select a smaller file.', true);
+      return;
+    }
+    
+    currentFileMime = file.type;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      currentFileB64 = event.target.result;
+      
+      // Update UI panels
+      $('fileEncodeOutputSec').style.display = 'block';
+      $('fileDecodePreviewSec').style.display = 'none';
+      $('fileB64Output').value = currentFileB64;
+      
+      $('btnFileEncode').style.display = 'none'; // Already loaded
+      $('btnFileCopy').style.display = 'inline-flex';
+      $('btnFileClear').style.display = 'inline-flex';
+      
+      showStatus(`✅ File loaded successfully! size: ${(file.size/1024).toFixed(1)} KB`);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Toggle Prefix check box
+  $('checkDataUri').onchange = () => {
+    if (!currentFileB64) return;
+    if ($('checkDataUri').checked) {
+      $('fileB64Output').value = currentFileB64;
+    } else {
+      // Strip Data URI prefix
+      const parts = currentFileB64.split(';base64,');
+      $('fileB64Output').value = parts[1] || parts[0];
+    }
+  };
+
+  // Decode Base64 back to file
+  $('fileB64Input').oninput = () => {
+    const input = $('fileB64Input').value.trim();
+    if (input) {
+      $('btnFileDecode').style.display = 'inline-flex';
+      $('btnFileClear').style.display = 'inline-flex';
+      
+      // Auto Mime-Type Extraction
+      if (input.startsWith('data:')) {
+        const mimeMatch = input.match(/data:([^;]+);base64,/);
+        if (mimeMatch) {
+          const mime = mimeMatch[1];
+          const ext = mime.split('/')[1] || '';
+          $('decodeExtension').value = ext;
+          showStatus(`ℹ️ Extracted Mime-Type: ${mime}`);
+          
+          // Create media preview
+          createMediaPreview(input, mime);
+        }
+      } else {
+        $('previewBox').style.display = 'none';
+        $('previewStatus').style.display = 'block';
+        $('previewStatus').textContent = 'Base64 string entered. Fill out name details to download.';
+      }
+    } else {
+      $('btnFileDecode').style.display = 'none';
+    }
+  };
+
+  function createMediaPreview(base64Url, mime) {
+    const box = $('previewBox');
+    box.innerHTML = '';
+    box.style.display = 'none';
+    $('previewStatus').style.display = 'none';
+
+    if (mime.startsWith('image/')) {
+      box.innerHTML = `<img src="${base64Url}" style="max-width: 100%; max-height: 200px; border-radius: 6px;">`;
+      box.style.display = 'flex';
+    } else if (mime.startsWith('audio/')) {
+      box.innerHTML = `<audio controls src="${base64Url}" style="width: 100%;"></audio>`;
+      box.style.display = 'flex';
+    } else {
+      $('previewStatus').style.display = 'block';
+      $('previewStatus').textContent = `Decoded: ${mime} format (ready for download)`;
+    }
+  }
+
+  // Decode & Download File Action
+  $('btnFileDecode').onclick = () => {
+    const input = $('fileB64Input').value.trim();
+    if (!input) return;
+    
+    try {
+      let rawBase64 = input;
+      let detectedMime = 'application/octet-stream';
+      
+      if (input.startsWith('data:')) {
+        const parts = input.split(';base64,');
+        detectedMime = parts[0].slice(5);
+        rawBase64 = parts[1];
+      }
+      
+      const byteCharacters = atob(rawBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: detectedMime });
+      
+      if (decodedBlobUrl) {
+        window.URL.revokeObjectURL(decodedBlobUrl);
+      }
+      decodedBlobUrl = window.URL.createObjectURL(blob);
+      
+      const filename = $('decodeFilename').value.trim() || 'decoded-file';
+      const ext = $('decodeExtension').value.trim() || 'bin';
+      
+      const a = document.createElement('a');
+      a.href = decodedBlobUrl;
+      a.download = `${filename}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showStatus('✅ Binary file decoded and downloaded successfully!');
+    } catch(e) {
+      showStatus('❌ Decoding failed. Check Base64 string integrity.', true);
+    }
+  };
+
+  // Copy File Mode Output
+  $('btnFileCopy').onclick = () => {
+    const output = $('fileB64Output').value;
+    if (!output) return;
+    navigator.clipboard.writeText(output).then(() => {
+      showStatus('📋 Base64 string copied to clipboard!');
+    });
+  };
+
+  // Clear File mode workspace
+  $('btnFileClear').onclick = () => {
+    $('fileInput').value = '';
+    $('fileB64Input').value = '';
+    $('fileB64Output').value = '';
+    $('decodeFilename').value = '';
+    $('decodeExtension').value = '';
+    
+    currentFileB64 = '';
+    currentFileMime = '';
+    
+    if (decodedBlobUrl) {
+      window.URL.revokeObjectURL(decodedBlobUrl);
+      decodedBlobUrl = null;
+    }
+    
+    $('fileEncodeOutputSec').style.display = 'none';
+    $('fileDecodePreviewSec').style.display = 'flex';
+    $('previewBox').style.display = 'none';
+    $('previewBox').innerHTML = '';
+    $('previewStatus').style.display = 'block';
+    $('previewStatus').textContent = 'Upload a file, or paste Base64 data to decode and view preview.';
+    
+    $('btnFileDecode').style.display = 'none';
+    $('btnFileCopy').style.display = 'none';
+    $('btnFileClear').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ Accordion
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

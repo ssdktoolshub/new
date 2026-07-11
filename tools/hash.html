@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hash Generator &bull; MD5, SHA256, HMAC &amp; File Hashing - SSDK TOOLS HUB</title>
+  <meta name="description" content="Advanced online Hash Generator: compute MD5, SHA-1, SHA-256, SHA-512 and HMAC hashes for text or files. Verify hashes, toggle HEX/Base64 output, all 100% client-side.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+
+  <!-- CryptoJS CDN for unified client-side cryptographic hashing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    /* ── Mode Tab Switcher ─────────────────────────────────── */
+    .mode-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 20px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 5px;
+      width: fit-content;
+    }
+    .mode-tab {
+      padding: 8px 22px;
+      border-radius: 7px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    .mode-tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+    .mode-tab:not(.active):hover {
+      background: var(--bg2);
+      color: var(--text);
+    }
+
+    /* ── Input panel ───────────────────────────────────────── */
+    .input-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .input-panel label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* File drop zone */
+    .file-drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 36px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      background: var(--bg3);
+      color: var(--muted);
+      font-size: 0.9rem;
+      display: none;
+    }
+    .file-drop-zone.active-drop {
+      border-color: var(--accent);
+      background: rgba(99,102,241,0.07);
+    }
+    .file-drop-zone .drop-icon {
+      font-size: 2.5rem;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .file-drop-zone .file-name {
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: var(--accent);
+      font-weight: 700;
+      word-break: break-all;
+    }
+    #fileInput { display: none; }
+
+    /* HMAC key row */
+    .hmac-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .hmac-row label {
+      white-space: nowrap;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .hmac-key-input {
+      flex: 1;
+      min-width: 160px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: monospace;
+      font-size: 0.88rem;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .hmac-key-input:focus { border-color: var(--accent); }
+    .hmac-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      background: #7c3aed22;
+      color: #a78bfa;
+      border: 1px solid #7c3aed55;
+      border-radius: 5px;
+      padding: 3px 8px;
+      white-space: nowrap;
+    }
+
+    /* ── Hash output rows ──────────────────────────────────── */
+    .hash-row {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .hash-label-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      min-width: 84px;
+    }
+    .hash-label {
+      font-size: 0.83rem;
+      font-weight: 800;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    /* Strength pills */
+    .strength-pill {
+      font-size: 0.65rem;
+      font-weight: 800;
+      border-radius: 20px;
+      padding: 2px 8px;
+      white-space: nowrap;
+    }
+    .pill-weak   { background: #f9731622; color: #f97316; border: 1px solid #f9731655; }
+    .pill-legacy { background: #eab30822; color: #eab308; border: 1px solid #eab30855; }
+    .pill-strong { background: #22c55e22; color: #22c55e; border: 1px solid #22c55e55; }
+    .pill-max    { background: #0d948822; color: #2dd4bf; border: 1px solid #0d948855; }
+
+    .hash-value {
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--text);
+      word-break: break-all;
+      background: var(--bg3);
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.03);
+      line-height: 1.5;
+      min-height: 38px;
+    }
+
+    /* HEX / B64 toggle */
+    .fmt-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .fmt-btn {
+      padding: 5px 9px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      font-family: inherit;
+    }
+    .fmt-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* copy btn */
+    .copy-btn {
+      padding: 7px 10px;
+      font-size: 0.8rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { background: var(--bg3); }
+
+    /* ── Verify hash panel ─────────────────────────────────── */
+    .verify-panel {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-top: 4px;
+    }
+    .verify-panel label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+    .verify-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .verify-input {
+      flex: 1;
+      min-width: 200px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: monospace;
+      font-size: 0.85rem;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .verify-input:focus { border-color: var(--accent); }
+    .verify-result {
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 8px;
+      white-space: nowrap;
+      display: none;
+    }
+    .verify-result.match    { background: #22c55e22; color: #22c55e; border: 1px solid #22c55e55; display: inline-block; }
+    .verify-result.mismatch { background: #ef444422; color: #ef4444; border: 1px solid #ef444455; display: inline-block; }
+
+    /* ── Bottom controls ───────────────────────────────────── */
+    .controls-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── Responsive ────────────────────────────────────────── */
+    @media (max-width: 760px) {
+      .hash-row {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+      }
+      .hash-label-wrap { grid-column: 1; grid-row: 1; }
+      .fmt-toggle      { grid-column: 2; grid-row: 1; justify-self: end; }
+      .hash-value      { grid-column: 1 / -1; grid-row: 2; }
+      .copy-btn        { grid-column: 2; grid-row: 1; display: none; }
+    }
+
+    /* ── Status / progress ─────────────────────────────────── */
+    #statusMsg {
+      margin-top: 12px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .file-progress {
+      width: 100%;
+      height: 4px;
+      background: var(--bg2);
+      border-radius: 2px;
+      margin-top: 10px;
+      overflow: hidden;
+      display: none;
+    }
+    .file-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.2s;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Hash Generator</h1>
+  <p class="page-sub">MD5 · SHA-1 · SHA-256 · SHA-512 · HMAC · File Hashing · HEX &amp; Base64 output — 100% client-side.</p>
+
+  <!-- ══ Tool Playground ══════════════════════════════════════════ -->
+  <div class="content-card tool-playground">
+
+    <!-- Mode tab switcher -->
+    <div class="mode-tabs" role="tablist">
+      <button class="mode-tab active" id="tabText" role="tab" aria-selected="true"  onclick="switchMode('text')">✏️ Text Mode</button>
+      <button class="mode-tab"        id="tabFile" role="tab" aria-selected="false" onclick="switchMode('file')">📁 File Mode</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 24px; align-items: start;" class="tool-io">
+
+      <!-- ── Left: Input Panel ── -->
+      <div class="input-panel">
+
+        <!-- TEXT input -->
+        <div id="textInputWrap">
+          <label for="hashInput">Input Text</label>
+          <textarea id="hashInput" placeholder="Type or paste text here…  Hashes update in real-time." style="min-height:220px; margin-top: 6px;"></textarea>
+        </div>
+
+        <!-- FILE drop zone -->
+        <div id="fileInputWrap" style="display:none;">
+          <label>Upload File</label>
+          <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <span class="drop-icon">📂</span>
+            <span>Click or drag &amp; drop any file</span>
+            <span style="font-size:0.78rem; margin-top:4px; opacity:0.6;">Binary content is hashed using CryptoJS WordArray</span>
+            <div class="file-name" id="chosenFileName"></div>
+          </div>
+          <input type="file" id="fileInput" onchange="handleFileSelect(this.files[0])">
+          <div class="file-progress" id="fileProgress"><div class="file-progress-bar" id="fileProgressBar"></div></div>
+        </div>
+
+        <!-- HMAC Key -->
+        <div>
+          <div class="hmac-row">
+            <label for="hmacKey">🔑 HMAC Secret Key</label>
+            <span class="hmac-badge">Optional</span>
+          </div>
+          <input type="text" id="hmacKey" class="hmac-key-input" placeholder="Leave blank for plain hashes…" style="width:100%; margin-top:6px;" oninput="recompute()">
+        </div>
+
+        <!-- Verify hash panel -->
+        <div class="verify-panel">
+          <label>🔍 Verify Hash (paste known hash to compare)</label>
+          <div class="verify-input-row">
+            <input type="text" id="verifyInput" class="verify-input" placeholder="Paste any MD5 / SHA-1 / SHA-256 / SHA-512 hash…" oninput="runVerify()">
+            <span class="verify-result" id="verifyResult"></span>
+          </div>
+          <div id="verifyAlgo" style="font-size:0.75rem; margin-top:6px; color:var(--muted);"></div>
+        </div>
+      </div>
+
+      <!-- ── Right: Output Panel ── -->
+      <div style="background:var(--bg3); border:1px dashed var(--border); border-radius:12px; padding:20px; min-height:250px;">
+        <h4 style="margin-bottom:14px; display:flex; align-items:center; gap:10px;">
+          Cryptographic Checksums
+          <span id="hmacIndicator" style="display:none;" class="hmac-badge">HMAC MODE</span>
+        </h4>
+
+        <!-- MD5 row -->
+        <div class="hash-row">
+          <div class="hash-label-wrap">
+            <span class="hash-label">MD5</span>
+            <span class="strength-pill pill-weak">Weak</span>
+          </div>
+          <div class="hash-value" id="hashMd5">—</div>
+          <div class="fmt-toggle">
+            <button class="fmt-btn active" data-algo="md5" data-fmt="hex"  onclick="setFmt('md5','hex',this)">HEX</button>
+            <button class="fmt-btn"        data-algo="md5" data-fmt="b64"  onclick="setFmt('md5','b64',this)">B64</button>
+          </div>
+          <button class="copy-btn" onclick="copyHash('md5')" title="Copy MD5">📋</button>
+        </div>
+
+        <!-- SHA-1 row -->
+        <div class="hash-row">
+          <div class="hash-label-wrap">
+            <span class="hash-label">SHA-1</span>
+            <span class="strength-pill pill-legacy">Legacy</span>
+          </div>
+          <div class="hash-value" id="hashSha1">—</div>
+          <div class="fmt-toggle">
+            <button class="fmt-btn active" data-algo="sha1" data-fmt="hex" onclick="setFmt('sha1','hex',this)">HEX</button>
+            <button class="fmt-btn"        data-algo="sha1" data-fmt="b64" onclick="setFmt('sha1','b64',this)">B64</button>
+          </div>
+          <button class="copy-btn" onclick="copyHash('sha1')" title="Copy SHA-1">📋</button>
+        </div>
+
+        <!-- SHA-256 row -->
+        <div class="hash-row">
+          <div class="hash-label-wrap">
+            <span class="hash-label">SHA-256</span>
+            <span class="strength-pill pill-strong">Strong</span>
+          </div>
+          <div class="hash-value" id="hashSha256">—</div>
+          <div class="fmt-toggle">
+            <button class="fmt-btn active" data-algo="sha256" data-fmt="hex" onclick="setFmt('sha256','hex',this)">HEX</button>
+            <button class="fmt-btn"        data-algo="sha256" data-fmt="b64" onclick="setFmt('sha256','b64',this)">B64</button>
+          </div>
+          <button class="copy-btn" onclick="copyHash('sha256')" title="Copy SHA-256">📋</button>
+        </div>
+
+        <!-- SHA-512 row -->
+        <div class="hash-row">
+          <div class="hash-label-wrap">
+            <span class="hash-label">SHA-512</span>
+            <span class="strength-pill pill-max">Maximum</span>
+          </div>
+          <div class="hash-value" id="hashSha512">—</div>
+          <div class="fmt-toggle">
+            <button class="fmt-btn active" data-algo="sha512" data-fmt="hex" onclick="setFmt('sha512','hex',this)">HEX</button>
+            <button class="fmt-btn"        data-algo="sha512" data-fmt="b64" onclick="setFmt('sha512','b64',this)">B64</button>
+          </div>
+          <button class="copy-btn" onclick="copyHash('sha512')" title="Copy SHA-512">📋</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom controls -->
+    <div class="controls-row">
+      <button class="btn ghost" id="btnClear" style="border-color:#ff6b6b; color:#ff6b6b;" onclick="clearAll()">🗑 Clear</button>
+      <button class="btn" id="btnCopyJson" onclick="copyAsJson()">📄 Copy as JSON</button>
+    </div>
+    <p id="statusMsg"></p>
+
+  </div><!-- /tool-playground -->
+
+  <!-- ══ Features Section ════════════════════════════════════════ -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Text &amp; File Hashing:</strong> Switch between typing text directly or uploading any file — binary content is read via FileReader and converted to a CryptoJS WordArray for accurate hashing.</li>
+      <li><strong>HMAC Mode:</strong> Enter a secret key to compute HMAC-MD5, HMAC-SHA1, HMAC-SHA256, and HMAC-SHA512 keyed message authentication codes instead of plain hashes.</li>
+      <li><strong>Hash Verification:</strong> Paste any known hash into the Verify field. The tool auto-detects the algorithm by length and shows a ✅ Match or ❌ Mismatch result instantly.</li>
+      <li><strong>HEX / Base64 Toggle:</strong> Each hash row has its own format toggle — switch between hexadecimal (default) and Base64-encoded output per algorithm.</li>
+      <li><strong>Copy as JSON:</strong> Export all four computed hashes as a single JSON object with one click.</li>
+      <li><strong>Strength Indicators:</strong> Colored pills next to each algorithm label signal security strength: MD5 = Weak, SHA-1 = Legacy, SHA-256 = Strong, SHA-512 = Maximum.</li>
+      <li><strong>100% Client-side:</strong> All computation happens in your browser via CryptoJS. No data leaves your device.</li>
+    </ul>
+  </div>
+
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+
+let currentMode   = 'text';          // 'text' | 'file'
+let fileWordArray = null;            // CryptoJS WordArray from file
+let lastWordArrays = {               // raw CryptoJS WordArrays (for format conversion)
+  md5: null, sha1: null, sha256: null, sha512: null
+};
+let fmts = { md5: 'hex', sha1: 'hex', sha256: 'hex', sha512: 'hex' };
+
+/* ═══════════════════════════════════════════════════
+   STATUS
+═══════════════════════════════════════════════════ */
+function showStatus(text, isError = false) {
+  const el = $('statusMsg');
+  el.style.display = 'block';
+  el.textContent   = text;
+  el.style.color   = isError ? '#ff6b6b' : 'var(--accent)';
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => { el.style.display = 'none'; }, 2200);
+}
+
+/* ═══════════════════════════════════════════════════
+   MODE SWITCH
+═══════════════════════════════════════════════════ */
+function switchMode(mode) {
+  currentMode = mode;
+  $('tabText').classList.toggle('active', mode === 'text');
+  $('tabFile').classList.toggle('active', mode === 'file');
+  $('textInputWrap').style.display = mode === 'text' ? '' : 'none';
+  $('fileInputWrap').style.display = mode === 'file' ? '' : 'none';
+  resetOutputs();
+  if (mode === 'text') recompute();
+}
+
+/* ═══════════════════════════════════════════════════
+   FILE HANDLING
+═══════════════════════════════════════════════════ */
+function handleFileSelect(file) {
+  if (!file) return;
+  $('chosenFileName').textContent = '📄 ' + file.name + ' (' + formatBytes(file.size) + ')';
+  $('fileProgress').style.display = 'block';
+  $('fileProgressBar').style.width = '0%';
+
+  const reader = new FileReader();
+  reader.onprogress = e => {
+    if (e.lengthComputable) {
+      $('fileProgressBar').style.width = Math.round((e.loaded / e.total) * 90) + '%';
+    }
+  };
+  reader.onload = e => {
+    $('fileProgressBar').style.width = '100%';
+    setTimeout(() => { $('fileProgress').style.display = 'none'; }, 600);
+
+    // Convert ArrayBuffer → CryptoJS WordArray
+    const buf   = e.target.result;
+    const bytes = new Uint8Array(buf);
+    const words = [];
+    for (let i = 0; i < bytes.length; i += 4) {
+      words.push(
+        ((bytes[i]   || 0) << 24) |
+        ((bytes[i+1] || 0) << 16) |
+        ((bytes[i+2] || 0) <<  8) |
+        ((bytes[i+3] || 0))
+      );
+    }
+    fileWordArray = CryptoJS.lib.WordArray.create(words, bytes.length);
+    recompute();
+  };
+  reader.onerror = () => showStatus('❌ File read failed.', true);
+  reader.readAsArrayBuffer(file);
+}
+
+function formatBytes(b) {
+  if (b < 1024)       return b + ' B';
+  if (b < 1048576)    return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(2) + ' MB';
+}
+
+// Drag-and-drop support
+const dz = $('dropZone');
+['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => {
+  e.preventDefault(); dz.classList.add('active-drop');
+}));
+['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => {
+  e.preventDefault(); dz.classList.remove('active-drop');
+}));
+dz.addEventListener('drop', e => {
+  const file = e.dataTransfer.files[0];
+  if (file) handleFileSelect(file);
+});
+
+/* ═══════════════════════════════════════════════════
+   CORE HASHING
+═══════════════════════════════════════════════════ */
+function recompute() {
+  const key = $('hmacKey').value;
+
+  // Choose input: text or file word array
+  let input;
+  if (currentMode === 'file') {
+    if (!fileWordArray) return;
+    input = fileWordArray;
+  } else {
+    const txt = $('hashInput').value;
+    if (!txt) { resetOutputs(); return; }
+    input = txt;
+  }
+
+  try {
+    const isHmac = key.length > 0;
+    $('hmacIndicator').style.display = isHmac ? '' : 'none';
+
+    if (isHmac) {
+      lastWordArrays.md5    = CryptoJS.HmacMD5(input, key);
+      lastWordArrays.sha1   = CryptoJS.HmacSHA1(input, key);
+      lastWordArrays.sha256 = CryptoJS.HmacSHA256(input, key);
+      lastWordArrays.sha512 = CryptoJS.HmacSHA512(input, key);
+    } else {
+      lastWordArrays.md5    = CryptoJS.MD5(input);
+      lastWordArrays.sha1   = CryptoJS.SHA1(input);
+      lastWordArrays.sha256 = CryptoJS.SHA256(input);
+      lastWordArrays.sha512 = CryptoJS.SHA512(input);
+    }
+
+    renderAll();
+    runVerify();   // re-check verification after new hash
+  } catch (err) {
+    showStatus('❌ Hashing error: ' + err.message, true);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════════ */
+function renderAll() {
+  ['md5','sha1','sha256','sha512'].forEach(algo => renderOne(algo));
+}
+
+function renderOne(algo) {
+  const wa  = lastWordArrays[algo];
+  const fmt = fmts[algo];
+  const el  = $('hash' + algo.charAt(0).toUpperCase() + algo.slice(1));
+  if (!wa) { el.textContent = '—'; return; }
+  el.textContent = fmt === 'b64'
+    ? CryptoJS.enc.Base64.stringify(wa)
+    : wa.toString(CryptoJS.enc.Hex);
+}
+
+function resetOutputs() {
+  ['Md5','Sha1','Sha256','Sha512'].forEach(k => { $('hash'+k).textContent = '—'; });
+  lastWordArrays = { md5: null, sha1: null, sha256: null, sha512: null };
+  $('hmacIndicator').style.display = 'none';
+  $('verifyResult').className  = 'verify-result';
+  $('verifyResult').textContent = '';
+  $('verifyAlgo').textContent  = '';
+}
+
+/* ═══════════════════════════════════════════════════
+   FORMAT TOGGLE  (HEX ↔ Base64)
+═══════════════════════════════════════════════════ */
+function setFmt(algo, fmt, btn) {
+  fmts[algo] = fmt;
+  // Update active button within its toggle group
+  const row = btn.closest('.fmt-toggle');
+  row.querySelectorAll('.fmt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOne(algo);
+  runVerify();   // verify might also be in b64 now
+}
+
+/* ═══════════════════════════════════════════════════
+   VERIFY HASH
+═══════════════════════════════════════════════════ */
+const ALGO_BY_LEN = {
+  32:  { name: 'MD5',    key: 'md5'    },
+  40:  { name: 'SHA-1',  key: 'sha1'   },
+  64:  { name: 'SHA-256',key: 'sha256' },
+  128: { name: 'SHA-512',key: 'sha512' }
+};
+// Also attempt base64 lengths (approximate)
+const B64_LEN = {
+  24:  { name: 'MD5 (Base64)',    key: 'md5'    },
+  28:  { name: 'SHA-1 (Base64)', key: 'sha1'   },
+  44:  { name: 'SHA-256 (Base64)',key: 'sha256' },
+  88:  { name: 'SHA-512 (Base64)',key: 'sha512' }
+};
+
+function runVerify() {
+  const known  = $('verifyInput').value.trim();
+  const resEl  = $('verifyResult');
+  const algoEl = $('verifyAlgo');
+
+  resEl.className  = 'verify-result';
+  resEl.textContent = '';
+  algoEl.textContent = '';
+
+  if (!known) return;
+
+  // Detect algorithm by length
+  const len    = known.length;
+  const info   = ALGO_BY_LEN[len] || B64_LEN[len];
+  if (!info) {
+    algoEl.textContent = `⚠️ Unrecognized hash length (${len} chars). Expected 32/40/64/128 (hex) or 24/28/44/88 (Base64).`;
+    return;
+  }
+
+  algoEl.textContent = `Detected: ${info.name}`;
+
+  const wa = lastWordArrays[info.key];
+  if (!wa) {
+    algoEl.textContent += ' — generate a hash first.';
+    return;
+  }
+
+  // Get current displayed value (respecting format)
+  const computed = fmts[info.key] === 'b64'
+    ? CryptoJS.enc.Base64.stringify(wa)
+    : wa.toString(CryptoJS.enc.Hex);
+
+  const match = computed.toLowerCase() === known.toLowerCase();
+  resEl.className  = 'verify-result ' + (match ? 'match' : 'mismatch');
+  resEl.textContent = match ? '✅ Match' : '❌ Mismatch';
+}
+
+/* ═══════════════════════════════════════════════════
+   COPY HELPERS
+═══════════════════════════════════════════════════ */
+function copyHash(algo) {
+  const elMap = { md5:'hashMd5', sha1:'hashSha1', sha256:'hashSha256', sha512:'hashSha512' };
+  const val   = $(elMap[algo]).textContent;
+  if (val === '—') return;
+  navigator.clipboard.writeText(val).then(() => showStatus('📋 Copied ' + algo.toUpperCase() + ' hash!'));
+}
+
+function copyAsJson() {
+  const obj = {};
+  ['md5','sha1','sha256','sha512'].forEach(algo => {
+    const wa = lastWordArrays[algo];
+    if (wa) {
+      obj[algo] = fmts[algo] === 'b64'
+        ? CryptoJS.enc.Base64.stringify(wa)
+        : wa.toString(CryptoJS.enc.Hex);
+    } else {
+      obj[algo] = null;
+    }
+  });
+  navigator.clipboard.writeText(JSON.stringify(obj, null, 2))
+    .then(() => showStatus('📄 All hashes copied as JSON!'));
+}
+
+/* ═══════════════════════════════════════════════════
+   CLEAR
+═══════════════════════════════════════════════════ */
+function clearAll() {
+  $('hashInput').value   = '';
+  $('hmacKey').value     = '';
+  $('verifyInput').value = '';
+  $('chosenFileName').textContent = '';
+  fileWordArray = null;
+  resetOutputs();
+  $('statusMsg').style.display = 'none';
+}
+
+/* ═══════════════════════════════════════════════════
+   EVENTS
+═══════════════════════════════════════════════════ */
+$('hashInput').addEventListener('input', recompute);
+
+// FAQ accordions (if any exist on page)
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.onclick = () => q.parentElement.classList.toggle('open');
+});
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

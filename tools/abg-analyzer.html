@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arterial Blood Gas (ABG) Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Interpret Arterial Blood Gas (ABG) values online. Analyze pH, pCO2, HCO3, and oxygenation status with bilingual English/Bengali support and dynamic diagnostics.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+    }
+
+    .overall-status {
+      padding: 16px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+      border-left: 6px solid var(--border);
+      background: rgba(255,255,255,0.01);
+    }
+
+    .overall-status.status-normal { border-left-color: var(--normal-color); color: var(--normal-color); }
+    .overall-status.status-abnormal { border-left-color: var(--high-color); color: var(--high-color); }
+    .overall-status.status-critical { border-left-color: var(--critical-color); color: var(--critical-color); }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .results-table th, .results-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .results-table th {
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+    }
+
+    .status-badge {
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+    
+    .status-badge.normal { background: rgba(16, 185, 129, 0.15); color: var(--normal-color); }
+    .status-badge.low { background: rgba(59, 130, 246, 0.15); color: var(--low-color); }
+    .status-badge.high { background: rgba(245, 158, 11, 0.15); color: var(--high-color); }
+    .status-badge.critical { background: rgba(239, 68, 68, 0.15); color: var(--critical-color); }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.9rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .insight-card p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .ref-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      margin-top: 8px;
+    }
+    
+    .ref-table th, .ref-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .ref-table th {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<main class="page reveal-on-scroll">
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Arterial Blood Gas (ABG) Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Interpret arterial blood gas parameters to assess acid-base balance, oxygenation status, and metabolic or respiratory compensation.</p>
+  </header>
+
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs panel -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🩺 Blood Gas Parameters</h3>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valPH" data-translate="labelPH">Blood pH (6.80 - 7.80)</label>
+              <input type="number" step="0.01" id="valPH" placeholder="e.g. 7.42" value="7.40" required>
+            </div>
+            <div class="input-wrapper">
+              <label for="valPCO2" data-translate="labelPCO2">pCO2 (mmHg) (10 - 100)</label>
+              <input type="number" step="1" id="valPCO2" placeholder="e.g. 40" value="40" required>
+            </div>
+            <div class="input-wrapper">
+              <label for="valHCO3" data-translate="labelHCO3">HCO3 (mEq/L) (5 - 50)</label>
+              <input type="number" step="1" id="valHCO3" placeholder="e.g. 24" value="24" required>
+            </div>
+            <div class="input-wrapper">
+              <label for="valPO2" data-translate="labelPO2">pO2 (mmHg) (30 - 150)</label>
+              <input type="number" step="1" id="valPO2" placeholder="e.g. 95" value="95" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control" style="margin-top: 10px;">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeABG()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Blood Gas</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results panel -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🩺</span>
+          <h4 data-translate="placeholderTitle">Report Analysis Pending</h4>
+          <p data-translate="placeholderDesc">Enter blood gas parameters and click the analyze button to display clinical interpretation.</p>
+        </div>
+
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Clinical ABG Interpretation Report</h3>
+          </div>
+
+          <div class="patient-summary">
+            <span id="resDateStr">-</span>
+          </div>
+
+          <div class="overall-status" id="resOverallStatus">-</div>
+
+          <div style="overflow-x: auto;">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th data-translate="thParam">Parameter</th>
+                  <th data-translate="thValue">Value</th>
+                  <th data-translate="thRef">Normal Reference</th>
+                  <th data-translate="thStatus">Status</th>
+                </tr>
+              </thead>
+              <tbody id="resTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="insight-card" id="oxygenationCard">
+            <h5 data-translate="titleOxygenation">Oxygenation Status</h5>
+            <p id="resOxygenation">-</p>
+          </div>
+
+          <div class="insight-card" id="compensationCard">
+            <h5 data-translate="titleCompensation">Acid-Base Compensation</h5>
+            <p id="resCompensation">-</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <section class="content-card">
+    <h3 data-translate="titleRefRange">📋 Standard ABG Reference Ranges</h3>
+    <div style="overflow-x: auto;">
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th data-translate="thParam">Parameter</th>
+            <th data-translate="thRef">Normal Range</th>
+            <th data-translate="thUnit">Unit</th>
+            <th data-translate="thIndicator">Clinical Meaning</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>pH</td>
+            <td>7.35 – 7.45</td>
+            <td>-</td>
+            <td data-translate="descPH">Overall blood acidity or alkalinity</td>
+          </tr>
+          <tr>
+            <td>pCO2</td>
+            <td>35 – 45</td>
+            <td>mmHg</td>
+            <td data-translate="descPCO2">Partial pressure of carbon dioxide (respiratory component)</td>
+          </tr>
+          <tr>
+            <td>HCO3</td>
+            <td>22 – 26</td>
+            <td>mEq/L</td>
+            <td data-translate="descHCO3">Bicarbonate concentration (metabolic component)</td>
+          </tr>
+          <tr>
+            <td>pO2</td>
+            <td>80 – 100</td>
+            <td>mmHg</td>
+            <td data-translate="descPO2">Partial pressure of oxygen (oxygenation status)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This analyzer is for educational and informational purposes only. It must never be used to diagnose diseases or guide clinical treatments. Always consult a physician.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      toolTitle: "Arterial Blood Gas (ABG) Analyzer",
+      toolDesc: "Interpret arterial blood gas parameters to assess acid-base balance, oxygenation status, and metabolic or respiratory compensation.",
+      inputsTitle: "🩺 Blood Gas Parameters",
+      labelPH: "Blood pH (6.80 - 7.80)",
+      labelPCO2: "pCO2 (mmHg) (10 - 100)",
+      labelHCO3: "HCO3 (mEq/L) (5 - 50)",
+      labelPO2: "pO2 (mmHg) (30 - 150)",
+      btnAnalyze: "Analyze Blood Gas",
+      placeholderTitle: "Report Analysis Pending",
+      placeholderDesc: "Enter blood gas parameters and click the analyze button to display clinical interpretation.",
+      reportTitle: "🔬 Clinical ABG Interpretation Report",
+      thParam: "Parameter",
+      thValue: "Value",
+      thRef: "Normal Reference",
+      thStatus: "Status",
+      thUnit: "Unit",
+      thIndicator: "Clinical Meaning",
+      titleRefRange: "📋 Standard ABG Reference Ranges",
+      descPH: "Overall blood acidity or alkalinity",
+      descPCO2: "Partial pressure of carbon dioxide (respiratory component)",
+      descHCO3: "Bicarbonate concentration (metabolic component)",
+      descPO2: "Partial pressure of oxygen (oxygenation status)",
+      recentRuns: "Recent Interpretations",
+      noHistory: "No recent runs recorded.",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This analyzer is for educational and informational purposes only. It must never be used to diagnose diseases or guide clinical treatments. Always consult a physician.",
+      titleOxygenation: "Oxygenation Status",
+      titleCompensation: "Acid-Base Compensation",
+      copyBtn: "Copy Report",
+      printBtn: "Print Report",
+      downloadImageBtn: "Save Image",
+      clearBtn: "Reset",
+      statusNormal: "Normal Acid-Base Status",
+      statusAbnormal: "Acid-Base Disbalance Detected",
+      statusCritical: "CRITICAL ACID-BASE STATUS"
+    },
+    bn: {
+      toolTitle: "ধমনীর রক্ত গ্যাস (ABG) বিশ্লেষক",
+      toolDesc: "অ্যাসিড-ক্ষার সমতা, অক্সিজেনেশন অবস্থা এবং মেটাবলিক বা রেসপিরেটরি ক্ষতিপূরণ মূল্যায়নের জন্য ধমনীর রক্তের গ্যাসের প্যারামিটার ব্যাখ্যা করুন।",
+      inputsTitle: "🩺 রক্তের গ্যাস প্যারামিটার",
+      labelPH: "রক্তের pH (৬.৮০ - ৭.৮০)",
+      labelPCO2: "pCO2 (mmHg) (১০ - ১০০)",
+      labelHCO3: "HCO3 (mEq/L) (৫ - ৫০)",
+      labelPO2: "pO2 (mmHg) (৩০ - ১৫০)",
+      btnAnalyze: "রক্তের গ্যাস विश्लेषण করুন",
+      placeholderTitle: "রিপোর্ট বিশ্লেষণ অমীমাংসিত",
+      placeholderDesc: "ইনপুট বক্সে রক্তের গ্যাস প্যারামিটার লিখুন এবং ক্লিনিক্যাল ফলাফল দেখতে বিশ্লেষণ বোতামটি চাপুন।",
+      reportTitle: "🔬 ক্লিনিক্যাল ABG বিশ্লেষণ রিপোর্ট",
+      thParam: "প্যারামিটার",
+      thValue: "মান",
+      thRef: "স্বাভাবিক সীমা",
+      thStatus: "অবস্থা",
+      thUnit: "ইউনিট",
+      thIndicator: "ক্লিনিক্যাল গুরুত্ব",
+      titleRefRange: "📋 প্রমিত ABG স্বাভাবিক রেফারেন্স টেবিল",
+      descPH: "রক্তের অম্লতা বা ক্ষারতার মাত্রা",
+      descPCO2: "কার্বন ডাই অক্সাইডের আংশিক চাপ (শ্বসনতন্ত্রের উপাদান)",
+      descHCO3: "বাইকার্বোনেট ঘনত্ব (বিপাকীয় উপাদান)",
+      descPO2: "অক্সিজেনের আংশিক চাপ (অক্সিজেনেশন অবস্থা)",
+      recentRuns: "সাম্প্রতিক বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই বিশ্লেষকটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না বা চিকিৎসায় নির্দেশিকা হিসেবে ব্যবহৃত হতে পারে না। সর্বদা একজন ডাক্তারের পরামর্শ নিন।",
+      titleOxygenation: "অক্সিজেনেশন অবস্থা",
+      titleCompensation: "অ্যাসিড-ক্ষার সমতা ক্ষতিপূরণ",
+      copyBtn: "কপি করুন",
+      printBtn: "প্রিন্ট করুন",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      clearBtn: "রিসেট",
+      statusNormal: "স্বাভাবিক অ্যাসিড-ক্ষার অবস্থা",
+      statusAbnormal: "অ্যাসিড-ক্ষার ভারসাম্যের অসঙ্গতি",
+      statusCritical: "জরুরী বা ঝুঁকিপূর্ণ অ্যাসিড-ক্ষার অবস্থা"
+    },
+    hi: {
+      toolTitle: "धमनी रक्त गैस (एबीजी) विश्लेषक",
+      toolDesc: "एसिड-बेस बैलेंस, ऑक्सीजनेशन स्थिति और चयापचय या श्वसन क्षतिपूर्ति का आकलन करने के लिए धमनी रक्त गैस मापदंडों की व्याख्या करें।",
+      inputsTitle: "🩺 रक्त गैस पैरामीटर्स",
+      labelPH: "रक्त पीएच (6.80 - 7.80)",
+      labelPCO2: "pCO2 (mmHg) (10 - 100)",
+      labelHCO3: "HCO3 (एमईक्यू/एल) (5 - 50)",
+      labelPO2: "पीओ2 (एमएमएचजी) (30 - 150)",
+      btnAnalyze: "रक्त गैस का विश्लेषण करें",
+      placeholderTitle: "रिपोर्ट विश्लेषण लंबित",
+      placeholderDesc: "रक्त गैस पैरामीटर ���र्ज करें और नैदानिक ​​व्याख्या प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 क्लिनिकल एबीजी इंटरप्रिटेशन रिपोर्ट",
+      thParam: "पैरामीटर",
+      thValue: "मूल्य",
+      thRef: "सामान्य संदर्भ",
+      thStatus: "स्थिति",
+      thUnit: "इकाई",
+      thIndicator: "नैदानिक अर्थ",
+      titleRefRange: "📋 मानक एबीजी संदर्भ रेंज",
+      descPH: "समग्र रक्त अम्लता या क्षारीयता",
+      descPCO2: "कार्बन डाइऑक्सा��ड का आंशिक दबाव (श्वसन घटक)",
+      descHCO3: "बाइकार्बोनेट सांद्रता (चयापचय घटक)",
+      descPO2: "ऑक्सीजन का आंशिक दबाव (ऑक्सीकरण स्थिति)",
+      recentRuns: "हालिया व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह विश्लेषक केवल शैक्षिक और सूच��ात्मक उद्देश्यों के लिए है। इसका उपयोग कभी भी बीमारियों का निदान करने या नैदानिक ​​​​उपचार का मार्गदर्शन करने के लिए नहीं किया जाना चाहिए। हमेशा चिकित्सक से परामर्श लें.",
+      titleOxygenation: "ऑक्सीजनेशन स्थिति",
+      titleCompensation: "एसिड-बेस मुआवजा",
+      copyBtn: "रिपोर्ट कॉपी करें",
+      printBtn: "रिपोर्ट प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      clearBtn: "रीसेट करें",
+      statusNormal: "सामान्य अम्ल-क्षार स्थिति",
+      statusAbnormal: "एसिड-बेस असंतुल��� का पता चला",
+      statusCritical: "क्रिटिकल एसिड-बेस स्थिति"
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-abg-history")) || [];
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        el.innerHTML = translations[lang][key];
+      }
+    });
+    renderHistoryDisplay();
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function resetForm() {
+    document.getElementById("valPH").value = "7.40";
+    document.getElementById("valPCO2").value = "40";
+    document.getElementById("valHCO3").value = "24";
+    document.getElementById("valPO2").value = "95";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function analyzeABG() {
+    const ph = parseFloat(document.getElementById("valPH").value);
+    const pco2 = parseFloat(document.getElementById("valPCO2").value);
+    const hco3 = parseFloat(document.getElementById("valHCO3").value);
+    const po2 = parseFloat(document.getElementById("valPO2").value);
+
+    if (isNaN(ph) || isNaN(pco2) || isNaN(hco3) || isNaN(po2)) {
+      alert("Please fill all input fields.");
+      return;
+    }
+
+    let status = "normal";
+    let diagnosisEN = "Normal Acid-Base Status";
+    let diagnosisBN = "স্বাভাবিক অ্যাসিড-ক্ষার অবস্থা";
+    
+    // Acid-base diagnosis logic
+    if (ph < 7.35) {
+      status = ph < 7.20 ? "critical" : "abnormal";
+      if (pco2 > 45 && hco3 < 22) {
+        diagnosisEN = "Mixed Respiratory & Metabolic Acidosis";
+        diagnosisBN = "মিশ্র রেসপিরেটরি ও মেটাবলিক অ্যাসিডোসিস";
+      } else if (pco2 > 45) {
+        if (hco3 > 26) {
+          diagnosisEN = "Partially Compensated Respiratory Acidosis";
+          diagnosisBN = "আংশিক ক্ষতিপূরণকৃত রেসপিরেটরি অ্যাসিডোসিস";
+        } else {
+          diagnosisEN = "Uncompensated Respiratory Acidosis";
+          diagnosisBN = "ক্ষতিপূরণহীন রেসপিরেটরি অ্যাসিডোসিস";
+        }
+      } else if (hco3 < 22) {
+        if (pco2 < 35) {
+          diagnosisEN = "Partially Compensated Metabolic Acidosis";
+          diagnosisBN = "আংশিক ক্ষতিপূরণকৃত মেটাবলিক অ্যাসিডোসিস";
+        } else {
+          diagnosisEN = "Uncompensated Metabolic Acidosis";
+          diagnosisBN = "ক্ষতিপূরণহীন মেটাবলিক অ্যাসিডোসিস";
+        }
+      }
+    } else if (ph > 7.45) {
+      status = ph > 7.60 ? "critical" : "abnormal";
+      if (pco2 < 35 && hco3 > 26) {
+        diagnosisEN = "Mixed Respiratory & Metabolic Alkalosis";
+        diagnosisBN = "মিশ্র রেসপিরেটরি ও মেটাবলিক অ্যালকালোসিস";
+      } else if (pco2 < 35) {
+        if (hco3 < 22) {
+          diagnosisEN = "Partially Compensated Respiratory Alkalosis";
+          diagnosisBN = "আংশিক ক্ষতিপূরণকৃত রেসপিরেটরি অ্যালকালোসিস";
+        } else {
+          diagnosisEN = "Uncompensated Respiratory Alkalosis";
+          diagnosisBN = "ক্ষতিপূরণহীন রেসপিরেটরি অ্যালকালোসিস";
+        }
+      } else if (hco3 > 26) {
+        if (pco2 > 45) {
+          diagnosisEN = "Partially Compensated Metabolic Alkalosis";
+          diagnosisBN = "আংশিক ক্ষতিপূরণকৃত মেটাবলিক অ্যালকালোসিস";
+        } else {
+          diagnosisEN = "Uncompensated Metabolic Alkalosis";
+          diagnosisBN = "ক্ষতিপূরণহীন মেটাবলিক অ্যালকালোসিস";
+        }
+      }
+    } else {
+      // Normal pH with compensation/mixed states
+      if (pco2 > 45 && hco3 > 26) {
+        diagnosisEN = "Fully Compensated Respiratory Acidosis or Metabolic Alkalosis";
+        diagnosisBN = "সম্পূর্ণ ক্ষতিপূরণকৃত রেসপিরেটরি অ্যাসিডোসিস অথবা মেটাবলিক অ্যালকালোসিস";
+        status = "abnormal";
+      } else if (pco2 < 35 && hco3 < 22) {
+        diagnosisEN = "Fully Compensated Respiratory Alkalosis or Metabolic Acidosis";
+        diagnosisBN = "সম্পূর্ণ ক্ষতিপূরণকৃত রেসপিরেটরি অ্যালকালোসিস অথবা মেটাবলিক অ্যাসিডোসিস";
+        status = "abnormal";
+      }
+    }
+
+    // Oxygenation logic
+    let oxEN = "";
+    let oxBN = "";
+    if (po2 < 60) {
+      oxEN = "Severe Hypoxemia (low oxygen level). Immediate medical assessment required.";
+      oxBN = "মারাত্মক হাইপোক্সেমিয়া (রক্তে অক্সিজেনের তীব্র স্বল্পতা)। অবিলম্বে জরুরি চিকিৎসা প্রয়োজন।";
+    } else if (po2 < 80) {
+      oxEN = "Mild to Moderate Hypoxemia. Oxygen supplementation may be indicated.";
+      oxBN = "মৃদু থেকে মাঝারি হাইপোক্সেমিয়া। অক্সিজেন সাপোর্ট লাগতে পারে।";
+    } else if (po2 > 100) {
+      oxEN = "Hyperoxia (excessive oxygenation). Evaluate oxygen supplementation levels.";
+      oxBN = "হাইপারঅক্সিয়া (অক্সিজেনের আধিক্য)। অক্সিজেন থেরাপির মাত্রা যাচাই করুন।";
+    } else {
+      oxEN = "Normal Oxygenation.";
+      oxBN = "স্বাভাবিক অক্সিজেন মাত্রা।";
+    }
+
+    const overallEl = document.getElementById("resOverallStatus");
+    overallEl.className = "overall-status";
+    if (status === "normal") {
+      overallEl.classList.add("status-normal");
+      overallEl.textContent = currentLang === "en" ? translations.en.statusNormal : translations.bn.statusNormal;
+    } else if (status === "abnormal") {
+      overallEl.classList.add("status-abnormal");
+      overallEl.textContent = currentLang === "en" ? translations.en.statusAbnormal : translations.bn.statusAbnormal;
+    } else {
+      overallEl.classList.add("status-critical");
+      overallEl.textContent = currentLang === "en" ? translations.en.statusCritical : translations.bn.statusCritical;
+    }
+
+    const tBody = document.getElementById("resTableBody");
+    tBody.innerHTML = `
+      <tr>
+        <td>pH</td>
+        <td><strong>${ph.toFixed(2)}</strong></td>
+        <td>7.35 - 7.45</td>
+        <td><span class="status-badge ${ph < 7.35 ? 'low' : (ph > 7.45 ? 'high' : 'normal')}">${ph < 7.35 ? (currentLang === 'en' ? 'Low' : 'কম') : (ph > 7.45 ? (currentLang === 'en' ? 'High' : 'বেশি') : (currentLang === 'en' ? 'Normal' : 'স্বাভাবিক'))}</span></td>
+      </tr>
+      <tr>
+        <td>pCO2</td>
+        <td><strong>${pco2} mmHg</strong></td>
+        <td>35 - 45 mmHg</td>
+        <td><span class="status-badge ${pco2 < 35 ? 'low' : (pco2 > 45 ? 'high' : 'normal')}">${pco2 < 35 ? (currentLang === 'en' ? 'Low' : 'কম') : (pco2 > 45 ? (currentLang === 'en' ? 'High' : 'বেশি') : (currentLang === 'en' ? 'Normal' : 'স্বাভাবিক'))}</span></td>
+      </tr>
+      <tr>
+        <td>HCO3</td>
+        <td><strong>${hco3} mEq/L</strong></td>
+        <td>22 - 26 mEq/L</td>
+        <td><span class="status-badge ${hco3 < 22 ? 'low' : (hco3 > 26 ? 'high' : 'normal')}">${hco3 < 22 ? (currentLang === 'en' ? 'Low' : 'কম') : (hco3 > 26 ? (currentLang === 'en' ? 'High' : 'বেশি') : (currentLang === 'en' ? 'Normal' : 'স্বাভাবিক'))}</span></td>
+      </tr>
+      <tr>
+        <td>pO2</td>
+        <td><strong>${po2} mmHg</strong></td>
+        <td>80 - 100 mmHg</td>
+        <td><span class="status-badge ${po2 < 80 ? 'low' : (po2 > 100 ? 'high' : 'normal')}">${po2 < 80 ? (currentLang === 'en' ? 'Low' : 'কম') : (po2 > 100 ? (currentLang === 'en' ? 'High' : 'বেশি') : (currentLang === 'en' ? 'Normal' : 'স্বাভাবিক'))}</span></td>
+      </tr>
+    `;
+
+    document.getElementById("resOxygenation").textContent = currentLang === "en" ? oxEN : oxBN;
+    document.getElementById("resCompensation").textContent = currentLang === "en" ? diagnosisEN : diagnosisBN;
+
+    document.getElementById("resDateStr").textContent = `${currentLang === "en" ? 'Analysis Date' : 'বিশ্লেষণের তারিখ'}: ${new Date().toLocaleString()}`;
+
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    // Save run logs to localStorage
+    const logItem = {
+      date: new Date().toLocaleDateString(),
+      resultEN: diagnosisEN,
+      resultBN: diagnosisBN,
+      ph: ph,
+      pco2: pco2,
+      hco3: hco3
+    };
+    recentHistory.unshift(logItem);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-abg-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const list = document.getElementById("historyListContainer");
+    if (!list) return;
+    list.innerHTML = "";
+    if (recentHistory.length === 0) {
+      list.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${currentLang === "en" ? 'No recent runs recorded.' : 'কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।'}</p>`;
+      return;
+    }
+    recentHistory.forEach(item => {
+      const el = document.createElement("div");
+      el.className = "history-item";
+      el.innerHTML = `
+        <span>${item.date} - pH: ${item.ph}, pCO2: ${item.pco2}, HCO3: ${item.hco3}</span>
+        <strong>${currentLang === "en" ? item.resultEN : item.resultBN}</strong>
+      `;
+      list.appendChild(el);
+    });
+  }
+
+  function copyFormattedResult() {
+    const ph = document.getElementById("valPH").value;
+    const pco2 = document.getElementById("valPCO2").value;
+    const hco3 = document.getElementById("valHCO3").value;
+    const po2 = document.getElementById("valPO2").value;
+    const dx = document.getElementById("resCompensation").textContent;
+    const ox = document.getElementById("resOxygenation").textContent;
+
+    const text = `--- SSDK ABG ANALYZER REPORT ---\npH: ${ph}\npCO2: ${pco2} mmHg\nHCO3: ${hco3} mEq/L\npO2: ${po2} mmHg\nAcid-Base Pattern: ${dx}\nOxygenation Status: ${ox}\nDisclaimer: Educational reference only.`;
+    navigator.clipboard.writeText(text).then(() => alert("Report copied to clipboard!"));
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function captureReportPng() {
+    const card = document.getElementById("resultsPanel");
+    html2canvas(card, { backgroundColor: "#0f1423" }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `abg-report-${new Date().getTime()}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    const favBtn = document.getElementById("toolFavBtn");
+    const isFav = favBtn.classList.toggle("on");
+    favBtn.textContent = isFav ? "★" : "☆";
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

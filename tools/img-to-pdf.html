@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image to PDF Converter &bull; Convert Images Online - SSDK TOOLS HUB</title>
+  <meta name="description" content="Convert JPG, PNG, WebP, and BMP images into a single PDF document instantly. Customize page layout settings with zero server uploads.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <!-- Load pdf-lib from CDN -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+  <style>
+    .img-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+    .img-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+    .img-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+    .img-thumbnail {
+      width: 100%;
+      height: 100px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: #000;
+      margin-bottom: 8px;
+    }
+    .img-details {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-align: center;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 600;
+    }
+    .img-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+      width: 100%;
+    }
+    .img-actions button {
+      flex: 1;
+      padding: 4px;
+      font-size: 0.7rem;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .img-actions button:hover:not(:disabled) {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    .img-actions button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .config-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+    .config-box h3 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .input-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 768px) {
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .input-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .input-group select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Image to PDF Converter</h1>
+  <p class="page-sub">Convert your JPEG, PNG, WebP, or BMP images into a single PDF document in the order you select.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    
+    <!-- PDF Configuration panel -->
+    <div class="config-box">
+      <h3>PDF Page Layout Settings</h3>
+      <div class="input-row">
+        <div class="input-group">
+          <label for="pageSize">Page Size</label>
+          <select id="pageSize" onchange="toggleOrientation()">
+            <option value="fit" selected>Fit to Image Dimensions (Recommended)</option>
+            <option value="A4">A4 (Standard Document)</option>
+            <option value="LETTER">US Letter Size</option>
+          </select>
+        </div>
+        
+        <div class="input-group" id="orientationGroup" style="display: none;">
+          <label for="pageOrientation">Orientation</label>
+          <select id="pageOrientation">
+            <option value="portrait" selected>Portrait</option>
+            <option value="landscape">Landscape</option>
+          </select>
+        </div>
+        
+        <div class="input-group">
+          <label for="pageMargins">Margins</label>
+          <select id="pageMargins">
+            <option value="0" selected>No Margins (0px)</option>
+            <option value="20">Small Margins (20px)</option>
+            <option value="50">Large Margins (50px)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-io" style="display: grid; grid-template-columns: 1fr; gap: 24px;">
+      
+      <!-- Upload Drop Zone -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Upload Images</h4>
+        <div id="dropZone" style="border: 2px dashed var(--border); padding: 35px 24px; border-radius: 12px; text-align: center; cursor: pointer; background: var(--bg2); transition: 0.3s; margin-bottom: 16px;">
+          <span style="font-size: 2.8rem; display: block; margin-bottom: 8px;">🖼</span>
+          <p style="font-size: 0.9rem; color: var(--muted); margin: 0;">Drag & drop your images here, or <span style="color: var(--accent); font-weight: 700;">browse</span></p>
+          <input type="file" id="imageInput" accept="image/*" multiple style="display: none;">
+        </div>
+      </div>
+
+      <!-- Image Queue Grid -->
+      <div id="queueContainer" style="display: none;">
+        <h4 style="margin-bottom: 6px;">Conversion Queue (<span id="queueCount">0</span> images loaded)</h4>
+        <div class="img-grid" id="imageGrid">
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnConvert" style="display: none; background: var(--grad2);">⚙️ Compile PDF</button>
+      <button class="btn ghost" id="btnClear" style="display: none; border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear Queue</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Flexible Page Settings:</strong> Fit the PDF page size to each image's dimensions, or scale images to fit standard A4 or Letter sizes.</li>
+      <li><strong>Reordering Queue:</strong> Easily adjust the sequence of images using Up/Down buttons.</li>
+      <li><strong>WebP & BMP Compatibility:</strong> Natively redraws WebP and raw bitmap files in-memory to ensure standard PDF rendering.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">Which formats are supported?<span>＋</span></div>
+        <div class="faq-a">The tool supports standard formats including JPG/JPEG, PNG, WebP, BMP, and GIF. It uses browser rendering engines to handle conversions entirely client-side.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Does the PDF generation reduce image resolution?<span>＋</span></div>
+        <div class="faq-a">By default, selecting "Fit to Image Dimensions" compiles the pages at the exact pixel resolution of your uploaded images. In A4 or Letter modes, the image scales to fit, preserving high definition.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  let imageQueue = [];
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  function toggleOrientation() {
+    const size = $('pageSize').value;
+    if (size === 'fit') {
+      $('orientationGroup').style.display = 'none';
+    } else {
+      $('orientationGroup').style.display = 'flex';
+    }
+  }
+
+  // Handle Drag & Drop
+  const dropZone = $('dropZone');
+  dropZone.onclick = () => $('imageInput').click();
+
+  dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--accent)';
+  };
+  dropZone.ondragleave = () => {
+    dropZone.style.borderColor = 'var(--border)';
+  };
+  dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files.length) {
+      appendImages(e.dataTransfer.files);
+    }
+  };
+  $('imageInput').onchange = (e) => {
+    if (e.target.files.length) {
+      appendImages(e.target.files);
+    }
+  };
+
+  function appendImages(filesList) {
+    showStatus('Loading images...');
+    
+    let added = 0;
+    for (let i = 0; i < filesList.length; i++) {
+      const file = filesList[i];
+      if (!file.type.startsWith('image/')) {
+        continue;
+      }
+      
+      const fileUrl = URL.createObjectURL(file);
+      imageQueue.push({
+        file: file,
+        url: fileUrl,
+        name: file.name
+      });
+      added++;
+    }
+
+    renderQueue();
+    showStatus(`✅ Added ${added} images to the queue.`);
+  }
+
+  function renderQueue() {
+    const grid = $('imageGrid');
+    grid.innerHTML = '';
+    
+    if (imageQueue.length === 0) {
+      $('queueContainer').style.display = 'none';
+      $('btnConvert').style.display = 'none';
+      $('btnClear').style.display = 'none';
+      return;
+    }
+
+    $('queueContainer').style.display = 'block';
+    $('btnConvert').style.display = 'inline-flex';
+    $('btnClear').style.display = 'inline-flex';
+    $('queueCount').textContent = imageQueue.length;
+
+    imageQueue.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.className = 'img-card';
+      
+      const img = document.createElement('img');
+      img.className = 'img-thumbnail';
+      img.src = item.url;
+      
+      const label = document.createElement('div');
+      label.className = 'img-details';
+      label.textContent = item.name;
+      label.title = item.name;
+
+      const actions = document.createElement('div');
+      actions.className = 'img-actions';
+
+      const upBtn = document.createElement('button');
+      upBtn.textContent = '▲';
+      upBtn.disabled = index === 0;
+      upBtn.onclick = () => moveItem(index, -1);
+
+      const downBtn = document.createElement('button');
+      downBtn.textContent = '▼';
+      downBtn.disabled = index === imageQueue.length - 1;
+      downBtn.onclick = () => moveItem(index, 1);
+
+      const delBtn = document.createElement('button');
+      delBtn.style.color = '#ff6b6b';
+      delBtn.textContent = '🗑';
+      delBtn.onclick = () => removeItem(index);
+
+      actions.appendChild(upBtn);
+      actions.appendChild(downBtn);
+      actions.appendChild(delBtn);
+
+      card.appendChild(img);
+      card.appendChild(label);
+      card.appendChild(actions);
+
+      grid.appendChild(card);
+    });
+  }
+
+  function moveItem(index, direction) {
+    const target = index + direction;
+    if (target < 0 || target >= imageQueue.length) return;
+    const temp = imageQueue[index];
+    imageQueue[index] = imageQueue[target];
+    imageQueue[target] = temp;
+    renderQueue();
+  }
+
+  function removeItem(index) {
+    URL.revokeObjectURL(imageQueue[index].url);
+    imageQueue.splice(index, 1);
+    renderQueue();
+  }
+
+  // Draw image on canvas to extract pure high-quality JPEG bytes buffer
+  async function getImageJpgBytes(item) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        
+        const ctx = canvas.getContext('2d');
+        // Paint background white in case of transparent png
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        
+        // Export to JPEG
+        canvas.toBlob((blob) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve(new Uint8Array(reader.result));
+          };
+          reader.readAsArrayBuffer(blob);
+        }, 'image/jpeg', 0.95);
+      };
+      img.onerror = reject;
+      img.src = item.url;
+    });
+  }
+
+  $('btnConvert').onclick = async () => {
+    if (imageQueue.length === 0) return;
+    if (typeof PDFLib === 'undefined') {
+      showStatus('Error: pdf-lib failed to load. Check your internet connection.', true);
+      return;
+    }
+
+    showStatus('Compiling PDF file... (Converting images to JPEG buffers)');
+
+    try {
+      const pdfDoc = await PDFLib.PDFDocument.create();
+      
+      const sizeMode = $('pageSize').value;
+      const orientation = $('pageOrientation').value;
+      const margin = parseInt($('pageMargins').value) || 0;
+
+      for (const item of imageQueue) {
+        showStatus(`Processing "${item.name}"...`);
+        const jpgBytes = await getImageJpgBytes(item);
+        const embeddedJpg = await pdfDoc.embedJpg(jpgBytes);
+        
+        const imgWidth = embeddedJpg.width;
+        const imgHeight = embeddedJpg.height;
+
+        let pageWidth = imgWidth;
+        let pageHeight = imgHeight;
+
+        if (sizeMode === 'A4') {
+          // A4 dimensions in points: 595 x 842
+          pageWidth = orientation === 'portrait' ? 595.27 : 841.89;
+          pageHeight = orientation === 'portrait' ? 841.89 : 595.27;
+        } else if (sizeMode === 'LETTER') {
+          // Letter dimensions in points: 612 x 792
+          pageWidth = orientation === 'portrait' ? 612 : 792;
+          pageHeight = orientation === 'portrait' ? 792 : 612;
+        }
+
+        const page = pdfDoc.addPage([pageWidth, pageHeight]);
+
+        // Calculate size to draw
+        const usableWidth = pageWidth - (margin * 2);
+        const usableHeight = pageHeight - (margin * 2);
+
+        let drawWidth = usableWidth;
+        let drawHeight = usableHeight;
+
+        if (sizeMode !== 'fit') {
+          const imgRatio = imgWidth / imgHeight;
+          const pageRatio = usableWidth / usableHeight;
+
+          if (imgRatio > pageRatio) {
+            drawHeight = usableWidth / imgRatio;
+          } else {
+            drawWidth = usableHeight * imgRatio;
+          }
+        }
+
+        // Center on page
+        const xPos = margin + ((usableWidth - drawWidth) / 2);
+        const yPos = margin + ((usableHeight - drawHeight) / 2);
+
+        page.drawImage(embeddedJpg, {
+          x: xPos,
+          y: yPos,
+          width: drawWidth,
+          height: drawHeight
+        });
+      }
+
+      showStatus('Saving PDF file bytes...');
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'images-compiled.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      showStatus('✅ Images compiled to PDF successfully!');
+    } catch (err) {
+      console.error(err);
+      showStatus(`❌ Compilation failed: ${err.message}`, true);
+    }
+  };
+
+  $('btnClear').onclick = () => {
+    imageQueue.forEach(item => URL.revokeObjectURL(item.url));
+    imageQueue = [];
+    $('imageInput').value = '';
+    renderQueue();
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

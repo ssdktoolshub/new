@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lipid Profile Report Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze comprehensive lipid panels (Total Cholesterol, HDL, LDL, VLDL, Triglycerides) online with detailed medical insights.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    
+    .lipid-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.8rem;
+    }
+    
+    .lipid-table th, .lipid-table td {
+      border: 1px solid var(--border);
+      padding: 8px;
+      text-align: left;
+    }
+    
+    .lipid-table th {
+      background: rgba(255,255,255,0.03);
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .lipid-table, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Lipid Profile Report Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze comprehensive lipid panels (Total Cholesterol, HDL, LDL, VLDL, Triglycerides) and evaluate cardiovascular risk status.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Fasting Lipid Panel</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="mgdl" selected>mg/dL</option>
+                <option value="mmoll">mmol/L</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="patientGender" data-translate="labelGender">Gender</label>
+              <select id="patientGender">
+                <option value="male" selected data-translate="genderMale">Male</option>
+                <option value="female" data-translate="genderFemale">Female</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valTC" data-translate="labelTC">Total Cholesterol</label>
+              <input type="number" step="0.1" id="valTC" placeholder="e.g. 210" min="0" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valHDL" data-translate="labelHDL">HDL Cholesterol</label>
+              <input type="number" step="0.1" id="valHDL" placeholder="e.g. 50" min="0" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valLDL" data-translate="labelLDL">LDL Cholesterol</label>
+              <input type="number" step="0.1" id="valLDL" placeholder="e.g. 130" min="0" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valTG" data-translate="labelTG">Triglycerides</label>
+              <input type="number" step="0.1" id="valTG" placeholder="e.g. 150" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeLipids()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Lipid Panel</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your fasting lipid panel measurements and click analyze to display diagnostic summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Serum Lipid Profile Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelGender">Gender</strong>: <span id="resGender">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <!-- Overall Risk Status Box -->
+          <div class="gauge-container">
+            <div style="font-size:0.8rem; color:var(--muted); font-weight:700;">OVERALL ASSESSMENT</div>
+            <div class="status-label" id="resStatusLabel" style="font-size: 1.8rem; margin: 12px 0;">-</div>
+            <div style="font-size:0.85rem; color:var(--muted);" id="resRiskSummary">-</div>
+          </div>
+
+          <!-- Lipid Details Table -->
+          <table class="lipid-table">
+            <thead>
+              <tr>
+                <th data-translate="thLipid">Lipid Marker</th>
+                <th data-translate="thValue">Measured Value</th>
+                <th data-translate="thRange">Desirable Range</th>
+                <th data-translate="thStatus">Status</th>
+              </tr>
+            </thead>
+            <tbody id="lipidTableBody"></tbody>
+          </table>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Lipids</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is the significance of a full lipid panel?</strong><br><span data-translate="eduA1">A full fasting lipid panel evaluates all primary cholesterol fractions (LDL, HDL, VLDL) and triglycerides. Analyzing these values in unison allows calculating specific risk ratios (Cholesterol/HDL, TG/HDL) which correlate strongly with cardiovascular outcomes.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What are the primary lipid patterns?</strong><br><span data-translate="eduA2">
+        - **Hypercholesterolemia**: Isolated high Total Cholesterol or LDL.<br>
+        - **Hypertriglyceridemia**: Isolated high Triglycerides, often carbohydrate-driven.<br>
+        - **Mixed Hyperlipidemia**: Elevated levels of both cholesterol and triglycerides, carrying high vascular plaque risk.
+      </span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Lipid Profile Report Analyzer",
+      toolDesc: "Analyze comprehensive lipid panels (Total Cholesterol, HDL, LDL, VLDL, Triglycerides) and evaluate cardiovascular risk status.",
+      inputsTitle: "🧬 Fasting Lipid Panel",
+      clearBtn: "Reset",
+      labelGender: "Gender",
+      genderMale: "Male",
+      genderFemale: "Female",
+      labelUnit: "Measurement Unit",
+      labelTC: "Total Cholesterol",
+      labelHDL: "HDL Cholesterol",
+      labelLDL: "LDL Cholesterol",
+      labelTG: "Triglycerides",
+      btnAnalyze: "Analyze Lipid Panel",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your fasting lipid panel measurements and click analyze to display diagnostic summaries.",
+      reportTitle: "🔬 Serum Lipid Profile Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      thLipid: "Lipid Marker",
+      thValue: "Value",
+      thRange: "Desirable Range",
+      thStatus: "Status",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Desirable Lipid Profile (Low Risk)",
+      badgeBorderline: "Borderline Lipid Pattern (Moderate Risk)",
+      badgeHigh: "High Lipid Burden (Elevated Cardiovascular Risk)",
+      badgeCriticalHigh: "CRITICALLY HIGH LIPIDS (Very High Plaque/Pancreatitis Risk)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "লিপিড প্রোফাইল রিপোর্ট বিশ্লেষক",
+      toolDesc: "রক্তের লিপিড প্যানেল (মোট কোলেস্টেরল, এইচডিএল, এলডিএল, ট্রাইগ্লিসারাইড) বিশ্লেষণ করে হৃদরোগের সামগ্রিক ঝুঁকি পরীক্ষা করুন।",
+      inputsTitle: "🧬 লিপিড প্রোফাইল প্যানেল",
+      clearBtn: "মুছে ফেলুন",
+      labelGender: "লিঙ্গ",
+      genderMale: "পুরুষ",
+      genderFemale: "নারী",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelTC: "মোট কোলেস্টেরল",
+      labelHDL: "এইচডিএল কোলেস্টেরল",
+      labelLDL: "এলডিএল কোলেস্টেরল",
+      labelTG: "ট্রাইগ্লিসারাইড",
+      btnAnalyze: "লিপিড বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "লিপিড প্রোফাইলের মানগুলো লিখুন এবং বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 সিরাম লিপিড প্রোফাইল রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      thLipid: "লিপিড মার্কার",
+      thValue: "মান",
+      thRange: "স্বাভাবিক সীমা",
+      thStatus: "অবস্থা",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "অনুকূল লিপিড প্রোফাইল (কম ঝুঁকি)",
+      badgeBorderline: "সীমান্তবর্তী লিপিড প্যাটার্ন (মাঝারি ঝুঁকি)",
+      badgeHigh: "উচ্চ লিপিড মাত্রা (হৃদরোগের ঝুঁকি)",
+      badgeCriticalHigh: "মারাত্মক উচ্চ লিপিড (প্লাক ও অগ্ন্যাশয় প্রদাহের তীব্র ঝুঁকি)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "लिपिड प्रोफाइल रिपोर्ट विश्लेषक",
+      toolDesc: "व्यापक लिपिड पैनल (कुल कोलेस्ट्रॉल, एचडीएल, एलडीएल, वीएलडीएल, ट्राइग्लिसराइड्स) का विश्लेषण करें और हृदय संबंधी जोखिम की स्थिति का मूल्यांकन करें।",
+      inputsTitle: "🧬 फास्टिंग लिपिड पैनल",
+      clearBtn: "रीसेट करें",
+      labelGender: "लिंग",
+      genderMale: "पुरुष",
+      genderFemale: "स्त्री",
+      labelUnit: "मापन इकाई",
+      labelTC: "कुल कोलेस्ट्रॉल",
+      labelHDL: "एचडीएल कोलेस्ट्रॉल",
+      labelLDL: "एलडीएल कोलेस्ट्रॉल",
+      labelTG: "ट्राइग्लिसराइड्स",
+      btnAnalyze: "लिपिड पैनल का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लं���ित",
+      placeholderDesc: "अपना उपवास लिपिड पैनल माप दर्ज करें और नैदानिक ​​​​सारांश प्रदर्शित करने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 सीरम लिपिड प्रोफाइल रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "छाप",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "दिनांक",
+      thLipid: "लिपिड मार्कर",
+      thValue: "मूल्य",
+      thRange: "वांछनीय रेंज",
+      thStatus: "स्थिति",
+      recentRuns: "हालिया रिपोर्��� व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता ���ै और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "वांछनीय लिपिड प्रोफ़ाइल (कम जोखिम)",
+      badgeBorderline: "सीमा रेखा लिपिड पैटर्न (मध्यम जोखिम)",
+      badgeHigh: "उच्च लिपिड बोझ (उन्नत हृदय जोखिम)",
+      badgeCriticalHigh: "गंभीर रूप से उच्च लिपिड (बहुत अधिक प्लाक/अग्नाशयशोथ जोखिम)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is a lipid panel?", a: "A lipid panel measures total cholesterol, HDL, LDL, and triglycerides in your blood, usually after a fasting period." },
+      { q: "What is the difference between LDL and HDL?", a: "LDL (Low-Density Lipoprotein) deposits fats in arterial walls, promoting plaque. HDL (High-Density Lipoprotein) clears fats from the circulation." },
+      { q: "Do I need to fast for this test?", a: "Fasting for 9 to 12 hours is recommended to obtain accurate triglyceride and calculated LDL results." },
+      { q: "What is Mixed Hyperlipidemia?", a: "A pattern where both cholesterol (LDL) and triglycerides are high, significantly increasing plaque risk." }
+    ],
+    bn: [
+      { q: "লিপিড প্যানেল কী?", a: "লিপিড প্যানেল রক্তে মোট কোলেস্টেরল, এইচডিএল, এলডিএল এবং ট্রাইগ্লিসারাইডের মাত্রা পরিমাপ করে।" },
+      { q: "এইচডিএল ও এলডিএল এর মধ্যে পার্থক্য কী?", a: "এলডিএল ধমনীর দেয়ালে চর্বি জমিয়ে প্লাক তৈরি করে, তাই এটি ক্ষতিকর। এইচডিএল চর্বি ধমনী থেকে সরিয়ে লিভারে ফেরত পাঠায়, তাই এটি উপকারী।" },
+      { q: "এই পরীক্ষার আগে কি খালি পেটে থাকা প্রয়োজন?", a: "হ্যাঁ, সঠিক লিপিড ও ট্রাইগ্লিসারাইডের রিপোর্টের জন্য পরীক্ষার আগে ৯-১২ ঘণ্টা খালি পেটে থাকা জরুরি।" }
+    ],
+    hi: [
+      { q: "लिपिड पैनल क्या है?", a: "एक लिपिड पैनल आपके रक्त में कुल कोलेस्ट्रॉल, एचडीएल, एलडीएल और ट्राइग्लिसराइड्स को मापता है, आमतौर पर उपवास की अवधि के बाद।" },
+      { q: "एलडीएल और एचडीएल में क्या अंतर है?", a: "एलडीएल (लो-डेंसिटी लिपोप्रोटीन) धमनियों की दीवारों में वसा जमा करता है, जिससे प्लाक को ब��़ावा मिलता है। एचडीएल (हाई-डेंसिटी लिपोप्रोटीन) परिसंचरण से वसा को साफ़ करता है।" },
+      { q: "क्या मुझे इस परीक्षण के लिए उपवास करने की आवश्यकता है?", a: "सटीक ट्राइग्लिसराइड और परिकलित एलडीएल परिणाम प्राप्त करने के लिए 9 से 12 घंटे तक उपवास करने की सलाह दी जाती है।" },
+      { q: "मिश्रित हाइपरलिपिडिमिया क्या है?", a: "एक ऐसा पैटर्न जहां कोलेस्ट्रॉल (एलडीएल) और ट्राइग्लिसराइड्स दोनों उच्च हैं, जिससे प्लाक का खतरा काफी बढ़ जाता है।" }
+    ]
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-panel-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "mgdl"; // mgdl, mmoll
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    document.getElementById("valTC").placeholder = currentUnit === "mgdl" ? "e.g. 210" : "e.g. 5.43";
+    document.getElementById("valHDL").placeholder = currentUnit === "mgdl" ? "e.g. 50" : "e.g. 1.29";
+    document.getElementById("valLDL").placeholder = currentUnit === "mgdl" ? "e.g. 130" : "e.g. 3.37";
+    document.getElementById("valTG").placeholder = currentUnit === "mgdl" ? "e.g. 150" : "e.g. 1.69";
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valTC").value = "";
+    document.getElementById("valHDL").value = "";
+    document.getElementById("valLDL").value = "";
+    document.getElementById("valTG").value = "";
+    document.getElementById("patientGender").value = "male";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function analyzeLipids() {
+    const tc = parseFloat(document.getElementById("valTC").value);
+    const hdl = parseFloat(document.getElementById("valHDL").value);
+    const ldl = parseFloat(document.getElementById("valLDL").value);
+    const tg = parseFloat(document.getElementById("valTG").value);
+    const gender = document.getElementById("patientGender").value;
+
+    if (isNaN(tc) || tc <= 0 || isNaN(hdl) || hdl <= 0 || isNaN(ldl) || ldl <= 0 || isNaN(tg) || tg <= 0) {
+      alert(currentLang === "en" ? "Please enter valid lipid values." : "দয়া করে লিপিড এর সঠিক মানগুলো লিখুন।");
+      return;
+    }
+
+    if (hdl >= tc) {
+      alert(currentLang === "en" ? "HDL cannot be greater than or equal to Total Cholesterol." : "এইচডিএল মোট কোলেস্টেরলের চেয়ে বেশি বা সমান হতে পারে না।");
+      return;
+    }
+
+    // Calculations
+    let nonHdl = tc - hdl;
+    let vldl = currentUnit === "mgdl" ? tg / 5 : tg / 2.2;
+    let tcHdl = tc / hdl;
+    let tgHdl = tg / hdl;
+
+    // Standard ranges thresholds (mg/dL reference)
+    let tcLim = currentUnit === "mgdl" ? { normal: 200, high: 240 } : { normal: 5.18, high: 6.21 };
+    let hdlLim = gender === "female" 
+      ? (currentUnit === "mgdl" ? { low: 50, high: 60 } : { low: 1.30, high: 1.55 })
+      : (currentUnit === "mgdl" ? { low: 40, high: 60 } : { low: 1.04, high: 1.55 });
+    let ldlLim = currentUnit === "mgdl" ? { normal: 100, high: 160 } : { normal: 2.59, high: 4.14 };
+    let tgLim = currentUnit === "mgdl" ? { normal: 150, high: 200, critical: 500 } : { normal: 1.69, high: 2.26, critical: 5.64 };
+
+    // Categorization
+    const tcStatus = tc < tcLim.normal ? "Normal" : tc < tcLim.high ? "Borderline" : "High";
+    const hdlStatus = hdl < hdlLim.low ? "Low" : hdl >= hdlLim.high ? "High (Protective)" : "Normal";
+    const ldlStatus = ldl < ldlLim.normal ? "Normal" : ldl < ldlLim.high ? "Borderline" : "High";
+    const tgStatus = tg < tgLim.normal ? "Normal" : tg < tgLim.high ? "Borderline" : tg < tgLim.critical ? "High" : "Critical High";
+
+    // Overall assessment status
+    let statusKey = "normal";
+    let badgeKey = "badgeNormal";
+
+    if (tcStatus === "High" || ldlStatus === "High" || tgStatus === "High" || hdlStatus === "Low") {
+      statusKey = "high";
+      badgeKey = "badgeHigh";
+    } else if (tgStatus === "Critical High") {
+      statusKey = "criticalHigh";
+      badgeKey = "badgeCriticalHigh";
+    } else if (tcStatus === "Borderline" || ldlStatus === "Borderline" || tgStatus === "Borderline") {
+      statusKey = "borderline";
+      badgeKey = "badgeBorderline";
+    }
+
+    activeReportData = {
+      gender,
+      tc, hdl, ldl, tg,
+      nonHdl, vldl, tcHdl, tgHdl,
+      tcStatus, hdlStatus, ldlStatus, tgStatus,
+      statusKey,
+      badgeKey,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, tcHdl);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resGender").textContent = d.gender === "male" ? translations[currentLang].genderMale : translations[currentLang].genderFemale;
+
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "borderline") colorClass = "high";
+    else if (d.statusKey === "high") colorClass = "critical";
+    else if (d.statusKey === "criticalHigh") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+
+    let riskSummaryText = "";
+    if (currentLang === "en") {
+      riskSummaryText = `Ratios - TC/HDL: ${d.tcHdl.toFixed(2)} | TG/HDL: ${d.tgHdl.toFixed(2)} | Non-HDL: ${d.nonHdl.toFixed(1)}`;
+    } else {
+      riskSummaryText = `অনুপাতসমূহ - TC/HDL: ${d.tcHdl.toFixed(2)} | TG/HDL: ${d.tgHdl.toFixed(2)} | নন-এইচডিএল: ${d.nonHdl.toFixed(1)}`;
+    }
+    document.getElementById("resRiskSummary").textContent = riskSummaryText;
+
+    // Table
+    const unitText = d.unit === "mgdl" ? " mg/dL" : " mmol/L";
+    const tableBody = document.getElementById("lipidTableBody");
+    
+    const tcDesirable = d.unit === "mgdl" ? "< 200" : "< 5.18";
+    const hdlDesirable = d.gender === "female" 
+      ? (d.unit === "mgdl" ? ">= 50" : ">= 1.30")
+      : (d.unit === "mgdl" ? ">= 40" : ">= 1.04");
+    const ldlDesirable = d.unit === "mgdl" ? "< 100" : "< 2.59";
+    const tgDesirable = d.unit === "mgdl" ? "< 150" : "< 1.69";
+
+    tableBody.innerHTML = `
+      <tr>
+        <td><strong>Total Cholesterol</strong></td>
+        <td>${d.tc.toFixed(1)} ${unitText}</td>
+        <td>${tcDesirable} ${unitText}</td>
+        <td style="color:${d.tcStatus === "Normal" ? "var(--normal-color)" : "var(--high-color)"}; font-weight:700;">${d.tcStatus}</td>
+      </tr>
+      <tr>
+        <td><strong>HDL Cholesterol (Good)</strong></td>
+        <td>${d.hdl.toFixed(1)} ${unitText}</td>
+        <td>${hdlDesirable} ${unitText}</td>
+        <td style="color:${d.hdlStatus === "Low" ? "var(--critical-color)" : "var(--normal-color)"}; font-weight:700;">${d.hdlStatus}</td>
+      </tr>
+      <tr>
+        <td><strong>LDL Cholesterol (Bad)</strong></td>
+        <td>${d.ldl.toFixed(1)} ${unitText}</td>
+        <td>${ldlDesirable} ${unitText}</td>
+        <td style="color:${d.ldlStatus === "Normal" ? "var(--normal-color)" : "var(--high-color)"}; font-weight:700;">${d.ldlStatus}</td>
+      </tr>
+      <tr>
+        <td><strong>Triglycerides</strong></td>
+        <td>${d.tg.toFixed(1)} ${unitText}</td>
+        <td>${tgDesirable} ${unitText}</td>
+        <td style="color:${d.tgStatus === "Normal" ? "var(--normal-color)" : "var(--critical-color)"}; font-weight:700;">${d.tgStatus}</td>
+      </tr>
+      <tr>
+        <td><strong>Non-HDL Cholesterol</strong></td>
+        <td>${d.nonHdl.toFixed(1)} ${unitText}</td>
+        <td>${d.unit === "mgdl" ? "< 130" : "< 3.37"} ${unitText}</td>
+        <td style="font-weight:700;">Calculated</td>
+      </tr>
+      <tr>
+        <td><strong>VLDL Cholesterol</strong></td>
+        <td>${d.vldl.toFixed(1)} ${unitText}</td>
+        <td>${d.unit === "mgdl" ? "5 - 30" : "0.13 - 0.78"} ${unitText}</td>
+        <td style="font-weight:700;">Calculated</td>
+      </tr>
+    `;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    // Generate clinical insights
+    let desc = "";
+    let factors = [];
+    let symptoms = ["Lipid changes are silent; they generate no symptoms"];
+    let prevention = [];
+    let consult = "";
+
+    if (currentLang === "en") {
+      if (d.statusKey === "normal") {
+        desc = "Your fasting lipid profile is desirable. Low levels of LDL and triglycerides combined with healthy HDL support strong cardiovascular protection.";
+        factors = ["Heart-healthy balanced diet", "Active lifestyle habits", "Ideal metabolic efficiency"];
+        prevention = ["Maintain your heart-healthy habits", "Stay active daily"];
+        consult = "Retest with standard lipid checks in 3 to 5 years.";
+      } else if (d.statusKey === "borderline") {
+        desc = "Your lipid profile shows borderline elevations. Introducing moderate lifestyle and nutritional changes can prevent progression to plaque formation.";
+        factors = ["Moderate dietary saturated fat or simple sugar intake", "Slight lack of cardiovascular exercise"];
+        prevention = ["Increase consumption of soluble fibers (oatmeal, beans)", "Limit sweetened beverages and refined sugar"];
+        consult = "Consult your physician to review cardiovascular risk indicators.";
+      } else {
+        desc = "Your lipid profile shows elevated cholesterol or triglycerides. This accelerates blood vessel plaque risk. If triglycerides are critically high, acute pancreatitis is also a concern.";
+        factors = ["Metabolic syndrome, insulin resistance, or diabetes", "Familial dyslipidemia (genetics)", "Diets high in saturated or trans fats", "Hypothyroidism or kidney strain"];
+        prevention = ["Adopt a strict low-glycemic Mediterranean diet", "Engage in 150 minutes of aerobic exercise weekly", "Quit all tobacco use"];
+        consult = "⚠️ Recommended to seek medical evaluation. Evaluation for lipid-lowering therapies (statin) is suggested.";
+      }
+    } else {
+      if (d.statusKey === "normal") {
+        desc = "আপনার সিরাম লিপিড প্রোফাইল স্বাভাবিক ও অনুকূল অবস্থায় রয়েছে। এটি রক্তনালীতে চর্বি জমার কম ঝুঁকি এবং হৃদরোগের নিম্ন আশঙ্কা নির্দেশ করে।";
+        factors = ["চর্বিমুক্ত আঁশযুক্ত খাবার গ্রহণ", "নিয়মিত কায়িক পরিশ্রম"];
+        prevention = ["স্বাস্থ্যকর হৃদবান্ধব সুষম খাবার গ্রহণ বজায় রাখুন"];
+        consult = "নিয়মিত বার্ষিক চেকআপ বজায় রাখুন।";
+      } else if (d.statusKey === "borderline") {
+        desc = "আপনার লিপিড প্রোফাইল সীমারেখায় বা কিছুটা বেশি। হৃদরোগ প্রতিরোধে জীবনযাত্রা ও খাদ্যাভ্যাসে পরিবর্তন আনা আবশ্যক।";
+        factors = ["পর্যাপ্ত কায়িক পরিশ্রমের অভাব", "খাদ্যতালিকায় অতিরিক্ত চর্বি বা শর্করা"];
+        prevention = ["ভাজাপোড়া তেল বর্জন করে সরিষার তেল ব্যবহার করুন", "মিষ্টি ও কোলা জাতীয় পানীয় সীমিত করুন"];
+        consult = "পরবর্তী বার্ষিক চেকআপে পরীক্ষা করুন।";
+      } else {
+        desc = "আপনার লিপিড প্রোফাইলের মানসমূহ অতিরিক্ত বেশি। এটি ধমনীর দেয়ালে রক্ত চলাচলে বাধা সৃষ্টি করে হার্ট অ্যাটাকের বড় ঝুঁকি তৈরি করে।";
+        factors = ["অনিয়ন্ত্রিত ডায়াবেটিস বা মেটাবলিক সিন্ড্রোম", "বংশগত উচ্চ চর্বির সমস্যা", "স্থূলতা বা ধূমপান"];
+        prevention = ["মিষ্টিজাতীয় খাবার ও অতিরিক্ত শর্করা সম্পূর্ণ পরিহার করুন", "ধূমপান পরিহার করুন", "ওজন কমান"];
+        consult = "⚠️ অবিলম্বে গ্যাস্ট্রোএন্টারোলজিস্ট বা কার্ডিওলজিস্ট চিকিৎসকের পরামর্শ নিন এবং কোলেস্টেরল কমানোর ওষুধ (Statin) প্রয়োজন কিনা মূল্যায়ন করুন।";
+      }
+    }
+
+    const mainCard = document.createElement("div");
+    mainCard.className = "insight-card";
+    mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+    
+    let causesList = factors.map(c => `<li>${c}</li>`).join("");
+    let symptomsList = symptoms.map(s => `<li>${s}</li>`).join("");
+    let tipsList = prevention.map(p => `<li>${p}</li>`).join("");
+
+    mainCard.innerHTML = `
+      <h5>${translations[currentLang].titleInterpretation}</h5>
+      <p>${desc}</p>
+      
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+          <ul>${causesList}</ul>
+        </div>
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+          <ul>${symptomsList}</ul>
+        </div>
+      </div>
+
+      <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+        <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+        <ul>${tipsList}</ul>
+      </div>
+
+      <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+        <strong>${translations[currentLang].titleConsult}:</strong> ${consult}
+      </div>
+    `;
+    insightSection.appendChild(mainCard);
+  }
+
+  function addToHistory(badgeKey, tcHdl) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      tcHdl,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-panel-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>TC/HDL Ratio: ${item.tcHdl.toFixed(2)} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const unitText = activeReportData.unit === "mgdl" ? " mg/dL" : " mmol/L";
+    let t = `--- FASTING LIPID PROFILE REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Total Cholesterol: ${activeReportData.tc.toFixed(1)}${unitText} (${activeReportData.tcStatus})\n`;
+    t += `HDL Cholesterol: ${activeReportData.hdl.toFixed(1)}${unitText} (${activeReportData.hdlStatus})\n`;
+    t += `LDL Cholesterol: ${activeReportData.ldl.toFixed(1)}${unitText} (${activeReportData.ldlStatus})\n`;
+    t += `Triglycerides: ${activeReportData.tg.toFixed(1)}${unitText} (${activeReportData.tgStatus})\n`;
+    t += `Non-HDL: ${activeReportData.nonHdl.toFixed(1)}${unitText}\n`;
+    t += `Calculated Risk Ratios - TC/HDL: ${activeReportData.tcHdl.toFixed(2)}\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `lipid-profile-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

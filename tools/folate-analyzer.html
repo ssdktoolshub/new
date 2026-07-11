@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Folate (Folic Acid) Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze Folate (Vitamin B9) levels online. Evaluate deficiency, borderline levels, and normal range with detailed clinical insights.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+
+  <!-- html2canvas for PNG export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) { .lab-grid { grid-template-columns: 1fr; } }
+
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255,255,255,0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+
+    .input-wrapper { display: flex; flex-direction: column; gap: 4px; }
+    .input-wrapper label { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+    .input-wrapper input,
+    .input-wrapper select {
+      padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg3); color: var(--text); outline: none;
+      font-size: 0.9rem; transition: all 0.25s;
+    }
+    .input-wrapper input:focus,
+    .input-wrapper select:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--glow); }
+
+    .lang-toggle-container { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+    .lang-btn {
+      background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+      padding: 6px 14px; border-radius: 20px; cursor: pointer;
+      font-size: 0.8rem; font-weight: 700; transition: all 0.3s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 10px var(--glow); }
+
+    .results-display {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px; min-height: 400px;
+    }
+
+    .results-placeholder { text-align: center; padding: 80px 20px; color: var(--muted); }
+    .results-placeholder .icon { font-size: 3.5rem; margin-bottom: 12px; opacity: 0.5; display: block; }
+
+    .report-card { display: flex; flex-direction: column; gap: 16px; }
+
+    .patient-summary {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px;
+      display: flex; justify-content: space-between; font-size: 0.85rem;
+    }
+    .patient-summary span strong { color: var(--accent); }
+
+    .gauge-container {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; text-align: center; position: relative;
+    }
+    .val-large { font-size: 3.2rem; font-weight: 900; line-height: 1.1; margin-bottom: 4px; }
+    .status-label { font-weight: 800; font-size: 1.1rem; text-transform: uppercase; margin-bottom: 16px; }
+
+    .range-slider-bar {
+      height: 16px; border-radius: 8px;
+      background: linear-gradient(to right,
+        var(--critical-color) 0%,
+        var(--high-color) 35%,
+        var(--normal-color) 100%
+      );
+      position: relative; margin-bottom: 10px;
+    }
+    .range-pointer {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #fff; border: 3px solid var(--bg1);
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+    .range-ticks { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); font-weight: 700; }
+
+    .insight-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-top: 14px;
+    }
+    .insight-card h5 { font-size: 0.95rem; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .insight-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+    .insight-card ul { margin-left: 18px; font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+
+    .history-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 16px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: var(--bg3); border-radius: 6px;
+      font-size: 0.75rem; border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245,158,11,0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px; padding: 14px; margin-top: 16px;
+      font-size: 0.8rem; color: #fbbf24; line-height: 1.5;
+    }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding-top: 0 !important; }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon { display: none !important; }
+      .results-display { border: none !important; background: #fff !important; color: #000 !important; min-height: auto !important; padding: 0 !important; }
+      .gauge-container, .insight-card { border: 1px solid #ddd !important; background: #fff !important; color: #000 !important; }
+      .lab-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumb -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Folate (Folic Acid) Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze Folate (Vitamin B9 / Folic Acid) levels to evaluate nutritional status, red blood cell function, and pregnancy health.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Tool Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🥗 Folate Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="ngml" selected>ng/mL</option>
+                <option value="nmoll">nmol/L</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label for="valFolate" id="inputLabel" data-translate="labelFolate">Folate Value (ng/mL)</label>
+              <input type="number" step="0.1" id="valFolate" placeholder="e.g. 8.4" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info note -->
+        <div style="font-size:0.78rem; color:var(--muted); padding:8px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:14px; line-height:1.5;">
+          <strong style="color:var(--text);">ℹ️ Note:</strong> <span data-translate="unitNote">1 ng/mL = 2.266 nmol/L. Reference ranges: Deficient &lt; 3.0, Borderline 3.0–5.9, Normal &ge; 6.0 ng/mL.</span>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width:100%; justify-content:center;" onclick="analyzeFolate()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Folate</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🥗</span>
+          <h4 data-translate="placeholderTitle">Analysis Pending</h4>
+          <p data-translate="placeholderDesc">Enter your Folate level and click Analyze to view clinical diagnostics.</p>
+        </div>
+
+        <div class="report-card" id="reportCardSec" style="display:none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Folate Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" title="Copy" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" title="Print" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" title="Save Image" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Serum Folate (Vitamin B9)</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resFolateVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">ng/mL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left:50%;"></div>
+            </div>
+            <div class="range-ticks">
+              <span id="tickDeficient" style="color:var(--critical-color);">&lt; 3.0 Deficient</span>
+              <span id="tickBorderline" style="color:var(--high-color);">3.0 – 5.9</span>
+              <span id="tickNormal" style="color:var(--normal-color);">&ge; 6.0 Normal</span>
+            </div>
+          </div>
+
+          <!-- Dynamic insight section -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Folate</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Folate (Vitamin B9)?</strong><br><span data-translate="eduA1">Folate is a water-soluble B vitamin naturally present in green leafy vegetables, beans, and citrus fruits. Folic acid is the synthetic form used in fortified foods and supplements. It is essential for cell division and DNA synthesis.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Why is folate critical during pregnancy?</strong><br><span data-translate="eduA2">Folate is absolutely vital during early pregnancy for the proper development of the fetal brain, skull, and spinal cord. Adequate folate prevents up to 70% of neural tube defects (NTDs) like spina bifida. Women planning pregnancy are advised to take 400 mcg of folic acid daily.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">How do Folate and Vitamin B12 interact?</strong><br><span data-translate="eduA3">Folate and B12 are co-factors in red blood cell production. Folate supplementation can resolve anemia symptoms caused by Vitamin B12 deficiency but does not fix B12-induced neurological damage, potentially masking a critical B12 deficiency. They should ideally be checked together.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Folate Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQ Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Medical Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for folate evaluation and treatment decisions.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical &amp; Lab Tools",
+      toolTitle: "Folate (Folic Acid) Analyzer",
+      toolDesc: "Analyze Folate (Vitamin B9 / Folic Acid) levels to evaluate nutritional status, red blood cell function, and pregnancy health.",
+      inputsTitle: "🥗 Folate Parameters",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      labelFolate: "Folate Value",
+      unitNote: "1 ng/mL = 2.266 nmol/L. Reference ranges: Deficient < 3.0, Borderline 3.0–5.9, Normal >= 6.0 ng/mL.",
+      btnAnalyze: "Analyze Folate",
+      placeholderTitle: "Analysis Pending",
+      placeholderDesc: "Enter your Folate level and click Analyze to view clinical diagnostics.",
+      reportTitle: "🔬 Folate Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Folate Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for folate evaluation and treatment decisions.",
+      titleEdu: "📚 Clinical Pathology Notes: Folate",
+      eduQ1: "What is Folate (Vitamin B9)?",
+      eduA1: "Folate is a water-soluble B vitamin naturally present in green leafy vegetables, beans, and citrus fruits. Folic acid is the synthetic form used in fortified foods and supplements. It is essential for cell division and DNA synthesis.",
+      eduQ2: "Why is folate critical during pregnancy?",
+      eduA2: "Folate is absolutely vital during early pregnancy for the proper development of the fetal brain, skull, and spinal cord. Adequate folate prevents up to 70% of neural tube defects (NTDs) like spina bifida. Women planning pregnancy are advised to take 400 mcg of folic acid daily.",
+      eduQ3: "How do Folate and Vitamin B12 interact?",
+      eduA3: "Folate and B12 are co-factors in red blood cell production. Folate supplementation can resolve anemia symptoms caused by Vitamin B12 deficiency but does not fix B12-induced neurological damage, potentially masking a critical B12 deficiency. They should ideally be checked together.",
+      badgeDeficient: "Deficient (< 3.0 ng/mL)",
+      badgeBorderline: "Borderline (3.0 - 5.9 ng/mL)",
+      badgeNormal: "Optimal / Sufficient (>= 6.0 ng/mL)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Management Tips",
+      titleConsult: "When to See a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ফোলেট (ফলিক অ্যাসিড) বিশ্লেষক",
+      toolDesc: "পুষ্টির মাত্রা, লোহিত রক্তকণিকার কাজ এবং গর্ভাবস্থার স্বাস্থ্য মূল্যায়নে ফোলেট (ভিটামিন বি৯ / ফলিক অ্যাসিড) মাত্রা বিশ্লেষণ করুন।",
+      inputsTitle: "🥗 ফোলেট ইনপুট",
+      clearBtn: "মুছুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelFolate: "ফোলেট মান",
+      unitNote: "১ ng/mL = ২.২৬৬ nmol/L। রেফারেন্স পরিসীমা: ঘাটতি < ৩.০, সীমানাবর্তী ৩.০–৫.৯, স্বাভাবিক >= ৬.০ ng/mL।",
+      btnAnalyze: "ফোলেট বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ অমীমাংসিত",
+      placeholderDesc: "আপনার ফোলেট মান লিখুন এবং ডায়াগনস্টিক রিপোর্ট দেখতে বিশ্লেষণ বাটনে ক্লিক করুন।",
+      reportTitle: "🔬 ফোলেট রিপোর্ট বিশ্লেষণ",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক ফোলেট বিশ্লেষণ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড নেই।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য অবশ্যই ডাক্তারের পরামর্শ নিন।",
+      titleEdu: "📚 ক্লিনিক্যাল নোটস: ফোলেট",
+      eduQ1: "ফোলেট (ভিটামিন বি৯) কী?",
+      eduA1: "ফোলেট হলো একটি পানিতে দ্রবণীয় বি-ভিটামিন যা প্রাকৃতিকভাবে সবুজ শাকসবজি, শিম ও লেবু জাতীয় ফলে পাওয়া যায়। ফলিক অ্যাসিড হলো এর কৃত্রিম রূপ যা ফর্টিফাইড খাবার ও সাপ্লিমেন্টে ব্যবহৃত হয়। এটি কোষ বিভাজন ও ডিএনএ সংশ্লেষণের জন্য অপরিহার্য।",
+      eduQ2: "গর্ভাবস্থায় ফোলেট কেন অত্যন্ত প্রয়োজনীয়?",
+      eduA2: "ভ্রূণের মস্তিষ্ক, করোটি এবং মেরুদণ্ডের সঠিক বিকাশের জন্য প্রাথমিক গর্ভাবস্থায় ফোলেট অত্যন্ত জরুরি। পর্যাপ্ত ফোলেট খেলে গর্ভস্থ শিশুর স্পাইনা বিফিডার মতো নিউরাল টিউব ত্রুটি (NTD) ৭০% পর্যন্ত প্রতিরোধ করা যায়। গর্ভধারণের পরিকল্পনাকারী নারীদের প্রতিদিন ৪০০ মাইক্রোগ্রাম ফলিক অ্যাসিড গ্রহণের পরামর্শ দেওয়া হয়।",
+      eduQ3: "ফোলেট এবং ভিটামিন বি১২ কীভাবে একে অপরের সাথে কাজ করে?",
+      eduA3: "লোহিত রক্তকণিকা তৈরিতে ফোলেট এবং বি১২ সহায়ক হিসেবে একসাথে কাজ করে। অতিরিক্ত ফোলেট গ্রহণে ভিটামিন বি১২ এর ঘাটতিজনিত অ্যানিমিয়ার লক্ষণ ঢাকা পড়ে যেতে পারে কিন্তু বি১২ জনিত স্নায়বিক ক্ষতি প্রতিরোধ হয় না। তাই আদর্শগতভাবে দুটি একসাথে পরীক্ষা করা উচিত।",
+      badgeDeficient: "ঘাটতি / অভাব রয়েছে (< ৩.০ ng/mL)",
+      badgeBorderline: "সীমানাবর্তী / সামান্য কম (৩.০ - ৫.৯ ng/mL)",
+      badgeNormal: "স্বাভাবিক / সন্তোষজনক (>= ৬.০ ng/mL)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "ব্যবস্থাপনা পরামর্শ",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "फोलेट (फोलिक एसिड) विश्लेषक",
+      toolDesc: "पोषण संबंधी स्थिति, लाल रक्त कोशिका कार्य और गर्भावस्था स्वास्थ्य का मूल्यांकन करने के लिए फोलेट (विटामिन बी9 / फोलिक एसिड) के स्तर का विश्लेषण करें।",
+      inputsTitle: "🥗फोलेट पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      labelFolate: "फोलेट मूल्य",
+      unitNote: "1 एनजी/एमएल = 2.266 एनएमओएल/एल। संदर्भ श्रेणियाँ: कमी <3.0, सीमा रेखा 3.0-5.9, सामान्य >= 6.0 एनजी/एमएल।",
+      btnAnalyze: "फोलेट का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण लंबित",
+      placeholderDesc: "अपना फोलेट स्तर दर्ज करें और नैदानिक ​​निदान देखने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 फोलेट डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हाल की फोलेट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। फोलेट मूल्यांकन और उपचार निर्णयों के लिए हमेशा एक योग्य चिकित्सक से परामर्श लें।",
+      titleEdu: "📚 क्लिनिकल पैथोलॉजी नोट्स: फोलेट",
+      eduQ1: "फोलेट (विटामिन बी9) क्या है?",
+      eduA1: "फोलेट एक पानी में घुलनशील विटामिन बी है जो प्राकृतिक रूप से हरी पत्तेदार सब्जियों, बीन्स और खट्टे फलों में मौजूद होता है। फोलिक एसिड सिंथेटिक रूप है जिसका उपयोग गरिष्ठ खाद्य पदार्थों और पूरकों में किया जाता है। यह कोशिका विभाजन और डीएनए संश्लेषण के लिए आवश्यक है।",
+      eduQ2: "गर्भावस्था के दौरान फोलेट महत्वपूर्ण क्यों है?",
+      eduA2: "प्रारंभिक गर्भावस्था के दौरान भ्रूण के मस्तिष्क, खोपड़ी और रीढ़ की हड्डी के समुचित विकास के लिए फोलेट अत्यंत महत्वपूर्ण है। पर्याप्त फोलेट स्पाइना बिफिडा जैसे न्यूरल ट्यूब दोष (एनटीडी) को 70% तक रोकता है। गर्भधारण की योजना बना रही महिलाओं को प्रतिदिन 400 एमसीजी फोलिक एसिड लेने की सलाह दी जाती है।",
+      eduQ3: "फोलेट और विटामिन बी12 कैसे परस्पर क्रिया करते हैं?",
+      eduA3: "फोलेट और बी12 लाल रक्त कोशिका उत्पादन में सह-कारक हैं। फोलेट अनुपूरण विटामिन बी 12 की कमी के कारण होने वाले एनीमिया के लक्षणों को हल कर सकता है लेकिन बी 12-प्रेरित न्यूरोलॉजिकल क्षति को ठीक नहीं करता है, जो संभावित रूप से गंभीर बी 12 की कमी को छुपाता है। आदर्श रूप से उनकी जाँच एक साथ की जानी चाहिए।",
+      badgeDeficient: "कमी (<3.0 एनजी/एमएल)",
+      badgeBorderline: "सीमा रेखा (3.0 - 5.9 एनजी/एमएल)",
+      badgeNormal: "इष्टतम / पर्याप्त (>= 6.0 एनजी/एमएल)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "प्रबंधन युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What are good food sources of Folate?", a: "Dark green leafy vegetables (spinach, asparagus, Brussels sprouts), beef liver, black-eyed peas, fortified grains, and fresh fruits (oranges, bananas)." },
+      { q: "What is the difference between Folate and Folic Acid?", a: "Folate is the natural form found in food, whereas Folic Acid is the synthetic compound used in dietary supplements and food fortification (like flour and bread)." },
+      { q: "How do I convert Folate units?", a: "Multiply ng/mL by 2.266 to convert to nmol/L. Conversely, divide nmol/L by 2.266 to convert to ng/mL." }
+    ],
+    bn: [
+      { q: "ফোলেটের ভালো খাদ্য উৎসগুলো কী কী?", a: "গাঢ় সবুজ শাকসবজি (পালং শাক, অ্যাসপারাগাস, বাঁধাকপি), গরুর কলিজা, বরবটি, ফর্টিফাইড শস্য এবং তাজা ফল (কমলা, কলা)।" },
+      { q: "ফোলেট এবং ফলিক অ্যাসিডের মধ্যে পার্থক্য কী?", a: "ফোলেট হলো খাবারে পাওয়া প্রাকৃতিক রূপ, অন্যদিকে ফলিক অ্যাসিড হলো কৃত্রিম যৌগ যা সাপ্লিমেন্ট এবং ফর্টিফাইড খাবারে ব্যবহৃত হয়।" },
+      { q: "ফোলেটের একক কীভাবে পরিবর্তন করব?", a: "ng/mL-কে ২.২৬৬ দ্বারা গুণ করলে nmol/L পাওয়া যায়। পক্ষান্তরে, nmol/L-কে ২.২৬৬ দ্বারা ভাগ করলে ng/mL পাওয়া যায়।" }
+    ],
+    hi: [
+      { q: "फोलेट के अच्छे खाद्य स्रोत क्या हैं?", a: "गहरे हरे रंग की पत्तेदार सब्जियाँ (पालक, शतावरी, ब्रसेल्स स्प्राउट्स), बीफ लीवर, ब्लैक-आइड मटर, गढ़वाले अनाज, और ताजे फल (संतरे, केले)।" },
+      { q: "फोलेट और फोलिक एसिड में क्या अंतर है?", a: "फोलेट भोजन में पाया जाने वाला प्राकृ��िक रूप है, जबकि फोलिक एसिड एक सिंथेटिक यौगिक है जिसका उपयोग आहार अनुपूरक और खाद्य सुदृढ़ीकरण (जैसे आटा और ब्रेड) में किया जाता है।" },
+      { q: "मैं फोलेट इकाइयों को कैसे परिवर्तित करूं?", a: "एनएमओएल/एल में बदलने के लिए एनजी/एमएल को 2.266 से गुणा करें। इसके विपरीत, एनजी/एमएल में बदलने के लिए एनएमओएल/एल को 2.266 से विभा���ित करें।" }
+    ]
+  };
+
+  const insights = {
+    en: {
+      deficient: {
+        desc: "Your Folate level is low (< 3.0 ng/mL), indicating Folate Deficiency. This impairs DNA synthesis and cell division, causing megaloblastic anemia and severe developmental risks in pregnancy.",
+        factors: ["Inadequate dietary intake of fresh vegetables and fortified grains", "Chronic alcohol use disorder (impairs intestinal absorption and increases excretion)", "Malabsorption disorders (celiac disease, tropical sprue)", "Medications (methotrexate, sulfasalazine, phenobarbital)", "Pregnancy (increased physiological folate demands)"],
+        symptoms: ["Fatigue, muscle weakness, and pallor (due to macrocytic anemia)", "Painful mouth ulcers or cracks at the corners of the mouth", "Swollen, red tongue", "Irritability, headache, or mild depression"],
+        prevention: ["Initiate daily folic acid supplementation (usually 1–5 mg daily for deficiency) under medical direction", "Increase dietary consumption of dark green vegetables and beans", "Limit alcohol intake"],
+        consult: "⚠️ URGENT: Consult your doctor, particularly if pregnant or planning pregnancy. Folate deficiency during conception can lead to severe congenital neural tube defects (spina bifida)."
+      },
+      borderline: {
+        desc: "Your Folate level is in the borderline range (3.0 – 5.9 ng/mL). While not severely deficient, folate stores are suboptimal and can easily deplete.",
+        factors: ["Suboptimal diet lacking fresh produce", "Early stages of intestinal malabsorption", "Increased metabolic demand"],
+        symptoms: ["Mild fatigue or lack of energy", "Occasional mouth sores", "Vague cognitive fog"],
+        prevention: ["Take a daily folic acid supplement of 400 mcg, especially if of childbearing age", "Incorporate fresh salads, citrus fruits, and beans into daily meals", "Monitor folate levels alongside Vitamin B12"],
+        consult: "Consult your doctor. Women of childbearing age must ensure optimal levels to safeguard future pregnancies."
+      },
+      normal: {
+        desc: "Your Folate level is within the healthy reference range (>= 6.0 ng/mL). This reflects adequate stores to support cell division and normal red blood cell synthesis.",
+        factors: ["Balanced diet rich in foliage-based foods or active folic acid supplementation", "Healthy gastrointestinal tract function"],
+        symptoms: ["No folate deficiency symptoms expected."],
+        prevention: ["Continue eating a varied diet rich in B-vitamins", "Maintain healthy lifestyle habits"],
+        consult: "No immediate medical intervention required. Continue annual health checks."
+      }
+    },
+    bn: {
+      deficient: {
+        desc: "আপনার ফোলেটের মাত্রা কম (< ৩.০ ng/mL)। এই তীব্র ঘাটতি ডিএনএ ও লোহিত রক্তকণিকা তৈরিতে বাধা দেয় এবং গর্ভাবস্থায় ভ্রূণের মারাত্মক ক্ষতি করতে পারে।",
+        factors: ["তাজা শাকসবজি ও ফর্টিফাইড খাবার না খাওয়া", "অতিরিক্ত মদ্যপান (যা শোষণ কমায় এবং রেচন বাড়ায়)", "অন্ত্রের শোষণ ক্ষমতা ব্যাহত হওয়া (যেমন সিলিয়াক রোগ)", "কিছু ওষুধ সেবন (যেমন মেথোট্রেক্সেট, ফেনোবারবিটাল)", "গর্ভাবস্থা (ফোলেটের চাহিদা বৃদ্ধি পাওয়া)"],
+        symptoms: ["ক্লান্তি, অবসাদ, পেশীর দুর্বলতা ও ফ্যাকাশে ত্বক", "মুখে ও ঠোঁটের কোণে ব্যথাদায়ক ঘা", "জিহ্বায় প্রদাহ ও লালচে ভাব", "খিটখিটে মেজাজ বা বিষণ্ণতা"],
+        prevention: ["চিকিৎসকের পরামর্শে প্রতিদিন মুখে খাওয়ার ফলিক অ্যাসিড সাপ্লিমেন্ট (১-৫ মিগ্রা) শুরু করুন", "খাদ্যতালিকায় গাঢ় সবুজ শাকসবজি ও ডাল জাতীয় খাবার বাড়ান", "মদ্যপান পরিহার করুন"],
+        consult: "⚠️ জরুরি: অবিলম্বে ডাক্তারের পরামর্শ নিন, বিশেষ করে যদি আপনি গর্ভবতী হন বা গর্ভধারণের পরিকল্পনা করেন। গর্ভধারণকালীন ফোলেটের অভাব শিশুর বিকলাঙ্গতার কারণ হতে পারে।"
+      },
+      borderline: {
+        desc: "আপনার ফোলেটের মাত্রা সীমানাবর্তী পরিসীমায় রয়েছে (৩.০ – ৫.৯ ng/mL)। এটি তীব্র ঘাটতি না হলেও ফোলেট মজুদ আদর্শ মাত্রার চেয়ে কম এবং যেকোনো সময় হ্রাস পেতে পারে।",
+        factors: ["শাকসবজি না খাওয়ার অভ্যাস", "প্রাথমিক শোষণহীনতা", "শারীরিক চাহিদা বৃদ্ধি পাওয়া"],
+        symptoms: ["হালকা ক্লান্তি ও অবসাদ", "মাঝে মাঝে মুখে ঘা বা লালচে ছোপ", "মনোযোগের অভাব"],
+        prevention: ["প্রতিদিন ৪০০ মাইক্রোগ্রাম ফলিক অ্যাসিড ট্যাবলেট খান (বিশেষ করে সন্তানসম্ভবা নারীরা)", "নিয়মিত তাজা সালাদ, লেবু জাতীয় ফল ও ডাল খান", "ভিটামিন বি১২ এর সাথে মিলিয়ে ফোলেট লেভেল পর্যবেক্ষণ করুন"],
+        consult: "ডাক্তারের পরামর্শ নিন। সন্তান ধারণক্ষম নারীদের হবু শিশুর স্বাস্থ্য নিশ্চিত করতে এই স্তরটি উন্নত করা জরুরি।"
+      },
+      normal: {
+        desc: "আপনার ফোলেটের মাত্রা স্বাভাবিক সীমার মধ্যে রয়েছে (>= ৬.০ ng/mL)। এর অর্থ দেহে পর্যাপ্ত ফোলেটের মজুদ আছে যা লোহিত রক্তকণিকা গঠনে সহায়ক।",
+        factors: ["পর্যাপ্ত ফোলেট সমৃদ্ধ খাবার বা ফলিক অ্যাসিড সাপ্লিমেন্ট গ্রহণ", "স্বাভাবিক পরিপাকতন্ত্র ও অন্ত্রের শোষণক্ষমতা"],
+        symptoms: ["ফোলেটের ঘাটতিজনিত কোনো লক্ষণ নেই।"],
+        prevention: ["সুষম খাদ্য তালিকা বজায় রাখুন", "নিয়মিত বার্ষিক স্বাস্থ্য পরীক্ষা সম্পন্ন করুন"],
+        consult: "কোনো চিকিৎসার প্রয়োজন নেই। স্বাভাবিক জীবনযাত্রা বজায় রাখুন।"
+      }
+    },
+    hi: {
+      deficient: {
+        desc: "आपका फोलेट स्तर कम है (<3.0 एनजी/एमएल), जो फोलेट की कमी को दर्शाता है। यह डीएनए संश्लेषण और कोशिका विभाजन को बाधित करता है, जिससे मेगालोब्लास्टिक एनीमिया और गर्भावस्था में गंभीर विकास संबंधी जोखिम होते हैं।",
+        factors: ["ताजी सब्जियों और गरिष्ठ अनाजों का अपर्याप्त आहार सेवन", "क्रोनिक अल्कोहल ��पयोग विकार (आंतों के अवशोषण को ख़राब करता है और उत्सर्जन को बढ़ाता है)", "कुअवशोषण विकार (सीलिएक रोग, उष्णकटिबंधीय स्प्रू)", "दवाएं (मेथोट्रेक्सेट, सल्फासालजीन, फेनोबार्बिटल)", "गर्भावस्था (शारीरिक फोलेट की मांग में वृद्धि)"],
+        symptoms: ["थकान, मांसपेशियों में कमजोरी और पीलापन (मैक्रोसाइटिक एनीमिया के कारण)", "मुंह के कोनों पर दर्दनाक छाले या दरारें", "सूजी हुई, लाल जीभ", "चिड़चिड़ापन, सिरदर्द या हल्का अवसाद"],
+        prevention: ["चिकित्सीय निर्देशन में दैनिक फोलिक एसिड अनुपूरण (आमतौर पर कमी के लिए प्रतिदिन 1-5 मिलीग्राम) शुरू करें", "आहार में गहरे हरे रंग की सब्जियों और फलियों का सेवन बढ़ाएँ", "शराब का सेवन सीमित करें"],
+        consult: "⚠️ अत्यावश्यक: अपने डॉक्टर से परामर्श लें, खासकर यदि ��र्भवती हैं या गर्भावस्था की योजना बना रही हैं। गर्भधारण के दौरान फोलेट की कमी से गंभीर जन्मजात न्यूरल ट्यूब दोष (स्पाइना बिफिडा) हो सकता है।"
+      },
+      borderline: {
+        desc: "आपका फोलेट स्तर सीमा रेखा सीमा (3.0 - 5.9 एनजी/एमएल) में है। हालांकि गंभीर रूप से कमी नहीं है, फोलेट भंडार इष्टतम नहीं हैं और आसानी से ख़त्म हो सकते हैं।",
+        factors: ["उप-इष्टतम आहार में ताजी उपज का अभाव", "आंतों के कुअवशोषण के प्रारंभिक चरण", "चयापचय संबंधी मांग में वृद्धि"],
+        symptoms: ["हल्की थकान या ऊर्जा की कमी", "समय-समय पर ���ुँह में छाले होना", "अस्पष्ट संज्ञानात्मक कोहरा"],
+        prevention: ["400 एमसीजी का दैनिक फोलिक एसिड अनुपूरक लें, खासकर अगर बच्चे पैदा करने की उम्र हो", "दैनिक भोजन में ताज़ा सलाद, खट्टे फल और बीन्स शामिल करें", "विटामिन बी12 के साथ-साथ फोलेट के स्तर की निगरानी करें"],
+        consult: "अपने डॉक्टर से सलाह लें. प्रसव उम्र की महिलाओं को भावी गर्भधारण की सुरक्षा के लिए इष्टतम स्तर सुनिश्चित करना चाहिए।"
+      },
+      normal: {
+        desc: "आपका फोलेट स्तर स्वस्थ संदर्भ सीमा (>= 6.0 एनजी/एमएल) के भीतर है। यह कोशिका विभाजन और सामान्य लाल रक्त कोशिका संश्लेषण का समर्थन करने के लिए पर्याप्त भंडार को दर्शाता है।",
+        factors: ["पत्ते-आधारित खाद्य पदार्थों या सक्रिय फोलिक एसिड अनुपूरण से भरपूर संतुलित आहार", "स्वस्थ जठरांत्र संबंधी कार्य"],
+        symptoms: ["फोलेट की कमी के कोई लक्षण अपेक्षित नहीं हैं।"],
+        prevention: ["बी-विटामिन से भरपूर विविध आहार खाना जारी रखें", "स्वस्थ जीवनशैली की आदतें बनाए रखें"],
+        consult: "तत्काल चिकित्सा हस्तक्षेप की आवश्यकता नहीं है। वार्षिक स्वास्थ्य जांच जारी रखें."
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-folate-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "ngml";
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    const btn = document.getElementById("langToggleBtn");
+    const finalFlag = lang === "bn" ? '🇬🇧' : '🇧🇩';
+    const finalLabel = lang === "bn" ? 'English' : 'Bengali';
+    if (btn) btn.innerHTML = `${finalFlag} <span>${finalLabel}</span>`;
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    if (activeReportData) updateReportDisplay();
+  }
+
+  function toggleLanguage() { setLanguage(currentLang === "en" ? "bn" : "en"); }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const label = document.getElementById("inputLabel");
+    const unit = currentUnit === "ngml" ? "ng/mL" : "nmol/L";
+    label.textContent = (currentLang === "en" ? "Folate Value" : "ফোলেট মান") + " (" + unit + ")";
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach(faq => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `<div class="faq-q">${faq.q}<span>＋</span></div><div class="faq-a">${faq.a}</div>`;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "300px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valFolate").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function getStatusFromFolate(valNgMl) {
+    if (valNgMl < 3.0) return { key: "deficient", badge: "badgeDeficient", color: "critical" };
+    if (valNgMl < 6.0) return { key: "borderline", badge: "badgeBorderline", color: "high" };
+    return { key: "normal", badge: "badgeNormal", color: "normal" };
+  }
+
+  function calcPointer(valNgMl) {
+    if (valNgMl <= 0) return 5;
+    if (valNgMl < 3.0) return 5 + (valNgMl / 3.0) * 30; // 5-35
+    if (valNgMl < 6.0) return 35 + ((valNgMl - 3.0) / 3.0) * 30; // 35-65
+    return Math.min(95, 65 + ((valNgMl - 6.0) / 19.0) * 30); // 65-95
+  }
+
+  function analyzeFolate() {
+    const rawVal = parseFloat(document.getElementById("valFolate").value);
+    if (isNaN(rawVal) || rawVal < 0) {
+      alert(currentLang === "en" ? "Please enter a valid Folate value." : "দয়া করে সঠিক ফোলেট মান লিখুন।");
+      return;
+    }
+
+    let valNgMl = rawVal;
+    let valNmolL = rawVal;
+
+    if (currentUnit === "nmoll") {
+      valNgMl = rawVal / 2.266;
+    } else {
+      valNmolL = rawVal * 2.266;
+    }
+
+    const status = getStatusFromFolate(valNgMl);
+    const pointerPct = calcPointer(valNgMl);
+
+    activeReportData = {
+      rawVal, valNgMl, valNmolL, status, pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+    addToHistory(status.badge, rawVal, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitStr = d.unit === "ngml" ? "ng/mL" : "nmol/L";
+
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resUnitText").textContent = unitStr;
+    document.getElementById("resFolateVal").textContent = d.rawVal.toFixed(1);
+
+    const colorVar = `var(--${d.status.color}-color)`;
+    document.getElementById("resFolateVal").style.color = colorVar;
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.status.badge];
+    statusLabel.style.color = colorVar;
+
+    const ptr = document.getElementById("rangePointer");
+    ptr.style.left = `${d.pointerPct}%`;
+    ptr.style.borderColor = colorVar;
+
+    // Ticks reference
+    if (d.unit === "nmoll") {
+      document.getElementById("tickDeficient").textContent = "< 6.8 Deficient";
+      document.getElementById("tickBorderline").textContent = "6.8 – 13.4";
+      document.getElementById("tickNormal").textContent = ">= 13.6 Normal";
+    } else {
+      document.getElementById("tickDeficient").textContent = "< 3.0 Deficient";
+      document.getElementById("tickBorderline").textContent = "3.0 – 5.9";
+      document.getElementById("tickNormal").textContent = ">= 6.0 Normal";
+    }
+
+    // Render insight
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+    const details = insights[currentLang][d.status.key];
+    if (!details) return;
+
+    const card = document.createElement("div");
+    card.className = "insight-card";
+    card.style.borderLeft = `4px solid ${colorVar}`;
+
+    const causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+    const symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+    const tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+    card.innerHTML = `
+      <h5>${translations[currentLang].titleInterpretation}</h5>
+      <p>${details.desc}</p>
+      <div style="font-size: 0.8rem; margin: 10px 0; color: var(--accent);">
+        <strong>Converted Values:</strong> ${d.valNgMl.toFixed(1)} ng/mL (${d.valNmolL.toFixed(1)} nmol/L)
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+          <ul>${causesList}</ul>
+        </div>
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+          <ul>${symptomsList}</ul>
+        </div>
+      </div>
+      <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:10px;">
+        <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+        <ul>${tipsList}</ul>
+      </div>
+      <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+        <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+      </div>
+    `;
+    insightSection.appendChild(card);
+  }
+
+  function addToHistory(badgeKey, val, unit) {
+    const unitStr = unit === "ngml" ? " ng/mL" : " nmol/L";
+    const item = { date: new Date().toLocaleDateString(), badgeKey, val, unitStr, id: Date.now() };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-folate-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `<span>📅 ${item.date}</span><strong>${item.val.toFixed(1)}${item.unitStr} — ${statusText}</strong>`;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() { window.print(); }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitStr = d.unit === "ngml" ? " ng/mL" : " nmol/L";
+    let t = `--- FOLATE ANALYSIS REPORT ---\n`;
+    t += `Date: ${d.date}\n`;
+    t += `Folate Value: ${d.rawVal.toFixed(1)}${unitStr}\n`;
+    t += `Values in both units: ${d.valNgMl.toFixed(1)} ng/mL / ${d.valNmolL.toFixed(1)} nmol/L\n`;
+    t += `Assessment: ${translations[currentLang][d.status.badge]}\n`;
+    t += `Reference Range: >= 6.0 ng/mL (Normal)\n`;
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, { backgroundColor: "#0a0e17", scale: 2 }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `folate-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => { setLanguage(currentLang); });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

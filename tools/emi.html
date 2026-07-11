@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EMI Calculator &bull; Loan Equated Monthly Installments - SSDK TOOLS HUB</title>
+  <meta name="description" content="Free online EMI Calculator helps you compute loan equated monthly installments, total interest payable, and view monthly amortization schedules.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 14px;
+    }
+    .input-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .input-group input, .input-group select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: border 0.3s;
+    }
+    .input-group input:focus, .input-group select:focus {
+      border-color: var(--accent);
+    }
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .result-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .result-card h3 {
+      font-size: 1.25rem;
+      color: var(--accent);
+      margin-bottom: 2px;
+      word-break: break-all;
+    }
+    .result-card span {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .chart-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 15px 0;
+      gap: 20px;
+    }
+    @media (max-width: 600px) {
+      .chart-container {
+        flex-direction: column;
+      }
+      .results-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .legend {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+    }
+    .legend-color {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+    }
+    .amort-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      margin-top: 10px;
+    }
+    .amort-table th, .amort-table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .amort-table th {
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .btn-show-all {
+      display: block;
+      margin: 12px auto 0;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.8rem;
+      transition: all 0.3s;
+    }
+    .btn-show-all:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">EMI Calculator</h1>
+  <p class="page-sub">Determine Equated Monthly Installments (EMI), calculate total interest payable, and view your loan amortization schedule.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 24px; align-items: start;">
+      
+      <!-- Left Column: Inputs -->
+      <div>
+        <h4 style="margin-bottom: 12px;">Enter Loan Parameters</h4>
+        
+        <div class="input-group">
+          <label for="loanAmount">Loan Amount (Principal)</label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <span style="position: absolute; left: 12px; font-weight: 700; color: var(--muted);">$</span>
+            <input type="number" id="loanAmount" placeholder="e.g. 50000" style="padding-left: 28px; width: 100%;" min="1">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="interestRate">Annual Interest Rate (%)</label>
+          <input type="number" id="interestRate" placeholder="e.g. 7.5" step="0.01" min="0" max="100">
+        </div>
+
+        <div class="input-row">
+          <div class="input-group">
+            <label for="loanTenure">Tenure Value</label>
+            <input type="number" id="loanTenure" placeholder="e.g. 5" min="1">
+          </div>
+          <div class="input-group">
+            <label for="tenureUnit">Tenure Unit</label>
+            <select id="tenureUnit">
+              <option value="years">Years</option>
+              <option value="months">Months</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Outputs & SVG Pie Chart -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 250px; display: flex; flex-direction: column; justify-content: center;">
+        
+        <div id="emiOutputContainer" style="display: none;">
+          <div class="results-grid">
+            <div class="result-card">
+              <h3 id="monthlyEmi">$0.00</h3>
+              <span>Monthly EMI</span>
+            </div>
+            <div class="result-card">
+              <h3 id="totalInterest">$0.00</h3>
+              <span>Total Interest</span>
+            </div>
+            <div class="result-card">
+              <h3 id="totalPayable">$0.00</h3>
+              <span>Total Payable</span>
+            </div>
+          </div>
+
+          <h4 style="margin: 10px 0 6px; text-align: center; font-size: 0.85rem; color: var(--muted);">Breakdown Visualization</h4>
+          <div class="chart-container">
+            <svg width="120" height="120" viewBox="0 0 32 32">
+              <circle r="16" cx="16" cy="16" fill="var(--bg2)" />
+              <!-- Principal Circle Segment -->
+              <circle r="8" cx="16" cy="16" fill="transparent"
+                      stroke="#2ecc71"
+                      stroke-width="16"
+                      stroke-dasharray="0 50.26"
+                      transform="rotate(-90 16 16)"
+                      id="piePrincipal" />
+              <!-- Interest Circle Segment -->
+              <circle r="8" cx="16" cy="16" fill="transparent"
+                      stroke="#e74c3c"
+                      stroke-width="16"
+                      stroke-dasharray="0 50.26"
+                      transform="rotate(-90 16 16)"
+                      id="pieInterest" />
+              <!-- Hole for donut style -->
+              <circle r="6" cx="16" cy="16" fill="var(--bg3)" />
+            </svg>
+            <div class="legend">
+              <div class="legend-item">
+                <div class="legend-color" style="background: #2ecc71;"></div>
+                <span>Principal: <strong id="lblPrincipalPct">50%</strong></span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #e74c3c;"></div>
+                <span>Interest: <strong id="lblInterestPct">50%</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="emiPlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Enter loan details to view interest calculations, chart breakdowns, and payment schedules.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnCalc">💰 Calculate EMI</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Amortization Schedule Section -->
+  <div class="content-card" id="scheduleCard" style="display: none;">
+    <h3>Amortization Payment Schedule</h3>
+    <div style="overflow-x: auto;">
+      <table class="amort-table">
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Beginning Balance</th>
+            <th>EMI Payment</th>
+            <th>Principal Paid</th>
+            <th>Interest Paid</th>
+            <th>Ending Balance</th>
+          </tr>
+        </thead>
+        <tbody id="scheduleBody">
+        </tbody>
+      </table>
+    </div>
+    <button class="btn-show-all" id="btnShowAll" style="display: none;">Expand Entire Schedule</button>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Dynamic Repayment Breakdown:</strong> Computes the exact division between Principal and Interest payments.</li>
+      <li><strong>Interactive Donut Chart:</strong> Real-time rendering of loan liability splits using vector SVGs.</li>
+      <li><strong>Complete Amortization Plan:</strong> Tracks month-by-month payment balances, interest portions, and equity building.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">What is Equated Monthly Installment (EMI)?<span>＋</span></div>
+        <div class="faq-a">An EMI is a fixed payment amount made by a borrower to a lender at a specified date each calendar month. EMIs are applied to both interest and principal each month so that over a specified number of years, the loan is paid off in full.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">How does the principal and interest split change over time?<span>＋</span></div>
+        <div class="faq-a">In the early stages of a loan, a large portion of each monthly payment goes toward paying off the interest because the outstanding principal balance is high. As the outstanding balance drops over time, the interest charge decreases, meaning more of your monthly EMI goes directly toward clearing the principal balance.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+  
+  let fullSchedule = [];
+  let showAllRows = false;
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  $('btnCalc').onclick = () => {
+    const principal = parseFloat($('loanAmount').value);
+    const annualRate = parseFloat($('interestRate').value);
+    const tenureVal = parseFloat($('loanTenure').value);
+    const tenureUnit = $('tenureUnit').value;
+
+    if (!principal || principal <= 0 || isNaN(annualRate) || annualRate < 0 || !tenureVal || tenureVal <= 0) {
+      showStatus('Please enter valid principal amount, interest rate, and tenure values.', true);
+      return;
+    }
+
+    showStatus('Calculating loan parameters...');
+
+    // Convert values
+    const rateMonthly = annualRate / (12 * 100);
+    const months = tenureUnit === 'years' ? tenureVal * 12 : tenureVal;
+
+    let emi = 0;
+    if (rateMonthly === 0) {
+      emi = principal / months;
+    } else {
+      emi = principal * rateMonthly * Math.pow(1 + rateMonthly, months) / (Math.pow(1 + rateMonthly, months) - 1);
+    }
+
+    const totalPayable = emi * months;
+    const totalInterest = totalPayable - principal;
+
+    // Set UI cards
+    $('monthlyEmi').textContent = '</script>
+</body>
+</html>
+ + emi.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    $('totalInterest').textContent = '</script>
+</body>
+</html>
+ + totalInterest.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    $('totalPayable').textContent = '</script>
+</body>
+</html>
+ + totalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // Chart logic
+    // Circle circumference for r=8 is 2 * pi * 8 = 50.265
+    const circ = 50.265;
+    const interestPct = totalInterest / totalPayable;
+    const principalPct = 1 - interestPct;
+
+    $('lblPrincipalPct').textContent = Math.round(principalPct * 100) + '%';
+    $('lblInterestPct').textContent = Math.round(interestPct * 100) + '%';
+
+    const pStroke = principalPct * circ;
+    const iStroke = interestPct * circ;
+
+    $('piePrincipal').setAttribute('stroke-dasharray', `${pStroke} ${circ}`);
+    $('pieInterest').setAttribute('stroke-dasharray', `${iStroke} ${circ}`);
+    $('pieInterest').setAttribute('stroke-dashoffset', -pStroke);
+
+    // Amortization Schedule Calculation
+    fullSchedule = [];
+    let balance = principal;
+    for (let m = 1; m <= months; m++) {
+      const interestPaid = balance * rateMonthly;
+      const principalPaid = emi - interestPaid;
+      const prevBalance = balance;
+      balance -= principalPaid;
+      if (balance < 0) balance = 0;
+
+      fullSchedule.push({
+        month: m,
+        beg: prevBalance,
+        emi: emi,
+        prin: principalPaid,
+        intr: interestPaid,
+        end: balance
+      });
+    }
+
+    showAllRows = false;
+    renderScheduleTable();
+
+    $('emiPlaceholder').style.display = 'none';
+    $('emiOutputContainer').style.display = 'block';
+    $('scheduleCard').style.display = 'block';
+    
+    showStatus('✅ Calculations and amortization schedule generated!');
+  };
+
+  function renderScheduleTable() {
+    const tbody = $('scheduleBody');
+    tbody.innerHTML = '';
+    
+    const limit = showAllRows ? fullSchedule.length : Math.min(12, fullSchedule.length);
+
+    for (let i = 0; i < limit; i++) {
+      const row = fullSchedule[i];
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.month}</td>
+        <td>${row.beg.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+        <td>${row.emi.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+        <td>${row.prin.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+        <td>${row.intr.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+        <td>${row.end.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    const btn = $('btnShowAll');
+    if (fullSchedule.length > 12) {
+      btn.style.display = 'block';
+      btn.textContent = showAllRows ? 'Collapse Schedule (Show 12 Months)' : `Expand Entire Schedule (${fullSchedule.length} Months)`;
+    } else {
+      btn.style.display = 'none';
+    }
+  }
+
+  $('btnShowAll').onclick = () => {
+    showAllRows = !showAllRows;
+    renderScheduleTable();
+  };
+
+  $('btnClear').onclick = () => {
+    $('loanAmount').value = '';
+    $('interestRate').value = '';
+    $('loanTenure').value = '';
+    $('emiPlaceholder').style.display = 'block';
+    $('emiOutputContainer').style.display = 'none';
+    $('scheduleCard').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+    fullSchedule = [];
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

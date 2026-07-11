@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Differential WBC Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze your differential White Blood Cell (WBC) count online. Check neutrophils, lymphocytes, monocytes, eosinophils, and basophils with dynamic ranges and bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #ef4444;
+      --critical-color: #7f1d1d;
+      --border-color: #f59e0b;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1.8fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .form-inputs-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper.span-2 {
+      grid-column: span 2;
+    }
+
+    @media (max-width: 600px) {
+      .input-wrapper.span-2 {
+        grid-column: span 1;
+      }
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 500px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 120px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    /* Diff Bars list */
+    .diff-list-results {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: var(--bg3);
+      padding: 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .diff-bar-item {
+      display: grid;
+      grid-template-columns: 140px 1fr 80px;
+      align-items: center;
+      gap: 14px;
+    }
+
+    @media (max-width: 600px) {
+      .diff-bar-item {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 10px;
+      }
+    }
+
+    .diff-bar-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .diff-bar-outer {
+      height: 12px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.05);
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .diff-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      background: var(--accent);
+      width: 0;
+      transition: width 0.6s cubic-bezier(0.1, 0.8, 0.1, 1);
+    }
+
+    .diff-bar-val {
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    @media (max-width: 600px) {
+      .diff-bar-val {
+        text-align: left;
+      }
+    }
+
+    .sum-warning-box {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid var(--high-color);
+      color: #f87171;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      margin-bottom: 12px;
+      display: none;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .diff-list-results, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Differential WBC Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze the complete differential White Blood Cell (WBC) count profile. Check neutrophils, lymphocytes, monocytes, eosinophils, and basophils percentages and absolute values.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Diff WBC Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">🗑 Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper span-2">
+              <label for="totalWBC" data-translate="labelWbcCount">Total WBC Count (cells/µL) [Optional]</label>
+              <input type="number" id="totalWBC" placeholder="e.g. 7500" min="100">
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valNeut" data-translate="labelNeut">Neutrophils (%)</label>
+              <input type="number" step="0.1" id="valNeut" placeholder="e.g. 60" min="0" max="100">
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valLymph" data-translate="labelLymph">Lymphocytes (%)</label>
+              <input type="number" step="0.1" id="valLymph" placeholder="e.g. 30" min="0" max="100">
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valMono" data-translate="labelMono">Monocytes (%)</label>
+              <input type="number" step="0.1" id="valMono" placeholder="e.g. 5" min="0" max="100">
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valEosin" data-translate="labelEosin">Eosinophils (%)</label>
+              <input type="number" step="0.1" id="valEosin" placeholder="e.g. 3" min="0" max="100">
+            </div>
+
+            <div class="input-wrapper span-2">
+              <label for="valBaso" data-translate="labelBaso">Basophils (%)</label>
+              <input type="number" step="0.1" id="valBaso" placeholder="e.g. 1" min="0" max="100">
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeDiff()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Profile</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🩸</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter leukocyte percentages (summing to 100%) and optional total WBC count, then click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Leukocyte Differential Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <!-- Total sum warning -->
+          <div class="sum-warning-box" id="sumWarningBox">
+            ⚠️ <strong>Sum warning:</strong> Percentages sum to <span id="warningSumVal">0</span>% instead of 100%. Please check values.
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelTotalWbc">Total WBC</strong>: <span id="resTotalWBC">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <!-- Dynamic Differential Bars -->
+          <div class="diff-list-results">
+            <div class="diff-bar-item">
+              <span class="diff-bar-label" data-translate="labelNeut">Neutrophils</span>
+              <div class="diff-bar-outer">
+                <div class="diff-bar-fill" id="fillNeut"></div>
+              </div>
+              <span class="diff-bar-val" id="valTextNeut">-</span>
+            </div>
+
+            <div class="diff-bar-item">
+              <span class="diff-bar-label" data-translate="labelLymph">Lymphocytes</span>
+              <div class="diff-bar-outer">
+                <div class="diff-bar-fill" id="fillLymph"></div>
+              </div>
+              <span class="diff-bar-val" id="valTextLymph">-</span>
+            </div>
+
+            <div class="diff-bar-item">
+              <span class="diff-bar-label" data-translate="labelMono">Monocytes</span>
+              <div class="diff-bar-outer">
+                <div class="diff-bar-fill" id="fillMono"></div>
+              </div>
+              <span class="diff-bar-val" id="valTextMono">-</span>
+            </div>
+
+            <div class="diff-bar-item">
+              <span class="diff-bar-label" data-translate="labelEosin">Eosinophils</span>
+              <div class="diff-bar-outer">
+                <div class="diff-bar-fill" id="fillEosin"></div>
+              </div>
+              <span class="diff-bar-val" id="valTextEosin">-</span>
+            </div>
+
+            <div class="diff-bar-item">
+              <span class="diff-bar-label" data-translate="labelBaso">Basophils</span>
+              <div class="diff-bar-outer">
+                <div class="diff-bar-fill" id="fillBaso"></div>
+              </div>
+              <span class="diff-bar-val" id="valTextBaso">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: WBC Differential</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is a WBC Differential?</strong><br><span data-translate="eduA1">A WBC differential measures the percentage of each type of white blood cell in your blood. There are five main types: Neutrophils, Lymphocytes, Monocytes, Eosinophils, and Basophils. Each plays a distinct role in your immune defense.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What are the roles of each leukocyte type?</strong><br><span data-translate="eduA2">1. **Neutrophils (40-70%)**: Target bacterial infections first. <br>2. **Lymphocytes (20-40%)**: Target viral infections (produces antibodies, includes T-cells/B-cells). <br>3. **Monocytes (2-8%)**: Clean up dead tissues and target chronic infections. <br>4. **Eosinophils (1-4%)**: Defend against parasites and participate in allergic reactions. <br>5. **Basophils (0.5-1%)**: Release histamine during severe allergic responses.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">How is absolute count determined?</strong><br><span data-translate="eduA3">Absolute count measures the actual number of cells per microliter. It is computed as: <code>Absolute Count = (WBC Count &times; Differential %) / 100</code>. This is vital for checking severe immunodeficiencies (like neutropenia).</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Differential WBC Analyzer",
+      toolDesc: "Analyze the complete differential White Blood Cell (WBC) count profile. Check neutrophils, lymphocytes, monocytes, eosinophils, and basophils percentages and absolute values.",
+      inputsTitle: "🧬 Diff WBC Parameters",
+      clearBtn: "Reset",
+      labelWbcCount: "Total WBC Count (cells/µL) [Optional]",
+      labelNeut: "Neutrophils (%)",
+      labelLymph: "Lymphocytes (%)",
+      labelMono: "Monocytes (%)",
+      labelEosin: "Eosinophils (%)",
+      labelBaso: "Basophils (%)",
+      btnAnalyze: "Analyze Profile",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter leukocyte percentages (summing to 100%) and optional total WBC count, then click the analyze button to display medical summaries.",
+      reportTitle: "🔬 Leukocyte Differential Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelTotalWbc: "Total WBC",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      titleInterpretation: "📋 Differential Analysis Summary",
+      titleAlerts: "Immune System Observations"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "শ্বেতকণিকা ডিফারেনশিয়াল বিশ্লেষক",
+      toolDesc: "রক্তের শ্বেতকণিকার ডিফারেনশিয়াল কাউন্ট (Neutrophils, Lymphocytes, Monocytes, Eosinophils, Basophils) এর মাত্রা বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 ডাব্লিউবিসি ডিফারেনশিয়াল ইনপুট সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelWbcCount: "মোট ডাব্লিউবিসি কাউন্ট (cells/µL) [ঐচ্ছিক]",
+      labelNeut: "নিউট্রোফিল (%)",
+      labelLymph: "লিম্ফোসাইট (%)",
+      labelMono: "মনোসাইট (%)",
+      labelEosin: "ইওসিনোফিল (%)",
+      labelBaso: "বেসোফিল (%)",
+      btnAnalyze: "বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "প্রতিটি শ্বেতকণিকার পার্সেন্টেজ লিখুন (সমষ্টি ১০০% হতে হবে) এবং ঐচ্ছিক মোট ডাব্লিউবিসি মান দিয়ে বিশ্লেষণ বোতামটি চাপুন।",
+      reportTitle: "🔬 শ্বেতকণিকা ডিফারেনশিয়াল রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelTotalWbc: "মোট ডাব্লিউবিসি",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      titleInterpretation: "📋 ডিফারেনশিয়াল বিশ্লেষণ ওভারভিউ",
+      titleAlerts: "রোগ প্রতিরোধ ব্যবস্থার পর্যবেক্ষণসমূহ"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "विभेदक WBC विश्लेषक",
+      toolDesc: "संपूर्ण विभेदक श्वेत रक्त कोशिका (डब्ल्यूबीसी) गणना प्रोफ़ाइल का विश्लेषण करें। न्यूट्रोफिल, लिम्फोसाइट्स, मोनोसाइट्स, ईोसिनोफिल्स और बेसोफिल्स प्रतिशत और निरपेक्ष मूल्यों की जाँच करें।",
+      inputsTitle: "🧬 अंतर WBC पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelWbcCount: "कुल WBC गणना (सेल/µL) [वैकल्पिक]",
+      labelNeut: "न्यूट्रोफिल (%)",
+      labelLymph: "लिम्फोसाइट्स (%)",
+      labelMono: "मोनोसाइट्स (%)",
+      labelEosin: "ईोसिनोफिल्स (%)",
+      labelBaso: "बेसोफिल्स (%)",
+      btnAnalyze: "प्रोफ़ाइल का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "ल्यूकोसाइट प्रतिशत (कुल 100%) और वैकल्पिक कुल डब्ल्यूबीसी गणना दर्ज करें, फिर चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬ल्यूकोसाइट डिफरेंशियल रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelTotalWbc: "कुल डब्ल्यूबीसी",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      titleInterpretation: "📋 विभेदक विश्लेषण सारांश",
+      titleAlerts: "प्रतिरक्षा प्रणाली अवलोकन"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is a WBC differential count?", a: "It measures the percentage of each type of white blood cell in your blood, representing how your immune system is currently distributed to fight threats." },
+      { q: "What are neutrophils?", a: "Neutrophils are the most common white blood cells, acting as first responders to bacterial infections." },
+      { q: "What does high lymphocytes mean?", a: "Elevated lymphocytes (lymphocytosis) typically indicate viral infections, chronic inflammatory conditions, or lymphatic disorders." },
+      { q: "What causes high eosinophils?", a: "High levels (eosinophilia) indicate allergic diseases (asthma, eczema, hay fever), drug reactions, or parasitic infections." },
+      { q: "What is the function of monocytes?", a: "Monocytes ingest dead cells and fight chronic infections, acting as scavengers for the immune system." },
+      { q: "What are basophils?", a: "Basophils are rare white cells that release histamine during severe allergic responses and prevent blood clots with heparin." },
+      { q: "Why should the differential sum equal 100%?", a: "Because these five cells compose the entire population of white blood cells. Their relative parts must represent the whole (100%)." },
+      { q: "What does it mean if the sum is not exactly 100%?", a: "Minor lab differences or rare cell types (like myelocytes) might cause slight variations, but large variations point to entry errors." },
+      { q: "How are absolute counts calculated?", a: "Absolute Count = (Total WBC Count &times; Cell %) / 100. This measures the actual cell density." },
+      { q: "What is a 'left shift'?", a: "A 'left shift' is a clinical term meaning that the bone marrow is releasing immature neutrophils (band cells) to fight an active bacterial infection." },
+      { q: "What causes low neutrophils (Neutropenia)?", a: "Causes include viral infections, autoimmune conditions, chemotherapy, marrow diseases, or severe sepsis." },
+      { q: "Can allergies increase basophils?", a: "Yes, though they represent a tiny portion of the white cells. High basophils can accompany severe allergy flares or skin conditions." },
+      { q: "Do children have different reference ranges?", a: "Yes. Children naturally have higher lymphocyte ratios and lower neutrophil ratios compared to adults." },
+      { q: "Does stress alter the WBC differential?", a: "Yes, acute physical stress raises neutrophils and lowers lymphocytes due to cortisol release." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "ডাব্লিউবিসি ডিফারেনশিয়াল কাউন্ট কী?", a: "এটি রক্তে প্রতিটি ধরণের শ্বেত রক্তকণিকার শতকরা হার পরিমাপ করে, যা নির্দেশ করে যে রোগ প্রতিরোধ ব্যবস্থা বর্তমানে কীভাবে বিতরণ করা হয়েছে।" },
+      { q: "নিউট্রোফিল কী?", a: "নিউট্রোফিল হলো সবচেয়ে সাধারণ শ্বেত রক্তকণিকা, যা ব্যাকটেরিয়াল ইনফেকশনের বিরুদ্ধে প্রথম প্রতিরোধ গড়ে তোলে।" },
+      { q: "লিম্ফোসাইট বেশি হওয়ার অর্থ কী?", a: "লিম্ফোসাইট বৃদ্ধি পাওয়া (লিম্ফোসাইটোসিস) সাধারণত ভাইরাল সংক্রমণ বা দীর্ঘস্থায়ী প্রদাহ নির্দেশ করে।" },
+      { q: "ইওসিনোফিল বাড়ার কারণ কী?", a: "উচ্চ মাত্রা (ইওসিনোফিলিয়া) অ্যালার্জিজনিত রোগ (হাঁপানি, একজিমা), ওষুধের পার্শ্বপ্রতিক্রিয়া বা পরজীবী সংক্রমণ নির্দেশ করে।" },
+      { q: "মনোসাইটের কাজ কী?", a: "মনোসাইট মৃত কোষ ভক্ষণ করে এবং ক্রনিক ইনফেকশনের বিরুদ্ধে কাজ করে ইমিউন সিস্টেমের পরিচ্ছন্নতাকর্মী হিসেবে।" },
+      { q: "বেসোফিল কী?", a: "বেসোফিল হলো বিরল শ্বেত রক্তকণিকা যা মারাত্মক অ্যালার্জি প্রতিক্রিয়ার সময় হিস্টামিন নিঃসরণ করে।" },
+      { q: "ডিফারেনশিয়াল যোগফল কেন ১০০% হওয়া উচিত?", a: "কারণ এই পাঁচটি কোষ মিলিয়েই মোট শ্বেত রক্তকণিকা গঠিত হয়। তাই তাদের শতকরা সমষ্টি অবশ্যই ১০০% হতে হবে।" },
+      { q: "যোগফল ১০০% না হলে কী নির্দেশ করে?", a: "সামান্য যান্ত্রিক তারতম্য বা বিরল কোনো কোষের উপস্থিতির জন্য একটু কম-বেশি হতে পারে, তবে বড় অসঙ্গতি ইনপুট ভুলের কারণে হয়।" },
+      { q: "অ্যাবসোলিউট কাউন্ট কীভাবে গণনা করা হয়?", a: "অ্যাবসোলিউট কাউন্ট = (মোট ডাব্লিউবিসি &times; ডিফারেনশিয়াল %) / ১০০। এটি রক্তের প্রকৃত কোষ ঘনত্ব পরিমাপ করে।" },
+      { q: "লেফট শিফট (Left Shift) কী?", a: "এটি একটি ক্লিনিক্যাল শব্দ যা নির্দেশ করে যে অস্থিমজ্জা ব্যাকটেরিয়াল ইনফেকশন মোকাবিলায় রক্তের অপরিণত নিউট্রোফিল ছেড়ে দিচ্ছে।" },
+      { q: "নিউট্রোফিল কমে যাওয়ার (নিউট্রোপেনিয়া) কারণ কী?", a: "ভাইরাল ইনফেকশন, অটোইমিউন রোগ, কেমোথেরাপি বা মারাত্মক সেপসিস এর অন্যতম কারণ।" },
+      { q: "অ্যালার্জি কি বেসোফিল বাড়াতে পারে?", a: "হ্যাঁ, তবে বেসোফিলের পরিমাণ খুবই সামান্য থাকে। তীব্র অ্যালার্জি বা ত্বকের রোগে বেসোফিল সামান্য বাড়তে পারে।" },
+      { q: "শিশুদের রেফারেন্স সীমা কি আলাদা?", a: "হ্যাঁ, শিশুদের ক্ষেত্রে নিউট্রোফিলের তুলনায় লিম্ফোসাইটের শতকরা হার স্বাভাবিকভাবেই বেশি থাকে।" },
+      { q: "মানসিক চাপ কি ডিফারেনশিয়াল পরিবর্তন করতে পারে?", a: "হ্যাঁ, অতিরিক্ত শারীরিক বা মানসিক চাপের ফলে কর্টিসলের নিঃসরণে নিউট্রোফিল বাড়ে ও লিম্ফোসাইট কমে যায়।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "WBC अंतर गणना क्या है?", a: "यह आपके रक्त में प्रत्येक प्रकार की श्वेत रक्त कोशिका के प्रतिशत को मापता है, यह दर्शाता है कि खतरों से लड़ने के लिए आपकी प्रतिरक्षा प्रणाली वर्तमान में कैसे वितरित है।" },
+      { q: "न्यूट्रोफिल क्या हैं?", a: "न्यूट्रोफिल सबसे आम श्वेत रक्त कोशिकाएं ह��ं, जो जीवाणु संक्रमण के लिए पहली प्रतिक्रियाकर्ता के रूप में कार्य करती हैं।" },
+      { q: "उच्च लिम्फोसाइटों का क्या मतलब है?", a: "ऊंचा लिम्फोसाइट्स (लिम्फोसाइटोसिस) आमतौर पर वायरल संक्रमण, पुरानी सूजन की स्थिति या लसीका संबंधी विकारों का संकेत देता है।" },
+      { q: "उच्च इओसिनोफिल्स का क्या कारण है?", a: "उच्च स्तर (इओसिनोफिलिया) एलर्जी संबंधी बीमारियों (अस्थमा, एक्जिमा, हे फीवर), दवा प्रतिक्रियाओं या परजीवी संक्रमण का संकेत देता है।" },
+      { q: "मोनोसाइट्स का कार्य क्या है?", a: "मोनोसाइट्स मृत कोशिकाओं को निगलते हैं और पुराने संक्रमणों से लड़ते हैं, प्रतिरक्षा प्रणाली के लिए सफाईकर्मी के रूप में कार्य करते हैं।" },
+      { q: "बेसोफिल क्या हैं?", a: "बेसोफिल्स दुर्लभ सफेद कोशिकाएं हैं जो गंभीर एलर्जी प्रतिक्रियाओं के दौरान हिस्टामाइन जारी करती हैं और हेपरिन के साथ रक्त के थक्कों को रोकती हैं।" },
+      { q: "अंतर योग 100% के ���राबर क्यों होना चाहिए?", a: "क्योंकि ये पांच कोशिकाएं श्वेत रक्त कोशिकाओं की पूरी आबादी का निर्माण करती हैं। उनके सापेक्ष भागों को संपूर्ण (100%) का प्रतिनिधित्व करना चाहिए।" },
+      { q: "यदि योग बिल्कुल 100% नहीं है तो इसका क्या मतलब है?", a: "मा���ूली प्रयोगशाला अंतर या दुर्लभ कोशिका प्रकार (जैसे मायलोसाइट्स) में मामूली बदलाव हो सकते हैं, लेकिन बड़े बदलाव प्रवेश त्रुटियों की ओर इशारा करते हैं।" },
+      { q: "निरपेक्ष गणना की गणना कैसे की जाती है?", a: "निरपेक्ष गणना = (कुल डब्लूबीसी गणना × सेल%) / 100। यह वास्तविक सेल घनत्व को मापता है।" },
+      { q: "'वामपंथ' क्या है?", a: "'लेफ्ट शिफ्ट' एक नैदानिक ​​शब्द है जिसका अर्थ है कि अस्थि मज्जा एक सक्रिय जीवाणु संक्रमण से लड़ने के लिए अपरिपक्व न्यूट्रोफिल (बैंड कोशिकाएं) जारी कर रहा है।" },
+      { q: "कम न्यूट्रोफिल (न्यूट्रोपेनिया) का क्या कारण है?", a: "कारणों में वायरल संक्रमण, ऑटोइम्यून स्थितियां, कीमोथेरेपी, मज्जा रोग या गंभीर सेप्सिस शामिल हैं।" },
+      { q: "क्या एलर्जी से बेसोफिल बढ़ सकता है?", a: "हाँ, हालाँकि वे श्वेत कोशिकाओं के एक छोटे से हिस्से का प्रतिनिधित्व करते हैं। उच्च बेसोफिल गंभीर एलर्जी फ्लेरेस या त्वचा की स्थिति के साथ हो सकता है।" },
+      { q: "क्या बच्चों के पास अलग-अलग संदर्भ श्रेणियाँ हैं?", a: "हाँ। वयस्कों की तुलना में बच्चों में स्वाभाविक रूप से अधिक लिम्फोसाइट अनुपात और कम न्यूट्रोफिल अनुपात होता है।" },
+      { q: "क्या तनाव WBC अंतर को बदल देता है?", a: "हां, तीव्र शारीरिक तनाव कोर्टिसोल रिलीज के कारण न्यूट्रोफिल बढ़ाता है और लिम्फोसाइटों को कम करता है।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-diff-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("totalWBC").value = "";
+    document.getElementById("valNeut").value = "";
+    document.getElementById("valLymph").value = "";
+    document.getElementById("valMono").value = "";
+    document.getElementById("valEosin").value = "";
+    document.getElementById("valBaso").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    document.getElementById("sumWarningBox").style.display = "none";
+  }
+
+  function analyzeDiff() {
+    const totalWBC = parseFloat(document.getElementById("totalWBC").value) || 0;
+    const neut = parseFloat(document.getElementById("valNeut").value) || 0;
+    const lymph = parseFloat(document.getElementById("valLymph").value) || 0;
+    const mono = parseFloat(document.getElementById("valMono").value) || 0;
+    const eosin = parseFloat(document.getElementById("valEosin").value) || 0;
+    const baso = parseFloat(document.getElementById("valBaso").value) || 0;
+
+    const sum = neut + lymph + mono + eosin + baso;
+    const sumWarningBox = document.getElementById("sumWarningBox");
+    
+    if (Math.abs(sum - 100) > 2) {
+      sumWarningBox.style.display = "block";
+      document.getElementById("warningSumVal").textContent = sum.toFixed(1);
+    } else {
+      sumWarningBox.style.display = "none";
+    }
+
+    activeReportData = {
+      totalWBC,
+      neut,
+      lymph,
+      mono,
+      eosin,
+      baso,
+      sum,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(activeReportData);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resTotalWBC").textContent = d.totalWBC > 0 ? `${d.totalWBC.toLocaleString()} cells/µL` : "Not provided";
+    document.getElementById("resDate").textContent = d.date;
+
+    // Fill bars and texts
+    setBar("Neut", d.neut, d.totalWBC);
+    setBar("Lymph", d.lymph, d.totalWBC);
+    setBar("Mono", d.mono, d.totalWBC);
+    setBar("Eosin", d.eosin, d.totalWBC);
+    setBar("Baso", d.baso, d.totalWBC);
+
+    // Insights
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const mainCard = document.createElement("div");
+    mainCard.className = "insight-card";
+    mainCard.style.borderLeft = `4px solid var(--accent)`;
+    
+    let obsList = [];
+    
+    // Check bounds
+    if (d.neut > 70) obsList.push(currentLang === "en" ? "<li><strong>High Neutrophils (Neutrophilia)</strong>: Often indicates acute bacterial infections or physical stress.</li>" : "<li><strong>উচ্চ নিউট্রোফিল</strong>: ব্যাকটেরিয়াল ইনফেকশন বা তীব্র শারীরিক চাপের ইঙ্গিত দেয়।</li>");
+    if (d.neut < 40) obsList.push(currentLang === "en" ? "<li><strong>Low Neutrophils (Neutropenia)</strong>: Weakens defense, could indicate viral suppression or marrow strain.</li>" : "<li><strong>কম নিউট্রোফিল</strong>: রোগ প্রতিরোধ ক্ষমতা হ্রাস পায়, যা ভাইরাস সংক্রমণ বা অস্থিমজ্জার চাপ নির্দেশ করতে পারে।</li>");
+    
+    if (d.lymph > 40) obsList.push(currentLang === "en" ? "<li><strong>High Lymphocytes (Lymphocytosis)</strong>: Frequently triggered by viral infections (mononucleosis, cold, flu).</li>" : "<li><strong>উচ্চ লিম্ফোসাইট</strong>: সাধারণত ভাইরাল সংক্রমণের কারণে ঘটে থাকে।</li>");
+    if (d.lymph < 20) obsList.push(currentLang === "en" ? "<li><strong>Low Lymphocytes (Lymphopenia)</strong>: Suggests general immune system depletion or corticosteroids use.</li>" : "<li><strong>কম লিম্ফোসাইট</strong>: রোগ প্রতিরোধ ক্ষমতা কমে যাওয়া বা স্টেরয়েড ওষুধের প্রভাবে হতে পারে।</li>");
+
+    if (d.mono > 8) obsList.push(currentLang === "en" ? "<li><strong>High Monocytes (Monocytosis)</strong>: Can indicate chronic infection, recovery phase, or auto-inflammatory disease.</li>" : "<li><strong>উচ্চ মনোসাইট</strong>: ক্রনিক ইনফেকশন বা অটোইমিউন সমস্যার সংকেত দেয়।</li>");
+    if (d.eosin > 4) obsList.push(currentLang === "en" ? "<li><strong>High Eosinophils (Eosinophilia)</strong>: Typically associated with allergies, asthma, or parasitic infection.</li>" : "<li><strong>উচ্চ ইওসিনোফিল</strong>: অ্যালার্জি, হাঁপানি বা পরজীবী সংক্রমণের ইঙ্গিত দেয়।</li>");
+    if (d.baso > 1) obsList.push(currentLang === "en" ? "<li><strong>High Basophils (Basophilia)</strong>: Rare; can reflect severe allergic disease or blood cell disorders.</li>" : "<li><strong>উচ্চ বেসোফিল</strong>: বিরল; তীব্র অ্যালার্জি বা রক্তকোষের বিশৃঙ্খলতার সাথে জড়িত।</li>");
+
+    if (obsList.length === 0) {
+      obsList.push(currentLang === "en" ? "<li>All differential percentages are within normal limits. Suggests balanced distribution of immune cells.</li>" : "<li>সব শ্বেতকণিকার শতকরা হার স্বাভাবিক সীমার মধ্যে রয়েছে। রোগ প্রতিরোধ ক্ষমতার সুষম বণ্টন প্রকাশ করে।</li>");
+    }
+
+    mainCard.innerHTML = `
+      <h5>${translations[currentLang].titleInterpretation}</h5>
+      <p>${currentLang === "en" ? "This report evaluates the percentage ratios of the five main white blood cell classes. Deviations indicate cellular shifts in response to immune triggers." : "এই রিপোর্টটি পাঁচটি প্রধান শ্বেতকণিকার অনুপাত মূল্যায়ন করে। যেকোনো বিচ্যুতি শরীরে সক্রিয় রোগ প্রতিরোধ ব্যবস্থার সংকেত দেয়।"}</p>
+      <div style="margin-top:14px;">
+        <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleAlerts}</strong>
+        <ul>${obsList.join("")}</ul>
+      </div>
+    `;
+    insightSection.appendChild(mainCard);
+  }
+
+  function setBar(id, pct, totalWbc) {
+    document.getElementById(`fill${id}`).style.width = `${pct}%`;
+    let absText = "";
+    if (totalWbc > 0) {
+      const abs = (totalWbc * pct) / 100;
+      absText = ` (${Math.round(abs).toLocaleString()} cells)`;
+    }
+    document.getElementById(`valText${id}`).textContent = `${pct.toFixed(1)}%${absText}`;
+  }
+
+  function addToHistory(d) {
+    const item = {
+      date: d.date,
+      desc: `N:${d.neut}% | L:${d.lymph}% | M:${d.mono}% | E:${d.eosin}% | B:${d.baso}%`,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-diff-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.desc}</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- WBC DIFFERENTIAL REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Total WBC: ${activeReportData.totalWBC > 0 ? activeReportData.totalWBC.toLocaleString() + ' cells/µL' : 'Not provided'}\n`;
+    t += `Neutrophils: ${activeReportData.neut.toFixed(1)}%\n`;
+    t += `Lymphocytes: ${activeReportData.lymph.toFixed(1)}%\n`;
+    t += `Monocytes: ${activeReportData.mono.toFixed(1)}%\n`;
+    t += `Eosinophils: ${activeReportData.eosin.toFixed(1)}%\n`;
+    t += `Basophils: ${activeReportData.baso.toFixed(1)}%\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `differential-wbc-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

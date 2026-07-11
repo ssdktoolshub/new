@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Social Media Caption Generator &bull; Copywriting Tools - SSDK TOOLS HUB</title>
+  <meta name="description" content="Generate highly engaging social media captions for Instagram, TikTok, and LinkedIn based on topics and selected tones of voice.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 14px;
+    }
+    .input-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .input-group input, .input-group select, .input-group textarea {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      transition: border 0.3s;
+    }
+    .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+      border-color: var(--accent);
+    }
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 600px) {
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .chk-row {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .chk-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .chk-container input {
+      accent-color: var(--accent);
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+    .caption-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .caption-card h4 {
+      font-size: 0.85rem;
+      margin-top: 0;
+      margin-bottom: 8px;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .caption-text {
+      font-size: 0.9rem;
+      line-height: 1.45;
+      color: var(--text);
+      white-space: pre-wrap;
+      margin-bottom: 12px;
+    }
+    .caption-copy-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 4px 8px;
+      font-size: 0.7rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .caption-copy-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Social Caption Generator</h1>
+  <p class="page-sub">Generate unique, copywriter-level captions for Instagram, TikTok, or LinkedIn. Toggle emojis and custom tag injections.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 24px; align-items: start;">
+      
+      <!-- Left: Form inputs -->
+      <div>
+        <h4 style="margin-bottom: 12px;">Caption Parameters</h4>
+        
+        <div class="input-group">
+          <label for="captionTopic">What is your post about?</label>
+          <input type="text" id="captionTopic" placeholder="e.g. coffee shop morning, launch of my app">
+        </div>
+
+        <div class="input-row">
+          <div class="input-group">
+            <label for="captionTone">Tone of Voice</label>
+            <select id="captionTone">
+              <option value="inspiring">✨ Inspiring / Motivational</option>
+              <option value="witty">☕ Witty / Humorous</option>
+              <option value="corporate">💼 Corporate / Professional</option>
+              <option value="casual">👋 Casual / Friendly</option>
+              <option value="minimalist">☁️ Minimalist / Aesthetic</option>
+            </select>
+          </div>
+          
+          <div class="input-group">
+            <label for="captionPlatform">Target Platform</label>
+            <select id="captionPlatform">
+              <option value="instagram" selected>Instagram</option>
+              <option value="tiktok">TikTok</option>
+              <option value="linkedin">LinkedIn</option>
+              <option value="general">General Post</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-group" style="margin-top: 10px;">
+          <label for="captionFont">Aesthetic Font Styler</label>
+          <select id="captionFont" onchange="applyFontStyling()" style="cursor: pointer;">
+            <option value="normal" selected>Normal Text</option>
+            <option value="bold">𝗕𝗼𝗹𝗱 𝗦𝗮𝗻𝘀</option>
+            <option value="italic">𝘐𝘵𝘢𝘭𝘪𝘤 𝘚𝘢𝘯𝘴</option>
+            <option value="typewriter">𝚃𝚢𝚙𝚎𝚠𝚛𝚒𝚝𝚎𝚛 𝙼𝚘𝚗𝚘</option>
+          </select>
+        </div>
+
+        <div class="chk-row">
+          <label class="chk-container">
+            <input type="checkbox" id="includeEmojis" checked>
+            <span>Include Emojis</span>
+          </label>
+          <label class="chk-container">
+            <input type="checkbox" id="includeHashtags" checked>
+            <span>Include Hashtags</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Right: Generated outputs -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 250px; display: flex; flex-direction: column; justify-content: center;">
+        
+        <div id="captionsWrapper" style="display: none;">
+          <!-- Option 1 -->
+          <div class="caption-card">
+            <h4>Option 1: Narrative & Engaging</h4>
+            <div class="caption-text" id="opt1Text"></div>
+            <button class="caption-copy-btn" onclick="copyCaption('opt1Text')">Copy</button>
+          </div>
+
+          <!-- Option 2 -->
+          <div class="caption-card">
+            <h4>Option 2: Short & Catchy</h4>
+            <div class="caption-text" id="opt2Text"></div>
+            <button class="caption-copy-btn" onclick="copyCaption('opt2Text')">Copy</button>
+          </div>
+
+          <!-- Option 3 -->
+          <div class="caption-card">
+            <h4>Option 3: Interactive (Question)</h4>
+            <div class="caption-text" id="opt3Text"></div>
+            <button class="caption-copy-btn" onclick="copyCaption('opt3Text')">Copy</button>
+          </div>
+        </div>
+
+        <div id="captionsPlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Configure your theme and tone parameters to write copy options.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnGenerate" style="background: var(--grad2);">✍️ Write Captions</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b; display: none;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none; text-align: center;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Target Tone Adjusters:</strong> Choose between casual friendly prompts, professional business milestone updates, or sleek aesthetic casings.</li>
+      <li><strong>Triple Alternatives:</strong> Creates three different layouts of varying length and intent to give you the perfect option.</li>
+      <li><strong>Contextual Hashtag Mapping:</strong> Generates hashtags directly relating to your core keywords parameters.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-list content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-item">
+      <div class="faq-q">Are these captions unique?<span>＋</span></div>
+      <div class="faq-a">Yes. The tool mixes template patterns, tone keywords, and platform characteristics to produce highly tailored sentences, ensuring your content stands out.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What is the ideal caption length?<span>＋</span></div>
+      <div class="faq-a">For platforms like TikTok, short captions (1-2 sentences) are best as users focus on the video. For Instagram, a mix of short punchy captions and deeper narratives works well. For LinkedIn, structured, professional paragraphs outlining lessons learned drive the most engagement.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  // Pre-compiled vocabulary mappings for natural looking procedural text outputs
+  const vocab = {
+    inspiring: {
+      intro: ["Elevate your perspective on [Topic].", "Finding the magic in [Topic] is a journey.", "Believe in the process of [Topic].", "[Topic] is not just a destination; it's a way of growth."],
+      middle: ["Pushing boundaries, setting standards, and discovering what is possible.", "It takes courage, persistence, and focus to align your metrics.", "Step out of your comfort zone and watch the magic happen."],
+      outro: ["Keep growing, keep creating.", "Dream big, execute bigger.", "Your only limit is you."],
+      emoji: "✨🚀🌱💪"
+    },
+    witty: {
+      intro: ["Plot twist: [Topic] actually worked out.", "Current status: negotiating with [Topic].", "Putting the 'pro' in procrastinating [Topic].", "My level of interest in everything else compared to [Topic]: 0%."],
+      middle: ["They said follow your dreams, so I ended up here.", "Adulting is 90% thinking about [Topic] and 10% actually doing it.", "Honestly, [Topic] deserves its own coffee channel."],
+      outro: ["Do not quote me on this.", "Send help (and caffeine).", "Living on a prayer and good vibes."],
+      emoji: "☕️🙃🤷‍♂️🍿"
+    },
+    corporate: {
+      intro: ["Excited to share our latest milestones around [Topic].", "Efficiency and strategy form the bedrock of successful [Topic].", "Deploying critical integrations for [Topic].", "A look at how we are streamlining [Topic] workflows."],
+      middle: ["Collaborative development, cross-functional synergy, and quality focus.", "By realigning our core metrics, we achieve optimal performance loops.", "Innovation is at the heart of our continuous improvement model."],
+      outro: ["Read the full update on our blog.", "Scale your operations today.", "Teamwork makes the dream work."],
+      emoji: "💼📈🎯🤝"
+    },
+    casual: {
+      intro: ["Just checking in with some [Topic] vibes.", "Spent the day diving into [Topic] stuff.", "Can we talk about [Topic] for a second?", "Highly recommend giving [Topic] a try."],
+      middle: ["Honestly, this has been a game-changer for my routine.", "Nothing beats a good, focused session to clear the backlog.", "Just showing you a little behind-the-scenes of the setup."],
+      outro: ["Hope you guys are having a great week!", "Let me know what you think.", "Cheers!"],
+      emoji: "👋☕️🪴☀️"
+    },
+    minimalist: {
+      intro: ["on [Topic].", "moments of [Topic].", "simple [Topic] thoughts.", "finding balance with [Topic]."],
+      middle: ["less noise, more focus.", "capturing simple frames.", "peace in the details."],
+      outro: ["quiet vibes.", "still.", "slowly."],
+      emoji: "☁️🕊🌿🍵"
+    }
+  };
+
+  let rawCaptions = { opt1: '', opt2: '', opt3: '' };
+
+  function toUnicode(text, style) {
+    if (style === 'normal' || !text) return text;
+    return text.split(/(\s+)/).map(token => {
+      if (token.startsWith('#')) return token;
+      let result = '';
+      for (let char of token) {
+        let code = char.codePointAt(0);
+        let newCode = code;
+        if (style === 'bold') {
+          if (code >= 65 && code <= 90) { // A-Z
+            newCode = 0x1D5EC + (code - 65);
+          } else if (code >= 97 && code <= 122) { // a-z
+            newCode = 0x1D606 + (code - 97);
+          } else if (code >= 48 && code <= 57) { // 0-9
+            newCode = 0x1D7E2 + (code - 48);
+          }
+        } else if (style === 'italic') {
+          if (code >= 65 && code <= 90) {
+            newCode = 0x1D620 + (code - 65);
+          } else if (code >= 97 && code <= 122) {
+            newCode = 0x1D63A + (code - 97);
+          }
+        } else if (style === 'typewriter') {
+          if (code >= 65 && code <= 90) {
+            newCode = 0x1D670 + (code - 65);
+          } else if (code >= 97 && code <= 122) {
+            newCode = 0x1D68A + (code - 97);
+          } else if (code >= 48 && code <= 57) {
+            newCode = 0x1D7F6 + (code - 48);
+          }
+        }
+        result += String.fromCodePoint(newCode);
+      }
+      return result;
+    }).join('');
+  }
+
+  window.applyFontStyling = () => {
+    const style = $('captionFont').value;
+    $('opt1Text').textContent = toUnicode(rawCaptions.opt1, style);
+    $('opt2Text').textContent = toUnicode(rawCaptions.opt2, style);
+    $('opt3Text').textContent = toUnicode(rawCaptions.opt3, style);
+  };
+
+  $('btnGenerate').onclick = () => {
+    const topic = $('captionTopic').value.trim();
+    if (!topic) {
+      showStatus('Please enter what your post is about.', true);
+      return;
+    }
+
+    showStatus('Writing caption variations...');
+
+    const tone = $('captionTone').value;
+    const platform = $('captionPlatform').value;
+    const useEmojis = $('includeEmojis').checked;
+    const useTags = $('includeHashtags').checked;
+
+    // Helper: generate tags
+    const cleanTopic = topic.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().split(/\s+/)[0];
+    const tagsList = useTags ? `\n\n#${cleanTopic} #${tone} #socialmedia #${platform}` : '';
+
+    // Helper: grab emojis
+    const grabEmojis = (toneKey, num = 2) => {
+      if (!useEmojis) return '';
+      const chars = vocab[toneKey].emoji;
+      let out = ' ';
+      for (let i = 0; i < num; i++) {
+        out += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return out;
+    };
+
+    // Compiling Option 1: Narrative & Engaging
+    const tData = vocab[tone];
+    let opt1 = `${tData.intro[0].replace('[Topic]', topic)}${grabEmojis(tone, 1)} ${tData.middle[0].replace('[Topic]', topic)} ${tData.outro[0]}${grabEmojis(tone, 1)}${tagsList}`;
+    
+    // Compiling Option 2: Short & Catchy
+    let opt2 = '';
+    if (tone === 'minimalist') {
+      opt2 = `${topic.toLowerCase()} // ${tData.middle[1]}${grabEmojis(tone, 1)}${tagsList}`;
+    } else {
+      opt2 = `${tData.intro[1].replace('[Topic]', topic)} ${tData.outro[1]}${grabEmojis(tone, 1)}${tagsList}`;
+    }
+
+    // Compiling Option 3: Interactive Question
+    let qTemplate = '';
+    if (platform === 'linkedin') {
+      qTemplate = `How do you approach [Topic] in your current business stack? Let's discuss in the comments below.`;
+    } else if (tone === 'witty') {
+      qTemplate = `Is it just me, or is [Topic] actually harder than it looks? Thoughts?`;
+    } else if (tone === 'minimalist') {
+      qTemplate = `thoughts on [Topic]?`;
+    } else {
+      qTemplate = `What is your favorite tip for managing [Topic]? Drop a comment below!`;
+    }
+    let opt3 = `${tData.intro[2].replace('[Topic]', topic)} ${qTemplate.replace('[Topic]', topic)}${grabEmojis(tone, 1)}${tagsList}`;
+
+    // Store raw captions
+    rawCaptions = { opt1, opt2, opt3 };
+
+    // Apply to UI with selected font styling
+    applyFontStyling();
+
+    $('captionsPlaceholder').style.display = 'none';
+    $('captionsWrapper').style.display = 'block';
+    $('btnClear').style.display = 'inline-flex';
+    showStatus('✅ Caption suggestions compiled successfully!');
+  };
+
+  window.copyCaption = (textId) => {
+    const txt = $(textId).textContent;
+    if (!txt) return;
+    navigator.clipboard.writeText(txt).then(() => {
+      showStatus('📋 Caption copied to clipboard!');
+    });
+  };
+
+  $('btnClear').onclick = () => {
+    $('captionTopic').value = '';
+    $('captionTone').value = 'inspiring';
+    $('captionPlatform').value = 'instagram';
+    $('captionFont').value = 'normal';
+    $('includeEmojis').checked = true;
+    $('includeHashtags').checked = true;
+    rawCaptions = { opt1: '', opt2: '', opt3: '' };
+
+    $('captionsPlaceholder').style.display = 'block';
+    $('captionsWrapper').style.display = 'none';
+    $('btnClear').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

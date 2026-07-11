@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANA (Antinuclear Antibody) Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Interpret Antinuclear Antibody (ANA) screening results, including titer and staining patterns with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 2.8rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--normal-color) 0%, 
+        var(--normal-color) 25%, 
+        var(--high-color) 40%, 
+        var(--high-color) 55%, 
+        var(--critical-color) 70%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">ANA (Antinuclear Antibody) Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Interpret Antinuclear Antibody (ANA) screening results, including titer and staining patterns.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 ANA Screening Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="anaTiter" data-translate="labelTiter">ANA Titer Select</label>
+              <select id="anaTiter" onchange="handleTiterChange()">
+                <option value="Negative" selected>Negative</option>
+                <option value="1:40">1:40</option>
+                <option value="1:80">1:80</option>
+                <option value="1:160">1:160</option>
+                <option value="1:320">1:320</option>
+                <option value="1:640">1:640</option>
+                <option value="1:1280+">1:1280+</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="anaPattern" data-translate="labelPattern">Staining Pattern Select</label>
+              <select id="anaPattern" disabled>
+                <option value="None" data-translate="optPatternNone" selected>None (Negative)</option>
+                <option value="Homogeneous" data-translate="optPatternHomo">Homogeneous</option>
+                <option value="Speckled" data-translate="optPatternSpeck">Speckled</option>
+                <option value="Nucleolar" data-translate="optPatternNucl">Nucleolar</option>
+                <option value="Centromere" data-translate="optPatternCent">Centromere</option>
+                <option value="Peripheral/Rim" data-translate="optPatternPeri">Peripheral/Rim</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeANA()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze ANA Panel</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your ANA Titer and Pattern, then click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 ANA Diagnostics Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: ANA Screening</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resTiterVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resPatternVal">Pattern: -</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickNeg" style="color: var(--normal-color);">-</span>
+              <span id="tickBorder" style="color: var(--high-color);">-</span>
+              <span id="tickPos" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Antinuclear Antibodies</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is ANA?</strong><br><span data-translate="eduA1">Antinuclear Antibodies (ANA) are autoantibodies that target components inside a cell's nucleus. An ANA screening test is the standard entry-level tool when investigating systemic autoimmune conditions.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Understanding Titers (e.g. 1:40 vs. 1:1280)</strong><br><span data-translate="eduA2">The titer represents how many times the patient's blood serum had to be diluted with saline to no longer see the antibodies under a microscope. A dilution of 1:1280 contains many more autoantibodies than 1:40. Higher titers are far more strongly correlated with actual autoimmune disease.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">Benign Positives and False Positives</strong><br><span data-translate="eduA3">Low titers (1:40 and 1:80) are frequently benign. Around 20-30% of the healthy population (especially women and the elderly) has a positive low-titer ANA without any underlying illness. Certain medications, thyroid problems, and viral recovery states also trigger positive results.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "ANA (Antinuclear Antibody) Analyzer",
+      toolDesc: "Interpret Antinuclear Antibody (ANA) screening results, including titer and staining patterns.",
+      inputsTitle: "🧬 ANA Screening Parameters",
+      clearBtn: "Reset",
+      labelTiter: "ANA Titer Select",
+      labelPattern: "Staining Pattern Select",
+      optPatternNone: "None (Negative)",
+      optPatternHomo: "Homogeneous",
+      optPatternSpeck: "Speckled",
+      optPatternNucl: "Nucleolar",
+      optPatternCent: "Centromere",
+      optPatternPeri: "Peripheral/Rim",
+      btnAnalyze: "Analyze ANA Panel",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your ANA Titer and Pattern, then click the analyze button to display medical summaries.",
+      reportTitle: "🔬 ANA Diagnostics Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNegative: "Negative ANA (Autoimmune disease unlikely)",
+      badgeBorderline: "Low Titer / Borderline (1:40 or 1:80)",
+      badgePositive: "Positive ANA (Titer ≥ 1:160 - Clinically Significant)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Staining Pattern Clinical Correlates",
+      titleSymptoms: "Potential Associated Autoimmune Pathologies",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Rheumatologist"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "এএনএ (ANA) অ্যান্টিবডি বিশ্লেষক",
+      toolDesc: "অ্যান্টিনিউক্লিয়ার অ্যান্টিবডি (এএনএ) স্ক্রিনিং পরীক্ষার টাইটার এবং স্টেইনিং প্যাটার্ন বা বিন্যাস বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 ANA স্ক্রিনিং পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelTiter: "ANA টাইটার নির্বাচন করুন",
+      labelPattern: "স্টেইনিং প্যাটার্ন নির্বাচন করুন",
+      optPatternNone: "কোনোটিই নয় (নেগেটিভ)",
+      optPatternHomo: "হোমোজেনাস (Homogeneous)",
+      optPatternSpeck: "স্পেকেল্ড (Speckled)",
+      optPatternNucl: "নিউক্লিওলার (Nucleolar)",
+      optPatternCent: "সেন্ট্রোমিয়ার (Centromere)",
+      optPatternPeri: "পেরিফেরাল/রিম (Peripheral/Rim)",
+      btnAnalyze: "ANA প্যানেল বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার ANA টাইটার ও প্যাটার্ন লিখুন এবং রিপোর্ট দেখতে বিশ্লেষণ বাটনে ক্লিক করুন।",
+      reportTitle: "🔬 ANA ডায়াগনস্টিক রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNegative: "নেগেটিভ ANA (অটোইমিউন রোগ হওয়ার সম্ভাবনা নেই)",
+      badgeBorderline: "কম টাইটার / বর্ডারলাইন (১:৪০ অথবা ১:৮০)",
+      badgePositive: "পজিটিভ ANA (টাইটার ≥ ১:১৬০ - চিকিৎসাগতভাবে গুরুত্বপূর্ণ)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "স্টেইনিং প্যাটার্ন এবং ক্লিনিক্যাল সম্পর্ক",
+      titleSymptoms: "সম্ভাব্য সংশ্লিষ্ট অটোইমিউন রোগসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন রিউমাটোলজিস্টের পরামর্শ নেবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "एएनए (एंटीन्यूक्लियर एंटीबॉडी) विश्लेषक",
+      toolDesc: "अनुमापांक और धुंधला पैटर्न सहित एंटीन्यूक्लियर एंटीबॉडी (एएनए) स्क्रीनिंग परिणामों की व्याख्या करें।",
+      inputsTitle: "🧬एएनए स्क्र��निंग पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelTiter: "एएनए टिटर चयन करें",
+      labelPattern: "धुंधला पैटर्न चुनें",
+      optPatternNone: "कोई नहीं (नकारात्मक)",
+      optPatternHomo: "सजातीय",
+      optPatternSpeck: "धब्बेदार",
+      optPatternNucl: "न्यूक्लियोलर",
+      optPatternCent: "सेंट्रोमियर",
+      optPatternPeri: "परिधीय/रिम",
+      btnAnalyze: "ANA पैनल का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना एएनए टिटर और पैटर्न दर्ज करें, फिर चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 एएनए डायग्नोस्टिक्स रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "छाप",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNegative: "नकारा���्मक एएनए (ऑटोइम्यून रोग की संभावना नहीं)",
+      badgeBorderline: "निम्न अनुमापांक/सीमा रेखा (1:40 या 1:80)",
+      badgePositive: "सकारात्मक एएनए (अनुमापांक ≥ 1:160 - चिकित्सकीय रूप से महत्वपूर्ण)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "धुंधलापन पैटर्न नैदानिक सहसंबंध",
+      titleSymptoms: "संभावित संबद्ध ऑटोइम्यून पैथोलॉजीज",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "रुमेटोलॉजिस्ट से कब मिलें"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is an ANA screening test?", a: "The Antinuclear Antibody (ANA) test is a blood screen used to detect antibodies that attack healthy proteins within cell nuclei. It is highly sensitive for systemic autoimmune diseases." },
+      { q: "What does an ANA titer of 1:40 or 1:80 mean?", a: "These are low titers, often considered borderline or normal. About 20% to 30% of healthy individuals have low positive titers without any medical illness." },
+      { q: "What is a clinically significant ANA titer?", a: "A titer of 1:160 or higher is generally considered clinically significant. Higher titers (like 1:640 or 1:1280) are more strongly associated with autoimmune disorders." },
+      { q: "What do ANA patterns represent?", a: "Staining patterns describe how the antibodies distribute inside the nucleus. Different patterns (e.g., Homogeneous, Speckled) are associated with specific autoimmune conditions like Lupus, Sjögren's, or Scleroderma." }
+    ],
+    bn: [
+      { q: "এএনএ (ANA) স্ক্রিনিং টেস্ট কি?", a: "অ্যান্টিনিউক্লিয়ার অ্যান্টিবডি (এএনএ) হলো এমন রক্ত পরীক্ষা যা কোষের নিউক্লিয়াসের নিজস্ব প্রোটিনকে আক্রমণকারী অ্যান্টিবডি শনাক্ত করে। এটি অটোইমিউন রোগ স্ক্রিনিংয়ে ব্যবহৃত হয়।" },
+      { q: "ANA টাইটার ১:৪০ বা ১:৮০ থাকার অর্থ কি?", a: "এগুলো সাধারণত কম টাইটার বা বর্ডারলাইন। প্রায় ২০%-৩০% সুস্থ মানুষের রক্তে কোনো রোগ ছাড়াই এ ধরনের কম মাত্রার পজিটিভ ফল আসতে পারে।" },
+      { q: "কত টাইটার চিকিৎসাগতভাবে গুরুত্ব বহন করে?", a: "সাধারণত ১:১৬০ বা তার বেশি টাইটার চিকিৎসাগতভাবে গুরুত্বপূর্ণ ধরা হয়। টাইটার যত বাড়ে (যেমন ১:৬৪০ বা ১:১২৮০) অটোইমিউন রোগের সম্ভাবনা তত বৃদ্ধি পায়।" },
+      { q: "ANA স্টেইনিং প্যাটার্ন কী নির্দেশ করে?", a: "প্যাটার্নগুলো নির্দেশ করে অণুবীক্ষণ যন্ত্রে নিউক্লিয়াসের ভেতরে অ্যান্টিবডিগুলো কীভাবে ছড়ানো রয়েছে। ভিন্ন প্যাটার্ন (যেমন হোমোজেনাস, স্পেকেল্ড) নির্দিষ্ট অটোইমিউন রোগ চিহ্নিত করতে সাহায্য করে।" }
+    ],
+    hi: [
+      { q: "एएनए स्क्रीनिंग टेस्ट क्या है?", a: "एंटीन्यूक्लियर एंटीबॉडी (एएनए) परीक्षण एक रक्त स्क्रीन है जिसका उपयोग एंटीबॉडी का पता लगाने के लिए किया जाता है जो कोशिका नाभिक के भीतर स्वस्थ प्रोटीन पर हमला करते हैं। यह प्रणालीगत ऑटोइम्यून बीमारियों के लिए अत्यधिक संवेदनशील है।" },
+      { q: "1:40 या 1:80 के एएनए अनुमापांक का क��या मतलब है?", a: "ये निम्न अनुमापांक वाले होते हैं, जिन्हें अक्सर सीमा रेखा या सामान्य माना जाता है। लगभग 20% से 30% स्वस्थ व्यक्तियों में बिना किसी चिकित्सीय बीमारी के कम सकारात्मक अनुमापांक होते हैं।" },
+      { q: "चिकित्सकीय रूप से महत्वपूर्ण ANA अनुमापांक क्या है?", a: "1:160 या उससे अधिक का अनुमापांक आम तौर पर चिकित्सकीय रूप से महत्वपूर्ण माना जाता है। उच्च अनुमापांक (जैसे 1:640 या 1:1280) ऑटोइम्यून विकारों से अधिक मजबूती से जुड़े होते हैं।" },
+      { q: "ANA पैटर्न क्या दर्शाते हैं?", a: "धुंधला पैटर्न वर्णन करता है कि एंटीबॉडी नाभिक के अंदर कैसे वितरित होती हैं। विभिन्न पैटर्न (उदाहरण के लिए, सजातीय, धब्बेदार) ल्यूपस, स्जोग्रेन या स्क्लेरोडर्मा जैसी विशिष्ट ऑटोइम्यून स्थितियों से जुड़े होते हैं।" }
+    ]
+  };
+
+  const anaInsights = {
+    en: {
+      negative: {
+        desc: "Your ANA screen is negative. Systemic connective tissue autoimmune conditions are highly unlikely due to the very high negative predictive value of this test.",
+        factors: ["Negative: Autoantibodies not detected or at clinical baseline."],
+        symptoms: ["No systemic autoimmune activity", "If joint symptoms exist, they may be mechanical (Osteoarthritis) or localized."],
+        prevention: ["Maintain a balanced healthy diet", "Perform joint stretching exercises"],
+        consult: "No specialized rheumatology follow-up required unless other signs (unexplained rashes, chronic fevers) emerge."
+      },
+      borderline: {
+        desc: "Your ANA titer is in the low/borderline positive range (1:40 or 1:80). This can be a normal finding present in healthy individuals.",
+        factors: ["Normal variation (up to 30% of healthy females and older adults)", "Transient post-viral reaction", "Early autoimmune manifestation (requires periodic monitoring)"],
+        symptoms: ["Often completely asymptomatic", "May present with mild transient joint stiffness or fatigue"],
+        prevention: ["Avoid smoking and excessive UV sun exposure (which can trigger inflammation)", "Optimize Vitamin D levels"],
+        consult: "Discuss with your physician. A repeat screen in 6-12 months is usually recommended only if symptoms progress."
+      },
+      positive: {
+        desc: "Your ANA titer is clinically significant (≥ 1:160). This suggests an active systemic autoimmune process. The staining pattern provides further diagnostic clues.",
+        factors: ["Active systemic autoimmune response", "Chronic drug-induced reaction", "Specific antibody associations depending on pattern"],
+        symptoms: ["Depending on pathology: Symmetrical joint pain, butterfly facial rash, dry mouth/eyes, photosensitivity, cold-induced finger discoloration (Raynaud's)."],
+        prevention: ["Protect skin from direct sunlight (use SPF 50+)", "Eat an anti-inflammatory diet low in refined carbohydrates"],
+        consult: "A formal consult with a rheumatologist is recommended to check specific antibodies (Anti-dsDNA, Anti-Smith, SSA/SSB, etc.) and establish a diagnosis."
+      }
+    },
+    bn: {
+      negative: {
+        desc: "আপনার ANA স্ক্রিন রিপোর্ট নেগেটিভ। এই পরীক্ষার উচ্চ নেগেটিভ প্রেডিক্টিভ ভ্যালুর কারণে সিস্টেমিক অটোইমিউন রোগ থাকার সম্ভাবনা অত্যন্ত কম।",
+        factors: ["নেগেটিভ: অটোঅ্যান্টিবডির উপস্থিতি পাওয়া যায়নি।"],
+        symptoms: ["শরীরে সিস্টেমিক অটোইমিউন জটিলতার কোনো লক্ষণ নেই", "ব্যথা থাকলে তা সাধারণ বাত (Osteoarthritis) হতে পারে।"],
+        prevention: ["একটি সুষম ও স্বাস্থ্যকর খাদ্যতালিকা মেনে চলুন", "জয়েন্ট ও পেশী সচল রাখতে নিয়মিত স্ট্রেচিং করুন"],
+        consult: "অন্য কোনো জটিল শারীরিক লক্ষণ (যেমন দীর্ঘস্থায়ী জ্বর বা ফুসকুড়ি) না থাকলে বিশেষজ্ঞের শরণাপন্ন হওয়ার প্রয়োজন নেই।"
+      },
+      borderline: {
+        desc: "আপনার ANA টাইটার কম বা বর্ডারলাইন পজিটিভ পরিসরে (১:৪০ বা ১:৮০) রয়েছে। এটি কোনো রোগ ছাড়াই সুস্থ মানুষের শরীরে থাকতে পারে।",
+        factors: ["স্বাভাবিক শারীরিক পরিবর্তন (বিশেষ করে নারী ও বয়স্কদের ক্ষেত্রে)", "ভাইরাস সংক্রমণ পরবর্তী সাময়িক প্রভাব", "অটোইমিউন রোগের অতি প্রাথমিক পর্যায়"],
+        symptoms: ["সাধারণত কোনো লক্ষণ থাকে না", "মৃদু ক্লান্তি বা মাঝে মাঝে জয়েন্টে ব্যথা হতে পারে"],
+        prevention: ["ধূমপান পরিহার করুন এবং সরাসরি অতিরিক্ত কড়া রোদ এড়িয়ে চলুন", "শরীরে ভিটামিন ডি এর মাত্রা উন্নত রাখুন"],
+        consult: "আপনার চিকিৎসকের সাথে কথা বলুন। সাধারণত যদি নতুন কোনো উপসর্গ দেখা না যায় তবে ৬-১২ মাস পর পুনরায় পরীক্ষা করাই যথেষ্ট।"
+      },
+      positive: {
+        desc: "আপনার ANA টাইটার চিকিৎসাগতভাবে গুরুত্বপূর্ণ (≥ ১:১৬০)। এটি অটোইমিউন রোগ সক্রিয় থাকার সম্ভাবনা বৃদ্ধি করে। স্টেইনিং প্যাটার্ন বা বিন্যাসটি রোগটি নির্দিষ্ট করতে সাহায্য করে।",
+        factors: ["সক্রিয় সিস্টেমিক অটোইমিউন রেসপন্স", "ঔষধের পার্শ্বপ্রতিক্রিয়া", "প্যাটার্ন অনুযায়ী সুনির্দিষ্ট অটোইমিউন জটিলতা"],
+        symptoms: ["জয়েন্টে ব্যথা, মুখে প্রজাপতি আকৃতির ফুসকুড়ি (Lupus Rash), মুখ ও চোখ শুকিয়ে যাওয়া, রোদে সংবেদনশীলতা, ঠান্ডায় আঙুল নীলচে হওয়া (Raynaud's)।"],
+        prevention: ["রোদ থেকে ত্বক রক্ষা করুন (SPF 50+ সানস্ক্রিন ব্যবহার করুন)", "পরিশোধিত চিনি এবং প্রক্রিয়াজাত খাবার পরিহার করুন"],
+        consult: "সুনির্দিষ্ট অ্যান্টিবডি পরীক্ষা (যেমন Anti-dsDNA, Anti-Smith, SSA/SSB) এবং সঠিক চিকিৎসার জন্য একজন রিউমাটোলজিস্ট দেখান।"
+      }
+    },
+    hi: {
+      negative: {
+        desc: "आपकी ANA स्क्रीन नकारात्मक है. इस परीक्षण के बहुत अधिक नकारात्मक पूर्वानुमानित मूल्य के कारण प्रणालीगत संयोजी ऊतक ऑटोइम्यून स्थितियां अत्यधिक असंभावित हैं।",
+        factors: ["नकारात्मक: ऑटोएंटीबॉडी का पता नहीं चला या क्लिनिकल बेसलाइन पर नहीं।"],
+        symptoms: ["कोई प्रणालीगत ऑटोइम्यून गतिविधि नहीं", "यदि जोड़ों के लक्षण मौजूद हैं, तो वे यांत्रिक (ऑस्टियोआर्थराइटिस) या स्थानीयकृत हो सकते हैं।"],
+        prevention: ["संतुलित स्वस्थ आहार बनाए रखें", "जोड़ों में खिंचाव लाने वाले व्यायाम करें"],
+        consult: "जब तक अन्य लक्षण (अस्पष्टीकृत चकत्ते, पुराना बुखार) ��भर न आएं तब तक किसी विशेष रुमेटोलॉजी फॉलो-अप की आवश्यकता नहीं होती है।"
+      },
+      borderline: {
+        desc: "आपका ANA अनुमापांक निम्न/बॉर्डरलाइन सकारात्मक सीमा (1:40 या 1:80) में है। यह स्वस्थ व्यक्तियों में मौजूद एक सामान्य खोज हो सकती है।",
+        factors: ["सामान्य भिन्नता (स्वस्थ महिलाओं और वृद्ध वयस्कों में 30% तक)", "क्षणिक पोस्ट-वायरल प्रतिक्रिया", "प्रारंभिक ऑटोइम्यून अभिव्यक्ति (समय-समय पर निगरानी की आवश्यकता होती है)"],
+        symptoms: ["अक्सर पूरी तरह से लक्षणहीन", "जोड़ों में हल्की क्षणिक अकड़न या थकान हो सकती है"],
+        prevention: ["धूम्रपान और अत्यधिक यूवी सूरज के संपर्क से बचें (जो सूजन को ट्रिगर कर सकता है)", "विटामिन डी के स्तर को अनुकूलित करें"],
+        consult: "अपने चिकित्सक से चर्चा करें. आमतौर पर लक्षण बढ़ने पर ही 6-12 महीनों में दोबारा जांच कराने की सलाह दी जाती है।"
+      },
+      positive: {
+        desc: "आपका ANA अनुमापांक चिकित्सीय रूप से महत्वपूर्ण है (≥ 1:160)। यह एक सक्रिय प्रणालीगत ऑटोइम्यून प्रक्रिया का सुझाव देता है। धुंधला पैटर्न आगे के नैदानिक ​​सुराग प्रदान करता है।",
+        factors: ["सक्रिय प्रणालीगत ऑटोइम्यून प्रतिक्रिया", "दीर्घकालिक दवा-प्रेरित प्रतिक्रिया", "पैटर्न के आधार पर विशिष्ट एंटीबॉडी संघ"],
+        symptoms: ["विकृति विज्ञान पर निर्भर: सममित जोड़ों का दर्द, तितली चेहरे पर दाने, शुष्क मुँह/आँखें, प्रकाश संवेदनशीलता, ठंड से प्रेरित उंगली का मलिनकिरण (रेनॉड)।"],
+        prevention: ["त्वचा को सीधी धूप से बचाएं (एसपीएफ़ 50+ का उपयोग करें)", "कम परिष्कृत कार्बोहाइड्रेट वाला सूजन रोधी आहार लें"],
+        consult: "विशिष्ट एंटीबॉडी (एंटी-डीएसडीएनए, एंटी-स्मिथ, एसएसए/एसएसबी, आदि) की जांच करने और निदान स्थापित करने के लिए रुमेटोलॉजिस्ट से औपचारिक परामर्श की सिफारिश की जाती है।"
+      }
+    }
+  };
+
+  const patternExplanations = {
+    en: {
+      None: "No autoantibody staining observed.",
+      Homogeneous: "Suggests Systemic Lupus Erythematosus (SLE) or Drug-induced Lupus.",
+      Speckled: "Suggests SLE, Sjögren's Syndrome, Mixed Connective Tissue Disease (MCTD), or Dermatomyositis.",
+      Nucleolar: "Highly associated with Systemic Sclerosis (Scleroderma).",
+      Centromere: "Highly specific for CREST Syndrome (Limited Systemic Sclerosis).",
+      "Peripheral/Rim": "Strongly associated with SLE, specifically active nephritis."
+    },
+    bn: {
+      None: "কোনো অটোঅ্যান্টিবডি বিন্যাস দেখা যায়নি।",
+      Homogeneous: "সিস্টেমিক লুপাস এরিথেমাটোসাস (SLE) বা ঔষধ-প্ররোচিত লুপাস নির্দেশ করে।",
+      Speckled: "লুপাস (SLE), সোগ্রেনস সিন্ড্রোম, মিক্সড কানেক্টিভ টিস্যু ডিজিজ (MCTD) নির্দেশ করে।",
+      Nucleolar: "সিস্টেমিক স্ক্লেরোসিস (স্ক্লেরোডার্মা) রোগের সাথে গভীরভাবে সম্পর্কিত।",
+      Centromere: "ক্রেস্ট (CREST) সিন্ড্রোম বা সীমিত সিস্টেমিক স্ক্লেরোসিসের জন্য অত্যন্ত নির্দিষ্ট।",
+      "Peripheral/Rim": "তীব্র লুপাস (SLE) এবং নেফ্রাইটিস (কিডনির লুপাস) এর সাথে দৃঢ়ভাবে যুক্ত।"
+    },
+    hi: {
+      None: "कोई स्वप्रतिरक्षी धुंधलापन नहीं देखा गया।",
+      Homogeneous: "सिस्टमिक ल्यूपस एरिथेमेटोसस (एसएलई) या ड्रग-प्रेरित ल्यूपस का सुझाव देता है।",
+      Speckled: "SLE, Sjögren सिंड्रोम, मिश्रित संयोजी ऊतक रोग (MCTD), या डर्माटोमायोसिटिस का सुझाव देता है।",
+      Nucleolar: "सिस्टमिक स्केलेरोसिस (स्केलेरोडर्मा) से अत्यधिक संबद्ध��",
+      Centromere: "क्रेस्ट सिंड्रोम (सीमित प्रणालीगत स्केलेरोसिस) के लिए अत्यधिक विशिष्ट।",
+      "Peripheral/Rim": "एसएलई, विशेष रूप से सक्रिय नेफ्रैटिस के साथ दृढ़ता से जुड़ा हुआ है।"
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-ana-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function handleTiterChange() {
+    const titer = document.getElementById("anaTiter").value;
+    const patternSelect = document.getElementById("anaPattern");
+    if (titer === "Negative") {
+      patternSelect.value = "None";
+      patternSelect.disabled = true;
+    } else {
+      patternSelect.disabled = false;
+      if (patternSelect.value === "None") {
+        patternSelect.value = "Homogeneous";
+      }
+    }
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("anaTiter").value = "Negative";
+    const patternSelect = document.getElementById("anaPattern");
+    patternSelect.value = "None";
+    patternSelect.disabled = true;
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function analyzeANA() {
+    const titer = document.getElementById("anaTiter").value;
+    const pattern = document.getElementById("anaPattern").value;
+
+    let statusKey = "negative"; 
+    let badgeKey = "badgeNegative";
+    let pointerPct = 15;
+
+    if (titer === "1:40" || titer === "1:80") {
+      statusKey = "borderline";
+      badgeKey = "badgeBorderline";
+      pointerPct = titer === "1:40" ? 35 : 48;
+    } else if (titer !== "Negative") {
+      statusKey = "positive";
+      badgeKey = "badgePositive";
+      if (titer === "1:160") pointerPct = 62;
+      else if (titer === "1:320") pointerPct = 72;
+      else if (titer === "1:640") pointerPct = 82;
+      else pointerPct = 92; // 1:1280+
+    }
+
+    activeReportData = {
+      titer,
+      pattern,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, titer, pattern);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resTiterVal").textContent = d.titer;
+    
+    const patternText = d.pattern === "None" ? "Negative Pattern" : `Pattern: ${d.pattern}`;
+    document.getElementById("resPatternVal").textContent = patternText;
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "borderline") colorClass = "high";
+    else if (d.statusKey === "positive") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resTiterVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickNeg").textContent = `Neg`;
+    document.getElementById("tickBorder").textContent = `1:40 - 1:80`;
+    document.getElementById("tickPos").textContent = `≥ 1:160`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = anaInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+      let patternDesc = patternExplanations[currentLang][d.pattern] || "";
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        ${d.pattern !== 'None' ? `
+        <div style="margin:12px 0; background:rgba(255,255,255,0.02); border:1px solid var(--border); padding:10px; border-radius:8px;">
+          <strong style="font-size:0.8rem; color:var(--accent);">${translations[currentLang].labelPattern}: ${d.pattern}</strong>
+          <p style="font-size:0.75rem; color:var(--muted); margin-top:4px;">${patternDesc}</p>
+        </div>
+        ` : ''}
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, titer, pattern) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      titer,
+      pattern,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-ana-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.titer} (${item.pattern !== 'None' ? item.pattern : 'Neg'}) - ${statusText}</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- ANA SCREENING REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Titer: ${activeReportData.titer}\n`;
+    t += `Pattern: ${activeReportData.pattern}\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `ana-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

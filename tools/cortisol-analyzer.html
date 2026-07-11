@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cortisol Analyzer &bull; SSDK CLINICAL TOOLS</title>
+  <meta name="description" content="Evaluate serum Cortisol levels online. Assess adrenal gland function, diurnal rhythm, and stress hormone indicators with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--low-color) 0%, 
+        var(--normal-color) 45%, 
+        var(--high-color) 80%,
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Cortisol Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Evaluate serum cortisol levels relative to collection timing to screen for adrenal abnormalities or stress indicators.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Cortisol Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valTiming" data-translate="labelTiming">Sample Collection Timing</label>
+              <select id="valTiming" onchange="resetForm()">
+                <option value="am" selected data-translate="optAM">Morning (AM) - Peak Levels</option>
+                <option value="pm" data-translate="optPM">Evening (PM) - Trough Levels</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valCortisol" data-translate="labelCortisol">Serum Cortisol (µg/dL)</label>
+              <input type="number" step="0.1" id="valCortisol" placeholder="e.g. 12.5" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeCortisol()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Cortisol</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your cortisol level and select the sample collection timing, then click Analyze.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Serum Cortisol Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Serum Cortisol</span>
+            <span><strong data-translate="labelTimingSum">Timing</strong>: <span id="resTimingText">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resCortVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">µg/dL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--low-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">-</span>
+              <span id="tickHigh" style="color: var(--high-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Cortisol</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Cortisol?</strong><br><span data-translate="eduA1">Cortisol is the primary glucocorticoid stress hormone synthesized by the adrenal glands. It plays vital roles in regulating glucose metabolism, suppressing inflammation, controlling blood pressure, and modulating the body's stress response.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Why does collection timing matter?</strong><br><span data-translate="eduA2">Cortisol follows a circadian rhythm (diurnal pattern). It peaks in the early morning (approx. 6:00 AM - 8:00 AM) to prepare the body for waking activities, and drops gradually throughout the day, reaching its lowest point (trough) around midnight. Evaluating timing is essential to avoid misinterpreting low or high levels.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What is Cushing's and Addison's Disease?</strong><br><span data-translate="eduA3">Adrenal insufficiency (Addison's disease) is characterized by pathologically low cortisol levels. Conversely, hypercortisolism (Cushing's syndrome) represents prolonged excessive cortisol production, often presenting with central obesity, muscle weakness, and hypertension.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Cortisol Analyzer",
+      toolDesc: "Evaluate serum cortisol levels relative to collection timing to screen for adrenal abnormalities or stress indicators.",
+      inputsTitle: "🧬 Cortisol Parameters",
+      clearBtn: "Reset",
+      labelTiming: "Sample Collection Timing",
+      labelCortisol: "Serum Cortisol (µg/dL)",
+      btnAnalyze: "Analyze Cortisol",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your cortisol level and select the sample collection timing, then click Analyze.",
+      reportTitle: "🔬 Serum Cortisol Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelTimingSum: "Timing",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      optAM: "Morning (AM) - Peak Levels (6-23 µg/dL)",
+      optPM: "Evening (PM) - Trough Levels (3-15 µg/dL)",
+      badgeNormal: "Normal Cortisol Level",
+      badgeLow: "Low Cortisol Level (Hypocortisolemia)",
+      badgeHigh: "Elevated Cortisol Level (Hypercortisolemia)",
+      badgeCriticalHigh: "Critical High Cortisol Level",
+      badgeCriticalLow: "Critical Low Cortisol Level",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "কর্টিসল বিশ্লেষক",
+      toolDesc: "অ্যাড্রেনাল গ্রন্থির কার্যকারিতা বা মানসিক চাপের লক্ষণ স্ক্রীন করতে স্যাম্পল সংগ্রহের সময়ের ওপর ভিত্তি করে রক্তের কর্টিসলের মাত্রা মূল্যায়ন করুন।",
+      inputsTitle: "🧬 কর্টিসল পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelTiming: "স্যাম্পল সংগ্রহের সময়",
+      labelCortisol: "সিরাম কর্টিসল (µg/dL)",
+      btnAnalyze: "কর্টিসল বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার কর্টিসলের মান লিখুন এবং স্যাম্পল সংগ্রহের সময় নির্বাচন করে বিশ্লেষণ করুন বোতামে ক্লিক করুন।",
+      reportTitle: "🔬 সিরাম কর্টিসল ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelTimingSum: "সময়",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      optAM: "সকাল (AM) - সর্বোচ্চ লেভেল (৬-২৩ µg/dL)",
+      optPM: "সন্ধ্যা/রাত (PM) - সর্বনিম্ন লেভেল (৩-১৫ µg/dL)",
+      badgeNormal: "স্বাভাবিক কর্টিসল লেভেল",
+      badgeLow: "কম কর্টিসল লেভেল (হাইপোকর্টিসোলেমিয়া)",
+      badgeHigh: "উচ্চ কর্টিসল লেভেল (হাইপারকর্টিসোলেমিয়া)",
+      badgeCriticalHigh: "মারাত্মক বেশি কর্টিসল লেভেল",
+      badgeCriticalLow: "মারাত্মক কম কর্টিসল লেভেল",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভavy প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "कोर्टिसोल विश्लेषक",
+      toolDesc: "अधिवृक्क असामान्यताओं या तनाव संकेतकों की जांच के लिए संग्रह समय के सापेक्ष सीरम कोर्टिसोल के स्तर का मूल्यांकन करें।",
+      inputsTitle: "🧬 कोर्टिसोल पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelTiming: "नमूना संग्रह समय",
+      labelCortisol: "सीरम कोर्टिसोल (µg/dL)",
+      btnAnalyze: "कोर्टिसोल का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना कोर्टिसोल स्तर दर्ज करें और नमूना संग्रह समय चुनें, फिर विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 सीरम कोर्टिसोल डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelTimingSum: "समय",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      optAM: "सुबह (AM) - अधिकतम स्तर (6-23 µg/dL)",
+      optPM: "शाम (PM) - गर्त स्तर (3-15 µg/dL)",
+      badgeNormal: "सामान्य कोर्टिसोल स्तर",
+      badgeLow: "निम्न कोर्टिसोल स्तर (हाइपोकोर्टिसोलेमिया)",
+      badgeHigh: "ऊंचा कोर्टिसोल स्तर (हाइपरकोर्टि��ोलेमिया)",
+      badgeCriticalHigh: "गंभीर उच्च कोर्टिसोल स्तर",
+      badgeCriticalLow: "गंभीर निम्न कोर्टिसोल स्तर",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Cortisol?", a: "Cortisol is a steroid hormone produced by the adrenal glands, often referred to as the stress hormone, crucial for energy, blood pressure, and immune control." },
+      { q: "Why is the time of blood draw important?", a: "Cortisol levels peak in the morning shortly after waking up and drop to their lowest levels around midnight. Separate reference ranges apply to AM and PM draws." },
+      { q: "What causes pathologically high cortisol?", a: "Prolonged stress, pituitary adenomas secreting ACTH (Cushing's disease), adrenal tumors, or oral corticosteroid medications." },
+      { q: "What causes pathologically low cortisol?", a: "Primary adrenal insufficiency (Addison's disease) or secondary adrenal insufficiency due to pituitary dysfunction." }
+    ],
+    bn: [
+      { q: "কর্টিসল কী?", a: "কর্টিসল হলো অ্যাড্রেনাল গ্রন্থি থেকে উৎপন্ন একটি স্টেরয়েড হরমোন, যা শক্তির বিপাক, রক্তচাপ ও শরীরের রোগ প্রতিরোধ ক্ষমতা নিয়ন্ত্রণে ভূমিকা রাখে।" },
+      { q: "রক্ত পরীক্ষার সময় নির্ধারণ কেন গুরুত্বপূর্ণ?", a: "কর্টিসলের মাত্রা সকালে ঘুম থেকে ওঠার পর সর্বোচ্চ থাকে এবং মধ্যরাতে সর্বনিম্ন হয়। এজন্য সকাল (AM) ও সন্ধ্যার (PM) জন্য পৃথক স্বাভাবিক মাত্রা প্রযোজ্য।" },
+      { q: "উচ্চ কর্টিসলের কারণ কী?", a: "দীর্ঘস্থায়ী মানসিক চাপ, পিটুইটারি বা অ্যাড্রেনাল গ্রন্থির টিউমার (কুশিং সিন্ড্রোম), অথবা কর্টিকোস্টেরয়েড জাতীয় ওষুধের ব্যবহার।" },
+      { q: "নিম্ন কর্টিসলের কারণ কী?", a: "অ্যাড্রেনাল গ্রন্থির অকার্যকারিতা (অ্যাডিসনস ডিজিজ) অথবা পিটুইটারি গ্রন্থির কোনো সমস্যা।" }
+    ],
+    hi: [
+      { q: "कोर्टिसोल क्या है?", a: "कोर्टिसोल एक स्टेरॉयड हार्मोन है जो अधिवृक्क ग्रंथियों द्वारा निर्मित होता है, जिसे अक्सर तनाव हार्मोन के रूप में जाना जाता है, जो ऊर्जा, रक्तचाप और प्रतिरक्षा नियंत्रण के लिए महत्वपूर्ण है।" },
+      { q: "खून निकालने का समय क्यों महत्वपूर्ण है?", a: "कोर्टिसोल का स्तर सुबह जागने के तुरंत बाद चरम पर होता है और आधी रात के आसपास अपने निम्नतम स्तर तक गिर जाता है। एएम और पीएम ड्रा पर अलग-अलग संदर्भ श्रेणियां लागू होती हैं।" },
+      { q: "पैथोलॉजिकल रूप से उच्च कोर्टिसोल का क्या कारण है?", a: "लंबे समय तक तनाव, एसीटीएच (कुशिंग रोग) स्रावित करने वाले पिट्यूटरी एडेनोमास, अधिवृक्�� ट्यूमर, या मौखिक कॉर्टिकोस्टेरॉइड दवाएं।" },
+      { q: "पैथोलॉजिकली कम कोर्टिसोल का क्या कारण है?", a: "प्राथमिक अधिवृक्क अपर्याप्तता (एडिसन रोग) या पिट्यूटरी शिथिलता के कारण माध्यमिक अधिवृक्क अपर्याप्तता।" }
+    ]
+  };
+
+  const cortisolInsights = {
+    en: {
+      normal: {
+        desc: "Your cortisol level is within the normal reference range for your specified timing. This indicates proper circadian release and adrenal health.",
+        factors: ["Healthy cortisol diurnal rhythm", "Normal adrenal gland function", "Adequate sleep and balanced physiological stress levels"],
+        symptoms: ["Stable energy levels", "Normal blood pressure", "Appropriate stress resilience"],
+        prevention: ["Maintain consistent sleep patterns", "Adopt regular stress management practices", "Minimize caffeine intake late in the day"],
+        consult: "Continue regular wellness screenings. Discuss with your provider if you have systemic complaints."
+      },
+      low: {
+        desc: "Your cortisol level is low. While evening levels naturally decline, a morning level below 6 µg/dL, or any level below 3 µg/dL, suggests potential adrenal insufficiency.",
+        factors: ["Primary adrenal insufficiency (Addison's disease)", "Pituitary dysfunction (Secondary adrenal insufficiency)", "Abrupt withdrawal from steroid medications"],
+        symptoms: ["Chronic fatigue, muscle weakness", "Unintentional weight loss, loss of appetite", "Low blood pressure (hypotension), dizziness upon standing", "Salt cravings, hyperpigmentation of skin"],
+        prevention: ["Do not discontinue steroid medications without consulting a physician", "Ensure adequate electrolyte intake if low blood pressure is present"],
+        consult: "Schedule a consultation with an endocrinologist. An ACTH stimulation test may be needed to rule out adrenal insufficiency."
+      },
+      high: {
+        desc: "Your cortisol level is elevated. Elevated levels can reflect acute psychological or physical stress, or pathologically high production (hypercortisolism).",
+        factors: ["High emotional, work-related, or physical stress", "Cushing's syndrome (adrenal tumor or ACTH-secreting pituitary tumor)", "Chronic sleep deprivation", "Use of oral contraceptives or corticosteroids"],
+        symptoms: ["Weight gain (especially around face and torso)", "Thinning skin, easy bruising, purple stretch marks (striae)", "High blood pressure, elevated blood sugar", "Anxiety, irritability, difficulty sleeping"],
+        prevention: ["Integrate mindfulness, meditation, or light exercise", "Establish a soothing evening routine to lower cortisol naturally"],
+        consult: "Consult a healthcare provider. A 24-hour urine free cortisol or a low-dose dexamethasone suppression test may be recommended to check for Cushing's syndrome."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার কর্টিসলের মাত্রা নির্দিষ্ট সময়ের স্বাভাবিক সীমার মধ্যে রয়েছে। এটি স্বাভাবিক সার্কাডিয়ান রিদম এবং সুস্থ অ্যাড্রেনাল গ্রন্থি নির্দেশ করে।",
+        factors: ["স্বাভাবিক কর্টিসল দৈনিক চক্র", "সুস্থ অ্যাড্রেনাল গ্রন্থি কার্যকারিতা", "পর্যাপ্ত ঘুম ও মানসিক চাপ নিয়ন্ত্রণ"],
+        symptoms: ["স্থিতিশীল শক্তি", "স্বাভাবিক রক্তচাপ"],
+        prevention: ["ঘুমের সময় ঠিক রাখুন", "প্রতিদিন হালকা ব্যায়াম ও মানসিক শিথিলতা বজায় রাখুন"],
+        consult: "সাধারণ বার্ষিক স্ক্রীনিং অব্যাহত রাখুন।"
+      },
+      low: {
+        desc: "আপনার কর্টিসলের মাত্রা কম। সকালে ৬ µg/dL এর নিচে অথবা যেকোনো সময় ৩ µg/dL এর নিচের মান অ্যাড্রেনাল গ্রন্থির অকার্যকারিতা নির্দেশ করতে পারে।",
+        factors: ["অ্যাডিসনস ডিজিজ (অ্যাড্রেনাল অকার্যকারিতা)", "পিটুইটারি গ্রন্থির অসঙ্গতি", "হঠাৎ কর্টিকোস্টেরয়েড জাতীয় ওষুধ বন্ধ করা"],
+        symptoms: ["ক্রনিক ক্লান্তি, পেশীর দুর্বলতা", "ওজন হ্রাস ও ক্ষুধা মন্দা", "রক্তচাপ কমে যাওয়া (হাইপোটেনশন), দাঁড়িয়ে গেলে মাথা ঘোরা", "লবণের প্রতি তীব্র আকাঙ্ক্ষা"],
+        prevention: ["ডাক্তারের পরামর্শ ছাড়া স্টেরয়েড ওষুধ বন্ধ করবেন না", "পর্যাপ্ত তরল ও ইলেকট্রোলাইট গ্রহণ করুন"],
+        consult: "একজন এন্ডোক্রাইনোলজিস্টের (হরমোন বিশেষজ্ঞ) পরামর্শ নিন। অ্যাড্রেনাল কার্যকারিতা যাচাই করতে ACTH স্টিমুলেশন পরীক্ষা লাগতে পারে।"
+      },
+      high: {
+        desc: "আপনার কর্টিসলের মাত্রা বেশি। এটি শারীরিক বা মানসিক চাপ, অপর্যাপ্ত ঘুম অথবা অতিরিক্ত কর্টিসল উৎপাদনের (কুশিং সিন্ড্রোম) সংকেত হতে পারে।",
+        factors: ["অতিরিক্ত মানসিক ও শারীরিক চাপ", "কুশিং সিন্ড্রোম (অ্যাড্রেনাল বা পিটুইটারি টিউমার)", "ক্রনিক অনিদ্রা", "স্টেরয়েড বা গর্ভনিরোধক বড়ি ব্যবহার"],
+        symptoms: ["ওজন বৃদ্ধি (বিশেষ করে মুখ ও পেটের অংশে)", "ত্বক পাতলা হয়ে যাওয়া, দ্রুত ক্ষত তৈরি হওয়া", "উচ্চ রক্তচাপ, সুগার বৃদ্ধি", "অস্থিরতা, অনিদ্রা"],
+        prevention: ["ধ্যান, যোগব্যায়াম বা হালকা ব্যায়াম করুন", "ঘুমানোর আগে স্ক্রিন টাইম কমান এবং ক্যাফেইন এড়িয়ে চলুন"],
+        consult: "ডাক্তারের পরামর্শ নিন। কুশিং সিন্ড্রোম নির্ণয়ের জন্য ২৪ ঘণ্টার ইউরিন কর্টিসল পরীক্ষা বা ডেক্সামিথাসন সাপ্রেসন টেস্ট লাগতে পারে।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका कोर्टिसोल स्तर आपके निर्दिष्ट समय के लिए सामान्य संदर्भ सीमा के भीतर है। यह उचित सर्कैडियन रिलीज़ और अधिवृक्क स्वास्थ्य को इंगित करता है।",
+        factors: ["स्वस्थ कोर्टिसोल दैनिक लय", "सामान्य अधिवृक्क ग्रंथि कार्य", "पर्याप्त नींद औ�� संतुलित शारीरिक तनाव का स्तर"],
+        symptoms: ["स्थिर ऊर्जा स्तर", "सामान्य रक्तचाप", "उचित तनाव लचीलापन"],
+        prevention: ["लगातार नींद के पैटर्न को बनाए रखें", "नियमित तनाव प्रबंधन प्रथाओं को अपनाएं", "दिन के अंत में कैफीन का सेवन कम से कम करें"],
+        consult: "नियमित स्वास्थ्य जांच जारी रखें। यदि आपको प्रणालीगत शिकायतें हैं तो अपने प्रदाता से चर्चा करें।"
+      },
+      low: {
+        desc: "आपका कोर्टिसोल स्तर कम है. जबकि शाम के स्तर में स्वाभाविक रूप से गिरावट आती है, सुबह का स्तर 6 µg/dL से नीचे, या 3 µg/dL से नीचे का कोई भी स्तर, संभावित अधिवृक्क अपर्याप्तता का सुझाव देता है।",
+        factors: ["प्राथमिक अधिवृक्क अपर्याप्तता (एडिसन रोग)", "पिट्यूटरी डिसफंक्शन (माध्यमिक अधिवृक्क अपर्याप्तता)", "स्टेरॉयड दवाओं से अचानक वापसी"],
+        symptoms: ["लगातार थकान, मांसपेशियों में कमजोरी", "अनजाने में वजन कम होना, भूख न लगना", "निम्न रक्तचाप (हाइपोटेंशन), खड़े होने पर चक्कर आना", "नमक की लालसा, ��्वचा का हाइपरपिगमेंटेशन"],
+        prevention: ["डॉक्टर की सलाह के बिना स्टेरॉयड दवाएं बंद न करें", "यदि निम्न रक्तचाप मौजूद है तो पर्याप्त इलेक्ट्रोलाइट का सेवन सुनिश्चित करें"],
+        consult: "एक एंडोक्रिनोलॉजिस्ट के साथ परामर्श का समय निर्धारित करें। अधिवृक्क अपर्याप्तता को दूर करने के लिए ACTH उत्तेजना परीक्षण की आवश्यकता हो सकती है।"
+      },
+      high: {
+        desc: "आपका कोर्टिसोल स्तर ऊंचा है। ऊंच��� स्तर तीव्र मनोवैज्ञानिक या शारीरिक तनाव, या पैथोलॉजिकल रूप से उच्च उत्पादन (हाइपरकोर्टिसोलिज़्म) को प्रतिबिंबित कर सकता है।",
+        factors: ["उच्च भावनात्मक, कार्य-संबंधी या शारीरिक तनाव", "कुशिंग सिंड्रोम (अधिवृक्क ट्यूमर या ACTH-स्रावित पिट्यूटरी ट्यूमर)", "लगातार ��ींद की कमी", "मौखिक गर्भ निरोधकों या कॉर्टिकोस्टेरॉइड्स का उपयोग"],
+        symptoms: ["वजन बढ़ना (विशेषकर चेहरे और धड़ के आसपास)", "त्वचा का पतला होना, आसानी से चोट लगना, बैंगनी खिंचाव के निशान (स्ट्राइ)", "उच्च रक्तचाप, ऊंचा रक्त शर्करा", "चिंता, चिड़चिड़ापन, सोने में कठिनाई"],
+        prevention: ["माइंडफुलनेस, ध्यान या हल्के व्यायाम को एकीकृत करें", "स्वाभाविक रूप से कोर्टिसोल को कम करने के लिए एक आरामदायक शाम की दिनचर्या स्थापित करें"],
+        consult: "किसी स्वास्थ्य सेवा प्रदाता से परामर्श लें. कुशिंग सिंड्रोम की जांच के लिए 24 घंटे के मूत्र मुक्त कोर्टिसोल या कम खुराक वाले डेक्सामेथासोन दमन परीक्षण की सिफारिश की जा सकती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-cortisol-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valCortisol").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function analyzeCortisol() {
+    const valCort = parseFloat(document.getElementById("valCortisol").value);
+    const timing = document.getElementById("valTiming").value;
+
+    if (isNaN(valCort) || valCort < 0) {
+      alert(currentLang === "en" ? "Please enter a valid cortisol value." : "দয়া করে কর্টিসলের সঠিক মান লিখুন।");
+      return;
+    }
+
+    // Set normal range based on timing
+    // Ranges: AM Normal 6-23 | PM Normal 3-15 | Low < 3 | High > 23 AM
+    let min = (timing === "am") ? 6.0 : 3.0;
+    let max = (timing === "am") ? 23.0 : 15.0;
+
+    let statusKey = "normal";
+    let badgeKey = "badgeNormal";
+
+    if (valCort < min) {
+      statusKey = "low";
+      badgeKey = "badgeLow";
+    } else if (valCort > max) {
+      statusKey = "high";
+      badgeKey = "badgeHigh";
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valCort >= min && valCort <= max) {
+      const range = max - min;
+      pointerPct = range > 0 ? 30 + ((valCort - min) / range) * 40 : 50;
+    } else if (valCort < min) {
+      pointerPct = Math.max(5, (valCort / min) * 25);
+    } else {
+      pointerPct = Math.min(95, 75 + ((valCort - max) / (max * 0.8)) * 20);
+    }
+
+    activeReportData = {
+      valCort,
+      min,
+      max,
+      timing,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valCort, timing);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+
+    const timingStr = d.timing === "am" ? 
+      (currentLang === "en" ? "Morning (AM)" : "সকাল (AM)") : 
+      (currentLang === "en" ? "Evening (PM)" : "সন্ধ্যা/রাত (PM)");
+      
+    document.getElementById("resTimingText").textContent = timingStr;
+    document.getElementById("resCortVal").textContent = d.valCort.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resCortVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = `< ${d.min.toFixed(1)}`;
+    document.getElementById("tickNormalRange").textContent = `${d.min.toFixed(1)} - ${d.max.toFixed(1)}`;
+    document.getElementById("tickHigh").textContent = `${d.max.toFixed(1)}+`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = cortisolInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valCort, timing) {
+    const timingStr = timing === "am" ? "AM" : "PM";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valCort,
+      timingStr,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-cortisol-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date} (${item.timingStr})</span>
+        <strong>${item.valCort.toFixed(1)} µg/dL (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const timingStr = activeReportData.timing === "am" ? "Morning (AM)" : "Evening (PM)";
+    let t = `--- SERUM CORTISOL REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Timing: ${timingStr}\n`;
+    t += `Value: ${activeReportData.valCort.toFixed(1)} µg/dL\n`;
+    t += `Reference Range: ${activeReportData.min} - ${activeReportData.max} µg/dL\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `cortisol-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

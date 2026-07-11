@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fasting Insulin &amp; HOMA-IR Analyzer &bull; SSDK CLINICAL TOOLS</title>
+  <meta name="description" content="Evaluate Fasting Insulin and calculate HOMA-IR score online. Check for insulin resistance, prediabetes risks, and metabolic health indicators.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--normal-color) 0%, 
+        var(--normal-color) 20%, 
+        var(--high-color) 40%,
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .secondary-findings {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .secondary-findings strong {
+      color: var(--text);
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card, .secondary-findings {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Fasting Insulin Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze fasting insulin, integrate fasting glucose, and calculate your HOMA-IR score to screen for insulin resistance risks.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Insulin &amp; Glucose Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valInsulin" data-translate="labelInsulin">Fasting Insulin (μU/mL)</label>
+              <input type="number" step="0.1" id="valInsulin" placeholder="e.g. 8.5" min="0" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valGlucose" data-translate="labelGlucose">Fasting Glucose (mg/dL)</label>
+              <input type="number" step="1" id="valGlucose" placeholder="e.g. 95" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeInsulin()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Calculate &amp; Analyze</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your fasting insulin and glucose levels, then click the analyze button to compute your HOMA-IR index.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 HOMA-IR &amp; Insulin Evaluation</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelInsulinSum">Insulin</strong>: <span id="resInsValSum">-</span> μU/mL</span>
+            <span><strong data-translate="labelGlucoseSum">Glucose</strong>: <span id="resGluValSum">-</span> mg/dL</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <!-- Main HOMA-IR Gauge -->
+          <div class="gauge-container">
+            <div style="font-size: 0.8rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing:1px;" data-translate="labelHomaScore">Calculated HOMA-IR</div>
+            <div class="val-large" id="resHomaVal">-</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--normal-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--high-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Fasting Insulin secondary findings -->
+          <div class="secondary-findings">
+            <span><strong data-translate="labelInsulinStatus">Fasting Insulin Level</strong>: <span id="resInsulinVal">-</span> μU/mL</span>
+            <span id="resInsulinStatusText" style="font-weight: 800;">-</span>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Insulin &amp; HOMA-IR</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Fasting Insulin?</strong><br><span data-translate="eduA1">Insulin is an anabolic hormone secreted by pancreatic beta cells. Fasting insulin levels measure the baseline amount of insulin circulating when blood sugar is low, which regulates gluconeogenesis. Normal fasting levels are between 2 and 25 μU/mL, though optimal functional ranges are often lower (under 10 μU/mL).</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is HOMA-IR?</strong><br><span data-translate="eduA2">The Homeostatic Model Assessment of Insulin Resistance (HOMA-IR) is a mathematical estimation of insulin sensitivity. It represents the balance between hepatic glucose output and insulin secretion. The formula is: <strong>HOMA-IR = (Fasting Insulin [μU/mL] × Fasting Glucose [mg/dL]) / 405</strong>.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What do the HOMA-IR ranges mean?</strong><br><span data-translate="eduA3">A score under 1.0 represents optimal insulin sensitivity. Scores between 1.0 and 1.9 indicate borderline or early insulin resistance. A HOMA-IR score of 2.0 or greater indicates significant insulin resistance, showing that the pancreas is overproducing insulin to clear blood sugar. This is a primary risk factor for prediabetes, metabolic syndrome, and Type 2 diabetes.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Fasting Insulin Analyzer",
+      toolDesc: "Analyze fasting insulin, integrate fasting glucose, and calculate your HOMA-IR score to screen for insulin resistance risks.",
+      inputsTitle: "🧬 Insulin & Glucose Parameters",
+      clearBtn: "Reset",
+      labelInsulin: "Fasting Insulin (μU/mL)",
+      labelGlucose: "Fasting Glucose (mg/dL)",
+      btnAnalyze: "Calculate & Analyze",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your fasting insulin and glucose levels, then click the analyze button to compute your HOMA-IR index.",
+      reportTitle: "🔬 HOMA-IR & Insulin Evaluation",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelInsulinSum: "Insulin",
+      labelGlucoseSum: "Glucose",
+      labelDate: "Date",
+      labelHomaScore: "Calculated HOMA-IR",
+      labelInsulinStatus: "Fasting Insulin Level",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeOptimal: "Optimal Insulin Sensitivity",
+      badgeBorderline: "Early/Borderline Insulin Resistance",
+      badgeResistant: "Insulin Resistance (Metabolic Risk)",
+      insulinLow: "Low Fasting Insulin",
+      insulinNormal: "Normal Fasting Insulin",
+      insulinHigh: "High Fasting Insulin",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ফাস্টিং ইনসুলিন বিশ্লেষক",
+      toolDesc: "রক্তের খালি পেটের ইনসুলিন এবং গ্লুকোজের মাত্রা পরিমাপ করে HOMA-IR ইনডেক্স হিসাব করুন এবং ইনসুলিন রেজিস্ট্যান্সের ঝুঁকি বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 ইনসুলিন ও গ্লুকোজ পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelInsulin: "খালি পেটে ইনসুলিন (μU/mL)",
+      labelGlucose: "খালি পেটে গ্লুকোজ (mg/dL)",
+      btnAnalyze: "হিসাব ও বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "খালি পেটের ইনসুলিন এবং গ্লুকোজ মান লিখুন এবং HOMA-IR ইনডেক্স বের করতে বোতামে ক্লিক করুন।",
+      reportTitle: "🔬 HOMA-IR ও ইনসুলিন মূল্যায়ন",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelInsulinSum: "ইনসুলিন",
+      labelGlucoseSum: "গ্লুকোজ",
+      labelDate: "তারিখ",
+      labelHomaScore: "হিসাবকৃত HOMA-IR",
+      labelInsulinStatus: "খালি পেটের ইনসুলিন লেভেল",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeOptimal: "অনুকূল ইনসুলিন সংবেদনশীলতা",
+      badgeBorderline: "হালকা বা বর্ডারলাইন ইনসুলিন রেজিস্ট্যান্স",
+      badgeResistant: "ইনসুলিন রেজিস্ট্যান্স (মেটাবলিক ঝুঁকি)",
+      insulinLow: "কম ফাস্টিং ইনসুলিন",
+      insulinNormal: "স্বাভাবিক ফাস্টিং ইনসুলিন",
+      insulinHigh: "উচ্চ ফাস্টিং ইনসুলিন",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভavy প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "उपवास इंसुलिन विश्लेषक",
+      toolDesc: "उपवास इंसुलिन का विश्लेषण करें, उपवास ग्लूकोज को एकीकृत करें, और इंसुलिन प्रतिरोध जोखिमों की जांच के लिए अपने HOMA-IR स्कोर की गणना करें।",
+      inputsTitle: "🧬 इंसुलिन और ग्लूकोज पैरामीटर",
+      clearBtn: "रीसेट करें",
+      labelInsulin: "फास्टिंग इंसुलिन (μU/mL)",
+      labelGlucose: "उपवास ग्लूकोज (मिलीग्राम/डीएल)",
+      btnAnalyze: "गणना एवं विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना उपवास इंसुलिन और ग्लूकोज स्तर दर्ज करें, फिर अपने HOMA-IR सूचकांक की गणना करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 होमा-आईआर और इंसुलिन मूल्यांकन",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelInsulinSum: "इंसुलिन",
+      labelGlucoseSum: "ग्लूकोज",
+      labelDate: "दिनांक",
+      labelHomaScore: "परिकलित होमा-आईआर",
+      labelInsulinStatus: "उपवास इंसुलिन स्तर",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeOptimal: "इष्टतम इंसुलिन संवेदनशीलता",
+      badgeBorderline: "प्रारंभिक/बॉर्डरलाइन इंसुलिन प्रतिरोध",
+      badgeResistant: "इंसुलिन प्रतिरोध (चयापचय जोखिम)",
+      insulinLow: "कम उपवास इंसुलिन",
+      insulinNormal: "सामान्य उपवास इंसुलिन",
+      insulinHigh: "हाई फास्टिंग इंसुलिन",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Fasting Insulin?", a: "It is the baseline insulin level in blood after an 8-hour fast, regulating resting glucose levels." },
+      { q: "What is HOMA-IR?", a: "Homeostatic Model Assessment of Insulin Resistance. It measures insulin resistance by combining glucose and insulin levels." },
+      { q: "What are normal reference values?", a: "Fasting Insulin: 2 to 25 μU/mL. HOMA-IR: Optimal is < 1.0, Borderline is 1.0 - 1.9, Resistant is >= 2.0." },
+      { q: "How can I improve my HOMA-IR score?", a: "By reducing refined carbohydrate intake, exercising regularly (both cardio and strength training), getting adequate sleep, and managing stress." }
+    ],
+    bn: [
+      { q: "ফাস্টিং ইনসুলিন কী?", a: "কমপক্ষে ৮ ঘণ্টা না খেয়ে থাকার পর রক্তে ইনসুলিনের যে স্বাভাবিক স্তর থাকে, যা শরীরের সুগার নিয়ন্ত্রণে ভূমিকা রাখে।" },
+      { q: "HOMA-IR কী?", a: "এটি হলো ইনসুলিন রেজিস্ট্যান্স পরিমাপের ইনডেক্স। রক্তের খালি পেটের ইনসুলিন ও সুগারকে গুণ করে ৪০৫ দিয়ে ভাগ করে এটি পাওয়া যায়।" },
+      { q: "এর স্বাভাবিক মাত্রা কত?", a: "ইনসুলিন: ২ - ২৫ μU/mL। HOMA-IR: স্বাভাবিক < ১.০, বর্ডারলাইন ১.০ - ১.৯, এবং রেজিস্ট্যান্স ২.০ বা তার বেশি।" },
+      { q: "HOMA-IR কীভাবে উন্নত করা যায়?", a: "অতিরিক্ত শর্করা বা চিনি খাওয়া কমিয়ে, নিয়মিত ব্যায়াম বা শরীরচর্চা করে, ঘুম ঠিক রেখে এবং ওজন নিয়ন্ত্রণে রেখে।" }
+    ],
+    hi: [
+      { q: "फास्टिंग इंसुलिन क्या है?", a: "यह 8 घंटे के उपवास के बाद रक्त में आधारभूत इंसुलिन स्तर है, जो आराम करने वाले ग्लूकोज स्तर को नियंत्रित करता है।" },
+      { q: "होमा-आईआर क्या है?", a: "इंसुलिन प्रतिरोध का होमोस्टैटिक मॉडल आकलन। यह ग्लूकोज और इंसुलिन के ��्तर को मिलाकर इंसुलिन प्रतिरोध को मापता है।" },
+      { q: "सामान्य संदर्भ मान क्या हैं?", a: "फास्टिंग इंसुलिन: 2 से 25 μU/mL। होमा-आईआर: इष्टतम <1.0 है, सीमा रेखा 1.0 - 1.9 है, प्रतिरोधी >= 2.0 है।" },
+      { q: "मैं अपना HOMA-IR स्कोर कैसे सुधार सकता हूँ?", a: "परिष्कृत कार्बोहाइड्रेट का सेवन कम करके, नियमित व्यायाम (कार्डियो और शक्ति प्रशिक्षण दोनों), पर्याप्त नींद लें और तनाव का प्रबंधन करें।" }
+    ]
+  };
+
+  const homaInsights = {
+    en: {
+      optimal: {
+        desc: "Your HOMA-IR score is optimal (< 1.0), reflecting excellent insulin sensitivity. Your body requires minimal insulin to regulate glucose levels.",
+        factors: ["High skeletal muscle insulin sensitivity", "Low pancreatic workload", "Balanced metabolic health"],
+        symptoms: ["Stable energy levels", "Easy weight maintenance", "Low inflammatory markers"],
+        prevention: ["Continue a whole-food diet", "Engage in regular physical activity to maintain muscle insulin receptors"],
+        consult: "No metabolic concerns. Maintain your healthy habits."
+      },
+      borderline: {
+        desc: "Your HOMA-IR score is borderline (1.0 - 1.9). This shows early signs of insulin resistance, indicating your cells are beginning to require more insulin to clear glucose.",
+        factors: ["Sedentary lifestyle", "Diets high in processed carbohydrates or sugar", "Visceral fat accumulation", "Inadequate sleep or chronic stress"],
+        symptoms: ["Mild fatigue after meals", "Slight difficulty losing weight", "Occasional brain fog"],
+        prevention: ["Cut back on sugars, sweetened beverages, and refined grains", "Walk for 10-15 minutes after meals", "Prioritize strength training"],
+        consult: "Consult your doctor. Early intervention at this stage can fully reverse insulin resistance."
+      },
+      resistant: {
+        desc: "Your HOMA-IR score indicates significant Insulin Resistance (>= 2.0). The pancreas is overworking, secreting large amounts of insulin to maintain stable blood sugars.",
+        factors: ["Chronic metabolic syndrome", "High abdominal (visceral) fat storage", "Genetic predisposition/family history of Type 2 diabetes", "Fatty liver disease (NAFLD)"],
+        symptoms: ["Fatigue, especially post-meal", "Weight gain around the waist, difficulty losing fat", "Skin tags, acanthosis nigricans (darkening of neck skin)", "Frequent hunger or sweet cravings"],
+        prevention: ["Adopt a lower-carbohydrate, Mediterranean-style diet", "Increase physical activity (aim for 150 minutes weekly)", "Focus on weight management"],
+        consult: "Contact your physician. They may check HbA1c, lipids, and evaluate options for metabolic support."
+      }
+    },
+    bn: {
+      optimal: {
+        desc: "আপনার HOMA-IR স্কোর অত্যন্ত সন্তোষজনক (< ১.০)। এটি নির্দেশ করে যে আপনার কোষগুলো ইনসুলিনের প্রতি খুব সংবেদনশীল এবং কম ইনসুলিন দিয়েই সুগার নিয়ন্ত্রণে থাকে।",
+        factors: ["কোষের চমৎকার ইনসুলিন সংবেদনশীলতা", "অগ্ন্যাশয়ের ওপর বাড়তি কাজের চাপ না থাকা", "স্বাস্থ্যকর বিপাক প্রক্রিয়া"],
+        symptoms: ["স্থিতিশীল শারীরিক শক্তি", "সহজে মেদহীন ওজন ধরে রাখা"],
+        prevention: ["পর্যাপ্ত আঁশযুক্ত ও সুষম প্রাকৃতিক খাবার খান", "শারীরিক সক্রিয়তা বজায় রাখুন"],
+        consult: "বিপাকীয় কোনো ঝুঁকি নেই। বর্তমান স্বাস্থ্যকর অভ্যাস বজায় রাখুন।"
+      },
+      borderline: {
+        desc: "আপনার HOMA-IR স্কোর বর্ডারলাইন বা সীমারেখায় আছে (১.০ - ১.৯)। এটি ইনসুলিন রেজিস্ট্যান্সের শুরুর দিকের লক্ষণ, যার অর্থ কোষগুলো সুগার সরাতে বেশি ইনসুলিন দাবি করতে শুরু করেছে।",
+        factors: ["শারীরিক পরিশ্রম বা ব্যায়ামের অভাব", "অতিরিক্ত শর্করা, ফাস্টফুড বা মিষ্টি খাওয়া", "পেটে অতিরিক্ত চর্বি জমতে শুরু করা", "পর্যাপ্ত ঘুমের অভাব"],
+        symptoms: ["খাবারের পর হালকা অলসতা বা ক্লান্তি লাগা", "ওজন কমাতে সামান্য বাধা পাওয়া"],
+        prevention: ["মিষ্টি পানীয় ও সাদা চাল বা ময়দা জাতীয় খাবার কমান", "খাওয়ার পর ১০-১৫ মিনিট হাঁটুন", "নিয়মিত ব্যায়াম শুরু করুন"],
+        consult: "ডাক্তারের পরামর্শ নিন। এই পর্যায়ে সচেতন হলে ইনসুলিন রেজিস্ট্যান্স সম্পূর্ণ নিরাময় করা সম্ভব।"
+      },
+      resistant: {
+        desc: "আপনার HOMA-IR স্কোর ইনসুলিন রেজিস্ট্যান্স নির্দেশ করছে (২.০ বা তার বেশি)। এর মানে হলো শরীর সুগার নিয়ন্ত্রণে রাখতে অগ্ন্যাশয়কে অতিরিক্ত কাজ করিয়ে বেশি ইনসুলিন তৈরি করতে বাধ্য করছে।",
+        factors: ["ক্রনিক মেটাবলিক সিন্ড্রোম বা ফ্যাটি লিভার", "পেটের চর্বি বা মেদ বৃদ্ধি", "বংশগত ডায়াবেটিসের ইতিহাস"],
+        symptoms: ["অতিরিক্ত ক্লান্তি বা ঝিমুনি (বিশেষ করে ভাত বা ভারী খাবারের পর)", "পেটে দ্রুত চর্বি জমা ও ওজন না কমা", "ঘাড়ের চামড়া কালো হওয়া (অ্যাকান্থোসিস নাইগ্রিকানস)", "মিষ্টি বা শর্করার প্রতি তীব্র লোভ"],
+        prevention: ["খাদ্যতালিকায় শর্করা অনেক কমিয়ে শাকসবজি ও ভালো প্রোটিন বাড়ান", "সপ্তাহে কমপক্ষে ১৫০ মিনিট মাঝারি ব্যায়াম করুন"],
+        consult: "অবিলম্বে একজন এন্ডোক্রাইনোলজিস্ট বা চিকিৎসকের পরামর্শ নিন। HbA1c ও লিপিড প্রোফাইল পরীক্ষা করা প্রয়োজন হতে পারে।"
+      }
+    },
+    hi: {
+      optimal: {
+        desc: "आपका HOMA-IR स्कोर इष्टतम (<1.0) है, जो उत्कृष्ट इंसुलिन संवेदनशीलता को दर्शाता है। ग्लूकोज के स्तर को नियंत्रित करने के लिए आपके शरीर को न्यूनतम इंसुलिन की आवश्यकता होती है।",
+        factors: ["उच्च कंकाल मांसपेशी इंसुलिन संवेदनशीलता", "कम अग्नाशय कार्यभार", "संतुलित चयापचय स्वास्थ्य"],
+        symptoms: ["स्थिर ऊर्जा स्तर", "आसान वजन रखरखाव", "कम सूजन वाले मार्कर"],
+        prevention: ["संपूर्ण भोजन आहार जारी रखें", "मांसपेश�� इंसुलिन रिसेप्टर्स को बनाए रखने के लिए नियमित शारीरिक गतिविधि में संलग्न रहें"],
+        consult: "कोई चयापचय संबंधी चिंता नहीं. अपनी स्वस्थ आदतें बनाए रखें."
+      },
+      borderline: {
+        desc: "आपका HOMA-IR स्कोर सीमा रेखा (1.0 - 1.9) है। यह इंसुलिन प्रतिरोध के शुरुआती लक्षण दिखाता है, जो दर्शाता है कि आपकी कोशिकाओं को ग्लूकोज को साफ़ करने के लि�� अधिक इंसुलिन की आवश्यकता होने लगी है।",
+        factors: ["गतिहीन जीवन शैली", "प्रसंस्कृत कार्बोहाइड्रेट या चीनी से भरपूर आहार", "आंत में वसा जमा होना", "अपर्याप्त नींद या पुराना तनाव"],
+        symptoms: ["भोजन के बाद हल्की थकान", "वजन कम करने में थोड़ी कठिनाई", "कभी-कभी मस्तिष्क का कोहरा"],
+        prevention: ["चीनी, मीठे पेय पदार्थ और परिष्कृत अनाज का सेवन कम करें", "���ोजन के बाद 10-15 मिनट तक टहलें", "शक्ति प्रशिक्षण को प्राथमिकता दें"],
+        consult: "अपने डॉक्टर से सलाह लें. इस स्तर पर प्रारंभिक हस्तक्षेप इंसुलिन प्रतिरोध को पूरी तरह से उलट सकता है।"
+      },
+      resistant: {
+        desc: "आपका HOMA-IR स्कोर महत्वपूर्ण इंसुलिन प्रतिरोध (>= 2.0) दर्शाता है। अग्न्याशय अधिक काम कर रहा है, रक्त शर्करा को स्थिर बनाए रखने के लि��� बड़ी मात्रा में इंसुलिन का स्राव कर रहा है।",
+        factors: ["क्रोनिक मेटाबोलिक सिंड्रोम", "उच्च पेट (आंत) वसा का भंडारण", "टाइप 2 मधुमेह की आनुवंशिक प्रवृत्ति/पारिवारिक इतिहास", "फैटी लीवर रोग (एनएएफएलडी)"],
+        symptoms: ["थकान, विशेषकर भोजन के बाद", "कमर के आसपास वजन बढ़ना, चर्बी कम करने में कठिनाई होना", "त्वचा टैग, एकैन्थोसिस नाइग्रिकन्स (गर्दन की त्वचा का काला पड़ना)", "बार-बार भूख लगना या मीठा खाने की इच्छा होना"],
+        prevention: ["कम कार्बोहाइड्रेट, भूमध्यसागरीय शैली का आहार अपनाएं", "शारीरिक गतिविधि बढ़ाएँ (सप्ताह में 150 मिनट का लक्ष्य)", "वजन प्रबंधन पर ध्यान दें"],
+        consult: "अपने चिकित्सक से संपर्क करें. वे एचबीए1सी, लिपिड की जांच कर सकते हैं और चयापचय सहायता के विकल्पों का मूल्यांकन कर सकते हैं।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-insulin-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valInsulin").value = "";
+    document.getElementById("valGlucose").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function analyzeInsulin() {
+    const valIns = parseFloat(document.getElementById("valInsulin").value);
+    const valGluc = parseFloat(document.getElementById("valGlucose").value);
+
+    if (isNaN(valIns) || valIns <= 0 || isNaN(valGluc) || valGluc <= 0) {
+      alert(currentLang === "en" ? "Please enter valid insulin and glucose values." : "দয়া করে ইনসুলিন ও গ্লুকোজের সঠিক মান লিখুন।");
+      return;
+    }
+
+    // Formula: HOMA-IR = (Fasting Insulin * Fasting Glucose) / 405
+    const homaScore = (valIns * valGluc) / 405.0;
+
+    // Fasting Insulin range: Normal 2 - 25
+    let insulinStatusKey = "insulinNormal";
+    if (valIns < 2.0) insulinStatusKey = "insulinLow";
+    else if (valIns > 25.0) insulinStatusKey = "insulinHigh";
+
+    // HOMA-IR status: Normal < 1.0 | Borderline 1.0-1.9 | Insulin Resistant >= 2.0
+    let homaStatusKey = "optimal";
+    let badgeKey = "badgeOptimal";
+
+    if (homaScore >= 2.0) {
+      homaStatusKey = "resistant";
+      badgeKey = "badgeResistant";
+    } else if (homaScore >= 1.0) {
+      homaStatusKey = "borderline";
+      badgeKey = "badgeBorderline";
+    }
+
+    // Scale mapping for HOMA-IR (0 to 5 on gauge)
+    let pointerPct = 50;
+    if (homaScore < 1.0) {
+      pointerPct = Math.max(5, (homaScore / 1.0) * 30); // 5% to 30%
+    } else if (homaScore < 2.0) {
+      pointerPct = 30 + ((homaScore - 1.0) / 1.0) * 30; // 30% to 60%
+    } else {
+      pointerPct = Math.min(95, 60 + ((homaScore - 2.0) / 3.0) * 30); // 60% to 90%
+    }
+
+    activeReportData = {
+      valIns,
+      valGluc,
+      homaScore,
+      insulinStatusKey,
+      homaStatusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, homaScore, valIns, valGluc);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resInsValSum").textContent = d.valIns.toFixed(1);
+    document.getElementById("resGlucoseSum").textContent = d.valGluc.toFixed(0);
+    document.getElementById("resHomaVal").textContent = d.homaScore.toFixed(2);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.homaStatusKey === "borderline") colorClass = "high";
+    else if (d.homaStatusKey === "resistant") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resHomaVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = `< 1.0 (Optimal)`;
+    document.getElementById("tickNormalRange").textContent = `1.0 - 1.9 (Borderline)`;
+    document.getElementById("tickHigh").textContent = `2.0+ (Resistant)`;
+
+    // Secondary findings
+    document.getElementById("resInsulinVal").textContent = d.valIns.toFixed(1);
+    const insulinStatusLabel = document.getElementById("resInsulinStatusText");
+    insulinStatusLabel.textContent = translations[currentLang][d.insulinStatusKey];
+    
+    let insColor = "var(--normal-color)";
+    if (d.insulinStatusKey === "insulinLow") insColor = "var(--low-color)";
+    else if (d.insulinStatusKey === "insulinHigh") insColor = "var(--high-color)";
+    insulinStatusLabel.style.color = insColor;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = homaInsights[currentLang][d.homaStatusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, homaScore, valIns, valGluc) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      homaScore,
+      valIns,
+      valGluc,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-insulin-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>HOMA-IR: ${item.homaScore.toFixed(2)} (Insulin: ${item.valIns.toFixed(1)}, Glucose: ${item.valGluc.toFixed(0)}) [${statusText}]</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- FASTING INSULIN & HOMA-IR REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Fasting Insulin: ${activeReportData.valIns.toFixed(1)} μU/mL (Normal 2 - 25)\n`;
+    t += `Fasting Glucose: ${activeReportData.valGluc.toFixed(0)} mg/dL\n`;
+    t += `Calculated HOMA-IR: ${activeReportData.homaScore.toFixed(2)}\n`;
+    t += `HOMA-IR Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `insulin-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

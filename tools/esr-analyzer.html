@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESR Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze your Erythrocyte Sedimentation Rate (ESR) level online. Evaluate systemic inflammation, infections, or autoimmune markers with dynamic references and bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #ef4444;
+      --critical-color: #7f1d1d;
+      --border-color: #f59e0b;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .esr-gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .esr-val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .esr-status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--normal-color) 0%, 
+        var(--border-color) 40%, 
+        var(--high-color) 75%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .esr-gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">ESR Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze your Erythrocyte Sedimentation Rate (ESR). Evaluate systemic inflammation, infection indexes, or arthritis flags dynamically.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🩸 ESR Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">🗑 Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="patientAge" data-translate="labelAge">Age (Years)</label>
+              <input type="number" id="patientAge" min="1" max="120" value="30" required>
+            </div>
+            
+            <div class="input-wrapper">
+              <label for="patientGender" data-translate="labelGender">Gender</label>
+              <select id="patientGender">
+                <option value="male" selected data-translate="genderMale">Male</option>
+                <option value="female" data-translate="genderFemale">Female</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valESR" data-translate="labelESR">ESR Value (mm/hr)</label>
+              <input type="number" id="valESR" placeholder="e.g. 12" min="0" max="200" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeESR()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze ESR Level</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🩸</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your age, gender, and ESR value, then click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 ESR Diagnostics Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelAge">Age</strong>: <span id="resAge">-</span></span>
+            <span><strong data-translate="labelGender">Gender</strong>: <span id="resGender">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="esr-gauge-container">
+            <div class="esr-val-large" id="resEsrVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">mm/hr</div>
+            <div class="esr-status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLowRange" style="color: var(--normal-color);">0 mm/hr</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">0 - 15</span>
+              <span id="tickCriticalHigh" style="color: var(--high-color);">100+ (Crit)</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Understanding ESR</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Erythrocyte Sedimentation Rate (ESR)?</strong><br><span data-translate="eduA1">ESR is a blood test measuring how quickly red blood cells (erythrocytes) settle at the bottom of a vertical test tube in one hour. When inflammation is present, blood proteins (like fibrinogen) clump RBCs together, making them heavier so they settle faster, resulting in an elevated ESR.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What does a high ESR level mean?</strong><br><span data-translate="eduA2">An elevated ESR points to active inflammation in the body. It does not identify the exact source of inflammation, but acts as a diagnostic indicator for infections, autoimmune diseases (rheumatoid arthritis, lupus), tissue damage, or certain malignancies.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">How do reference ranges adapt with age?</strong><br><span data-translate="eduA3">ESR naturally increases with age. For older adults (over 50), the upper normal bound shifts upward (up to 20 mm/hr for men and 30 mm/hr for women). Some clinical formulas estimate this as `Age / 2` for men and `(Age + 10) / 2` for women.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "ESR Analyzer",
+      toolDesc: "Analyze your Erythrocyte Sedimentation Rate (ESR). Evaluate systemic inflammation, infection indexes, or arthritis flags dynamically.",
+      inputsTitle: "🩸 ESR Parameters",
+      clearBtn: "Reset",
+      labelAge: "Age (Years)",
+      labelGender: "Gender",
+      genderMale: "Male",
+      genderFemale: "Female",
+      labelESR: "ESR Value (mm/hr)",
+      btnAnalyze: "Analyze ESR Level",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your age, gender, and ESR value, then click the analyze button to display medical summaries.",
+      reportTitle: "🔬 ESR Diagnostics Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal ESR (No Active Inflammation)",
+      badgeLow: "Low ESR Level",
+      badgeHigh: "Elevated ESR (Moderate Inflammation)",
+      badgeCriticalHigh: "CRITICAL EXTREME INFLAMMATION INDICATOR",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ইএসআর (ESR) বিশ্লেষক",
+      toolDesc: "আপনার ইএসআর (Erythrocyte Sedimentation Rate) এর মাত্রা বিশ্লেষণ করুন। শরীরে প্রদাহ, ইনফেকশন বা বাতের ব্যথার ঝুঁকি ইন্টারেক্টিভ সূচকের সাহায্যে পরীক্ষা করুন।",
+      inputsTitle: "🩸 ইএসআর (ESR) এর পরিমাপক সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelAge: "বয়স (বছর)",
+      labelGender: "লিঙ্গ",
+      genderMale: "পুরুষ",
+      genderFemale: "নারী",
+      labelESR: "ইএসআর মান (mm/hr)",
+      btnAnalyze: "ইএসআর বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার বয়স, লিঙ্গ এবং ইএসআর এর মান লিখুন, তারপর বিশ্লেষণ বোতামটি চাপুন রিপোর্টের সামারি দেখতে।",
+      reportTitle: "🔬 ইএসআর ডায়াগনস্টিক রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক ইএসআর (কোনো তীব্র প্রদাহ নেই)",
+      badgeLow: "নিম্ন ইএসআর মাত্রা",
+      badgeHigh: "উচ্চ ইএসআর মাত্রা (মাঝারি প্রদাহ)",
+      badgeCriticalHigh: "মারাত্মক বা ঝুঁকিপূর্ণ মাত্রার প্রদাহ",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "ईएसआर विश्लेषक",
+      toolDesc: "अपने एरिथ्रोसाइट अवसादन दर (ईएसआर) का विश्लेषण करें। प्रणालीगत सूजन, संक्रमण सूचकांक, या गठिया के लक्षणों का गतिशील रूप से मूल्यांकन करें।",
+      inputsTitle: "🩸 ईएसआर पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelAge: "आयु (वर्ष)",
+      labelGender: "लिंग",
+      genderMale: "पुरुष",
+      genderFemale: "स्त्री",
+      labelESR: "ईएसआर मान (मिमी/घंटा)",
+      btnAnalyze: "ईएसआर स्तर का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपनी आयु, लिंग और ईएसआर मान दर्ज करें, फिर चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 ईएसआर डायग्नोस्टिक्स रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य ईएसआर (कोई सक्रिय सूजन नहीं)",
+      badgeLow: "निम्न ईएसआर स्तर",
+      badgeHigh: "ऊंचा ईएसआर (मध्यम सूजन)",
+      badgeCriticalHigh: "गंभीर अत्यधिक सूजन सूचक",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is an ESR test?", a: "The Erythrocyte Sedimentation Rate (ESR) is an indirect test measuring how quickly red blood cells settle to the bottom of a tube. Faster settlement points to higher inflammation." },
+      { q: "What is a normal ESR level?", a: "For males under 50, normal is under 15 mm/hr. For females under 50, normal is under 20 mm/hr. Older adults have slightly higher limits." },
+      { q: "What causes a high ESR?", a: "Elevations indicate active inflammation, commonly caused by bacterial/viral infections, autoimmune diseases (rheumatoid arthritis, lupus), tissue damage, or cancer." },
+      { q: "What causes a low ESR count?", a: "Low counts are associated with polycythemia (too many RBCs), sickle cell anemia, leukemia, or high blood protein viscosity." },
+      { q: "What are symptoms of high ESR?", a: "Symptoms depend on the cause of inflammation, but often include joint pain/stiffness, headaches, unexplained fever, weight loss, or muscle aches." },
+      { q: "How can I lower my ESR level naturally?", a: "By consuming an anti-inflammatory diet (turmeric, green tea, omega-3 oils, berries), exercising regularly, and managing systemic disease flares." },
+      { q: "Is a high ESR count a definite indicator of cancer?", a: "No. ESR is non-specific. It rises with minor infections, tissue injuries, or aging, and is not a stand-alone test for cancer." },
+      { q: "How does aging affect ESR values?", a: "As you age, levels of blood proteins like fibrinogen naturally increase, causing ESR limits to gradually rise." },
+      { q: "How does pregnancy change ESR limits?", a: "Pregnancy increases blood proteins and dilutes cells, causing ESR to naturally double or rise significantly without indicating patholgical infections." },
+      { q: "What is the difference between ESR and CRP?", a: "Both measure inflammation. CRP (C-Reactive Protein) rises and falls rapidly in response to acute inflammation. ESR responds slower and reflects long-term inflammatory trends." },
+      { q: "Can stress increase ESR?", a: "Severe physical stress or chronic psychological stress can elevate systemic inflammatory cytokines, indirectly raising ESR." },
+      { q: "When is an ESR count considered a critical high?", a: "A level at or exceeding 100 mm/hr is a critical high, strongly suggesting serious underlying diseases like polymyalgia rheumatica, vasculitis, bone infections, or malignancies." },
+      { q: "Do children have different normal ranges?", a: "Yes. Normal pediatric ranges are generally lower (0 - 10 mm/hr) and remain steady from infancy to puberty." },
+      { q: "Does drinking alcohol affect ESR?", a: "Chronic heavy alcohol consumption can trigger liver inflammation or alter blood viscosity, indirectly distorting ESR results." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "ইএসআর (ESR) টেস্ট কী?", a: "ইএসআর হলো রক্ত পরীক্ষার একটি পদ্ধতি যা লোহিত রক্তকণিকা টিউবের নিচে জমা হওয়ার গতি মাপে। দ্রুত জমা হওয়া শরীরে প্রদাহের উপস্থিতি নির্দেশ করে।" },
+      { q: "ইএসআর এর স্বাভাবিক মাত্রা কত?", a: "৫০ বছরের কম পুরুষদের জন্য ১৫ mm/hr এর নিচে এবং ৫০ বছরের কম নারীদের জন্য ২০ mm/hr এর নিচে। বয়স্কদের ক্ষেত্রে স্বাভাবিক মাত্রা কিছুটা বেশি হয়।" },
+      { q: "ইএসআর বৃদ্ধির কারণ কী?", a: "শরীরে প্রদাহের লক্ষণ হিসেবে এটি বাড়ে, যার কারণ হতে পারে ইনফেকশন, বাতের ব্যথা (রিউমাটয়েড আর্থ্রাইটিস), অটোইমিউন রোগ বা লিভারের সমস্যা।" },
+      { q: "ইএসআর হ্রাসের কারণ কী?", a: "রক্তে অতিরিক্ত লোহিত কণিকা থাকা (পলিসাইথেমিয়া), সিকল সেল অ্যানিমিয়া বা রক্তের ঘনত্ব বেড়ে যাওয়া।" },
+      { q: "ইএসআর বেশি হলে কী লক্ষণ দেখা যায়?", a: "প্রদাহের কারণ অনুযায়ী লক্ষণ ভিন্ন হয়, তবে সাধারণ লক্ষণের মধ্যে রয়েছে জোড়ে ব্যথা বা শক্ত ভাব, মাথাব্যহা, জ্বর, ওজন হ্রাস বা পেশীতে ব্যথা।" },
+      { q: "কীভাবে প্রাকৃতিক উপায়ে ইএসআর কমানো যায়?", a: "প্রদাহবিরোধী খাবার (হলুদ, গ্রিন টি, ওমেগা-৩ সমৃদ্ধ তেল) খেয়ে, নিয়মিত ব্যায়াম করে এবং মূল রোগটির সঠিক চিকিৎসা করে।" },
+      { q: "উচ্চ ইএসআর কি ক্যান্সারের নিশ্চিত লক্ষণ?", a: "না। ইএসআর সুনির্দিষ্ট কোনো টেস্ট নয়। সাধারণ সর্দি-কাশি, আঘাত বা বয়সের কারণেও এটি বাড়তে পারে।" },
+      { q: "বয়স কীভাবে ইএসআর কে প্রভাবিত করে?", a: "বয়স বৃদ্ধির সাথে সাথে রক্তের কিছু প্রোটিনের পরিমাণ স্বাভাবিকভাবেই বৃদ্ধি পায়, যা ইএসআর এর স্বাভাবিক সীমা কিছুটা বাড়িয়ে দেয়।" },
+      { q: "গর্ভাবস্থায় ইএসআর এর কী পরিবর্তন হয়?", a: "গর্ভাবস্থায় রক্তের প্রোটিন বেড়ে যাওয়ার কারণে ইএসআর স্বাভাবিকের চেয়ে দ্বিগুণ বা তার বেশি হতে পারে, যা কোনো রোগ নির্দেশ করে না।" },
+      { q: "ইএসআর ও সিআরপি (CRP) এর মধ্যে পার্থক্য কী?", a: "উভয়ই প্রদাহের মাত্রা নির্দেশ করে। তবে সিআরপি তীব্র বা নতুন প্রদাহে দ্রুত বাড়ে ও কমে। ইএসআর ধীরে কাজ করে এবং দীর্ঘমেয়াদী প্রদাহ প্রকাশ করে।" },
+      { q: "মানসিক চাপ কি ইএসআর বাড়াতে পারে?", a: "তীব্র শারীরিক বা মানসিক অবসাদ শরীরে ইনফ্লেমেটরি সাইটোকাইন বাড়িয়ে দিতে পারে, যা পরোক্ষভাবে ইএসআর বাড়ায়।" },
+      { q: "ইএসআর কত বেশি হলে তা মারাত্মক ঝুঁকিপূর্ণ?", a: "ইএসআর ১০০ mm/hr বা তার বেশি হলে তা মারাত্মক ঝুঁকিপূর্ণ বা ইনফেকশনের লক্ষণ হিসেবে ধরা হয় যা রিউম্যাটিক আর্থ্রাইটিস বা টিউমারের সংকেত হতে পারে।" },
+      { q: "শিশুদের ইএসআর স্বাভাবিক মাত্রা কি আলাদা?", a: "হ্যাঁ, শিশুদের ক্ষেত্রে স্বাভাবিক ইএসআর সাধারণত কম থাকে (০ - ১০ mm/hr) এবং বয়ঃসন্ধিকাল পর্যন্ত একই থাকে।" },
+      { q: "মদ্যপান কি ইএসআরকে প্রভাবিত করে?", a: "দীর্ঘমেয়াদী অতিরিক্ত মদ্যপান লিভারে প্রদাহ ঘটাতে পারে বা রক্তের সান্দ্রতা বাড়িয়ে ইএসআর এর মানে তারতম্য ঘটাতে পারে।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই টুলটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "ईएसआर परीक्षण क्या है?", a: "एरिथ्रोसाइट अवसादन दर (ईएसआर) एक अप्रत्यक्ष परीक्षण है जो मापता है कि लाल रक्त कोशिकाएं कितनी जल्दी ट्यूब के नीचे बस जाती हैं। तेजी से निपटान उच्च सूजन की ओर इशारा करता है।" },
+      { q: "सामान्य ईएसआर स्तर क्या है?", a: "50 से कम उम्र के पुरुषों के लिए, सामान्य 15 मिमी/घंटा से कम है। 50 से कम उम्र की महिलाओं के लिए, सामान्य 20 मिमी/घंटा से कम है। बड़े वयस्कों की सीमा थोड़ी अधिक होती है।" },
+      { q: "उच्च ESR का क्या कारण है?", a: "ऊंचाई सक्रिय सूजन का संकेत देती है, जो आमतौर पर बैक्टीरिया/वायरल संक्रमण, ऑटोइम्यून बीमारियो�� (संधिशोथ, ल्यूपस), ऊतक क्षति या कैंसर के कारण होती है।" },
+      { q: "ESR गिनती कम होने का क्या कारण है?", a: "कम गिनती पॉलीसिथेमिया (बहुत अधिक आरबीसी), सिकल सेल एनीमिया, ल्यूकेमिया, या उच्च रक्त प्रोटीन चिपचिपाहट से जुड़ी होती है।" },
+      { q: "उच्च ईएसआर ��े लक्षण क्या हैं?", a: "लक्षण सूजन के कारण पर निर्भर करते हैं, लेकिन अक्सर जोड़ों में दर्द/कठोरता, सिरदर्द, अस्पष्ट बुखार, वजन कम होना या मांसपेशियों में दर्द शामिल होते हैं।" },
+      { q: "मैं अपना ईएसआर स्तर स्वाभाविक रूप से कैसे कम कर सकता हूँ?", a: "सूजन रोधी आहार (हल्दी, हरी चाय, ओ��ेगा-3 तेल, जामुन) का सेवन करके, नियमित रूप से व्यायाम करके, और प्रणालीगत रोग भड़कने का प्रबंधन करके।" },
+      { q: "क्या उच्च ईएसआर गणना कैंसर का एक निश्चित संकेतक है?", a: "नहीं, ईएसआर गैर-विशिष्ट है। यह मामूली संक्रमण, ऊतक की चोटों या उम्र बढ़ने के साथ बढ़ता है, और यह कैंसर के लिए कोई अकेला परीक्षण नहीं है।" },
+      { q: "उम्र बढ़ने का ईएसआर मूल्यों पर क्या प्रभाव पड़ता है?", a: "जैसे-जैसे आपकी उम्र बढ़ती है, फ़ाइब्रिनोजेन जैसे रक्त प्रोटीन का स्तर स्वाभाविक रूप से बढ़ता है, जिससे ईएसआर सीमा धीरे-धीरे बढ़ती है।" },
+      { q: "गर्भावस्था ईएसआर सीमा कैसे बदलती है?", a: "गर्भावस्था रक्त प्रोटीन को बढ़ाती है और कोशिकाओं को पतला करती है, जिससे ईएसआर स्वाभाविक रूप से दोगुना हो जाता है या पैथोलॉजिकल संक्रमण का संकेत दिए बिना काफी बढ़ जाता है।" },
+      { q: "ईएसआर और सीआरपी में क्या अंतर है?", a: "दोनों सूजन को मापते हैं। तीव्र सू���न की प्रतिक्रिया में सीआरपी (सी-रिएक्टिव प्रोटीन) तेजी से बढ़ता और घटता है। ईएसआर धीमी गति से प्रतिक्रिया करता है और दीर्घकालिक सूजन संबंधी प्रवृत्तियों को दर्शाता है।" },
+      { q: "क्या तनाव ESR बढ़ा सकता है?", a: "गंभीर शारीरिक तनाव या दीर्घकालिक मनोवैज्ञानिक तनाव प्रणालीगत सूजन साइटोकिन्स को बढ़ा सकता है, जिससे अप्रत्यक्ष रूप से ईएसआर बढ़ सकता है।" },
+      { q: "ESR गिनती को कब गंभीर उच्च माना जाता है?", a: "100 मिमी/घंटा पर या उससे अधिक का स्तर एक गंभीर उच्च है, जो दृ��़ता से पॉलीमायल्जिया रुमेटिका, वास्कुलिटिस, हड्डी में संक्रमण, या घातक बीमारियों जैसी गंभीर अंतर्निहित बीमारियों का सुझाव देता है।" },
+      { q: "क्या बच्चों की सामान्य सीमाएँ अलग-अलग होती हैं?", a: "हाँ। सामान्य बाल चिकित्सा सीमा आम तौर पर कम (0 - 10 मिमी/घंटा) होती है और शैशवावस्था से यौवन तक स्थिर रहती है।" },
+      { q: "क्या शराब पीने से ESR प्रभावित होता है?", a: "लगातार भारी शराब के सेवन से लीवर में सूजन हो सकती है या रक्त की चिपचिपाहट में बदलाव हो सकता है, जिससे अप्रत्यक्ष रूप से ईएसआर परिणाम विकृत हो सकते हैं।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const esrInsights = {
+    en: {
+      normal: {
+        desc: "Your ESR level is completely within the normal range for your demographic profile. This suggests no active systemic inflammation, acute bacterial infections, or major flare-ups of chronic autoimmune diseases. Maintain your active lifestyle.",
+        causes: ["No active systemic inflammatory processes", "Normal levels of plasma proteins", "Healthy aging curves"],
+        symptoms: ["No unexplained joint pains", "No persistent low-grade fevers", "Normal muscle function"],
+        prevention: ["Eat an anti-inflammatory diet (berries, fatty fish, olive oil)", "Manage daily stress levels", "Exercise moderately to keep joints mobile"],
+        consult: "Regular annual health screenings are recommended to monitor long-term trends."
+      },
+      low: {
+        desc: "Your ESR level is low. In clinical settings, low ESR (near 0) is generally healthy, but extreme lows can sometimes be linked to viscosity changes or red cell abnormalities.",
+        causes: ["Polycythemia (excess red cells)", "Sickle cell anemia or cell shape variants", "High white cell counts", "Low plasma proteins"],
+        symptoms: ["Often asymptomatic", "Symptoms of underlying blood viscosity issues if present"],
+        prevention: ["Maintain proper hydration", "Seek routine clinical evaluations"],
+        consult: "No immediate action is needed unless accompanied by abnormal RBC or WBC counts."
+      },
+      high: {
+        desc: "Your ESR level is elevated, indicating active systemic inflammation. The body is producing acute-phase proteins that speed up red cell settling. This requires clinical context to evaluate.",
+        causes: ["Infections (bacterial, viral, localized)", "Rheumatoid arthritis or lupus flare-ups", "Tissue injury or recent bone trauma", "Anemia or iron deficiency"],
+        symptoms: ["Joint pain, stiffness, or swelling", "Persistent low-grade fever or chills", "Muscle aches or unexplained fatigue", "Unexplained weight loss"],
+        prevention: ["Focus on anti-inflammatory diet (rich in antioxidants, turmeric, ginger)", "Stay hydrated with clean water", "Treat underlying infections under medical supervision"],
+        consult: "Consult a general physician to screen for active infections, anemia, or evaluate chronic joint discomfort."
+      },
+      criticalHigh: {
+        desc: "Your ESR is critically high (at or above 100 mm/hr). This indicates intense systemic inflammation or serious autoimmune/tissue reactions that require urgent investigation.",
+        causes: ["Polymyalgia Rheumatica or Giant Cell Arteritis (severe inflammation of vessels)", "Severe bone or heart valve infection (osteomyelitis, endocarditis)", "Systemic autoimmune flare-up", "Malignancies (multiple myeloma, lymphoma)"],
+        symptoms: ["Severe joint or muscle stiffness (especially in morning)", "Severe headaches or jaw pain while chewing", "Persistent high fevers", "Severe fatigue and weakness"],
+        prevention: ["Avoid intense physical strain", "Follow emergency clinical protocols"],
+        consult: "⚠️ Seek immediate medical evaluation. Further specific tests (like CRP, ANA, or imaging) are urgently required to diagnose the primary cause."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার ইএসআর (ESR) এর মাত্রা সম্পূর্ণ স্বাভাবিক সীমার মধ্যে রয়েছে। এটি নির্দেশ করে যে আপনার শরীরে কোনো তীব্র প্রদাহ, সংক্রমণ বা ক্রনিক অটোইমিউন রোগ সক্রিয় অবস্থায় নেই। আপনার স্বাস্থ্যকর জীবনযাত্রা বজায় রাখুন।",
+        causes: ["শরীরে প্রদাহের অনুপস্থিতি", "রক্তের প্রোটিনের স্বাভাবিক অনুপাত", "স্বাভাবিক শারীরিক সুস্থতা"],
+        symptoms: ["জোড়ে কোনো ব্যথা না থাকা", "টানা বা অস্বাভাবিক জ্বর না থাকা", "স্বাভাবিক পেশীর কার্যকারিতা"],
+        prevention: ["প্রদাহবিরোধী খাবার খান (যেমন কালোজিরা, ওমেগা-৩ যুক্ত তেল, লেবু)", "মানসিক চাপ নিয়ন্ত্রণ করুন", "জয়েন্টগুলো সচল রাখতে নিয়মিত ব্যায়াম করুন"],
+        consult: "দীর্ঘমেয়াদী রক্তস্বাস্থ্য ট্র্যাক করতে বছরে অন্তত একবার রুটিন ব্লাড স্ক্রীনিং করা ভালো।"
+      },
+      low: {
+        desc: "আপনার ইএসআর মাত্রা নিম্নমুখী। সাধারণত ০ এর কাছাকাছি ইএসআর ক্ষতিকর নয়, তবে এটি রক্তের অতিরিক্ত ঘনত্ব বা কোষের গঠনগত পরিবর্তনের সাথে জড়িত হতে পারে।",
+        causes: ["রক্তে অতিরিক্ত লোহিত কোষের উপস্থিতি (পলিসাইথেমিয়া)", "সিকল সেল অ্যানিমিয়া", "রক্তে অতিরিক্ত শ্বেত কোষ থাকা"],
+        symptoms: ["সাধারণত কোনো লক্ষণ থাকে না", "রক্ত অতিরিক্ত ঘন হলে সাময়িক মাথা ঘোরানো"],
+        prevention: ["পর্যাপ্ত পানি পান করুন", "রুটিন শারীরিক পরীক্ষা করুন"],
+        consult: "যদি আরবিসি বা ডাব্লিউবিসি রিপোর্টে কোনো সমস্যা না থাকে, তবে নিম্ন ইএসআর নিয়ে চিন্তার কারণ নেই।"
+      },
+      high: {
+        desc: "আপনার ইএসআর মাত্রা উচ্চ, যা শরীরে সক্রিয় প্রদাহের লক্ষণ। ইনফেকশন বা বাতের ব্যথার কারণে রক্তের প্রোটিন বেড়ে লাল কণিকাগুলোকে টিউবের নিচে দ্রুত টেনে নিচ্ছে।",
+        causes: ["শরীরে কোনো ইনফেকশন বা সংক্রমণ", "বাতের ব্যথা (রিউমাটয়েড আর্থ্রাইটিস বা লুপাস)", "টিস্যুর আঘাত বা ক্ষত", "রক্তস্বল্পতা"],
+        symptoms: ["জোড়ে ব্যথা, শক্ত ভাব বা ফোলা ভাব", "মৃদু জ্বর বা কাঁপুনি", "পেশীতে ব্যথা বা অতিরিক্ত ক্লান্তি অনুভব করা", "ওজন হ্রাস"],
+        prevention: ["প্রদাহবিরোধী খাবার বেশি খান (অ্যান্টিঅক্সিডেন্ট সমৃদ্ধ ফল, আদা, হলুদ)", "পর্যাপ্ত পানি পান করুন", "ডাক্তারের পরামর্শ অনুযায়ী ইনফেকশনের সঠিক চিকিৎসা নিন"],
+        consult: "বাতের ব্যথা, দীর্ঘস্থায়ী ইনফেকশন বা রক্তস্বল্পতা পরীক্ষা করতে একজন ডাক্তারের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার ইএসআর মারাত্মক উচ্চ (১০০ mm/hr বা তার বেশি)। এটি শরীরে তীব্র সংক্রমণ, গুরুতর রক্তনালীর প্রদাহ বা কোনো জটিল রোগের সংকেত দেয় যা দ্রুত পরীক্ষা করা প্রয়োজন।",
+        causes: ["রক্তনালীর তীব্র প্রদাহ (Polymyalgia Rheumatica / Arteritis)", "হাড়ের সংক্রমণ (অস্টিওমাইলাইটিস) বা হার্টের ভাল্বের সংক্রমণ", "গুরুতর অটোইমিউন রোগ", "টিউমার বা লিম্ফোমা"],
+        symptoms: ["সকালে ঘুম থেকে ওঠার পর তীব্র জয়েন্ট বা পেশীর শক্ত ভাব", "মাথাব্যহা বা খাবার চিবানোর সময় চোয়ালে ব্যথা", "টানা উচ্চ জ্বর", "চরম ক্লান্তি ও অবসাদ"],
+        prevention: ["ভারী শারীরিক পরিশ্রম বন্ধ রাখুন", "ডাক্তারের সরাসরি তত্ত্বাবধানে থাকুন"],
+        consult: "⚠️ অবিলম্বে একজন বিশেষজ্ঞ ডাক্তারের শরণাপন্ন হোন। সঠিক রোগ নির্ণয়ের জন্য সিআরপি (CRP), এএনএ (ANA) বা ইমেজিং পরীক্ষাগুলোর প্রয়োজন হবে।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका ईएसआर स्तर आपकी जनसांख्यिकीय प्रोफ़ाइल के लिए पूरी तरह से सामान्य सीमा के भीतर है। इससे पता चलता है कि कोई सक्रिय प्रणालीगत सूजन, तीव्र जीवाणु संक्रमण या पुरानी ऑटोइम्यून बीमारियों का प्रमुख प्रकोप नहीं है। अपनी सक्रिय जीवनशैली बनाए रखें.",
+        causes: ["कोई सक्रिय प्रणालीगत सूजन प्रक्रिया नहीं", "प्लाज्मा प्रोटीन का सामान्य स्तर", "स्वस्थ उम्र बढ़ने वाले वक्र"],
+        symptoms: ["कोई अस्पष्टीकृत जोड़ों का दर्द नहीं", "लगातार निम्न श्रेणी का बुखार नहीं", "सामान्य मांसपेशीय कार्य"],
+        prevention: ["सूजनरोधी आहार लें (जामुन, वसायुक्त मछली, जैतून का तेल)", "दैनिक तनाव के स्तर को प्रबंधित करें", "जोड़ों को गतिशील बनाए रखने के लिए मध्यम व्यायाम करें"],
+        consult: "दीर्घकालिक रुझानों पर नज़र रखने के लिए नियमित वार्षिक स्���ास्थ्य जांच की सिफारिश की जाती है।"
+      },
+      low: {
+        desc: "आपका ESR लेवल कम है. नैदानिक ​​​​सेटिंग्स में, कम ईएसआर (0 के करीब) आम तौर पर स्वस्थ होता है, लेकिन अत्यधिक गिरावट को कभी-कभी चिपचिपाहट में बदलाव या लाल कोशिका असामान्यताओं से जोड़ा जा सकता है।",
+        causes: ["पॉलीसिथेमिया (अतिरिक्त लाल कोशिकाएं)", "सिकल सेल एनीमिया या कोशिका आकार प्रकार", "उच्च श्वेत कोशिका गिनती", "कम प्लाज्मा प्रोटीन"],
+        symptoms: ["अक्सर लक्षणरहित", "अंतर्निहित रक्त चिपचिपापन समस्याओं के लक्ष�� यदि मौजूद हों"],
+        prevention: ["उचित जलयोजन बनाए रखें", "नियमित नैदानिक ​​मूल्यांकन की तलाश करें"],
+        consult: "जब तक असामान्य आरबीसी या डब्लूबीसी गिनती न हो, तब तक किसी तत्काल कार्रवाई की आवश्यकता नहीं है।"
+      },
+      high: {
+        desc: "आपका ईएसआर स्तर ऊंचा है, जो सक्रिय प्रणालीगत सूजन का संकेत देता है। शरीर तीव्र-चरण प्रोटीन का उत्पादन कर रहा है जो लाल कोशिका के निपटान की गति बढ़ाता है। इसके मूल्यांकन के लिए नैदानिक ​​संदर्भ की आवश्यकता होती है।",
+        causes: ["संक्रमण (जीवाणु, वायरल, स्थानीयकृत)", "रुमेटीइड गठिया या ल्यूपस फ्लेयर-अप", "ऊतक की चोट या हाल ही में हड्डी का आघात", "एनीमिया या आयरन की कमी"],
+        symptoms: ["��ोड़ों का दर्द, अकड़न या सूजन", "लगातार निम्न श्रेणी का बुखार या ठंड लगना", "मांसपेशियों में दर्द या अस्पष्ट थकान", "अस्पष्टीकृत वजन घटना"],
+        prevention: ["सूजन रोधी आहार (एंटीऑक्सीडेंट, हल्दी, अदरक से भरपूर) पर ध्यान दें", "साफ पानी से हाइड्रेटेड रहें", "चिकित्सकीय देखरेख में अंतर्निहित संक्रमण का इलाज करें"],
+        consult: "सक्रिय संक्रमण, एनीमिया की जांच करने या पुरानी संयुक्त परेशानी का मूल्यांकन करने के लिए एक सामान्य चिकित्सक से परामर्श लें।"
+      },
+      criticalHigh: {
+        desc: "आपका ईएसआर गंभीर रूप से उच्च (100 मिमी/घंटा या उससे ऊपर) है। यह तीव्र प्रणालीगत सूजन या गंभीर ऑटोइम्यून/ऊतक प्रतिक्रियाओं को इंगित करता है जिसके लिए तत्काल जांच की आवश्यकता होती है।",
+        causes: ["पॉलीमायल्जिया रुमेटिका या जाइंट सेल आर्टेराइटिस (वाहिकाओं की गंभीर सूजन)", "गंभीर हड्डी या हृदय वाल्व संक्रमण (ऑस्टियोमाइलाइटिस, एंडोकार्डिटिस)", "प्रणालीगत ऑटोइम्यून भड़कना", "घातक रोग (मल्टीपल मायलोमा, लिंफोमा)"],
+        symptoms: ["गंभीर जोड़ या मांसपेशियों में अकड़न (विशेषकर सुबह के समय)", "चबाते समय गंभीर सिरदर्द या जबड़े में दर्द", "लगातार तेज बुखार रहना", "गंभीर थकान और कमजोरी"],
+        prevention: ["तीव्र शारीरिक तनाव से बचें", "आपातकालीन क्लिनिकल प्रोटोकॉल का पालन करें"],
+        consult: "⚠️ तत्काल चिकित्सा मूल्यांकन की मांग करें। प्राथमिक कारण का निदान करने के लिए अतिरिक्त विशिष्ट परीक्षण (जैसे सीआरपी, एएनए, या इमेजिंग) की तत्काल आवश्यकता है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-esr-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateActiveTicks();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("patientAge").value = "30";
+    document.getElementById("patientGender").value = "male";
+    document.getElementById("valESR").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits(age, gender) {
+    let limits = { min: 0, max: 15, criticalMin: 0, criticalMax: 100 };
+
+    if (age < 12) {
+      limits.max = 10;
+    } else {
+      if (gender === "female") {
+        limits.max = age >= 50 ? 30 : 20;
+      } else {
+        limits.max = age >= 50 ? 20 : 15;
+      }
+    }
+    return limits;
+  }
+
+  function updateActiveTicks() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    const limits = getReferenceLimits(age, gender);
+    
+    document.getElementById("tickNormalRange").textContent = `0 - ${limits.max} mm/hr (${currentLang === "en" ? "Normal" : "স্বাভাবিক"})`;
+  }
+
+  document.getElementById("patientAge").oninput = updateActiveTicks;
+  document.getElementById("patientGender").onchange = updateActiveTicks;
+
+  function analyzeESR() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    const valESR = parseFloat(document.getElementById("valESR").value);
+
+    if (isNaN(valESR) || valESR < 0) {
+      alert(currentLang === "en" ? "Please enter a valid ESR value." : "দয়া করে ইএসআর এর একটি সঠিক মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits(age, gender);
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valESR > limits.max) {
+      if (valESR >= limits.criticalMax) {
+        statusKey = "criticalHigh";
+        badgeKey = "badgeCriticalHigh";
+      } else {
+        statusKey = "high";
+        badgeKey = "badgeHigh";
+      }
+    } else if (valESR < 0) {
+      statusKey = "low";
+      badgeKey = "badgeLow";
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 20;
+    if (valESR <= limits.max) {
+      pointerPct = limits.max > 0 ? 5 + (valESR / limits.max) * 35 : 20;
+    } else {
+      const range = limits.criticalMax - limits.max;
+      pointerPct = range > 0 ? Math.min(95, 40 + ((valESR - limits.max) / range) * 55) : 80;
+    }
+
+    activeReportData = {
+      age,
+      gender,
+      date: new Date().toLocaleDateString(),
+      valESR,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valESR);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resAge").textContent = d.age;
+    const genderKey = d.gender === "male" ? "genderMale" : "genderFemale";
+    document.getElementById("resGender").textContent = translations[currentLang][genderKey];
+    document.getElementById("resDate").textContent = d.date;
+
+    document.getElementById("resEsrVal").textContent = d.valESR;
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey.startsWith("critical")) colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resEsrVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = esrInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.causes.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valESR) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valESR,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-esr-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valESR} mm/hr (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- ESR DIAGNOSTIC REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Age: ${activeReportData.age} | Gender: ${activeReportData.gender}\n`;
+    t += `Value: ${activeReportData.valESR} mm/hr (Ref: 0-${activeReportData.limits.max} mm/hr)\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `esr-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

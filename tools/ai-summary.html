@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Text Summarizer &bull; Free Summarize Tool - SSDK TOOLS HUB</title>
+  <meta name="description" content="Summarize articles, essays, and long documents instantly. 100% secure client-side extractive summarizer with configurable summary lengths.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .stats-bar {
+      display: flex;
+      gap: 14px;
+      margin-top: 14px;
+    }
+    .stat-badge {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .stat-badge strong {
+      color: var(--accent);
+    }
+    .summary-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      min-height: 180px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: var(--text);
+    }
+    .summary-box ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .summary-box li {
+      margin-bottom: 8px;
+    }
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 600px) {
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .input-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .input-group select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .entity-tag {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    .entity-tag:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: scale(1.03);
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">AI Text Summarizer</h1>
+  <p class="page-sub">Condense long articles and paragraphs into key takeaways instantly and securely offline.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    
+    <div class="tool-io" style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; align-items: start;">
+      
+      <!-- Left Column: Inputs -->
+      <div>
+        <div class="input-row">
+          <div class="input-group">
+            <label for="summaryLength">Summary Length</label>
+            <select id="summaryLength">
+              <option value="3">Short (3 Sentences)</option>
+              <option value="5" selected>Medium (5 Sentences)</option>
+              <option value="8">Long (8 Sentences)</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="summaryFormat">Summary Format</label>
+            <select id="summaryFormat">
+              <option value="paragraph" selected>Standard Paragraph</option>
+              <option value="bullets">Key Takeaways (Bullet Points)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="textInput">Enter Article/Text (Minimum 5 sentences recommended)</label>
+          <textarea id="textInput" rows="10" placeholder="Paste your text document here..." style="font-size: 0.85rem;"></textarea>
+        </div>
+      </div>
+
+      <!-- Right Column: Results -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 350px; display: flex; flex-direction: column; justify-content: center;">
+        
+        <div id="resultsWrapper" style="display: none;">
+          <h4 style="margin-bottom: 8px;">Condensed Summary</h4>
+          
+          <div class="summary-box" id="summaryOutput">
+          </div>
+
+          <div class="stats-bar">
+            <div class="stat-badge">Original: <strong id="origWords">0</strong> words</div>
+            <div class="stat-badge">Summary: <strong id="sumWords">0</strong> words</div>
+            <div class="stat-badge" id="reductionBadge">Reduced: <strong>0%</strong></div>
+          </div>
+
+          <h4 style="margin-top: 18px; margin-bottom: 8px;">Key Facts & Entities <span style="font-size:0.7rem; color:var(--muted); font-weight:normal;">(Click tags to copy)</span></h4>
+          <div id="entitiesOutput" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 14px;">
+            <button class="btn" id="btnCopy" style="flex: 1.2; background: var(--grad2);">📋 Copy Summary</button>
+            <button class="btn ghost" id="btnDownload" style="flex: 1;">Download Text</button>
+          </div>
+        </div>
+
+        <div id="resultsPlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Paste an article inside the editor to process AI-driven summaries.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnSummarize">📊 Summarize Text</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b; display: none;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none; text-align: center;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Extractive NLP Algorithm:</strong> Scores sentence value based on localized term frequencies relative to overall content size.</li>
+      <li><strong>Paragraph / Bullet Toggle:</strong> Format the results into clean narrative descriptions or direct key takeaway checklists.</li>
+      <li><strong>Preserves Chronology:</strong> Re-orders high-value sentences back into their sequence of appearance, safeguarding argument flows.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-list content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-item">
+      <div class="faq-q">What is extractive summarization?<span>＋</span></div>
+      <div class="faq-a">Extractive summarization is an NLP technique that identifies and extracts the most key sentences directly from the source text. Unlike abstractive summarization (which rewrites text), extractive methods preserve the exact wording and quotes, ensuring no artificial distortions are introduced.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Does this tool upload my texts online?<span>＋</span></div>
+      <div class="faq-a">No. The text parser operates entirely in-memory using client-side JavaScript. This ensures 100% data security, privacy, and zero data leakage.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  // Common stop words to exclude from calculations
+  const stopWords = new Set([
+    'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves',
+    'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their',
+    'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are', 'was',
+    'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'a', 'an', 'the',
+    'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against',
+    'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in',
+    'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why',
+    'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only',
+    'own', 'same', 'so', 'than', 'too', 'very', 'can', 'will', 'just', 'should', 'now'
+  ]);
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  $('btnSummarize').onclick = () => {
+    const textVal = $('textInput').value.trim();
+    if (!textVal) {
+      showStatus('Please enter some text to summarize.', true);
+      return;
+    }
+
+    const sentencesLimit = parseInt($('summaryLength').value);
+    const format = $('summaryFormat').value;
+
+    showStatus('Analyzing document structure...');
+
+    // 1. Sentence splitting: smart regex splits by punctuation followed by space/newlines
+    const rawSentences = textVal.split(/[.!?]\s+|\n+/).map(s => s.trim()).filter(s => s.length > 5);
+
+    if (rawSentences.length < 2) {
+      showStatus('The text is too short. Please provide at least 2 complete sentences.', true);
+      return;
+    }
+
+    // 2. Compute word frequencies
+    const wordFreq = {};
+    const normalizedWords = textVal.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'’]/g, "").split(/\s+/);
+    
+    let totalWordCount = 0;
+    normalizedWords.forEach(w => {
+      if (w.length > 2 && !stopWords.has(w)) {
+        wordFreq[w] = (wordFreq[w] || 0) + 1;
+        totalWordCount++;
+      }
+    });
+
+    // 3. Score sentences based on word frequencies
+    const scoredSentences = rawSentences.map((sentence, index) => {
+      const words = sentence.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'’]/g, "").split(/\s+/);
+      let score = 0;
+      words.forEach(w => {
+        if (wordFreq[w]) {
+          score += wordFreq[w];
+        }
+      });
+      return { sentence, score, index };
+    });
+
+    // 4. Sort sentences by score descending to get high-value sentences
+    const sorted = [...scoredSentences].sort((a, b) => b.score - a.score);
+
+    // Grab top N sentences
+    const limit = Math.min(sentencesLimit, rawSentences.length);
+    const topSentences = sorted.slice(0, limit);
+
+    // 5. Sort top sentences by original index to keep chronological arguments intact
+    topSentences.sort((a, b) => a.index - b.index);
+
+    // 6. Format output
+    const outputDiv = $('summaryOutput');
+    outputDiv.innerHTML = '';
+
+    if (format === 'paragraph') {
+      const summaryText = topSentences.map(s => s.sentence + '.').join(' ');
+      outputDiv.textContent = summaryText;
+    } else {
+      const ul = document.createElement('ul');
+      topSentences.forEach(s => {
+        const li = document.createElement('li');
+        li.textContent = s.sentence + '.';
+        ul.appendChild(li);
+      });
+      outputDiv.appendChild(ul);
+    }
+
+    // Stats calculations
+    const origWordCount = textVal.split(/\s+/).filter(w => w.length > 0).length;
+    const sumWordCount = outputDiv.textContent.split(/\s+/).filter(w => w.length > 0).length;
+    const reduction = Math.round((1 - (sumWordCount / origWordCount)) * 100);
+
+    $('origWords').textContent = origWordCount.toLocaleString();
+    $('sumWords').textContent = sumWordCount.toLocaleString();
+    $('reductionBadge').firstChild.textContent = `Reduced: ${reduction}%`;
+
+    // Extract and render key facts / entities
+    const entities = extractEntities(textVal);
+    const entContainer = $('entitiesOutput');
+    entContainer.innerHTML = '';
+    if (entities.length === 0) {
+      entContainer.innerHTML = `<span style="color:var(--muted); font-size:0.8rem;">No key entities detected.</span>`;
+    } else {
+      entities.forEach(ent => {
+        const span = document.createElement('span');
+        span.className = 'entity-tag';
+        span.textContent = ent;
+        span.onclick = () => copyEntity(ent);
+        entContainer.appendChild(span);
+      });
+    }
+
+    $('resultsPlaceholder').style.display = 'none';
+    $('resultsWrapper').style.display = 'block';
+    $('btnClear').style.display = 'inline-flex';
+    showStatus('✅ Summary compiled successfully!');
+  };
+
+  function extractEntities(text) {
+    const entities = new Set();
+    
+    // 1. Extract Dates
+    const dateRegex = /\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:,\s+\d{4})?\b/gi;
+    let match;
+    while ((match = dateRegex.exec(text)) !== null) {
+      entities.add(match[0]);
+    }
+    
+    // Extract Years
+    const yearRegex = /\b(19\d{2}|20\d{2})\b/g;
+    while ((match = yearRegex.exec(text)) !== null) {
+      entities.add(match[0]);
+    }
+
+    // 2. Extract Metrics/Values
+    const metricRegex = /\b\d+(?:\.\d+)?%\b|\b[$€£¥]\d+(?:\.\d+)?\b|\b\d+(?:\.\d+)?\s*(?:million|billion|percent|units)\b/gi;
+    while ((match = metricRegex.exec(text)) !== null) {
+      entities.add(match[0]);
+    }
+
+    // 3. Extract Capitalized Named Entities (proper nouns)
+    // Build set of sentence starting words (to avoid capturing common words starting a sentence)
+    const sentenceStarters = new Set();
+    const sentences = text.split(/[.!?]\s+/);
+    sentences.forEach(s => {
+      const firstWord = s.trim().match(/^[A-Z][a-z]+/);
+      if (firstWord) {
+        sentenceStarters.add(firstWord[0].toLowerCase());
+      }
+    });
+
+    const namedRegex = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b/g;
+    while ((match = namedRegex.exec(text)) !== null) {
+      const entity = match[0];
+      const words = entity.split(/\s+/);
+      if (words.length === 1) {
+        const lower = entity.toLowerCase();
+        if (stopWords.has(lower)) continue;
+        if (sentenceStarters.has(lower)) {
+          // Verify if it is repeated elsewhere in the text
+          const occurrences = (text.match(new RegExp('\\b' + entity + '\\b', 'g')) || []).length;
+          if (occurrences <= 1) continue;
+        }
+      }
+      entities.add(entity);
+    }
+
+    return Array.from(entities).slice(0, 15);
+  }
+
+  window.copyEntity = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      showStatus(`📋 Copied entity "${text}" to clipboard!`);
+    });
+  };
+
+  $('btnCopy').onclick = () => {
+    const text = $('summaryOutput').textContent;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      showStatus('📋 Summary copied to clipboard!');
+    });
+  };
+
+  $('btnDownload').onclick = () => {
+    const text = $('summaryOutput').textContent;
+    if (!text) return;
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'text-summary.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showStatus('✅ Summary file downloaded successfully!');
+  };
+
+  $('btnClear').onclick = () => {
+    $('textInput').value = '';
+    $('summaryOutput').innerHTML = '';
+    $('entitiesOutput').innerHTML = '';
+    $('resultsPlaceholder').style.display = 'block';
+    $('resultsWrapper').style.display = 'none';
+    $('btnClear').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BMI Calculator &bull; Free Body Mass Index - SSDK TOOLS HUB</title>
+  <meta name="description" content="Calculate your Body Mass Index (BMI) instantly in your browser. Supports both metric and imperial units with a visual weight category indicator.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .unit-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .unit-tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--bg2);
+      font-weight: 700;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+      color: var(--muted);
+    }
+    .unit-tab.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .input-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .input-group input {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: border 0.3s;
+    }
+    .input-group input:focus {
+      border-color: var(--accent);
+    }
+    .dual-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .gauge-container {
+      margin: 20px 0 15px;
+      position: relative;
+    }
+    .gauge-bar {
+      height: 16px;
+      border-radius: 30px;
+      background: linear-gradient(to right, #3498db 0%, #2ecc71 30%, #f1c40f 65%, #e74c3c 100%);
+      position: relative;
+    }
+    .gauge-pointer {
+      width: 14px;
+      height: 14px;
+      background: var(--text);
+      border: 2px solid var(--bg1);
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+    .gauge-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .health-tip-box {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 8px;
+      background: var(--bg2);
+      border-left: 4px solid var(--border);
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+    .bmi-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 0.85rem;
+    }
+    .bmi-table th, .bmi-table td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .bmi-table th {
+      color: var(--muted);
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">BMI Calculator</h1>
+  <p class="page-sub">Quickly compute your Body Mass Index (BMI) to understand your health classifications.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 24px; align-items: start;">
+      
+      <!-- Left Column: Inputs -->
+      <div>
+        <h4 style="margin-bottom: 12px;">Enter Physical Metrics</h4>
+        
+        <div class="unit-selector">
+          <div class="unit-tab active" id="tabMetric" onclick="setUnit('metric')">Metric (kg/cm)</div>
+          <div class="unit-tab" id="tabImperial" onclick="setUnit('imperial')">Imperial (lbs/ft-in)</div>
+        </div>
+
+        <!-- Metric Inputs -->
+        <div id="metricInputs">
+          <div class="input-group" style="margin-bottom: 14px;">
+            <label for="heightCm">Height (cm)</label>
+            <input type="number" id="heightCm" placeholder="e.g. 175" min="30" max="300">
+          </div>
+          <div class="input-group" style="margin-bottom: 14px;">
+            <label for="weightKg">Weight (kg)</label>
+            <input type="number" id="weightKg" placeholder="e.g. 70" min="5" max="500">
+          </div>
+        </div>
+
+        <!-- Imperial Inputs -->
+        <div id="imperialInputs" style="display: none;">
+          <div class="input-group" style="margin-bottom: 14px;">
+            <label>Height</label>
+            <div class="dual-inputs">
+              <input type="number" id="heightFt" placeholder="Feet" min="1" max="10">
+              <input type="number" id="heightIn" placeholder="Inches" min="0" max="11">
+            </div>
+          </div>
+          <div class="input-group" style="margin-bottom: 14px;">
+            <label for="weightLbs">Weight (lbs)</label>
+            <input type="number" id="weightLbs" placeholder="e.g. 150" min="10" max="1000">
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Results & Interactive Gauge -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 250px; display: flex; flex-direction: column; justify-content: center;">
+        
+        <div id="bmiOutputContainer" style="display: none;">
+          <h4 style="margin-bottom: 4px; text-align: center; color: var(--muted);">Your BMI Score</h4>
+          <h2 id="bmiScore" style="text-align: center; font-size: 2.8rem; font-weight: 900; margin: 0; line-height: 1.1;">-</h2>
+          <p id="bmiCategory" style="text-align: center; font-weight: 800; font-size: 1.1rem; margin: 6px 0 16px; text-transform: uppercase;">-</p>
+          
+          <div class="gauge-container">
+            <div class="gauge-bar">
+              <div class="gauge-pointer" id="gaugePointer" style="left: 0%;"></div>
+            </div>
+            <div class="gauge-labels">
+              <span>Underweight (<18.5)</span>
+              <span>Normal (18.5-25)</span>
+              <span>Overweight (25-30)</span>
+              <span>Obese (30+)</span>
+            </div>
+          </div>
+
+          <div class="health-tip-box" id="healthTipBox">
+            <strong id="healthTipTitle" style="display: block; margin-bottom: 4px;">Health Tip:</strong>
+            <span id="healthTipText">-</span>
+          </div>
+        </div>
+
+        <div id="bmiPlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Enter your height and weight parameters to view your BMI category and health overview.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnCalc">⚖️ Calculate BMI</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Reference Chart Section -->
+  <div class="content-card">
+    <h3>Standard BMI Categories</h3>
+    <table class="bmi-table">
+      <thead>
+        <tr>
+          <th>BMI Range</th>
+          <th>Weight Classification</th>
+          <th>Health Risk Rating</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="color: #3498db;">
+          <td>Below 18.5</td>
+          <td>Underweight</td>
+          <td>Minimal to Moderate (Nutritional deficiency risk)</td>
+        </tr>
+        <tr style="color: #2ecc71;">
+          <td>18.5 – 24.9</td>
+          <td>Normal Weight</td>
+          <td>Very Low (Ideal range)</td>
+        </tr>
+        <tr style="color: #f1c40f;">
+          <td>25.0 – 29.9</td>
+          <td>Overweight</td>
+          <td>Increased risk of chronic issues</td>
+        </tr>
+        <tr style="color: #e74c3c;">
+          <td>30.0 and above</td>
+          <td>Obese</td>
+          <td>High risk (Cardiovascular, diabetes, etc.)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Standard Conversions:</strong> Switch dynamically between Metric (cm/kg) and Imperial (in/lbs) units.</li>
+      <li><strong>Aesthetic Indicator Gauge:</strong> Instant visual feedback showing precisely where your weight category falls.</li>
+      <li><strong>Actionable Health Tips:</strong> Provides relevant recommendations based on your calculated score.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">What is Body Mass Index (BMI)?<span>＋</span></div>
+        <div class="faq-a">Body Mass Index (BMI) is a simple estimate of body fat level based on an individual's height and weight. It is widely used by healthcare practitioners to quickly screen for potential weight-related risks.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Is BMI accurate for everyone?<span>＋</span></div>
+        <div class="faq-a">No. BMI has limitations because it does not directly measure body fat percentage or body composition. For example, athletes with high muscle mass may be classified as "overweight" or "obese" despite having very low body fat. It is best used as a general indicator rather than a comprehensive diagnosis.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let currentUnit = 'metric';
+
+  function setUnit(unit) {
+    currentUnit = unit;
+    if (unit === 'metric') {
+      $('tabMetric').classList.add('active');
+      $('tabImperial').classList.remove('active');
+      $('metricInputs').style.display = 'block';
+      $('imperialInputs').style.display = 'none';
+    } else {
+      $('tabMetric').classList.remove('active');
+      $('tabImperial').classList.add('active');
+      $('metricInputs').style.display = 'none';
+      $('imperialInputs').style.display = 'block';
+    }
+  }
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  $('btnCalc').onclick = () => {
+    let height = 0; // In meters or inches
+    let weight = 0; // In kg or lbs
+    let bmi = 0;
+
+    if (currentUnit === 'metric') {
+      const hCm = parseFloat($('heightCm').value);
+      const wKg = parseFloat($('weightKg').value);
+
+      if (!hCm || hCm <= 0 || !wKg || wKg <= 0) {
+        showStatus('Please enter valid height and weight values.', true);
+        return;
+      }
+
+      height = hCm / 100;
+      weight = wKg;
+      bmi = weight / (height * height);
+    } else {
+      const ft = parseFloat($('heightFt').value) || 0;
+      const inch = parseFloat($('heightIn').value) || 0;
+      const wLbs = parseFloat($('weightLbs').value);
+
+      if ((ft <= 0 && inch <= 0) || !wLbs || wLbs <= 0) {
+        showStatus('Please enter valid height and weight values.', true);
+        return;
+      }
+
+      height = (ft * 12) + inch;
+      weight = wLbs;
+      bmi = (weight / (height * height)) * 703;
+    }
+
+    bmi = Math.round(bmi * 10) / 10;
+    
+    // Set UI
+    $('bmiScore').textContent = bmi.toFixed(1);
+    
+    // Category & Recommendations
+    let cat = '';
+    let color = '';
+    let tipTitle = '';
+    let tipText = '';
+    let gaugePct = 0;
+
+    // Normal range is 18.5 - 24.9. We map gauge from BMI 15 to 40
+    // formula: pct = (bmi - 15) / (40 - 15) * 100
+    gaugePct = ((bmi - 12) / (38 - 12)) * 100;
+    if (gaugePct < 2) gaugePct = 2;
+    if (gaugePct > 98) gaugePct = 98;
+
+    if (bmi < 18.5) {
+      cat = 'Underweight';
+      color = '#3498db';
+      tipTitle = 'Nutritional Focus Recommended';
+      tipText = 'Consider consult with a nutritionist to design a healthy, calorie-dense diet plan to gradually increase weight while maintaining strength.';
+    } else if (bmi >= 18.5 && bmi <= 24.9) {
+      cat = 'Normal Weight';
+      color = '#2ecc71';
+      tipTitle = 'Great Job! Maintain Your Balance';
+      tipText = 'Continue staying active and eating a balanced diet rich in whole foods, vegetables, lean proteins, and staying adequately hydrated.';
+    } else if (bmi >= 25.0 && bmi <= 29.9) {
+      cat = 'Overweight';
+      color = '#f1c40f';
+      tipTitle = 'Moderate Adjustments Recommended';
+      tipText = 'A combination of regular aerobic exercise (like brisk walking/swimming) and portion control can help realign your weight toward target metrics.';
+    } else {
+      cat = 'Obese';
+      color = '#e74c3c';
+      tipTitle = 'Health Plan Advisable';
+      tipText = 'Consider speaking with a medical professional to draft a safe, comprehensive lifestyle, nutritional, and physical activity roadmap.';
+    }
+
+    $('bmiCategory').textContent = cat;
+    $('bmiCategory').style.color = color;
+    $('bmiScore').style.color = color;
+    $('gaugePointer').style.left = `${gaugePct}%`;
+    $('gaugePointer').style.backgroundColor = color;
+    
+    $('healthTipTitle').textContent = tipTitle + ':';
+    $('healthTipText').textContent = tipText;
+    $('healthTipBox').style.borderLeftColor = color;
+
+    $('bmiPlaceholder').style.display = 'none';
+    $('bmiOutputContainer').style.display = 'block';
+    showStatus('✅ BMI calculated successfully!');
+  };
+
+  $('btnClear').onclick = () => {
+    $('heightCm').value = '';
+    $('weightKg').value = '';
+    $('heightFt').value = '';
+    $('heightIn').value = '';
+    $('weightLbs').value = '';
+    $('bmiPlaceholder').style.display = 'block';
+    $('bmiOutputContainer').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

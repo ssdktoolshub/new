@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liver Function Report Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze your comprehensive liver function test (LFT) panel online. Evaluate ALT, AST, Bilirubin, ALP, Albumin, and related ratios together with bilingual FAQs.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .form-inputs-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 500px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 140px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .panel-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .metric-badge-box {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .metric-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .metric-value {
+      font-size: 1.3rem;
+      font-weight: 900;
+    }
+
+    .metric-status {
+      font-size: 0.65rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .metric-badge-box, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Liver Function Report Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze comprehensive liver function test (LFT) panels including ALT, AST, Bilirubin, ALP, Albumin, and ratios.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 LFT Panel Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="patientAge" data-translate="labelAge">Age (Years)</label>
+              <input type="number" id="patientAge" min="1" max="120" value="35" onchange="togglePregnancy()" required>
+            </div>
+            
+            <div class="input-wrapper">
+              <label for="patientGender" data-translate="labelGender">Gender</label>
+              <select id="patientGender" onchange="togglePregnancy()">
+                <option value="male" selected data-translate="genderMale">Male</option>
+                <option value="female" data-translate="genderFemale">Female</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper" id="pregWrapper" style="display: none;">
+              <label for="patientPreg" data-translate="labelPreg">Is the patient pregnant?</label>
+              <select id="patientPreg">
+                <option value="no" selected data-translate="optNo">No</option>
+                <option value="yes" data-translate="optYes">Yes</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valALT" data-translate="labelALTInput">ALT (SGPT) (U/L)</label>
+              <input type="number" step="0.1" id="valALT" placeholder="Ref: 7 - 40" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valAST" data-translate="labelASTInput">AST (SGOT) (U/L)</label>
+              <input type="number" step="0.1" id="valAST" placeholder="Ref: 9 - 40" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valTotalBili" data-translate="labelTotalBiliInput">Total Bilirubin (mg/dL)</label>
+              <input type="number" step="0.01" id="valTotalBili" placeholder="Ref: 0.2 - 1.2" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valDirectBili" data-translate="labelDirectBiliInput">Direct Bilirubin (mg/dL)</label>
+              <input type="number" step="0.01" id="valDirectBili" placeholder="Ref: 0.0 - 0.3" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valALP" data-translate="labelALPInput">ALP (Alkaline Phosphatase) (U/L)</label>
+              <input type="number" step="0.1" id="valALP" placeholder="Ref: 44 - 147" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valTotalProt" data-translate="labelTotalProtInput">Total Protein (g/dL)</label>
+              <input type="number" step="0.1" id="valTotalProt" placeholder="Ref: 6.0 - 8.3" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valAlbumin" data-translate="labelAlbuminInput">Albumin (g/dL)</label>
+              <input type="number" step="0.1" id="valAlbumin" placeholder="Ref: 3.5 - 5.0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeLFTReport()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze LFT Panel</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Report Diagnostics Pending</h4>
+          <p data-translate="placeholderDesc">Enter LFT panel metrics and click the analyze button to generate clinical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Comprehensive Hepatic Diagnostic Summary</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelAge">Age</strong>: <span id="resAge">-</span></span>
+            <span><strong data-translate="labelGender">Gender</strong>: <span id="resGender">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <!-- Parameter Badges Grid -->
+          <div class="panel-metrics-grid">
+            <div class="metric-badge-box">
+              <div class="metric-title" data-translate="badgeDeRitis">AST/ALT Ratio</div>
+              <div class="metric-value" id="resRatioVal">-</div>
+              <div class="metric-status" id="resRatioStatus">-</div>
+            </div>
+            <div class="metric-badge-box">
+              <div class="metric-title" data-translate="badgeIndirect">Indirect Bili</div>
+              <div class="metric-value" id="resIndirectVal">-</div>
+              <div class="metric-status" id="resIndirectStatus">-</div>
+            </div>
+            <div class="metric-badge-box">
+              <div class="metric-title" data-translate="badgeGlobulin">Globulin</div>
+              <div class="metric-value" id="resGlobulinVal">-</div>
+              <div class="metric-status" id="resGlobulinStatus">-</div>
+            </div>
+            <div class="metric-badge-box">
+              <div class="metric-title" data-translate="badgeAgRatio">A/G Ratio</div>
+              <div class="metric-value" id="resAgRatioVal">-</div>
+              <div class="metric-status" id="resAgRatioStatus">-</div>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Liver Panels</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">How do ALT/AST and ALP differentiate liver disorders?</strong><br><span data-translate="eduA1">- **Hepatocellular Pattern**: Marked elevations in ALT and AST (transaminases) relative to ALP suggests liver cell inflammation/injury (hepatitis, toxins).<br>- **Cholestatic Pattern**: Marked elevations in Alkaline Phosphatase (ALP) and direct bilirubin relative to ALT/AST suggest bile duct obstruction or sludge.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What determines hepatic synthetic capacity?</strong><br><span data-translate="eduA2">Because albumin and clotting factors are synthesized solely by hepatocytes, serum Albumin and Total Protein levels are key indicators of the liver's long-term production capability. Chronic liver failure (cirrhosis) typically presents with hypoalbuminemia.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Liver Function Report Analyzer",
+      toolDesc: "Analyze comprehensive liver function test (LFT) panels including ALT, AST, Bilirubin, ALP, Albumin, and ratios.",
+      inputsTitle: "🧬 LFT Panel Parameters",
+      clearBtn: "Reset",
+      labelAge: "Age (Years)",
+      labelGender: "Gender",
+      genderMale: "Male",
+      genderFemale: "Female",
+      labelPreg: "Is the patient pregnant?",
+      optNo: "No",
+      optYes: "Yes",
+      labelALTInput: "ALT (SGPT) (U/L)",
+      labelASTInput: "AST (SGOT) (U/L)",
+      labelTotalBiliInput: "Total Bilirubin (mg/dL)",
+      labelDirectBiliInput: "Direct Bilirubin (mg/dL)",
+      labelALPInput: "ALP (Alkaline Phosphatase) (U/L)",
+      labelTotalProtInput: "Total Protein (g/dL)",
+      labelAlbuminInput: "Albumin (g/dL)",
+      btnAnalyze: "Analyze LFT Panel",
+      placeholderTitle: "Report Diagnostics Pending",
+      placeholderDesc: "Enter LFT panel metrics and click the analyze button to generate clinical summaries.",
+      reportTitle: "🔬 Comprehensive Hepatic Diagnostic Summary",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      badgeDeRitis: "AST/ALT Ratio",
+      badgeIndirect: "Indirect Bili",
+      badgeGlobulin: "Globulin",
+      badgeAgRatio: "A/G Ratio",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      statusNormal: "Normal",
+      statusLow: "Low",
+      statusHigh: "High",
+      statusCritical: "Critical",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "লিভার রিপোর্ট বিশ্লেষক",
+      toolDesc: "রক্তের এএলটি, এএসটি, বিলিরুবিন, এএলপি, অ্যালবুমিন এবং সংশ্লিষ্ট অনুপাত সহ সম্পূর্ণ লিভার ফাংশন টেস্ট (LFT) রিপোর্ট বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 এলএফটি প্যানেল ইনপুট সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelAge: "বয়স (বছর)",
+      labelGender: "লিঙ্গ",
+      genderMale: "পুরুষ",
+      genderFemale: "নারী",
+      labelPreg: "রোগী কি গর্ভবতী?",
+      optNo: "না",
+      optYes: "হ্যাঁ",
+      labelALTInput: "ALT (SGPT) (U/L)",
+      labelASTInput: "AST (SGOT) (U/L)",
+      labelTotalBiliInput: "টোটাল বিলিরুবিন (mg/dL)",
+      labelDirectBiliInput: "ডাইরেক্ট বিলিরুবিন (mg/dL)",
+      labelALPInput: "ALP (ক্ষারীয় ফসফেটেস) (U/L)",
+      labelTotalProtInput: "টোটাল প্রোটিন (g/dL)",
+      labelAlbuminInput: "অ্যালবুমিন (g/dL)",
+      btnAnalyze: "এলএফটি প্যানেল বিশ্লেষণ করুন",
+      placeholderTitle: "রিপোর্ট মূল্যায়ন অমীমাংসিত",
+      placeholderDesc: "লিভার পরীক্ষার মানগুলো পূরণ করে বিশ্লেষণ বোতামটি চাপুন ডায়াগনস্টিক রিপোর্ট দেখতে।",
+      reportTitle: "🔬 লিভার পরীক্ষার সামগ্রিক ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      badgeDeRitis: "AST/ALT অনুপাত",
+      badgeIndirect: "ইনডাইরেক্ট বিলি",
+      badgeGlobulin: "গলোবুলিন",
+      badgeAgRatio: "এ/জি অনুপাত",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      statusNormal: "স্বাভাবিক",
+      statusLow: "কম",
+      statusHigh: "উচ্চ",
+      statusCritical: "ঝুঁকিপূর্ণ",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "लिवर फंक्शन रिपोर्ट विश्लेषक",
+      toolDesc: "एएलटी, एएसटी, बिलीरुबिन, एएलपी, एल्ब्यूमिन और अनुपात सहित व्यापक लिवर फंक्शन टेस्ट (एलएफटी) पैनल का विश्लेषण करें।",
+      inputsTitle: "🧬 एलएफटी ��ैनल पैरामीटर",
+      clearBtn: "रीसेट करें",
+      labelAge: "आयु (वर्ष)",
+      labelGender: "लिंग",
+      genderMale: "पुरुष",
+      genderFemale: "स्त्री",
+      labelPreg: "क्या मरीज़ गर्भवती है?",
+      optNo: "नहीं",
+      optYes: "हाँ",
+      labelALTInput: "एएलटी (एसजीपीटी) (यू/एल)",
+      labelASTInput: "एएसटी (एसजीओटी) (यू/एल)",
+      labelTotalBiliInput: "कुल बिलीरुबिन (मिलीग्राम/डीएल)",
+      labelDirectBiliInput: "प्रत्यक्ष बिलीरुबिन (मिलीग्राम/डीएल)",
+      labelALPInput: "एएलपी (क्षारीय फॉस्फेट) (यू/एल)",
+      labelTotalProtInput: "कुल प्रोटीन (जी/डीएल)",
+      labelAlbuminInput: "एल्बुमिन (जी/डीएल)",
+      btnAnalyze: "एलएफटी पैनल का विश्लेषण करें",
+      placeholderTitle: "रिपोर्ट डायग्नोस्टिक्स लंबित",
+      placeholderDesc: "एलएफटी पैनल मेट्रिक्स दर्ज करें और नैदानिक ​​​​सारांश उत्पन्न करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 व्यापक हेपेटिक डायग्नोस्टिक सारांश",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "दिनांक",
+      badgeDeRitis: "एएसटी/एएलटी अनुपात",
+      badgeIndirect: "अप्रत्यक्ष बिलि",
+      badgeGlobulin: "ग्लोब्युलिन",
+      badgeAgRatio: "ए/जी अनुपात",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      statusNormal: "सामान्य",
+      statusLow: "नीचा",
+      statusHigh: "ऊँचा",
+      statusCritical: "गंभीर",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What does a Liver Function Test (LFT) panel analyze?", a: "An LFT panel evaluates enzymes (ALT, AST, ALP), bilirubin levels, and blood proteins (Albumin, Total Protein) to check hepatocyte injury, biliary secretion, and protein synthesis." },
+      { q: "What is a hepatocellular vs. cholestatic pattern?", a: "A hepatocellular pattern shows predominant transaminase (ALT/AST) elevations. A cholestatic pattern shows predominant Alkaline Phosphatase (ALP) and direct bilirubin elevations." },
+      { q: "Why is the AST/ALT ratio helpful?", a: "It differentiates alcoholic hepatitis (ratio &ge; 2.0) from fatty liver or viral hepatitis (ratio &lt; 1.0)." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "লিভার ফাংশন টেস্ট (LFT) প্যানেল কী বিশ্লেষণ করে?", a: "এটি লিভারের এনজাইম (ALT, AST, ALP), বিলিরুবিন এবং রক্তের প্রোটিনের (Albumin, Total Protein) মাত্রা পরিমাপ করে যকৃতের সামগ্রিক অবস্থা বিশ্লেষণ করে।" },
+      { q: "হেপাটোসেলুলার বনাম কোলেস্ট্যাটিক প্যাটার্ন কী?", a: "হেপাটোসেলুলার প্যাটার্নে এএলটি ও এএসটি এনজাইম বেশি বৃদ্ধি পায়। কোলেস্ট্যাটিক প্যাটার্নে পিত্তনালীর বাধার কারণে মূলত এএলপি ও ডাইরেক্ট বিলিরুবিন বাড়ে।" },
+      { q: "AST/ALT অনুপাত কেন ব্যবহার করা হয়?", a: "এটি মদ্যপান জনিত লিভারের প্রদাহ (অনুপাত ২.০ বা তার বেশি) বনাম ফ্যাটি লিভার ও জন্ডিস (অনুপাত ১.০ এর কম) আলাদা করতে সাহায্য করে।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "लिवर फंक्शन टेस्ट (एलएफटी) पैनल क्या विश्लेषण करता है?", a: "एक एलएफटी पैनल हेपेटोसाइट चोट, पित्त स्राव और प्रोटीन संश्लेषण की जांच करने के लिए एंजाइम (एएलटी, एएसटी, एएलपी), बिलीरुबिन स्तर और रक्त प्रोटीन (एल्ब्यूमिन, कुल प्रोटीन) का मूल्यांकन करता है।" },
+      { q: "हेपैटोसेलुलर बनाम कोलेस्टेटिक पैटर्न क्या है?", a: "हेपेटोसेलुलर पैटर्न प्रमुख ट्रांसएमिनेज़ (एएलटी/एएसटी) ऊंचाई को दर्शाता है। एक कोलेस्टेटिक पैटर्न प्रमुख क्षारीय फॉस्फेट (एएलपी) और प्रत्यक्ष बिलीरुबिन ऊंचाई को दर्शाता है।" },
+      { q: "एएसटी/एएलटी अनुपात क्यों सहायक है?", a: "यह अल्कोहलिक हेपेटाइटिस (अनुपात ≥ 2.0) को फैटी लीवर या वायरल हेपेटाइटिस (अनुपात <1.0) से अलग करता है।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const lftInsights = {
+    en: {
+      normal: {
+        desc: "Your LFT panel parameters are within the normal reference ranges. Your liver cell structure, biliary flow, and synthetic protein production are operating healthily.",
+        factors: ["Balanced diet and low metabolic fat accumulation", "Absent hepatotoxic exposure", "Normal biliary clearance rates"],
+        symptoms: ["No clinical symptoms of liver congestion or jaundice"],
+        prevention: ["Continue keeping alcohol consumption minimal", "Maintain healthy weight to avoid fatty liver"],
+        consult: "Continue standard annual metabolic panel checkups."
+      },
+      hepatocellular: {
+        desc: "Your report indicates a Hepatocellular pattern (active liver cell injury), characterized by significant elevations in ALT and AST relative to ALP.",
+        factors: ["Non-Alcoholic Fatty Liver Disease (NAFLD)", "Viral hepatitis (Hepatitis A, B, or C)", "Excessive alcohol or drug-induced liver load (e.g. acetaminophen overload)"],
+        symptoms: ["Fatigue, generalized weakness", "Mild pain on the upper right side of the abdomen"],
+        prevention: ["Avoid all alcohol and unnecessary supplements", "Rest to reduce metabolic strain on hepatocytes"],
+        consult: "⚠️ URGENT: Consult your doctor. Liver ultrasound and viral hepatitis screening are typically ordered next."
+      },
+      cholestatic: {
+        desc: "Your report indicates a Cholestatic pattern (biliary tract blockage or congestion), characterized by significant elevations in ALP and direct bilirubin relative to transaminases.",
+        factors: ["Gallstones obstructing the common bile duct", "Biliary tract inflammation or bile duct strictures", "Pregnancy-induced cholestasis (third trimester)"],
+        symptoms: ["Jaundice (yellow skin/eyes)", "Severe skin itching (pruritus)", "Pale clay-colored stools and dark urine"],
+        prevention: ["Restrict all high-fat, fried, and greasy foods", "Drink plenty of water to help biliary flow"],
+        consult: "⚠️ URGENT: Consult your gastroenterologist immediately. Abdominal ultrasound or MRCP (magnetic resonance cholangiopancreatography) is indicated."
+      },
+      mixed: {
+        desc: "Your report shows a mixed LFT injury pattern. Both transaminases (ALT/AST) and biliary markers (ALP/Bilirubin) are elevated, suggesting widespread liver tissue strain.",
+        factors: ["Severe acute hepatitis", "Toxic hepatopathy", "Chronic biliary disease causing secondary hepatocyte injury"],
+        symptoms: ["Jaundice, nausea, abdominal discomfort", "Fatigue"],
+        prevention: ["Strict bed rest and zero alcohol or hepatotoxic medication intake"],
+        consult: "⚠️ URGENT: Seek clinical evaluation immediately to monitor hepatocellular and biliary function."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার লিভার প্যানেলের সকল মান স্বাভাবিক সীমায় রয়েছে। আপনার লিভারের কোষ, পিত্ত প্রবাহ এবং প্রোটিন তৈরির ক্ষমতা অত্যন্ত সুস্থ রয়েছে।",
+        factors: ["পর্যাপ্ত পানি পান ও সুষম ডায়েট", "অ্যালকোহল ও বিষাক্ত উপাদানমুক্ত জীবনধারা"],
+        symptoms: ["জন্ডিস বা পেটে ব্যথার কোনো লক্ষণ নেই"],
+        prevention: ["ওজন নিয়ন্ত্রণে রাখুন", "অতিরিক্ত ব্যথানাশক ওষুধ পরিহার করুন"],
+        consult: "রুটিন বার্ষিক চেকআপ বজায় রাখুন।"
+      },
+      hepatocellular: {
+        desc: "আপনার রিপোর্টে হেপাটোসেলুলার প্যাটার্ন (যকৃতের কোষে প্রদাহ/আঘাত) নির্দেশ করছে। এখানে এএলটি ও এএসটি এর মান এএলপির চেয়ে বেশি বৃদ্ধি পেয়েছে।",
+        factors: ["ফ্যাটি লিভার ডিজিজ (NAFLD)", "ভাইরাল হেপাটাইটিস (এ, বি বা সি)", "অ্যালকোহল বা ওষুধের পার্শ্বপ্রতিক্রিয়া"],
+        symptoms: ["তীব্র ক্লান্তি ও দুর্বলতা", "পেটের ডান পাশের উপরিভাগে অস্বস্তি"],
+        prevention: ["অবিলম্বে সম্পূর্ণ অ্যালকোহল ও অপ্রয়োজনীয় ওষুধ সেবন বন্ধ করুন", "পর্যাপ্ত বিশ্রাম নিন"],
+        consult: "⚠️ অবিলম্বে চিকিৎসকের শরণাপন্ন হোন এবং লিভারের আল্ট্রাসাউন্ড ও ভাইরাল স্ক্রিনিং টেস্ট করান।"
+      },
+      cholestatic: {
+        desc: "আপনার রিপোর্টে কোলেস্ট্যাটিক প্যাটার্ন (পিত্তনালীতে বাধা/পিত্ত প্রবাহে ব্যাঘাত) নির্দেশ করছে। এখানে এএলপি ও ডাইরেক্ট বিলিরুবিন বেশি বৃদ্ধি পেয়েছে।",
+        factors: ["পিত্তনালীতে পাথর", "পিত্তনালীর প্রদাহ", "গর্ভাবস্থা জনিত কোলেস্ট্যাসিস (শেষ ৩ মাস)"],
+        symptoms: ["জন্ডিস বা চোখ ও ত্বক অতিরিক্ত হলুদ হওয়া", "সারা শরীরে তীব্র চুলকানি", "ফ্যাকাশে বা মাটির রঙের মল ও গাড় প্রস্রাব"],
+        prevention: ["চর্বিযুক্ত ও ভাজাপোড়া খাবার সম্পূর্ণ পরিহার করুন", "পর্যাপ্ত পানি পান করুন"],
+        consult: "⚠️ অবিলম্বে একজন গ্যাস্ট্রোএন্টারোলজিস্ট ডাক্তারের পরামর্শ নিন এবং আল্ট্রাসাউন্ড করান।"
+      },
+      mixed: {
+        desc: "আপনার রিপোর্টে লিভারের মিশ্র আঘতের সংকেত পাওয়া গেছে। এনজাইম (ALT/AST) এবং পিত্তনালীর মার্কার (ALP/Bilirubin) উভয়ই উচ্চ, যা লিভারের সামগ্রিক চাপ নির্দেশক।",
+        factors: ["তীব্র ভাইরাল বা টক্সিক হেপাটাইটিস", "ক্রনিক পিত্তনালীর রোগ"],
+        symptoms: ["জন্ডিস, বমি বমি ভাব, ক্ষুধামন্দা", "পেটে ব্যথা ও ক্লান্তি"],
+        prevention: ["সম্পূর্ণ বিশ্রামে থাকুন এবং লিভারের ওপর চাপ সৃষ্টিকারী উপাদান বর্জন করুন"],
+        consult: "⚠️ অনতিবিলম্বে লিভার রোগ বিশেষজ্ঞ (Hepatologist) চিকিৎসকের নিবিড় তত্ত্বাবধানে থাকুন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपके एलएफटी पैनल पैरामीटर सामान्य संदर्भ सीमाओं के भीतर हैं। आपकी यकृत कोशिका संरचना, पित्त प्रवाह और सिंथेटिक प्रोटीन उत्पादन स्वस्थ रूप से काम कर रहे हैं।",
+        factors: ["संतुलित आहार और कम चयापचय वसा संचय", "अनुपस्थित हेपेटोटॉक्सिक एक्सपोज़र", "सामान्य पित्त निकासी दरें"],
+        symptoms: ["लीवर में जमाव या पीलिया का कोई नैदानिक लक्षण नहीं"],
+        prevention: ["शराब का सेवन न्यूनतम रखना जारी रखें", "फैटी लीवर से बचने के लिए स्वस्थ वजन बनाए रखें"],
+        consult: "मानक वार्���िक मेटाबॉलिक पैनल चेकअप जारी रखें।"
+      },
+      hepatocellular: {
+        desc: "आपकी रिपोर्ट हेपेटोसेल्यूलर पैटर्न (सक्रिय यकृत कोशिका चोट) को इंगित करती है, जो एएलपी के सापेक्ष एएलटी और एएसटी में महत्वपूर्ण वृद्धि की विशेषता है।",
+        factors: ["गैर-अल्कोहलिक फैटी लीवर रोग (एनएएफएलडी)", "वायरल हेपेटाइटिस (हेपेटाइटिस ए, बी, या सी)", "अत्यधिक शराब या नशीली दवाओं से प्रेरित यकृत भार (जैसे एसिटामिनोफेन अधिभार)"],
+        symptoms: ["थकान, सामान्यीकृत कमजोरी", "पेट के ऊपरी दाहिनी ओर हल्का दर्द"],
+        prevention: ["सभी शराब और अनावश्यक पूरकों स��� बचें", "हेपेटोसाइट्स पर चयापचय तनाव को कम करने के लिए आराम करें"],
+        consult: "⚠️ अत्यावश्यक: अपने डॉक्टर से परामर्श लें। लिवर अल्ट्रासाउंड और वायरल हेपेटाइटिस स्क्रीनिंग का आमतौर पर अगला आदेश दिया जाता है।"
+      },
+      cholestatic: {
+        desc: "आपकी रिपोर्ट एक कोलेस्टेटिक पै��र्न (पित्त पथ की रुकावट या जमाव) को इंगित करती है, जो ट्रांसएमिनेस के सापेक्ष एएलपी और प्रत्यक्ष बिलीरुबिन में महत्वपूर्ण वृद्धि की विशेषता है।",
+        factors: ["पित्ताशय की पथरी सामान्य पित्त नली में बाधा डालती है", "पित्त पथ की सूजन या पित्त नली में सिकुड़न", "गर्भावस्था-प्रेरित कोलेस्टेसिस (तीसरी तिमाही)"],
+        symptoms: ["पीलिया (पीली त्वचा/आँखें)", "गंभीर त्वचा खुजली (खुजली)", "हल्के मिट्टी के रंग का मल और गहरे रंग का मूत्र"],
+        prevention: ["सभी उच्च वसा, तले हुए और चिकनाई वाले खाद्य पदार्थों को ���्रतिबंधित करें", "पित्त प्रवाह में सहायता के लिए खूब पानी पियें"],
+        consult: "⚠️ अत्यावश्यक: तुरंत अपने गैस्ट्रोएंटेरोलॉजिस्ट से परामर्श लें। पेट का अल्ट्रासाउंड या एमआरसीपी (चुंबकीय अनुनाद कोलेजनोपचारोग्राफी) का संकेत दिया गया है।"
+      },
+      mixed: {
+        desc: "आपकी रिपोर्ट मिश्रित एलएफटी चोट पैटर्न दिखाती है। ट्रांसएमिनेस (एएलटी/एएसटी) और पित्त मार्कर (एएलपी/बिलीरुबिन) दोनों ऊंचे हैं, जो व्यापक यकृत ऊतक तनाव का संकेत देते हैं।",
+        factors: ["गंभीर तीव्र हेपेटाइटिस", "विषाक्त हेपटोपैथी", "क्रोनिक पित्त संबंधी रोग जिसके कारण द्वितीयक हेपेटोसाइट क्षति होती है"],
+        symptoms: ["पीलिया, मतली, पेट की परेशानी", "थकान"],
+        prevention: ["सख्त बिस्तर पर आराम और शून्य शराब या हेपेटोटॉक्सिक दवा का सेवन"],
+        consult: "⚠️ अत्यावश्यक: हेपैट��सेलुलर और पित्त संबंधी कार्य की निगरानी के लिए तुरंत नैदानिक ​​​​मूल्यांकन लें।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-lft-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function togglePregnancy() {
+    const age = parseInt(document.getElementById("patientAge").value) || 35;
+    const gender = document.getElementById("patientGender").value;
+    const pregWrapper = document.getElementById("pregWrapper");
+    
+    if (gender === "female" && age >= 12 && age <= 50) {
+      pregWrapper.style.display = "flex";
+    } else {
+      pregWrapper.style.display = "none";
+      document.getElementById("patientPreg").value = "no";
+    }
+  }
+
+  function resetForm() {
+    document.getElementById("valALT").value = "";
+    document.getElementById("valAST").value = "";
+    document.getElementById("valTotalBili").value = "";
+    document.getElementById("valDirectBili").value = "";
+    document.getElementById("valALP").value = "";
+    document.getElementById("valTotalProt").value = "";
+    document.getElementById("valAlbumin").value = "";
+    document.getElementById("patientAge").value = "35";
+    document.getElementById("patientGender").value = "male";
+    document.getElementById("patientPreg").value = "no";
+    document.getElementById("pregWrapper").style.display = "none";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function analyzeLFTReport() {
+    const age = parseInt(document.getElementById("patientAge").value) || 35;
+    const gender = document.getElementById("patientGender").value;
+    const preg = document.getElementById("patientPreg").value;
+
+    const alt = parseFloat(document.getElementById("valALT").value);
+    const ast = parseFloat(document.getElementById("valAST").value);
+    const totalBili = parseFloat(document.getElementById("valTotalBili").value);
+    const directBili = parseFloat(document.getElementById("valDirectBili").value);
+    const alp = parseFloat(document.getElementById("valALP").value);
+    const totalProt = parseFloat(document.getElementById("valTotalProt").value);
+    const alb = parseFloat(document.getElementById("valAlbumin").value);
+
+    if (isNaN(alt) || alt <= 0 || isNaN(ast) || ast <= 0 || isNaN(totalBili) || totalBili <= 0 || isNaN(directBili) || directBili < 0 || isNaN(alp) || alp <= 0 || isNaN(totalProt) || totalProt <= 0 || isNaN(alb) || alb <= 0) {
+      alert(currentLang === "en" ? "Please enter valid positive values for all fields." : "দয়া করে সকল ক্ষেত্রে সঠিক সংখ্যা লিখুন।");
+      return;
+    }
+
+    if (directBili > totalBili) {
+      alert(currentLang === "en" ? "Direct bilirubin cannot exceed total bilirubin." : "ডাইরেক্ট বিলিরুবিন টোটাল বিলিরুবিনের চেয়ে বেশি হতে পারে না।");
+      return;
+    }
+
+    if (alb > totalProt) {
+      alert(currentLang === "en" ? "Albumin cannot exceed total protein." : "অ্যালবুমিন টোটাল প্রোটিনের চেয়ে বেশি হতে পারে না।");
+      return;
+    }
+
+    // 1. Calculations
+    const ratio = ast / alt;
+    const indirectBili = totalBili - directBili;
+    const globulin = totalProt - alb;
+    const agRatio = alb / globulin;
+
+    // 2. Transaminase limits checking
+    let altMax = gender === "female" ? 35 : 40;
+    let astMax = gender === "female" ? 32 : 40;
+    let alpMax = (gender === "female" && preg === "yes") ? 300 : 147;
+
+    const isHepatocellularElevated = (alt > altMax || ast > astMax);
+    const isCholestaticElevated = (alp > alpMax || directBili > 0.3);
+
+    // 3. Overall pattern classification
+    let overallKey = "normal";
+    if (isHepatocellularElevated && isCholestaticElevated) {
+      overallKey = "mixed";
+    } else if (isHepatocellularElevated) {
+      overallKey = "hepatocellular";
+    } else if (isCholestaticElevated) {
+      overallKey = "cholestatic";
+    }
+
+    // Badge statuses
+    let ratioStatus = "statusNormal";
+    if (ratio < 1.0) ratioStatus = "statusLow";
+    else if (ratio >= 2.0) ratioStatus = "statusHigh";
+
+    let indirectStatus = indirectBili > 0.9 ? "statusHigh" : "statusNormal";
+    let globulinStatus = (globulin > 3.5) ? "statusHigh" : ((globulin < 2.0) ? "statusLow" : "statusNormal");
+    let agRatioStatus = (agRatio > 2.5) ? "statusHigh" : ((agRatio < 1.1) ? "statusLow" : "statusNormal");
+
+    activeReportData = {
+      age,
+      gender,
+      alt,
+      ast,
+      totalBili,
+      directBili,
+      alp,
+      totalProt,
+      alb,
+      ratio,
+      indirectBili,
+      globulin,
+      agRatio,
+      ratioStatus,
+      indirectStatus,
+      globulinStatus,
+      agRatioStatus,
+      overallKey,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(overallKey, alt, ast);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resAge").textContent = d.age;
+    document.getElementById("resGender").textContent = d.gender === "male" ? translations[currentLang].genderMale : translations[currentLang].genderFemale;
+
+    // Badges values
+    document.getElementById("resRatioVal").textContent = d.ratio.toFixed(2);
+    document.getElementById("resRatioStatus").textContent = translations[currentLang][d.ratioStatus];
+    document.getElementById("resRatioStatus").style.color = getStatusColor(d.ratioStatus);
+
+    document.getElementById("resIndirectVal").textContent = d.indirectBili.toFixed(2);
+    document.getElementById("resIndirectStatus").textContent = translations[currentLang][d.indirectStatus];
+    document.getElementById("resIndirectStatus").style.color = getStatusColor(d.indirectStatus);
+
+    document.getElementById("resGlobulinVal").textContent = d.globulin.toFixed(1);
+    document.getElementById("resGlobulinStatus").textContent = translations[currentLang][d.globulinStatus];
+    document.getElementById("resGlobulinStatus").style.color = getStatusColor(d.globulinStatus);
+
+    document.getElementById("resAgRatioVal").textContent = d.agRatio.toFixed(2);
+    document.getElementById("resAgRatioStatus").textContent = translations[currentLang][d.agRatioStatus];
+    document.getElementById("resAgRatioStatus").style.color = getStatusColor(d.agRatioStatus);
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = lftInsights[currentLang][d.overallKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      let colorClass = "normal";
+      if (d.overallKey === "hepatocellular" || d.overallKey === "cholestatic") colorClass = "high";
+      else if (d.overallKey === "mixed") colorClass = "critical";
+      
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function getStatusColor(statusKey) {
+    if (statusKey === "statusNormal") return "var(--normal-color)";
+    if (statusKey === "statusLow") return "var(--low-color)";
+    return "var(--critical-color)";
+  }
+
+  function addToHistory(overallKey, alt, ast) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      overallKey,
+      alt,
+      ast,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-lft-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      let statusText = currentLang === "en" ? "Healthy Panel" : "স্বাভাবিক প্যানেল";
+      if (item.overallKey === "hepatocellular") statusText = currentLang === "en" ? "Liver Cell Strain" : "যকৃত কোষে চাপ";
+      if (item.overallKey === "cholestatic") statusText = currentLang === "en" ? "Bile Duct Strain" : "পিত্তনালীতে চাপ";
+      if (item.overallKey === "mixed") statusText = currentLang === "en" ? "Mixed Injury" : "মিশ্র যকৃত সমস্যা";
+      
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>ALT: ${Math.round(item.alt)} | AST: ${Math.round(item.ast)} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- LFT PANEL DIAGNOSTIC REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `ALT: ${activeReportData.alt} U/L | AST: ${activeReportData.ast} U/L\n`;
+    t += `AST/ALT Ratio: ${activeReportData.ratio.toFixed(2)}\n`;
+    t += `Total Bilirubin: ${activeReportData.totalBili} mg/dL | Direct: ${activeReportData.directBili} mg/dL\n`;
+    t += `ALP: ${activeReportData.alp} U/L\n`;
+    t += `Albumin: ${activeReportData.alb} g/dL | Globulin: ${activeReportData.globulin.toFixed(1)} g/dL\n`;
+    t += `Assessment: ${activeReportData.overallKey.toUpperCase()}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `lft-panel-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autoimmune Panel Interpreter &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Combine RF, Anti-CCP, and ANA results to interpret systemic autoimmune profiles and connective tissue diseases with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    
+    @media (max-width: 600px) {
+      .form-inputs-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 2.8rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--normal-color) 0%, 
+        var(--normal-color) 33%, 
+        var(--high-color) 50%, 
+        var(--high-color) 70%, 
+        var(--critical-color) 85%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 0.8rem;
+    }
+
+    .report-table th, .report-table td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+    }
+
+    .report-table th {
+      background: rgba(255,255,255,0.02);
+      color: var(--text);
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Autoimmune Panel Interpreter</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Combine Rheumatoid Factor, Anti-CCP, and ANA results to interpret systemic autoimmune profiles and connective tissue diseases.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Panel Inputs</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valRF" data-translate="labelRF">Rheumatoid Factor (RF) (IU/mL)</label>
+              <input type="number" step="0.1" id="valRF" placeholder="e.g. 12" min="0" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valAntiCCP" data-translate="labelAntiCCP">Anti-CCP Antibody (U/mL)</label>
+              <input type="number" step="0.1" id="valAntiCCP" placeholder="e.g. 15" min="0" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="anaTiter" data-translate="labelTiter">ANA Titer Select</label>
+              <select id="anaTiter" onchange="handleTiterChange()">
+                <option value="Negative" selected>Negative</option>
+                <option value="1:40">1:40</option>
+                <option value="1:80">1:80</option>
+                <option value="1:160">1:160</option>
+                <option value="1:320">1:320</option>
+                <option value="1:640">1:640</option>
+                <option value="1:1280+">1:1280+</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="anaPattern" data-translate="labelPattern">ANA Pattern Select</label>
+              <select id="anaPattern" disabled>
+                <option value="None" data-translate="optPatternNone" selected>None (Negative)</option>
+                <option value="Homogeneous" data-translate="optPatternHomo">Homogeneous</option>
+                <option value="Speckled" data-translate="optPatternSpeck">Speckled</option>
+                <option value="Nucleolar" data-translate="optPatternNucl">Nucleolar</option>
+                <option value="Centromere" data-translate="optPatternCent">Centromere</option>
+                <option value="Peripheral/Rim" data-translate="optPatternPeri">Peripheral/Rim</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="interpretPanel()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Interpret Panel</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Interpretation Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter the panel parameters and click the interpret button to display the differential analysis.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Autoimmune Panel Evaluation</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Autoimmune Profile Interpreter</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resIndexVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" data-translate="labelAlertIndex">Clinical Autoimmune Alert Index</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--normal-color);">-</span>
+              <span id="tickMod" style="color: var(--high-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Parameter Summary Table -->
+          <div>
+            <h4 style="font-size:0.85rem; font-weight:800; margin-bottom:6px;" data-translate="tableTitle">📋 Parameter Summary Table</h4>
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th data-translate="thParam">Parameter</th>
+                  <th data-translate="thValue">Input Value</th>
+                  <th data-translate="thRef">Normal Range</th>
+                  <th data-translate="thStatus">Status</th>
+                </tr>
+              </thead>
+              <tbody id="resTableBody">
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Autoimmune Panels</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">Why combine RF, Anti-CCP, and ANA?</strong><br><span data-translate="eduA1">An autoimmune panel looks at multiple independent pathways of immune dysfunction. While RF and Anti-CCP target joint-specific autoimmune arthritis, ANA screens for broader antinuclear antibodies linked to systemic diseases like Lupus and Scleroderma. Combining them narrows the differential diagnosis.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Positive Predictive Value (PPV) in Rheumatoid Arthritis</strong><br><span data-translate="eduA2">While testing positive for RF alone has a modest predictive value, testing positive for both RF and Anti-CCP yields a positive predictive value of nearly 98-99% for Rheumatoid Arthritis, highlighting the strength of combined panel interpretation.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">Benign Positives in Systemic Screens</strong><br><span data-translate="eduA3">Up to 25% of individuals can present with low-titer positive ANA or RF due to age, thyroiditis, active virus recovery, or chronic low-grade bacterial infections. Therefore, diagnosis must never rely solely on a positive lab panel but must align with active clinical symptoms.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Autoimmune Panel Interpreter",
+      toolDesc: "Combine RF, Anti-CCP, and ANA results to interpret systemic autoimmune profiles and connective tissue diseases.",
+      inputsTitle: "🧬 Panel Inputs",
+      clearBtn: "Reset",
+      labelRF: "Rheumatoid Factor (RF)",
+      labelAntiCCP: "Anti-CCP Antibody",
+      labelTiter: "ANA Titer Select",
+      labelPattern: "ANA Pattern Select",
+      optPatternNone: "None (Negative)",
+      optPatternHomo: "Homogeneous",
+      optPatternSpeck: "Speckled",
+      optPatternNucl: "Nucleolar",
+      optPatternCent: "Centromere",
+      optPatternPeri: "Peripheral/Rim",
+      btnAnalyze: "Interpret Panel",
+      placeholderTitle: "Interpretation Report Pending",
+      placeholderDesc: "Enter the panel parameters and click the interpret button to display the differential analysis.",
+      reportTitle: "🔬 Autoimmune Panel Evaluation",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      labelAlertIndex: "Clinical Autoimmune Alert Index",
+      tableTitle: "📋 Parameter Summary Table",
+      thParam: "Parameter",
+      thValue: "Input Value",
+      thRef: "Normal Range",
+      thStatus: "Status",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNegative: "Autoimmune Pattern Not Detected",
+      badgeBorderline: "Low-Risk / Borderline Profile",
+      badgePositive: "Autoimmune Signature Detected",
+      titleInterpretation: "📋 Combined Clinical Insights",
+      titleCauses: "Pathological Differential Indicators",
+      titleSymptoms: "Clinical Presentation To Watch For",
+      titlePrevention: "Actionable Lifestyle Tips",
+      titleConsult: "Recommended Medical Next Steps",
+      lblNormal: "Normal",
+      lblBorderline: "Borderline",
+      lblElevated: "Elevated",
+      lblHigh: "High",
+      lblWeakPos: "Weak Positive",
+      lblStrongPos: "Strong Positive",
+      lblNegative: "Negative",
+      lblPositive: "Positive"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "অটোইমিউন প্যানেল ইন্টারপ্রেটার",
+      toolDesc: "আরএফ (RF), অ্যান্টি-সিসিপি (Anti-CCP) এবং এএনএ (ANA) রিপোর্টের সমন্বয়ে সম্ভাব্য অটোইমিউন ও কানেক্টিভ টিস্যু রোগ মূল্যায়ন করুন।",
+      inputsTitle: "🧬 প্যানেল ইনপুটসমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelRF: "রিউমাটয়েড ফ্যাক্টর (RF)",
+      labelAntiCCP: "অ্যান্টি-সিসিপি অ্যান্টিবডি",
+      labelTiter: "ANA টাইটার নির্বাচন করুন",
+      labelPattern: "ANA প্যাটার্ন নির্বাচন করুন",
+      optPatternNone: "কোনোটিই নয় (নেগেটিভ)",
+      optPatternHomo: "হোমোজেনাস (Homogeneous)",
+      optPatternSpeck: "স্পেকেল্ড (Speckled)",
+      optPatternNucl: "নিউক্লিওলার (Nucleolar)",
+      optPatternCent: "সেন্ট্রোমিয়ার (Centromere)",
+      optPatternPeri: "পেরিফেরাল/রিম (Peripheral/Rim)",
+      btnAnalyze: "প্যানেল ব্যাখ্যা করুন",
+      placeholderTitle: "প্যানেল ব্যাখ্যা অমীমাংসিত",
+      placeholderDesc: "প্যানেল মানসমূহ লিখুন এবং ডিফারেন্সিয়াল বিশ্লেষণ দেখতে বাটনে ক্লিক করুন।",
+      reportTitle: "🔬 অটোইমিউন প্যানেল মূল্যায়ন",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      labelAlertIndex: "ক্লিনিক্যাল অটোইমিউন অ্যালার্ট ইনডেক্স",
+      tableTitle: "📋 পরিমাপক সারসংক্ষেপ টেবিল",
+      thParam: "পরীক্ষা",
+      thValue: "প্রাপ্ত মান",
+      thRef: "স্বাভাবিক সীমা",
+      thStatus: "অবস্থা",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNegative: "অটোইমিউন বিন্যাস শনাক্ত হয়নি",
+      badgeBorderline: "কম ঝুঁকি / বর্ডারলাইন প্রোফাইল",
+      badgePositive: "অটোইমিউন লক্ষণ বা বিন্যাস শনাক্ত হয়েছে",
+      titleInterpretation: "📋 সমন্বিত ক্লিনিক্যাল বিশ্লেষণ",
+      titleCauses: "প্যাথলজিক্যাল ডিফারেন্সিয়াল নির্দেশক",
+      titleSymptoms: "পর্যবেক্ষণযোগ্য শারীরিক লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "পরবর্তী চিকিৎসাগত সুপারিশমালা",
+      lblNormal: "স্বাভাবিক",
+      lblBorderline: "বর্ডারলাইন",
+      lblElevated: "উচ্চ",
+      lblHigh: "অতি উচ্চ",
+      lblWeakPos: "দুর্বল পজিটিভ",
+      lblStrongPos: "তীব্র পজিটিভ",
+      lblNegative: "নেগেটিভ",
+      lblPositive: "পজিটিভ"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "ऑटोइम्यून पैनल दुभाषिया",
+      toolDesc: "प्रणालीगत ऑटोइम्यून प्रोफाइल और संयोजी ऊतक रोगों की व्याख्या करने के लिए आरएफ, एंटी-सीसीपी और एएनए परिणामों को मिलाएं।",
+      inputsTitle: "🧬 पैनल इन���ुट",
+      clearBtn: "रीसेट करें",
+      labelRF: "रूमेटोइड फैक्टर (आरएफ)",
+      labelAntiCCP: "एंटी-सीसीपी एंटीबॉडी",
+      labelTiter: "एएनए टिटर चयन करें",
+      labelPattern: "एएनए पैटर्न का चयन करें",
+      optPatternNone: "कोई नहीं (नकारात्मक)",
+      optPatternHomo: "सजातीय",
+      optPatternSpeck: "धब्बेदार",
+      optPatternNucl: "न्यूक्लियोलर",
+      optPatternCent: "सेंट्रोमियर",
+      optPatternPeri: "परिधीय/रिम",
+      btnAnalyze: "पैनल की व्याख्या करें",
+      placeholderTitle: "व्याख्या रिपोर्ट लंबित",
+      placeholderDesc: "पैनल पैरामीटर दर्ज करें और अंतर विश्लेषण प्रदर्शित करने के लिए व्याख्या बटन पर क्लिक करें।",
+      reportTitle: "🔬 ऑटोइम्यून पैनल मूल्यांकन",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      labelAlertIndex: "क्लिनिकल ऑटोइम्यून अलर्ट इंडेक्स",
+      tableTitle: "📋 पैरामीटर सारांश तालिका",
+      thParam: "पैरामीटर",
+      thValue: "इनपुट मान",
+      thRef: "सामान्य सीमा",
+      thStatus: "स्थिति",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए�� हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNegative: "ऑटोइम्यून पैटर्न का पता नहीं चला",
+      badgeBorderline: "कम जोखिम/सीमा रेखा प्रोफ़ाइल",
+      badgePositive: "ऑटोइम्यून हस्ताक्षर का पता चला",
+      titleInterpretation: "📋 संयुक्त नैदानिक अंतर्दृष्टि",
+      titleCauses: "पैथोलॉजिकल डिफरेंशियल संकेतक",
+      titleSymptoms: "देखने लायक नैदानिक प्रस्तुति",
+      titlePrevention: "क्रियाशील जीवन शैली युक्तियाँ",
+      titleConsult: "अनुशंसित चिकित्सा अगले चरण",
+      lblNormal: "सामान्य",
+      lblBorderline: "सीमा रेखा",
+      lblElevated: "ऊंचा",
+      lblHigh: "ऊँचा",
+      lblWeakPos: "कमजोर सकारात्मक",
+      lblStrongPos: "सशक्त सकारात्मक",
+      lblNegative: "नकारात्मक",
+      lblPositive: "सकारात्मक"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is an autoimmune panel?", a: "An autoimmune panel is a group of blood tests (such as ANA, RF, and Anti-CCP) run together to check for markers of systemic joint and connective tissue autoimmune diseases." },
+      { q: "Why is combining RF and Anti-CCP helpful?", a: "Combining RF and Anti-CCP increases diagnostic certainty for Rheumatoid Arthritis. Positivity in both markers represents a near 99% specificity for RA." },
+      { q: "What does it mean if ANA is positive but RF and CCP are normal?", a: "This profile points away from Rheumatoid Arthritis and suggests other systemic conditions such as Systemic Lupus Erythematosus (SLE), Sjögren's, or systemic sclerosis." },
+      { q: "Can healthy people test positive on an autoimmune panel?", a: "Yes, low-titer positive results (e.g. ANA 1:40 or borderline RF) are common in healthy individuals, especially with aging or chronic benign infections." }
+    ],
+    bn: [
+      { q: "অটোইমিউন প্যানেল কি?", a: "অটোইমিউন প্যানেল হলো রক্ত পরীক্ষার একটি সেট (যেমন ANA, RF, এবং Anti-CCP) যা জয়েন্ট ও কানেক্টিভ টিস্যুর অটোইমিউন রোগ আছে কিনা তা একসাথে যাচাই করতে ব্যবহৃত হয়।" },
+      { q: "RF এবং Anti-CCP একসাথে পরীক্ষা করার সুবিধা কী?", a: "দুটি পরীক্ষা একসাথে করলে রিউমাটয়েড আর্থ্রাইটিস নির্ণয় করার নিখুঁততা বৃদ্ধি পায়। উভয় মার্কার পজিটিভ থাকলে রিউমাটয়েড আর্থ্রাইটিস হওয়ার সম্ভাবনা প্রায় ৯৯%।" },
+      { q: "ANA পজিটিভ কিন্তু RF ও CCP স্বাভাবিক থাকার অর্থ কী?", a: "এই ধরনের প্রোফাইল রিউমাটয়েড আর্থ্রাইটিসের সম্ভাবনা দূর করে লুপাস (SLE), সোগ্রেনস বা সিস্টেমিক স্ক্লেরোসিসের দিকে ইঙ্গিত করতে পারে।" },
+      { q: "সুস্থ মানুষেরও কি অটোইমিউন প্যানেল পজিটিভ হতে পারে?", a: "হ্যাঁ, বয়স বৃদ্ধি বা মৃদু ইনফেকশনের কারণে সুস্থ ব্যক্তিদের রক্তেও সামান্য পজিটিভ ফলাফল (যেমন ANA ১:৪০ বা বর্ডারলাইন RF) আসতে পারে।" }
+    ],
+    hi: [
+      { q: "ऑटोइम्यून पैनल क्या है?", a: "एक ऑटोइम्यून पैनल रक्त परीक्षणों (जैसे एएनए, आरएफ और एंटी-सीसीपी) का एक समूह है जो प्रणालीगत संयुक्त और संयोजी ऊतक ऑटोइम्यून रोगों के मार्करों की जांच के लिए एक साथ चलाया जाता है।" },
+      { q: "आरएफ और एंटी-सीसीपी का संयोजन क्यों सहायक है?", a: "आरएफ और एंटी-सीसीपी के संयोजन से रुमेटीइड गठिया के लिए नैदानिक ​​निश्चितता बढ़ जाती है। दोनों मार्करों में सकारात्मकता आरए के लिए लगभग 99% विशिष्टता का प्रतिनिधित्व करती है।" },
+      { q: "यदि ANA सकारात्मक है लेकिन RF और CCP सामान्य हैं तो इसका क्या मतलब है?", a: "यह प्रोफ़ाइल रुमेटीइड गठिया से दूर की ओर इशारा करती है और सिस्टमिक ल्यूपस एरिथेमेटोसस (एसएलई), स्जोग्रेन या सिस्टमिक स्केलेरोसिस जैसी अन्य प्रणालीगत स्थितियों का सुझाव देती है।" },
+      { q: "क्या स्वस्थ लोग ऑटोइम्यून पैनल पर सकारात्मक परीक्षण कर सकते हैं?", a: "हां, कम-अनुमापांक सकारात्मक परिणाम (उदाहरण के लिए एएनए 1:40 या बॉर्डरलाइन आरएफ) स्वस्थ व्यक्तियों में आम हैं, खासकर उम्र बढ़ने या पुराने सौम्य संक्रमण के साथ।" }
+    ]
+  };
+
+  const patternExplanations = {
+    en: {
+      None: "No nuclear autoantibody patterns detected.",
+      Homogeneous: "Suggests SLE or drug-induced Lupus.",
+      Speckled: "Suggests SLE, Sjögren's Syndrome, or MCTD.",
+      Nucleolar: "Highly associated with Systemic Sclerosis (Scleroderma).",
+      Centromere: "Highly specific for CREST Syndrome (Limited Scleroderma).",
+      "Peripheral/Rim": "Associated with active SLE and renal involvement."
+    },
+    bn: {
+      None: "কোনো নিউক্লিয়ার অটোঅ্যান্টিবডি বিন্যাস শনাক্ত হয়নি।",
+      Homogeneous: "সিস্টেমিক লুপাস (SLE) বা ঔষধ-প্ররোচিত লুপাস নির্দেশ করে।",
+      Speckled: "লুপাস (SLE), সোগ্রেনস বা মিক্সড কানেক্টিভ টিস্যু রোগ (MCTD) নির্দেশ করে।",
+      Nucleolar: "সিস্টেমিক স্ক্লেরোসিস (স্ক্লেরোডার্মা) রোগের সাথে গভীরভাবে সম্পর্কিত।",
+      Centromere: "ক্রেস্ট (CREST) সিন্ড্রোম বা সীমিত স্ক্লেরোডার্মা নির্দেশ করে।",
+      "Peripheral/Rim": "তীব্র লুপাস (SLE) এবং নেফ্রাইটিসের সাথে সম্পৃক্ত।"
+    },
+    hi: {
+      None: "कोई परमाणु स्वप्रतिपिंड पैटर्न नहीं पाया गया।",
+      Homogeneous: "एसएलई या दवा-प्रेरित ल्यूपस का सुझाव देता है।",
+      Speckled: "SLE, Sjögren's Syndrome, या MCTD का सुझाव देता है।",
+      Nucleolar: "सिस्टमिक स्केलेरोसिस (स्केलेरोडर्मा) से अत्यधिक संबद्ध।",
+      Centromere: "क्रेस्ट सिंड्रोम (सीमित स्क्लेरोडर्मा) के लिए अत्यधिक विशिष्ट।",
+      "Peripheral/Rim": "सक्रिय एसएलई और गुर्दे की भागीदारी से संबद्ध।"
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-autoimmune-panel-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function handleTiterChange() {
+    const titer = document.getElementById("anaTiter").value;
+    const patternSelect = document.getElementById("anaPattern");
+    if (titer === "Negative") {
+      patternSelect.value = "None";
+      patternSelect.disabled = true;
+    } else {
+      patternSelect.disabled = false;
+      if (patternSelect.value === "None") {
+        patternSelect.value = "Homogeneous";
+      }
+    }
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valRF").value = "";
+    document.getElementById("valAntiCCP").value = "";
+    document.getElementById("anaTiter").value = "Negative";
+    const patternSelect = document.getElementById("anaPattern");
+    patternSelect.value = "None";
+    patternSelect.disabled = true;
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function interpretPanel() {
+    const rfVal = parseFloat(document.getElementById("valRF").value);
+    const ccpVal = parseFloat(document.getElementById("valAntiCCP").value);
+    const anaTiter = document.getElementById("anaTiter").value;
+    const anaPattern = document.getElementById("anaPattern").value;
+
+    if (isNaN(rfVal) || rfVal < 0 || isNaN(ccpVal) || ccpVal < 0) {
+      alert(currentLang === "en" ? "Please fill in all numerical values." : "দয়া করে সব ঘরের সঠিক সংখ্যা লিখুন।");
+      return;
+    }
+
+    // Determine individual status
+    let rfStatus = "normal";
+    if (rfVal >= 14 && rfVal <= 20) rfStatus = "borderline";
+    else if (rfVal > 20 && rfVal <= 50) rfStatus = "elevated";
+    else if (rfVal > 50) rfStatus = "high";
+
+    let ccpStatus = "normal";
+    if (ccpVal >= 20 && ccpVal < 60) ccpStatus = "weakPositive";
+    else if (ccpVal >= 60) ccpStatus = "strongPositive";
+
+    let anaStatus = "negative";
+    if (anaTiter === "1:40" || anaTiter === "1:80") anaStatus = "borderline";
+    else if (anaTiter !== "Negative") anaStatus = "positive";
+
+    // Scoring system for Alert Index
+    let score = 0;
+    // RF score contribution
+    if (rfStatus === "borderline") score += 15;
+    else if (rfStatus === "elevated") score += 30;
+    else if (rfStatus === "high") score += 40;
+
+    // CCP score contribution
+    if (ccpStatus === "weakPositive") score += 35;
+    else if (ccpStatus === "strongPositive") score += 50;
+
+    // ANA score contribution
+    if (anaStatus === "borderline") score += 10;
+    else if (anaStatus === "positive") {
+      if (anaTiter === "1:160") score += 30;
+      else score += 40; // 1:320+
+    }
+
+    // Cap score at 99%
+    let alertIndexVal = Math.min(99, Math.max(5, score));
+    if (rfStatus === "normal" && ccpStatus === "normal" && anaStatus === "negative") {
+      alertIndexVal = 10;
+    }
+
+    let statusKey = "negative";
+    let badgeKey = "badgeNegative";
+    if (alertIndexVal >= 20 && alertIndexVal < 50) {
+      statusKey = "borderline";
+      badgeKey = "badgeBorderline";
+    } else if (alertIndexVal >= 50) {
+      statusKey = "positive";
+      badgeKey = "badgePositive";
+    }
+
+    activeReportData = {
+      rfVal, rfStatus,
+      ccpVal, ccpStatus,
+      anaTiter, anaPattern, anaStatus,
+      alertIndexVal,
+      statusKey,
+      badgeKey,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, alertIndexVal);
+  }
+
+  function getCombinedInsight(d, lang) {
+    const isEn = lang === "en";
+
+    // Scenario 1: Highly suggestive of RA
+    if ((d.rfStatus === "elevated" || d.rfStatus === "high") && (d.ccpStatus === "weakPositive" || d.ccpStatus === "strongPositive")) {
+      return {
+        desc: isEn ? 
+          "High Rheumatoid Factor combined with Positive Anti-CCP is highly suggestive of Rheumatoid Arthritis. The positive predictive value of this combination is extremely high (>98%)." : 
+          "উচ্চ রিউমাটয়েড ফ্যাক্টর (RF) এবং পজিটিভ অ্যান্টি-সিসিপি (Anti-CCP) সমন্বয় রিউমাটয়েড আর্থ্রাইটিস হওয়ার অত্যন্ত জোরালো সংকেত। এই দুইটির সমন্বিত পজিটিভ ফলের নির্ভুলতা অত্যন্ত বেশি (>৯৮%)।",
+        causes: isEn ? ["Active Rheumatoid Arthritis", "Severe joint inflammation risks"] : ["সক্রিয় রিউমাটয়েড আর্থ্রাইটিস", "জয়েন্টে তীব্র প্রদাহের ঝুঁকি"],
+        symptoms: isEn ? ["Symmetrical hand/foot joint swelling", "Morning stiffness > 45 minutes"] : ["হাত ও পায়ের পাতার প্রতিসম জয়েন্ট ফুলে যাওয়া", "সকালে জয়েন্ট শক্ত ভাব (> ৪৫ মিনিট)"],
+        prevention: isEn ? ["Avoid high-impact joint stresses", "Consult for DMARD therapy initiation"] : ["জয়েন্টে অতিরিক্ত ঝাকুনি পরিহার করুন", "DMARD ঔষধ শুরুর জন্য পরামর্শ নিন"],
+        consult: isEn ? "Urgent Rheumatologist consult recommended." : "জরুরি ভিত্তিতে একজন রিউমাটোলজিস্ট দেখান।"
+      };
+    }
+
+    // Scenario 2: Suggests SLE or MCTD
+    if (d.anaStatus === "positive" && (d.anaPattern === "Homogeneous" || d.anaPattern === "Speckled") && d.rfStatus === "normal" && d.ccpStatus === "normal") {
+      return {
+        desc: isEn ? 
+          "Significant Positive ANA (titer ≥ 1:160) with a Homogeneous or Speckled staining pattern and normal joint markers (RF/CCP) suggests Systemic Lupus Erythematosus (SLE) or Mixed Connective Tissue Disease (MCTD)." : 
+          "স্বাভাবিক জয়েন্ট মার্কার (RF/CCP) থাকা সত্ত্বেও এএনএ (ANA ≥ ১:১৬০) এবং হোমোজেনাস বা স্পেকেল্ড প্যাটার্ন লুপাস (SLE) অথবা মিক্সড কানেক্টিভ টিস্যু রোগ (MCTD) নির্দেশ করে।",
+        causes: isEn ? ["Systemic Lupus Erythematosus (SLE)", "Sjögren's Syndrome", "MCTD"] : ["সিস্টেমিক লুপাস এরিথেমাটোসাস (SLE)", "সোগ্রেনস সিন্ড্রোম", "মিক্সড কানেক্টিভ টিস্যু ডিজিজ (MCTD)"],
+        symptoms: isEn ? ["Malar (butterfly) facial rash", "Photosensitivity", "Unexplained fever, fatigue"] : ["মুখে প্রজাপতি আকৃতির র্যাশ (ফুসকুড়ি)", "রোদে ত্বকের সংবেদনশীলতা", "অকারণ মৃদু জ্বর ও তীব্র ক্লান্তি"],
+        prevention: isEn ? ["Apply sunscreen (SPF 50+)", "Ensure adequate rest to manage fatigue"] : ["সানস্ক্রিন ব্যবহার করুন (SPF 50+)", "ক্লান্তি দূর করতে পর্যাপ্ত বিশ্রাম নিন"],
+        consult: isEn ? "Rheumatologist evaluation for lupus antibodies (dsDNA, Sm) is recommended." : "লুপাস অ্যান্টিবডি (dsDNA, Sm) পরীক্ষার জন্য রিউমাটোলজিস্টের পরামর্শ নিন।"
+      };
+    }
+
+    // Scenario 3: Suggests CREST (Limited Scleroderma)
+    if (d.anaStatus === "positive" && d.anaPattern === "Centromere") {
+      return {
+        desc: isEn ? 
+          "Positive ANA with a Centromere pattern is highly specific for Limited Systemic Sclerosis (CREST Syndrome)." : 
+          "এএনএ (ANA) পজিটিভ এবং সেন্ট্রোমিয়ার প্যাটার্ন ক্রেস্ট (CREST) সিন্ড্রোম বা লিমিটেড সিস্টেমিক স্ক্লেরোসিসের জন্য অত্যন্ত সুনির্দিষ্ট লক্ষণ।",
+        causes: isEn ? ["Limited Systemic Sclerosis (CREST Syndrome)"] : ["লিমিটেড সিস্টেমিক স্ক্লেরোসিস (ক্রেস্ট সিন্ড্রোম)"],
+        symptoms: isEn ? ["Raynaud's phenomenon (fingers changing color in cold)", "Sclerodactyly (skin tightening on fingers)", "Esophageal dysfunction"] : ["রেইনোডস প্রপঞ্চ (ঠান্ডায় আঙুলের রঙ পরিবর্তন)", "আঙুলের চামড়া শক্ত হওয়া", "খাদ্য গিলতে সমস্যা"],
+        prevention: isEn ? ["Keep hands warm in cold conditions", "Eat smaller, more frequent meals"] : ["ঠান্ডা আবহাওয়ায় হাত ও পা গরম রাখুন", "অল্প অল্প করে ঘন ঘন খাবার খান"],
+        consult: isEn ? "Consult a rheumatologist for baseline esophageal and pulmonary checks." : "খাদ্যনালী ও ফুসফুসের মূল্যায়নের জন্য একজন রিউমাটোলজিস্ট দেখান।"
+      };
+    }
+
+    // Scenario 4: All normal
+    if (d.rfStatus === "normal" && d.ccpStatus === "normal" && d.anaStatus === "negative") {
+      return {
+        desc: isEn ? 
+          "Autoimmune panel pattern is not detected. All evaluated parameters are within normal baseline ranges." : 
+          "অটোইমিউন প্যানেল বিন্যাস শনাক্ত হয়নি। মূল্যায়িত সব পরিমাপক স্বাভাবিক সীমার মধ্যে রয়েছে।",
+        causes: isEn ? ["No active systemic autoimmune signatures checkable on this panel"] : ["এই প্যানেলে শনাক্তযোগ্য কোনো সক্রিয় অটোইমিউন লক্ষণ নেই"],
+        symptoms: isEn ? ["Normal baseline"] : ["স্বাভাবিক"],
+        prevention: isEn ? ["Maintain a healthy anti-inflammatory lifestyle"] : ["স্বাস্থ্যকর ও সুষম জীবনধারা বজায় রাখুন"],
+        consult: isEn ? "Follow up with routine metabolic panels annually." : "প্রতি বছর রুটিন চেকআপ চালিয়ে যান।"
+      };
+    }
+
+    // Default mixed response
+    return {
+      desc: isEn ? 
+        "Mixed panel results detected. Some parameters show borderline or elevated activity, suggesting a need for clinical follow-up." : 
+        "মিশ্র বা জটিল অটোইমিউন প্যানেল রিপোর্ট। কিছু পরিমাপক বর্ডারলাইন বা তার বেশি দেখাচ্ছে যা পর্যবেক্ষণে রাখা প্রয়োজন।",
+      causes: isEn ? ["Early connective tissue disorders", "Transient inflammatory response"] : ["প্রাথমিক অটোইমিউন রোগ", "সাময়িক মৃদু প্রদাহ"],
+      symptoms: isEn ? ["Vague joint aches", "Muscle fatigue"] : ["জয়েন্টে মৃদু ব্যথা ও অনমনীয়তা", "মাংসপেশীতে অবসাদ"],
+      prevention: isEn ? ["Maintain a log of symptoms and joint pain triggers"] : ["ব্যথার তীব্রতা ও কারণগুলো ডায়েরিতে লিখে রাখুন"],
+      consult: isEn ? "Consult your primary physician to interpret these findings in your clinical context." : "শারীরিক পরীক্ষার সাথে মিলিয়ে দেখতে ডাক্তারের পরামর্শ নিন।"
+    };
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resIndexVal").textContent = `${d.alertIndexVal}%`;
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "borderline") colorClass = "high";
+    else if (d.statusKey === "positive") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resIndexVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.alertIndexVal}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = currentLang === 'en' ? 'Normal / Low' : 'স্বাভাবিক / কম';
+    document.getElementById("tickMod").textContent = currentLang === 'en' ? 'Borderline' : 'বর্ডারলাইন';
+    document.getElementById("tickHigh").textContent = currentLang === 'en' ? 'High Alert' : 'উচ্চ ঝুঁকি';
+
+    // Table render
+    const tbody = document.getElementById("resTableBody");
+    tbody.innerHTML = "";
+
+    const rows = [
+      {
+        name: "Rheumatoid Factor (RF)",
+        val: `${d.rfVal.toFixed(1)} IU/mL`,
+        ref: "< 14 IU/mL",
+        status: translations[currentLang][`lbl${d.rfStatus.charAt(0).toUpperCase() + d.rfStatus.slice(1)}`]
+      },
+      {
+        name: "Anti-CCP Antibody",
+        val: `${d.ccpVal.toFixed(1)} U/mL`,
+        ref: "< 20 U/mL",
+        status: translations[currentLang][`lbl${d.ccpStatus.charAt(0).toUpperCase() + d.ccpStatus.slice(1)}`]
+      },
+      {
+        name: "ANA Titer",
+        val: d.anaTiter,
+        ref: "< 1:160",
+        status: translations[currentLang][`lbl${d.anaStatus.charAt(0).toUpperCase() + d.anaStatus.slice(1)}`]
+      },
+      {
+        name: "ANA Pattern",
+        val: d.anaPattern,
+        ref: "N/A",
+        status: patternExplanations[currentLang][d.anaPattern] || "-"
+      }
+    ];
+
+    rows.forEach(r => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-weight:700;">${r.name}</td>
+        <td>${r.val}</td>
+        <td>${r.ref}</td>
+        <td style="font-weight:700;">${r.status}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = getCombinedInsight(d, currentLang);
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.causes.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, alertIndexVal) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      alertIndexVal,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-autoimmune-panel-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>Alert Index: ${item.alertIndexVal}% (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- AUTOIMMUNE PANEL INTERPRETATION ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Clinical Autoimmune Alert Index: ${activeReportData.alertIndexVal}%\n`;
+    t += `RF: ${activeReportData.rfVal.toFixed(1)} IU/mL (${activeReportData.rfStatus})\n`;
+    t += `Anti-CCP: ${activeReportData.ccpVal.toFixed(1)} U/mL (${activeReportData.ccpStatus})\n`;
+    t += `ANA Titer: ${activeReportData.anaTiter} (${activeReportData.anaStatus})\n`;
+    t += `ANA Pattern: ${activeReportData.anaPattern}\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `autoimmune-panel-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

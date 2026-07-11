@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CA-125 Analyzer (Cancer Antigen 125) &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate Cancer Antigen 125 (CA-125) levels. Understand normal, borderline, and elevated ranges for ovarian and pelvic tissues with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--normal-color) 0%, 
+        var(--high-color) 45%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">CA-125 Analyzer (Cancer Antigen 125)</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze CA-125 levels to evaluate risk, monitor treatment efficacy, or screen for potential recurrence of ovarian pathology.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 CA-125 Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valCA125" id="inputLabel" data-translate="labelCA125">CA-125 Level (U/mL)</label>
+              <input type="number" step="0.1" id="valCA125" placeholder="e.g. 24.5" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeCA125()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze CA-125</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your CA-125 level and click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 CA-125 Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Cancer Antigen 125 (CA-125)</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resCAVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">U/mL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--normal-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--high-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: CA-125</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is CA-125?</strong><br><span data-translate="eduA1">Cancer Antigen 125 (CA-125) is a protein most heavily present on the surface of ovarian cancer cells. It is also found in smaller amounts in normal tissues like the lining of the abdomen, pelvis, and chest. It is clinically utilized as a tumor marker.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Can benign conditions raise CA-125?</strong><br><span data-translate="eduA2">Yes, absolutely. CA-125 is notoriously elevated in several non-cancerous conditions, especially in pre-menopausal women. These include menstruation, pregnancy, endometriosis, pelvic inflammatory disease (PID), uterine fibroids, and liver cirrhosis.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "CA-125 Analyzer (Cancer Antigen 125)",
+      toolDesc: "Analyze CA-125 levels to evaluate risk, monitor treatment efficacy, or screen for potential recurrence of ovarian pathology.",
+      inputsTitle: "🧬 CA-125 Parameters",
+      clearBtn: "Reset",
+      labelCA125: "CA-125 Level",
+      btnAnalyze: "Analyze CA-125",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your CA-125 level and click the analyze button to display medical summaries.",
+      reportTitle: "🔬 CA-125 Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal CA-125 (<35 U/mL)",
+      badgeBorderline: "Borderline / Equivocal CA-125 (35-65 U/mL)",
+      badgeElevated: "Elevated CA-125 (>65 U/mL)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Pelvic Health & Wellness Tips",
+      titleConsult: "Clinical Recommendation"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "সিএ-১২৫ বিশ্লেষক",
+      toolDesc: "ডিম্বাশয় ও পেলভিক টিস্যুর কোনো টিউমার বা জটিলতা পর্যবেক্ষণ করতে ক্যান্সার অ্যান্টিজেন ১২৫ (CA-125) স্তর বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 সিএ-১২৫ পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelCA125: "সিএ-১২৫ লেভেল",
+      btnAnalyze: "সিএ-১২৫ বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "সিএ-১২৫ এর মান লিখুন এবং বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 সিএ-১২৫ ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক সিএ-১২৫ (<৩৫ U/mL)",
+      badgeBorderline: "সীমান্তবর্তী সিএ-১২৫ (৩৫-৬৫ U/mL)",
+      badgeElevated: "বর্ধিত সিএ-১২৫ (>৬৫ U/mL)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "পেলভিক ও রিপ্রোডাক্টিভ সুস্থতা টিপস",
+      titleConsult: "ক্লিনিক্যাল নির্দেশনা"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "सीए-125 विश्लेषक (कैंसर एंटीजन 125)",
+      toolDesc: "जोखिम का मूल्यांकन करने, उपचार प्रभावकारिता की निगरानी करने, या डिम्बग्रंथि विकृति विज्ञान की संभावित पुनरावृत्ति की जांच करने के लिए सीए-125 स्तरों का विश्लेषण करें।",
+      inputsTitle: "🧬 CA-125 पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelCA125: "सीए-125 स्तर",
+      btnAnalyze: "सीए-125 का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना सीए-125 स्���र दर्ज करें और चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 CA-125 डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिक��त्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य सीए-125 (<35 यू/एमएल)",
+      badgeBorderline: "बॉर्डरलाइन / इक्विवोकल सीए-125 (35-65 यू/एमएल)",
+      badgeElevated: "उन्नत सीए-125 (>65 यू/एमएल)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "पेल्विक स्वास्थ्य एवं कल्याण युक्तियाँ",
+      titleConsult: "नैदानिक ​​सिफ़ारिश"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is a normal CA-125 level?", a: "A CA-125 level under 35 U/mL is generally considered normal." },
+      { q: "Can men have elevated CA-125?", a: "Yes, though CA-125 is mostly associated with ovarian tissue, men also produce it in abdominal linings. Severe liver disease, pancreatitis, or peritoneal cancers can elevate it in men." },
+      { q: "Does a high CA-125 definitely mean cancer?", a: "No, not at all. Up to 80% of elevated CA-125 cases in premenopausal women are caused by non-cancerous/benign issues like menstruation, endometriosis, fibroids, or pelvic infection." },
+      { q: "Is CA-125 used for general ovarian cancer screening?", a: "No, because of high false-positive rates from benign conditions in premenopausal women. However, it is used for screening in women with a high genetic risk (e.g. BRCA1/2 mutations) or to monitor recurrence." },
+      { q: "What is borderline CA-125?", a: "A range of 35-65 U/mL is borderline. It indicates mild irritation in the pelvic/peritoneal lining, requiring close clinical follow-up." }
+    ],
+    bn: [
+      { q: "সিএ-১২৫ (CA-125) এর স্বাভাবিক মাত্রা কত?", a: "সাধারণত ৩৫ U/mL এর নিচে সিএ-১২৫ স্তরকে স্বাভাবিক ধরা হয়।" },
+      { q: "পুরুষদের কি সিএ-১২৫ বৃদ্ধি পেতে পারে?", a: "হ্যাঁ, এটি প্রধানত মহিলাদের সাথে সম্পর্কিত হলেও পুরুষদের ক্ষেত্রে লিভার সিরোসিস, অগ্ন্যাশয় প্রদাহ বা পেরিটোনিয়াল ক্যান্সারের কারণে এটি বাড়তে পারে।" },
+      { q: "সিএ-১২৫ বেশি হওয়া মানেই কি ক্যান্সার?", a: "না, একেবারেই নয়। বিশেষ করে মেনোপজ হয়নি এমন মহিলাদের ক্ষেত্রে এটি ঋতুস্রাব, এন্ডোমেট্রিওসিস, জরায়ু টিউমার (Fibroids) বা গর্ভধারণের মতো সাধারণ কারণে বৃদ্ধি পেতে পারে।" },
+      { q: "সিএ-১২৫ কি ডিম্বাশয় ক্যান্সারের সাধারণ স্ক্রীনিংয়ের জন্য ব্যবহৃত হয়?", a: "না, সাধারণ মহিলাদের জন্য এটি স্ক্রীনিং হিসেবে উপযুক্ত নয় কারণ এটি অনেক সাধারণ কারণেই বৃদ্ধি পেতে পারে। তবে বংশগত ঝুঁকি থাকলে (BRCA1/2 মিউটেশন) বা চিকিৎসা পর্যবেক্ষণে এটি ব্যবহৃত হয়।" },
+      { q: "সীমান্তবর্তী বা বর্ডারলাইন সিএ-১২৫ কী?", a: "৩৫ থেকে ৬৫ U/mL স্তরকে বর্ডারলাইন ধরা হয়। এটি পেলভিক অঞ্চলের কোনো মৃদু প্রদাহ নির্দেশ করতে পারে, যার জন্য চিকিৎসকের পর্যবেক্ষণ প্রয়োজন।" }
+    ],
+    hi: [
+      { q: "सामान्य CA-125 स्तर क्या है?", a: "35 यू/एमएल से कम सीए-125 स्तर को आम तौर पर सामान्य माना जाता है।" },
+      { q: "क्या पुरुष CA-125 को ऊंचा कर सकते हैं?", a: "हां, हालांकि सीए-125 ज्यादातर डिम्बग्रंथि ऊतक से जुड़ा होता है, पुरुष भी इसे पेट की परत में पैदा करते हैं। गंभीर यकृत रोग, अग्नाशयशोथ, या पेरिटोनियल कैंसर पुरुषों में इसे बढ़ा सकते हैं।" },
+      { q: "क्या उच्च CA-125 का मतलब निश्चित रूप से कैंसर है?", a: "नहीं बिलकुल नहीं। प्रीमेनोपॉज़ल महिलाओं में बढ़े हुए सीए-125 के 80% मामले मासिक धर्म, एंडोमेट्रियोसिस, फाइब्रॉएड या पेल्विक संक्रमण जैसे गैर-कैंसरयुक्त/सौम्य मुद्दों के कारण होते हैं।" },
+      { q: "क्या सीए-125 का उपयोग सामान्य डिम्बग्रंथि कैंसर की जांच के लिए किया जाता है?", a: "नहीं, प्रीमेनोपॉज़ल महिलाओं में सौम्य स्थितियों से उच्च झूठी-सकारात्मक दर के कारण। हालाँकि, इसका उपयोग उच्च आनुवंशिक जोखिम (जैसे BRCA1/2 उत्परिवर्तन) वाली महिलाओं में स्क्रीनिंग या पुनरावृत्ति की निगरानी के लिए किया जाता है।" },
+      { q: "सीमा रेखा CA-125 क्या है?", a: "35-65 यू/एमएल की सीमा सीमा रेखा है। यह पेल्विक/पेरिटोनियल लाइनिंग में हल्की जलन का संकेत देता है, जिसके लिए नजदीकी क्लिनिकल फॉलो-अप की आवश्यकता होती है।" }
+    ]
+  };
+
+  const ca125Insights = {
+    en: {
+      normal: {
+        desc: "Your CA-125 level is within the normal limit (<35 U/mL). Active ovarian tissue proliferation or significant peritoneal irritation is unlikely.",
+        factors: ["Healthy abdominal lining", "No major pelvic tissue inflammation", "Absence of active epithelial tumors"],
+        symptoms: ["No pelvic swelling", "Normal menstrual patterns", "No severe abdominal bloating"],
+        prevention: ["Maintain regular gynecological checkups", "Support cellular health with diets high in antioxidants"],
+        consult: "No specialized testing is warranted. Continue routine checkups."
+      },
+      borderline: {
+        desc: "Your CA-125 level is borderline elevated (35-65 U/mL). While this is above the standard baseline, it is highly likely to be caused by benign conditions or temporary pelvic inflammation.",
+        factors: ["Active menstruation or early pregnancy", "Mild endometriosis", "Uterine fibroids", "Pelvic Inflammatory Disease (PID)"],
+        symptoms: ["Mild pelvic cramps", "Bloating", "Irregular periods"],
+        prevention: ["Track your symptoms relative to your menstrual cycle", "Limit physical stress"],
+        consult: "Consult a gynecologist. They may suggest repeating the test in a different phase of your menstrual cycle."
+      },
+      elevated: {
+        desc: "Your CA-125 level is elevated (>65 U/mL). This indicates significant inflammation or irritation of the pelvic/peritoneal lining. While it is associated with ovarian tumors, a complete diagnostic review is required.",
+        factors: ["Ovarian, uterine, or endometrial malignancies", "Moderate to severe endometriosis", "Recent abdominal/pelvic surgery", "Severe pelvic infection or ascites", "Liver cirrhosis"],
+        symptoms: ["Persistent abdominal bloating or swelling", "Pelvic pain", "Feeling full quickly when eating", "Urinary frequency"],
+        prevention: ["Seek comprehensive diagnostics", "Do not ignore bloating or abdominal pressure"],
+        consult: "We strongly advise consulting a gynecologist or gynecologic oncologist. A pelvic ultrasound (transvaginal) or MRI is commonly ordered to evaluate the ovaries and uterus."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার সিএ-১২৫ মাত্রা স্বাভাবিক সীমার মধ্যে রয়েছে (<৩৫ U/mL)। ডিম্বাশয় বা পেলভিক অঞ্চলে বড় ধরনের কোনো ক্ষতিকর প্রদাহ থাকার সম্ভাবনা খুবই কম।",
+        factors: ["পেলভিক ও উদর অঞ্চলের সুস্থতা", "টিউমার বা ম্যালিগন্যান্সির অনুপস্থিতি"],
+        symptoms: ["পেট ফুলে থাকা বা তলপেট ব্যথার লক্ষণ না থাকা"],
+        prevention: ["বাৎসরিক রুটিন গাইনোকোলজিক্যাল পরীক্ষা করান", "অ্যান্টিঅক্সিডেন্ট সমৃদ্ধ সুষম খাবার খান"],
+        consult: "সাধারণ রুটিন চেকআপ চালিয়ে যান, কোনো বিশেষ পরীক্ষার প্রয়োজন নেই।"
+      },
+      borderline: {
+        desc: "আপনার সিএ-১২৫ মাত্রা কিছুটা বর্ডারলাইন বা সীমান্তবর্তী সীমার মধ্যে রয়েছে (৩৫-৬৫ U/mL)। এটি মেনোপজের পূর্বে মহিলাদের ঋতুস্রাব বা জরায়ুর মৃদু প্রদাহজনিত কারণে হতে পারে।",
+        factors: ["চলমান ঋতুস্রাব বা প্রাথমিক গর্ভধারণ", "এন্ডোমেট্রিওসিস", "জরায়ু টিউমার (Fibroids)", "পেলভিক ইনফ্ল্যামেটরি ডিজিজ (PID)"],
+        symptoms: ["তলপেটে মৃদু কামড়ানো ব্যথা", "পেট ফাঁপা", "ঋতুস্রাবের অনিয়ম"],
+        prevention: ["আপনার মাসিক চক্রের সাথে লক্ষণগুলো মিলিয়ে ট্র্যাক করুন", "শারীরিক মানসিক চাপ কমান"],
+        consult: "গাইনোকোলজিস্টের পরামর্শ নিন। মাসিক চক্রের ভিন্ন সময়ে টেস্টটি পুনরায় করার নির্দেশ দেওয়া হতে পারে।"
+      },
+      elevated: {
+        desc: "আপনার সিএ-১২৫ মাত্রা ঊর্ধ্বমুখী বা বর্ধিত (>৬৫ U/mL)। এটি পেলভিক অঞ্চলের উল্লেখযোগ্য প্রদাহ নির্দেশ করে। ডিম্বাশয় বা জরায়ুর কোনো টিউমার পরীক্ষা করতে সম্পূর্ণ পরীক্ষা প্রয়োজন।",
+        factors: ["ডিম্বাশয়, জরায়ু বা এন্ডোমেট্রিয়াল ক্যান্সার", "মারাত্মক এন্ডোমেট্রিওসিস", "তীব্র পেলভিক ইনফেকশন", "লিভার সিরোসিস বা পেটে পানি জমা (Ascites)"],
+        symptoms: ["ক্রমাগত পেট ফাঁপা বা ফোলা ভাব", "তলপেটে তীব্র ব্যথা", "খাবার খেলে দ্রুত পেট ভরে যাওয়া", "ঘন ঘন প্রস্রাবের বেগ"],
+        prevention: ["পেটের অস্বস্তি অবহেলা করবেন না", "বিশেষজ্ঞের সঠিক পরীক্ষা দ্রুত করান"],
+        consult: "অবিলম্বে একজন গাইনোকোলজিস্ট বা অনকোলজিস্টের পরামর্শ নিন। সাধারণত ডিম্বাশয় ও জরায়ু মূল্যায়নের জন্য পেলভিক আল্ট্রাসাউন্ড (TVS) বা এমআরআই করার নির্দেশ দেওয়া হয়।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका सीए-125 स्तर सामान्य सीमा (<35 यू/एमएल) के भीतर है। सक्रिय डिम्बग्रंथि ऊतक प्रसार या महत्वपूर्ण पेरिटोनियल जलन की संभावना नहीं है।",
+        factors: ["स्वस्थ पेट की परत", "पैल्विक ऊतक में कोई बड़ी सूजन नहीं", "सक्रिय उपकला ट्यूमर की अनुपस्��िति"],
+        symptoms: ["पैल्विक सूजन नहीं", "सामान्य मासिक धर्म पैटर्न", "पेट में कोई गंभीर सूजन नहीं"],
+        prevention: ["नियमित स्त्री रोग संबंधी जांच कराते रहें", "उ���्च एंटीऑक्सीडेंट युक्त आहार के साथ सेलुलर स्वास्थ्य का समर्थन करें"],
+        consult: "किसी विशेष परीक्षण की आवश्यकता नहीं है। नियमित जांच जारी रखें."
+      },
+      borderline: {
+        desc: "आपका सीए-125 स्तर सीमा रेखा से ऊंचा (35-65 यू/एमएल) है। हालाँकि यह मानक आधार रेखा से ऊपर है, लेकिन इसके सौम्य स्थितियों या अस्थायी पेल्विक सूजन के कारण ह��ने की अत्यधिक संभावना है।",
+        factors: ["सक्रिय मासिक धर्म या प्रारंभिक गर्भावस्था", "हल्का एंडोमेट्रिओसिस", "गर्भाशय फाइब्रॉएड", "पेल्विक सूजन रोग (पीआईडी)"],
+        symptoms: ["पेल्विक में हल्की ऐंठन", "सूजन", "अनियमित पीरियड्स"],
+        prevention: ["अपने मासिक धर्म चक्र के सापेक्ष अपने लक्षणों को ट्रैक करें", "शारीरिक तनाव सीमित करें"],
+        consult: "स्त्री रोग विशेषज्ञ से सलाह लें. वे आपके मासिक धर्म चक्र के एक अलग चरण में परीक्षण दोहराने का सुझाव दे सकते हैं।"
+      },
+      elevated: {
+        desc: "आपका CA-125 स्तर ऊंचा (>65 U/mL) है। यह पेल्विक/पेरिटोनियल अस्तर की महत्वपूर्ण सूजन या जलन को इंगित करता है। हालाँकि यह डिम्बग्रंथि ट्यूमर से जुड़ा हुआ है, इसलिए पूर्ण नैदानिक ​​समीक्षा क��� आवश्यकता होती है।",
+        factors: ["डिम्बग्रंथि, गर्भाशय, या एंडोमेट्रियल दुर्दमताएँ", "मध्यम से गंभीर एंडोमेट्रियोसिस", "हाल ही में पेट/पेल्विक सर्जरी", "गंभीर पेल्विक संक्रमण या जलोदर", "लीवर सिरोसिस"],
+        symptoms: ["पेट में लगातार सूजन या सूजन रहना", "पैल्विक दर्द", "खाते समय जल्दी पेट भरा हुआ महसूस होना", "मूत्र आवृत्ति"],
+        prevention: ["व्यापक निदान की तलाश करें", "सूजन या पेट पर दबाव को नजरअंदाज न करें"],
+        consult: "हम स्त्री रोग विशेषज्ञ या स्त्री रोग ऑन्कोलॉजिस्ट से परामर्श लेने की दृढ़ता से सलाह देते हैं। आमतौर पर अंडाशय और गर्भाशय का मूल्यांकन करने के लिए पेल्विक अल्ट्रासाउंड (ट्रांसवेजाइनल) या एमआरआई का आदेश दिया ���ाता है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-ca125-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valCA125").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function analyzeCA125() {
+    const valCA125 = parseFloat(document.getElementById("valCA125").value);
+
+    if (isNaN(valCA125) || valCA125 < 0) {
+      alert(currentLang === "en" ? "Please enter a valid CA-125 value." : "দয়া করে সিএ-১২৫ এর সঠিক মান লিখুন।");
+      return;
+    }
+
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valCA125 >= 35 && valCA125 <= 65) {
+      statusKey = "borderline";
+      badgeKey = "badgeBorderline";
+    } else if (valCA125 > 65) {
+      statusKey = "elevated";
+      badgeKey = "badgeElevated";
+    }
+
+    // Gauge pointer calculation
+    let pointerPct = 10;
+    if (valCA125 <= 35) {
+      pointerPct = Math.max(5, (valCA125 / 35) * 40);
+    } else if (valCA125 <= 65) {
+      pointerPct = 40 + ((valCA125 - 35) / 30) * 35;
+    } else {
+      pointerPct = Math.min(95, 75 + ((valCA125 - 65) / 135) * 20);
+    }
+
+    activeReportData = {
+      valCA125,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valCA125);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resCAVal").textContent = d.valCA125.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "borderline") colorClass = "high";
+    else if (d.statusKey === "elevated") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resCAVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = "0 - 35 (Normal)";
+    document.getElementById("tickNormalRange").textContent = "35 - 65 (Borderline)";
+    document.getElementById("tickHigh").textContent = "65+ (Elevated)";
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = ca125Insights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valCA125) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valCA125,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-ca125-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valCA125.toFixed(1)} U/mL (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- CANCER ANTIGEN 125 (CA-125) REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `CA-125 Value: ${activeReportData.valCA125.toFixed(1)} U/mL\n`;
+    t += `Clinical Status: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `ca125-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

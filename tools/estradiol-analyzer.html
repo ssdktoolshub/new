@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estradiol (E2) Analyzer &bull; SSDK CLINICAL TOOLS</title>
+  <meta name="description" content="Evaluate serum Estradiol (E2) levels online. Assess reproductive health, cycle-phase variations, and estrogen balance for males and females.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--low-color) 0%, 
+        var(--normal-color) 45%, 
+        var(--high-color) 80%,
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Estradiol (E2) Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze serum estradiol (E2) levels in relation to biological gender and cycle phases to assess fertility, menstrual health, or estrogen excess.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Estradiol Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valGender" data-translate="labelGender">Biological Gender</label>
+              <select id="valGender" onchange="togglePhaseSelect(); resetForm();">
+                <option value="female" selected data-translate="optFemale">Female</option>
+                <option value="male" data-translate="optMale">Male</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper" id="phaseWrapper">
+              <label for="valPhase" data-translate="labelPhase">Menstrual Cycle Phase (Females Only)</label>
+              <select id="valPhase" onchange="resetForm()">
+                <option value="follicular" selected data-translate="optFollicular">Follicular Phase (30 - 120 pg/mL)</option>
+                <option value="luteal" data-translate="optLuteal">Luteal Phase (70 - 300 pg/mL)</option>
+                <option value="postmenopausal" data-translate="optPostmenopausal">Postmenopausal (&lt; 30 pg/mL)</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valEstradiol" data-translate="labelEstradiol">Serum Estradiol (pg/mL)</label>
+              <input type="number" step="0.1" id="valEstradiol" placeholder="e.g. 85" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeEstradiol()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Estradiol</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your estradiol level and select gender/phase parameters, then click Analyze.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Serum Estradiol Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Serum Estradiol (E2)</span>
+            <span><strong data-translate="labelGenderSum">Gender</strong>: <span id="resGenderText">-</span></span>
+            <span><strong data-translate="labelPhaseSum">Phase</strong>: <span id="resPhaseText">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resEstVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">pg/mL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--low-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">-</span>
+              <span id="tickHigh" style="color: var(--high-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Estradiol</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Estradiol (E2)?</strong><br><span data-translate="eduA1">Estradiol is the most active and dominant form of estrogen in adult, non-pregnant females. It is primarily synthesized by the granulosa cells of the ovarian follicles. Small amounts are generated in males via peripheral aromatization of testosterone.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">How does it fluctuate?</strong><br><span data-translate="eduA2">In menstruating females, E2 peaks twice: once in the late follicular phase (triggering LH surge and ovulation) and a secondary, broader peak during the luteal phase. After menopause, ovarian production ceases, resulting in persistently low levels.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What causes abnormal levels?</strong><br><span data-translate="eduA3">High estradiol levels may indicate estrogen therapy, ovarian cysts, or tumors. In men, elevated estradiol causes gynecomastia and is linked to liver cirrhosis. Low estradiol is a hallmark of ovarian failure, menopause, extreme eating disorders, or heavy athletic training.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Estradiol (E2) Analyzer",
+      toolDesc: "Analyze serum estradiol (E2) levels in relation to biological gender and cycle phases to assess fertility, menstrual health, or estrogen excess.",
+      inputsTitle: "🧬 Estradiol Parameters",
+      clearBtn: "Reset",
+      labelGender: "Biological Gender",
+      labelPhase: "Menstrual Cycle Phase (Females Only)",
+      labelEstradiol: "Serum Estradiol (pg/mL)",
+      btnAnalyze: "Analyze Estradiol",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your estradiol level and select gender/phase parameters, then click Analyze.",
+      reportTitle: "🔬 Serum Estradiol Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelGenderSum: "Gender",
+      labelPhaseSum: "Phase",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      optFemale: "Female",
+      optMale: "Male (Normal 10 - 40 pg/mL)",
+      optFollicular: "Follicular Phase (30 - 120 pg/mL)",
+      optLuteal: "Luteal Phase (70 - 300 pg/mL)",
+      optPostmenopausal: "Postmenopausal (< 30 pg/mL)",
+      badgeNormal: "Normal Estradiol Level",
+      badgeLow: "Low Estradiol Level",
+      badgeHigh: "Elevated Estradiol Level",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "এস্ট্রাডিওল (E2) বিশ্লেষক",
+      toolDesc: "প্রজনন স্বাস্থ্য, ডিম্বস্ফোটন বা অতিরিক্ত ইস্ট্রোজেন হরমোন চিহ্নিত করতে লিঙ্গ ও মাসিক চক্রের ধাপের ওপর ভিত্তি করে সিরাম এস্ট্রাডিওলের মাত্রা বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 এস্ট্রাডিওল পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelGender: "শারীরবৃত্তীয় লিঙ্গ",
+      labelPhase: "মাসিক চক্রের ধাপ (শুধুমাত্র নারীদের জন্য)",
+      labelEstradiol: "সিরাম এস্ট্রাডিওল (pg/mL)",
+      btnAnalyze: "এস্ট্রাডিওল বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "এস্ট্রাডিওলের মান লিখুন, লিঙ্গ ও ধাপ নির্বাচন করে বিশ্লেষণ করুন বোতামে ক্লিক করুন।",
+      reportTitle: "🔬 সিরাম এস্ট্রাডিওল ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelGenderSum: "লিঙ্গ",
+      labelPhaseSum: "ধাপ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      optFemale: "নারী",
+      optMale: "পুরুষ (স্বাভাবিক ১০ - ৪০ pg/mL)",
+      optFollicular: "ফলিকুলার ধাপ (৩০ - ১২০ pg/mL)",
+      optLuteal: "লুটিয়াল ধাপ (৭০ - ৩০০ pg/mL)",
+      optPostmenopausal: "মেনোপজ-পরবর্তী বা পোস্টমেনোপজাল (< ৩০ pg/mL)",
+      badgeNormal: "স্বাভাবিক এস্ট্রাডিওল লেভেল",
+      badgeLow: "কম এস্ট্রাডিওল লেভেল",
+      badgeHigh: "উচ্চ এস্ট্রাডিওল লেভেল",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভavy প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "एस्ट्राडियोल (ई2) विश्लेषक",
+      toolDesc: "प्रजनन क्षमता, मासिक धर्म स्वास्थ्य, या एस्ट्रोजन की अधिकता का आकलन करने के लिए जैविक लिंग और चक्र चरणों के संबंध में सीरम एस्ट्राडियोल (ई2) स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬 एस्ट्राडियोल पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelGender: "जैविक लिंग",
+      labelPhase: "मासिक धर्म चक्र चरण (केवल महिलाएँ)",
+      labelEstradiol: "सीरम एस्ट्राडियोल (पीजी/एमएल)",
+      btnAnalyze: "एस्ट्राडियोल का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना एस्ट्राडियोल स्तर दर्ज करें और लिंग/चरण पैरामीटर चुनें, फिर विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 सीरम एस्ट्राडियोल डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelGenderSum: "लिंग",
+      labelPhaseSum: "चरण",
+      labelDate: "तारीख",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      optFemale: "स्त्री",
+      optMale: "पुरुष (सामान्य 10 - 40 पीजी/एमएल)",
+      optFollicular: "कूपिक चरण (30 - 120 पीजी/एमएल)",
+      optLuteal: "ल्यूटियल चरण (70 - 300 पीजी/एमएल)",
+      optPostmenopausal: "रजोनिवृत्ति उपरांत (<30 पीजी/एमएल)",
+      badgeNormal: "सामान्य एस्ट्राडियोल स्तर",
+      badgeLow: "निम्न एस्ट्राडियोल स्तर",
+      badgeHigh: "ऊंचा एस्ट्राडियोल स्तर",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Estradiol (E2)?", a: "Estradiol is the primary and strongest form of the estrogen hormone produced by adult ovaries, critical for bones and reproductive organs." },
+      { q: "What are the reference ranges?", a: "Females: Follicular (30-120 pg/mL), Luteal (70-300 pg/mL), Postmenopausal (< 30 pg/mL). Males: 10-40 pg/mL." },
+      { q: "What causes elevated estradiol?", a: "Exogenous estrogens, ovarian hyperstimulation, pregnancy, or ovarian tumors. In males, liver disease or excess fat tissue aromatizing testostrone." },
+      { q: "What causes low estradiol?", a: "Ovarian failure, natural menopause, excessive weight loss, strenuous athletic training, or hypopituitarism." }
+    ],
+    bn: [
+      { q: "এস্ট্রাডিওল (E2) কী?", a: "এস্ট্রাডিওল হলো ডিম্বাশয় থেকে তৈরি হওয়া ইস্ট্রোজেন হরমোনের প্রধান ও সবচেয়ে শক্তিশালী রূপ, যা নারীর প্রজনন স্বাস্থ্য ও হাড় সুরক্ষায় দরকারি।" },
+      { q: "এর স্বাভাবিক মাত্রা কত?", a: "নারীদের ক্ষেত্রে: ফলিকুলার ধাপ (৩০-১২০ pg/mL), লুটিয়াল ধাপ (৭০-৩০০ pg/mL), মেনোপজ-পরবর্তী (< ৩০ pg/mL)। পুরুষদের ক্ষেত্রে: ১০-৪০ pg/mL।" },
+      { q: "উচ্চ এস্ট্রাডিওল কেন হয়?", a: "হরমোন থেরাপি, গর্ভধারণ, ডিম্বাশয়ের টিউমার। পুরুষদের ক্ষেত্রে লিভারের রোগ বা চর্বির কোষে টেস্টোস্টেরন রূপান্তর।" },
+      { q: "কম এস্ট্রাডিওল কেন হয়?", a: "মেনোপজ বা মাসিক স্থায়ীভাবে বন্ধ হওয়া, ডিম্বাশয়ের অকাল অকার্যকারিতা, অতিরিক্ত ওজন হ্রাস বা অতিরিক্ত শারীরিক পরিশ্রম।" }
+    ],
+    hi: [
+      { q: "एस्ट्राडियोल (E2) क्या है?", a: "एस्ट्राडियोल वयस्क अंडाशय द्वारा उत्पादित एस्ट्रोजन हार्मोन का प्राथमिक और सबसे मजबूत रूप है, जो हड्डियों और प्रजनन अंगों के लिए महत्वपूर्ण है।" },
+      { q: "संदर्भ श्रेणियाँ क्या हैं?", a: "महिलाएं: कूपिक (30-120 पीजी/एमएल), ल्यूटियल (70-300 पीजी/एमएल), पोस्टमेन��पॉज़ल (<30 पीजी/एमएल)। नर: 10-40 पीजी/एमएल।" },
+      { q: "बढ़े हुए एस्ट्राडियोल का क्या कारण है?", a: "बहिर्जात एस्ट्रोजेन, डिम्बग्रंथि हाइपरस्टिम्यूलेशन, गर्भावस्था, या डिम्बग्रंथि ट्यूमर। पुरुषों में, यकृत रोग या अतिरिक्त वसा ऊतक टेस्टोस्ट्रोन को सुगंधित करता है।" },
+      { q: "कम एस्ट्राडियोल का क्या कारण है?", a: "डिम्बग्रंथि विफलता, प्राकृतिक रजोनिवृत्ति, अत्यधिक वजन घटना, ज़ोरदार एथलेटिक प्रशिक्षण, या हाइपोपिटिटारिज़्म।" }
+    ]
+  };
+
+  const estradiolInsights = {
+    en: {
+      normal: {
+        desc: "Your estradiol level is within the normal reference range for your specified gender and cycle phase. This indicates stable estrogenic activity.",
+        factors: ["Healthy follicular development", "Proper ovarian response", "Balanced endocrine signaling"],
+        symptoms: ["Regular menstrual cycles", "Normal bone health maintenance", "Balanced mood and cognitive function"],
+        prevention: ["Maintain a healthy, nutrient-rich diet", "Incorporate load-bearing exercise for bone protection", "Avoid endocrine disruptors"],
+        consult: "Continue routine monitoring. Report any cycles changes to your gynecologist."
+      },
+      low: {
+        desc: "Your estradiol level is lower than the reference normal. Postmenopausally, this is expected. During active reproductive years, it signifies ovarian insufficiency.",
+        factors: ["Menopause or premature ovarian failure", "Hypothalamic amenorrhea (due to low body weight/stress)", "Extreme physical training (female athlete triad)"],
+        symptoms: ["Hot flashes, night sweats", "Vaginal dryness, painful intercourse", "Mood swings, anxiety, depression", "Bone thinning (risk of osteopenia/osteoporosis)"],
+        prevention: ["Consume foods with phytoestrogens (e.g. soy) if approved by a doctor", "Ensure adequate calcium and Vitamin D intake"],
+        consult: "Discuss with a physician or endocrinologist. If you are young with amenorrhea, HRT or lifestyle alterations may be indicated."
+      },
+      high: {
+        desc: "Your estradiol level is elevated. High estrogen can drive estrogen dominance, causing cycle changes and proliferation of endometrial tissues.",
+        factors: ["Ovarian hyperstimulation or cysts", "Estrogen-secreting ovarian or adrenal tumors", "Liver disease (reduced estrogen clearance)", "Estrogen replacement therapy or contraceptive use"],
+        symptoms: ["Heavy or irregular periods", "Breast tenderness, fibrocystic breasts", "Bloating, fluid retention, weight gain", "In men: Gynecomastia (enlarged breast tissue), erectile dysfunction"],
+        prevention: ["Support liver health (which metabolizes estrogens) by reducing alcohol", "Eat cruciferous vegetables (broccoli, cabbage) containing DIM"],
+        consult: "Seek clinical consultation. A pelvic ultrasound is recommended for females to rule out ovarian cysts or lining thickness issues."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার এস্ট্রাডিওল মাত্রা নির্দিষ্ট লিঙ্গ ও চক্রের ধাপ অনুযায়ী স্বাভাবিক সীমার মধ্যেই রয়েছে। এটি ইস্ট্রোজেনের স্বাভাবিক কাজকে নির্দেশ করে।",
+        factors: ["ডিম্বাশয়ের স্বাস্থ্যকর কার্যাবলি", "হরমোনের সঠিক ভারসাম্য"],
+        symptoms: ["নিয়মিত মাসিক চক্র", "হাড়ের সুস্থতা"],
+        prevention: ["পর্যাপ্ত পুষ্টিকর খাদ্য গ্রহণ বজায় রাখুন", "হাড় মজবুত রাখতে ব্যায়াম করুন"],
+        consult: "রুটিন স্ক্রীনিং এর মাধ্যমে নজর রাখুন।"
+      },
+      low: {
+        desc: "আপনার এস্ট্রাডিওলের মাত্রা কম। মেনোপজের পর এটি স্বাভাবিক হলেও প্রজনন বয়সের নারীদের ক্ষেত্রে এটি ডিম্বাশয়ের অকাল অকার্যকারিতা বা ডিম্বস্ফোটনের অভাব নির্দেশ করে।",
+        factors: ["মেনোপজ (মাসিক বন্ধ হওয়া) বা প্রি-ম্যাচিউর ওভারিয়ান ফেইলিউর", "অতিরিক্ত ডায়েটিং বা কম ওজন", "অত্যধিক শারীরিক কসরত"],
+        symptoms: ["হট ফ্ল্যাশ বা হঠাৎ শরীর গরম হওয়া ও ঘাম আসা", "ত্বক ও যোনিপথের শুষ্কতা", "হতাশা ও অতিরিক্ত মেজাজ খিটখিটে হওয়া", "হাড় ক্ষয় ও দুর্বল হওয়া"],
+        prevention: ["ক্যালসিয়াম ও ভিটামিন ডি সমৃদ্ধ খাবার খাবেন", "শরীরের ওজন স্বাভাবিক রাখুন"],
+        consult: "অবিলম্বে স্ত্রীরোগ বিশেষজ্ঞ বা হরমোন বিশেষজ্ঞের পরামর্শ নিন। হরমোন থেরাপি (HRT) এর প্রয়োজন হতে পারে।"
+      },
+      high: {
+        desc: "আপনার এস্ট্রাডিওলের মাত্রা বেশি। রক্তে অতিরিক্ত এস্ট্রাডিওল মাসিক অনিয়মিত করা সহ জরায়ুর দেয়াল পুরু করা বা স্তনে ব্যথার কারণ হতে পারে। পুরুষদের ক্ষেত্রে এটি বুক বড় হয়ে যাওয়ার কারণ হতে পারে।",
+        factors: ["ডিম্বাশয়ের সিস্ট বা টিউমার", "লিভারের রোগ (যার কারণে শরীরে ইস্ট্রোজেন ভাঙতে পারে না)", "বাইরে থেকে ইস্ট্রোজেন ওষুধ বা গর্ভনিরোধক গ্রহণ"],
+        symptoms: ["মাসিকের সময় অতিরিক্ত রক্তপাত বা অনিয়মিত মাসিক", "স্তনে অতিরিক্ত সংবেদনশীলতা ও ব্যথা", "শরীরে পানি জমা ও হঠাৎ ওজন বৃদ্ধি", "পুরুষদের ক্ষেত্রে: গাইনোকোমাস্টিয়া (পুরুষের স্তন বৃদ্ধি)"],
+        prevention: ["লিভারের সুস্থতা বজায় রাখতে অ্যালকোহল ও অতিরিক্ত ফ্যাটযুক্ত খাবার এড়ান", "বাঁধাকপি, ব্রকলি ইত্যাদি আঁশযুক্ত সবজি বেশি খাবেন"],
+        consult: "ডাক্তারের পরামর্শ নিন। ডিম্বাশয়ের কোনো আল্ট্রাসাউন্ড বা অন্যান্য হরমোনের অনুপাত পরীক্ষা করার প্রয়োজন হতে পারে।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका एस्ट्राडियोल स्तर आपके निर्दिष्ट लिंग और चक्र चरण के लिए सामान्य संदर्भ सीमा के भीतर है। यह स्थिर एस्ट्रोजेनिक गतिविधि को इंगित करता है।",
+        factors: ["स्वस्थ कूपिक विकास", "उचित डिम्बग्रंथि प्रतिक्रिया", "संतुलित अंतःस्रावी संकेतन"],
+        symptoms: ["नियमित मासिक धर्म चक्र", "सामान्य हड्डी स्वास्थ्य रखरखाव", "संतुलित मनोदशा और संज्ञानात्मक कार्य"],
+        prevention: ["स्वस्थ, पोषक तत्वों से भरपूर आहार बनाए रखें", "हड्डियों की सुरक्षा के लिए भार वहन करने वाले व्यायाम को शामिल करें", "अंतःस्रावी अवरोधकों से बचें"],
+        consult: "नियमित निगरानी जारी रखें. चक्र में किसी भी बदलाव के बारे में अपने स्त्री रोग विशेषज्ञ को बताएं।"
+      },
+      low: {
+        desc: "आपका एस्ट्राडियोल स्तर संदर्भ सामान्य से कम है। रजोनिवृत्ति के बाद, यह अपेक्षित है। सक्रिय प्रजनन वर्षों के दौरान, यह डिम्बग्रंथि अपर्याप्तता का प्रतीक है।",
+        factors: ["रजोनिवृत्ति या समय से पहले डिम्बग्रंथि विफलता", "हाइपोथैलेमिक एमेनोरिया (शरीर के कम वजन/तनाव के कारण)", "अत्यधिक शारीरिक प्रशिक्षण (महिला एथलीट ट्रायड)"],
+        symptoms: ["गर्म चमक, रात को पसीना", "योनि का सूखापन, दर्दनाक संभोग", "मूड में बदलाव, चिंता, अवसाद", "हड्डी का पतला होना (ऑस्टियोपीनिया/ऑस्टियोपोरोसिस का खतरा)"],
+        prevention: ["डॉक्टर द्वारा अनुमोदित होने पर फाइटोएस्ट्रोजेन (जैसे सोया) वाले खाद्य पदार्थों का सेवन करें", "पर्याप्त कैल्शियम और विटामिन डी का सेवन सुनिश्चित करें"],
+        consult: "किसी चिकित्सक या एंडोक्रिनोलॉजिस्ट से चर्चा करें। यदि आप युवा हैं और एमेनोरिया से पीड़ित हैं, तो एचआरटी या जीवनशैली में बदलाव का संकेत दिया जा सकता है।"
+      },
+      high: {
+        desc: "आपका एस्ट्राडियोल स्तर ऊंचा है। उच्च एस्ट्रोजन एस्ट्��ोजेन प्रभुत्व को बढ़ा सकता है, जिससे चक्र परिवर्तन और एंडोमेट्रियल ऊतकों का प्रसार हो सकता है।",
+        factors: ["डिम्बग्रंथि हाइपरस्टिम्यूलेशन या सिस्ट", "एस्ट्रोजेन-स्रावित डिम्बग्रंथि या अधिवृक्क ट्यूमर", "जिगर की बीमारी (एस्ट्रोजन निकासी में कमी)", "एस्ट्रोजन रिप्लेसमेंट थेरेपी या गर्भनिरोधक उपयोग"],
+        symptoms: ["भारी या अनियमित माहवारी", "स्तन कोमलता, फाइब्रोसिस्टिक स्तन", "सूजन, द्रव प्रतिधारण, वजन बढ़ना", "पुरुषों में: गाइनेकोमेस्टिया (स्तन ऊतक का बढ़ना), स्तंभन दोष"],
+        prevention: ["शराब को कम करके लीवर के स्वास्थ्य (जो एस्ट्रोजेन का चयापचय करता है) का समर्थन करें", "डीआईएम युक्त क्रूसिफेरस सब्जियां (ब्रोकोली, पत्तागोभी) खाएं"],
+        consult: "चिकित्सीय परामर्श लें. डिम्बग्रंथि अल्सर या अस्तर की मोटाई की समस्याओं से निपटने के लिए महिलाओं को पेल्विक अल्ट्रासाउंड की सिफारिश की जाती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-estradiol-history")) || [];
+  let activeReportData = null;
+
+  function togglePhaseSelect() {
+    const gender = document.getElementById("valGender").value;
+    const phaseWrapper = document.getElementById("phaseWrapper");
+    if (gender === "male") {
+      phaseWrapper.style.display = "none";
+    } else {
+      phaseWrapper.style.display = "block";
+    }
+  }
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valEstradiol").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function analyzeEstradiol() {
+    const valEst = parseFloat(document.getElementById("valEstradiol").value);
+    const gender = document.getElementById("valGender").value;
+    const phase = document.getElementById("valPhase").value;
+
+    if (isNaN(valEst) || valEst < 0) {
+      alert(currentLang === "en" ? "Please enter a valid estradiol value." : "দয়া করে এস্ট্রাডিওলের সঠিক মান লিখুন।");
+      return;
+    }
+
+    // Determine limits
+    // Follicular 30-120 | Luteal 70-300 | Postmenopausal < 30 | Males 10-40
+    let min = 0;
+    let max = 0;
+    let statusKey = "normal";
+    let badgeKey = "badgeNormal";
+
+    if (gender === "male") {
+      min = 10.0;
+      max = 40.0;
+      if (valEst < min) {
+        statusKey = "low";
+        badgeKey = "badgeLow";
+      } else if (valEst > max) {
+        statusKey = "high";
+        badgeKey = "badgeHigh";
+      }
+    } else {
+      if (phase === "follicular") {
+        min = 30.0;
+        max = 120.0;
+        if (valEst < min) {
+          statusKey = "low";
+          badgeKey = "badgeLow";
+        } else if (valEst > max) {
+          statusKey = "high";
+          badgeKey = "badgeHigh";
+        }
+      } else if (phase === "luteal") {
+        min = 70.0;
+        max = 300.0;
+        if (valEst < min) {
+          statusKey = "low";
+          badgeKey = "badgeLow";
+        } else if (valEst > max) {
+          statusKey = "high";
+          badgeKey = "badgeHigh";
+        }
+      } else {
+        // postmenopausal
+        min = 0;
+        max = 30.0;
+        if (valEst >= max) {
+          statusKey = "high";
+          badgeKey = "badgeHigh";
+        } else {
+          statusKey = "normal";
+          badgeKey = "badgeNormal";
+        }
+      }
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    let scaleMin = min === 0 ? 5 : min;
+    if (valEst >= scaleMin && valEst <= max) {
+      const range = max - scaleMin;
+      pointerPct = range > 0 ? 30 + ((valEst - scaleMin) / range) * 40 : 50;
+    } else if (valEst < scaleMin) {
+      pointerPct = Math.max(5, (valEst / scaleMin) * 25);
+    } else {
+      pointerPct = Math.min(95, 75 + ((valEst - max) / (max * 0.8)) * 20);
+    }
+
+    activeReportData = {
+      valEst,
+      min,
+      max,
+      gender,
+      phase: gender === "male" ? "n/a" : phase,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valEst, gender, activeReportData.phase);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+
+    const genderStr = d.gender === "male" ? 
+      (currentLang === "en" ? "Male" : "পুরুষ") : 
+      (currentLang === "en" ? "Female" : "নারী");
+    document.getElementById("resGenderText").textContent = genderStr;
+
+    let phaseStr = "-";
+    if (d.gender === "female") {
+      if (d.phase === "follicular") phaseStr = currentLang === "en" ? "Follicular Phase" : "ফলিকুলার ধাপ";
+      else if (d.phase === "luteal") phaseStr = currentLang === "en" ? "Luteal Phase" : "লুটিয়াল ধাপ";
+      else if (d.phase === "postmenopausal") phaseStr = currentLang === "en" ? "Postmenopausal" : "মেনোপজ-পরবর্তী";
+    } else {
+      phaseStr = currentLang === "en" ? "N/A" : "প্রযোজ্য নয়";
+    }
+    document.getElementById("resPhaseText").textContent = phaseStr;
+    
+    document.getElementById("resEstVal").textContent = d.valEst.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resEstVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    if (d.gender === "female" && d.phase === "postmenopausal") {
+      document.getElementById("tickLow").textContent = `0`;
+      document.getElementById("tickNormalRange").textContent = `< 30.0 (Normal)`;
+      document.getElementById("tickHigh").textContent = `30.0+`;
+    } else {
+      document.getElementById("tickLow").textContent = `< ${d.min.toFixed(0)}`;
+      document.getElementById("tickNormalRange").textContent = `${d.min.toFixed(0)} - ${d.max.toFixed(0)}`;
+      document.getElementById("tickHigh").textContent = `${d.max.toFixed(0)}+`;
+    }
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = estradiolInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valEst, gender, phase) {
+    const detailStr = gender === "male" ? "Male" : phase.charAt(0).toUpperCase() + phase.slice(1);
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valEst,
+      detailStr,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-estradiol-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date} (${item.detailStr})</span>
+        <strong>${item.valEst.toFixed(1)} pg/mL (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const genderStr = activeReportData.gender === "male" ? "Male" : "Female";
+    let t = `--- SERUM ESTRADIOL (E2) REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Gender: ${genderStr}\n`;
+    if (activeReportData.gender === "female") {
+      t += `Phase: ${activeReportData.phase}\n`;
+    }
+    t += `Value: ${activeReportData.valEst.toFixed(1)} pg/mL\n`;
+    t += `Reference Range: ${activeReportData.min} - ${activeReportData.max} pg/mL\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `estradiol-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    togglePhaseSelect();
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

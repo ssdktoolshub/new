@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>eGFR Calculator &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Calculate estimated Glomerular Filtration Rate (eGFR) online using CKD-EPI (2021) and MDRD equations to check chronic kidney disease stages.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .egfr-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--critical-color) 0%, 
+        var(--high-color) 40%, 
+        var(--normal-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .equation-comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .eq-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.8rem;
+    }
+
+    .eq-box strong {
+      color: var(--accent);
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .egfr-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">eGFR Calculator</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Calculate Estimated Glomerular Filtration Rate (eGFR) using CKD-EPI (2021) and MDRD equations to monitor chronic kidney stages.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 eGFR Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="patientAge" data-translate="labelAge">Age (Years)</label>
+              <input type="number" id="patientAge" min="18" max="120" value="45" required>
+            </div>
+            
+            <div class="input-wrapper">
+              <label for="patientGender" data-translate="labelGender">Gender</label>
+              <select id="patientGender">
+                <option value="male" selected data-translate="genderMale">Male</option>
+                <option value="female" data-translate="genderFemale">Female</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Creatinine Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="mgdl" selected>mg/dL</option>
+                <option value="umoll">µmol/L</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valCreatinine" id="inputLabel" data-translate="labelCreatinine">Serum Creatinine</label>
+              <input type="number" step="0.01" id="valCreatinine" placeholder="e.g. 1.1" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="calculateEGFR()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Calculate eGFR</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧬</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter patient age, gender, and serum creatinine, then click calculate to display kidney filtration metrics.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Kidney Filtration Profile</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelAge">Age</strong>: <span id="resAge">-</span></span>
+            <span><strong data-translate="labelGender">Gender</strong>: <span id="resGender">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="egfr-container">
+            <div class="val-large" id="resEGFRVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">mL/min/1.73 m²</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span style="color: var(--critical-color);">&lt; 15 (Failure)</span>
+              <span style="color: var(--high-color);">15 - 60</span>
+              <span style="color: var(--normal-color);">90+ (Normal)</span>
+            </div>
+
+            <div class="equation-comparison">
+              <div class="eq-box">
+                <span data-translate="eqCkdEpi">CKD-EPI (2021)</span><br>
+                <strong id="resCkdEpi">-</strong> mL/min/1.73 m²
+              </div>
+              <div class="eq-box">
+                <span data-translate="eqMdrd">MDRD Equation</span><br>
+                <strong id="resMdrd">-</strong> mL/min/1.73 m²
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: eGFR & CKD Stages</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is eGFR?</strong><br><span data-translate="eduA1">eGFR (Estimated Glomerular Filtration Rate) measures how much blood passes through the tiny kidney filters (glomeruli) each minute. It is adjusted for body surface area.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is the 2021 CKD-EPI equation?</strong><br><span data-translate="eduA2">The 2021 CKD-EPI creatinine equation is a refit of the CKD-EPI equations, developed to eliminate race-based coefficients to improve clinical impartiality and diagnostic accuracy.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "eGFR Calculator",
+      toolDesc: "Calculate Estimated Glomerular Filtration Rate (eGFR) using CKD-EPI (2021) and MDRD equations to monitor chronic kidney stages.",
+      inputsTitle: "🧬 eGFR Parameters",
+      clearBtn: "Reset",
+      labelAge: "Age (Years)",
+      labelGender: "Gender",
+      genderMale: "Male",
+      genderFemale: "Female",
+      labelUnit: "Creatinine Unit",
+      labelCreatinine: "Serum Creatinine",
+      btnAnalyze: "Calculate eGFR",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter patient age, gender, and serum creatinine, then click calculate to display kidney filtration metrics.",
+      reportTitle: "🔬 Kidney Filtration Profile",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      eqCkdEpi: "CKD-EPI (2021)",
+      eqMdrd: "MDRD Equation",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeStage1: "Stage 1 CKD - Normal/High eGFR (>=90)",
+      badgeStage2: "Stage 2 CKD - Mildly Decreased (60-89)",
+      badgeStage3a: "Stage 3a CKD - Mild to Moderate Decline (45-59)",
+      badgeStage3b: "Stage 3b CKD - Moderate to Severe Decline (30-44)",
+      badgeStage4: "Stage 4 CKD - Severe Decreased eGFR (15-29)",
+      badgeStage5: "Stage 5 CKD - Kidney Failure (<15)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ই-জিএফআর (eGFR) ক্যালকুলেটর",
+      toolDesc: "CKD-EPI (২০২১) এবং MDRD সমীকরণ ব্যবহার করে আপনার গ্লোমেরুলার পরিস্রাবণ হার (eGFR) এবং ক্রনিক কিডনি রোগের স্টেজ নির্ণয় করুন।",
+      inputsTitle: "🧬 ই-জিএফআর ইনপুট সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelAge: "বয়স (বছর)",
+      labelGender: "লিঙ্গ",
+      genderMale: "পুরুষ",
+      genderFemale: "নারী",
+      labelUnit: "ক্রিয়েটিনিন ইউনিট",
+      labelCreatinine: "সিরাম ক্রিয়েটিনিন",
+      btnAnalyze: "ই-জিএফআর হিসাব করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "রোগীর বয়স, লিঙ্গ এবং সিরাম ক্রিয়েটিনিন এর মান লিখুন, তারপর হিসাব করুন বোতামটি চাপুন ফলাফল দেখতে।",
+      reportTitle: "🔬 কিডনি পরিস্রাবণ প্রোফাইল",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      eqCkdEpi: "CKD-EPI (২০২১)",
+      eqMdrd: "MDRD সমীকরণ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeStage1: "স্টেজ ১ সিকেডি - স্বাভাবিক ই-জিএফআর (>=৯০)",
+      badgeStage2: "স্টেজ ২ সিকেডি - সামান্য কম ই-জিএফআর (৬০-৮৯)",
+      badgeStage3a: "স্টেজ ৩ক সিকেডি - মৃদু থেকে মাঝারি হ্রাস (৪৫-৫৯)",
+      badgeStage3b: "স্টেজ ৩খ সিকেডি - মাঝারি থেকে তীব্র হ্রাস (৩০-৪৪)",
+      badgeStage4: "স্টেজ ৪ সিকেডি - তীব্র হ্রাসপ্রাপ্ত ই-জিএফআর (১৫-২৯)",
+      badgeStage5: "স্টেজ ৫ সিকেডি - কিডনি বৈকল্য (<১৫)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "ईजीएफआर कैलकुलेटर",
+      toolDesc: "क्रोनिक किडनी चरणों की निगरानी के लिए सीकेडी-ईपीआई (2021) और एमडीआरडी समीकरणों का उपयोग करके अनुमानित ग्लोमेरुलर निस्पंदन दर (ईजीएफआर) की गणना करें।",
+      inputsTitle: "🧬 ईजीएफआर पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelAge: "आयु (वर्ष)",
+      labelGender: "लिंग",
+      genderMale: "पुरुष",
+      genderFemale: "स्त्री",
+      labelUnit: "क्र���एटिनिन यूनिट",
+      labelCreatinine: "सीरम क्रिएटिनिन",
+      btnAnalyze: "ईजीएफआर की गणना करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "रोगी की आयु, लिंग और सीरम क्रिएटिनिन दर्ज करें, फिर किडनी निस्पंदन मेट्रिक्स प्रदर्शित करने के लिए गणना पर क्लिक करें।",
+      reportTitle: "🔬 किडनी निस्पंदन प्रोफ़ाइल",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "तारीख",
+      eqCkdEpi: "सीकेडी-ईपीआई (2021)",
+      eqMdrd: "एमडीआरडी समीकरण",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeStage1: "चरण 1 सीकेडी - सामान्य/उच्च ईजीएफआर (>=90)",
+      badgeStage2: "स्टेज 2 सीकेडी - हल्की कमी (60-89)",
+      badgeStage3a: "चरण 3ए सीकेडी - हल्की से मध्यम गिरावट (45-59)",
+      badgeStage3b: "चरण 3बी सीकेडी - मध्यम से गंभीर गिरावट (30-44)",
+      badgeStage4: "स्टेज 4 सीकेडी - गंभीर रूप से कम हुई ईजीएफआर (15-29)",
+      badgeStage5: "चरण 5 सीकेडी - गुर्दे की विफलता (<15)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is eGFR?", a: "eGFR stands for estimated Glomerular Filtration Rate. It tells you how well your kidneys filter waste based on your creatinine, age, and gender." },
+      { q: "Why is race not included in the 2021 CKD-EPI formula?", a: "In 2021, the NKF and ASN recommended a refit formula that eliminates the race coefficient to promote diagnostic equity." },
+      { q: "What is a normal eGFR?", a: "An eGFR of 90 mL/min/1.73 m² or higher is considered normal in healthy adults." },
+      { q: "What eGFR indicates kidney disease?", a: "An eGFR below 60 for more than three months indicates chronic kidney disease (CKD)." },
+      { q: "What are the CKD Stages?", a: "Stage 1 (&ge;90), Stage 2 (60-89), Stage 3a (45-59), Stage 3b (30-44), Stage 4 (15-29), Stage 5 (&lt;15)." },
+      { q: "Can eGFR fluctuate?", a: "Yes, eGFR can temporarily fluctuate due to dehydration, diet, intensive exercise, or medications." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "eGFR কী?", a: "eGFR হলো আনুমানিক গ্লোমেরুলার ফিল্ট্রেশন রেট। এটি রক্তের ক্রিয়েটিনিন, বয়স ও লিঙ্গের ভিত্তিতে কিডনির ছাঁকন ক্ষমতা নির্দেশ করে।" },
+      { q: "২০২১ CKD-EPI সমীকরণে জাতিগত দিক বাদ দেওয়া হয়েছে কেন?", a: "চিকিৎসায় নিরপেক্ষতা ও সমতা আনার জন্য ন্যাশনাল কিডনি ফাউন্ডেশন জাতিভিত্তিক সহগ বা কো-ইফিসিয়েন্ট সমীকরণ থেকে সরিয়ে দিয়েছে।" },
+      { q: "ই-জিএফআর এর স্বাভাবিক মান কত?", a: "সুস্থ প্রাপ্তবয়স্কদের ক্ষেত্রে ই-জিএফআর ৯০ বা তার বেশি হওয়া স্বাভাবিক।" },
+      { q: "কত ই-জিএফআর হলে কিডনির রোগ ধরা হয়?", a: "টানা ৩ মাসের বেশি ই-জিএফআর ৬০ এর নিচে থাকলে ক্রনিক কিডনি ডিজিজ (CKD) বলা হয়।" },
+      { q: "কিডনি রোগের স্টেজগুলো কী কী?", a: "স্টেজ ১ (>=৯০), স্টেজ ২ (৬০-৮৯), স্টেজ ৩ক (৪৫-৫৯), স্টেজ ৩খ (৩০-৪৪), স্টেজ ৪ (১৫-২৯), এবং স্টেজ ৫ (<১৫)।" },
+      { q: "ই-জিএফআর কি পরিবর্তিত হতে পারে?", a: "হ্যাঁ, পানিশূন্যতা, উচ্চ প্রোটিন বা ভারী অনুশীলনের কারণে এটি সাময়িকভাবে কম-বেশি হতে পারে।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "ईजीएफआर क्या है?", a: "ईजीएफआर का मतलब अनुमानित ग्लोमेरुलर निस्पंदन दर है। यह आपको बताता है कि आपकी किडनी आपके क्रिएटिनिन, उम्र और लिंग के आधार पर अपशिष्ट को कितनी अच्छी तरह फ़िल्टर करती है।" },
+      { q: "2021 सीकेडी-ईपीआई फॉर्मूले में दौड़ को क्यों शामिल नहीं किया गया है?", a: "2021 में, एनकेएफ और एएसएन ने एक रीफिट फॉर्मूला की सिफारिश की जो डायग्नोस्टिक इक्विटी को बढ़ावा देने के लिए रेस गुणांक को समाप्त करता है।" },
+      { q: "सामान्य ईजीएफआर क्या है?", a: "स्वस्थ वयस्कों में 90 एमएल/मिनट/1.73 वर्ग मीटर या इससे अधिक का ईजीएफआर सामान्य माना जाता है।" },
+      { q: "कौन सा ईजीएफआर गुर्दे की बीमारी का संकेत देता है?", a: "तीन महीने से अधिक समय तक 60 से नीचे ईजीएफआर क्रोनिक किडनी रोग (सीकेडी) का संकेत देता है।" },
+      { q: "सीकेडी चरण क्या हैं?", a: "स्टेज 1 (≥90), स्टेज 2 (60-89), स्टेज 3ए (45-59), स्टेज 3बी (30-44), स्टेज 4 (15-29), स्टेज 5 (<15)।" },
+      { q: "क्या ईजीएफआर में उतार-चढ़ाव हो सकता है?", a: "हां, निर्जलीकरण, आहार, गहन व्यायाम या दवाओं के कारण ईजीएफआर में अस्थायी रूप से उतार-चढ़ाव हो सकता है।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const egfrInsights = {
+    en: {
+      stage1: {
+        desc: "Your eGFR represents Stage 1 CKD (Normal or High kidney function). If there is no evidence of kidney damage (like protein in urine), your kidneys are healthy.",
+        factors: ["Optimal renal clearance", "Normal muscle creatinine index"],
+        symptoms: ["No symptoms of renal strain"],
+        prevention: ["Stay hydrated", "Monitor blood pressure", "Check microalbuminuria periodically if diabetic"],
+        consult: "Follow regular general health examinations."
+      },
+      stage2: {
+        desc: "Your eGFR represents Stage 2 CKD (Mildly Decreased kidney function). This can be normal for older adults, but points to mild filtration changes.",
+        factors: ["Age-related filtration decline", "Slight dehydration", "Mild early hypertension"],
+        symptoms: ["Asymptomatic"],
+        prevention: ["Avoid excessive NSAID pain relievers", "Control blood pressure and glucose levels"],
+        consult: "Discuss with your doctor at your next routine checkup."
+      },
+      stage3a: {
+        desc: "Your eGFR represents Stage 3a CKD (Mild to Moderately Decreased kidney function). This shows early stage kidney disease, and intervention can prevent further decline.",
+        factors: ["Chronic hypertension", "Diabetic nephropathy", "Glomerular inflammation history"],
+        symptoms: ["Mild fatigue", "Urinary frequency shifts", "Dry or itchy skin"],
+        prevention: ["Adopt a kidney-friendly low sodium diet", "Strictly control blood pressure (<130/80)", "Limit protein intake to 0.8g/kg body weight"],
+        consult: "Schedule a diagnostic review with your physician."
+      },
+      stage3b: {
+        desc: "Your eGFR represents Stage 3b CKD (Moderately to Severely Decreased kidney function). Managing metabolic complications is essential.",
+        factors: ["Progressive nephron loss", "Long-term uncontrolled diabetes/hypertension"],
+        symptoms: ["Swelling in feet or ankles", "Fatigue or anemia signs", "Changes in urination patterns"],
+        prevention: ["Strictly avoid NSAIDs", "Follow renal dietary recommendations (limit potassium and phosphorus)"],
+        consult: "Consult a nephrologist to manage complications like anemia, bone mineral changes, and fluid balance."
+      },
+      stage4: {
+        desc: "Your eGFR represents Stage 4 CKD (Severely Decreased kidney function). This indicates advanced kidney damage, requiring active specialist care.",
+        factors: ["Advanced stage kidney injury", "Structural renal changes"],
+        symptoms: ["Puffiness in limbs and face", "Nausea, metallic taste, or poor appetite", "Concentration challenges or muscle cramps"],
+        prevention: ["Comply with nephrologist guidance", "Discuss planning for future kidney replacement therapy options"],
+        consult: "⚠️ Regular close monitoring by a nephrologist is critical."
+      },
+      stage5: {
+        desc: "Your eGFR represents Stage 5 CKD (Kidney Failure). Glomerular filtration is severely impaired, causing toxin buildup. Immediate replacement options are needed.",
+        factors: ["End-stage renal disease (ESRD)"],
+        symptoms: ["Uremic symptoms (severe nausea, vomiting, itching)", "Shortness of breath due to fluid overload", "Minimal urine output"],
+        prevention: ["Follow emergency dietary restriction", "Prepare for renal replacement therapy (dialysis or transplant)"],
+        consult: "⚠️ Seek immediate medical evaluation or emergency hospital nephrology consultation."
+      }
+    },
+    bn: {
+      stage1: {
+        desc: "আপনার ই-জিএফআর স্টেজ ১ কিডনি কার্যকারিতা নির্দেশ করছে (স্বাভাবিক বা উচ্চ পরিস্রাবণ)। প্রস্রাবে প্রোটিন ক্ষরণ না থাকলে এটি চমৎকার রেনাল স্বাস্থ্যের ইঙ্গিত দেয়।",
+        factors: ["কিডনির স্বাভাবিক ছাঁকন ক্ষমতা", "সঠিক পানিশূন্যতা মুক্ত অবস্থা"],
+        symptoms: ["কোনো লক্ষণ থাকে না"],
+        prevention: ["পর্যাপ্ত পানি পান বজায় রাখুন", "রক্তচাপ ও ডায়াবেটিস নিয়ন্ত্রণে রাখুন"],
+        consult: "বার্ষিক স্বাস্থ্য পরীক্ষার অংশ হিসেবে রুটিন চেকআপ করান।"
+      },
+      stage2: {
+        desc: "আপনার ই-জিএফআর স্টেজ ২ কিডনি কার্যকারিতা নির্দেশ করছে (সামান্য হ্রাসপ্রাপ্ত)। বয়স্ক ব্যক্তিদের ক্ষেত্রে এটি স্বাভাবিক হতে পারে, তবে সতর্ক থাকা বাঞ্ছনীয়।",
+        factors: ["বয়সজনিত স্বাভাবিক পরিস্রাবণ হ্রাস", "মৃদু পানিশূন্যতা", "মৃদু উচ্চ রক্তচাপ"],
+        symptoms: ["সাধারণত কোনো লক্ষণ থাকে না"],
+        prevention: ["ব্যথানাশক ওষুধ সেবন পরিহার করুন", "নিয়মিত রক্তচাপ পরীক্ষা করুন"],
+        consult: "পরবর্তী রুটিন স্বাস্থ্য পরীক্ষায় ডাক্তারের সাথে এ নিয়ে আলোচনা করুন।"
+      },
+      stage3a: {
+        desc: "আপনার ই-জিএফআর স্টেজ ৩ক কিডনি কার্যকারিতা নির্দেশ করছে (মৃদু থেকে মাঝারি হ্রাস)। এটি কিডনি রোগের প্রাথমিক পর্যায় নির্দেশ করে, যা জীবনযাত্রার পরিবর্তনে নিয়ন্ত্রণযোগ্য।",
+        factors: ["নিয়ন্ত্রণহীন উচ্চ রক্তচাপ", "ডায়াবেটিস জনিত নেফ্রোপ্যাথি", "কিডনির মৃদু প্রদাহ"],
+        symptoms: ["সামান্য ক্লান্তি", "ঘন ঘন প্রস্রাব হওয়া", "ত্বক চুলকানো"],
+        prevention: ["লো-সোডিয়াম (কম লবণ) যুক্ত খাদ্য গ্রহণ করুন", "রক্তচাপ ১৩০/৮০ এর নিচে রাখুন", "ডায়েটে প্রোটিন নিয়ন্ত্রণ করুন"],
+        consult: "কিডনির যত্ন ও ওষুধ রিভিউ করতে ডাক্তারের পরামর্শ নিন।"
+      },
+      stage3b: {
+        desc: "আপনার ই-জিএফআর স্টেজ ৩খ কিডনি কার্যকারিতা নির্দেশ করছে (মাঝারি থেকে তীব্র হ্রাস)। কিডনির ক্রনিক ক্ষতি এড়াতে বিশেষজ্ঞের পরামর্শ নেওয়া জরুরি।",
+        factors: ["কিডনি টিস্যুর স্থায়ী পরিবর্তন", "দীর্ঘস্থায়ী ডায়াবেটিস বা প্রেসারের প্রভাব"],
+        symptoms: ["পা ও গোড়ালি ফুলে যাওয়া", "ক্লান্তি ও রক্তস্বল্পতা", "প্রস্রাবের পরিবর্তন"],
+        prevention: ["সব ধরণের ব্যথানাশক ওষুধ (NSAIDs) সম্পূর্ণ পরিহার করুন", "খাবারে পটাশিয়াম ও ফসফরাস নিয়ন্ত্রণ করুন"],
+        consult: "একজন নেফ্রোলজিস্ট বা কিডনি বিশেষজ্ঞ ডাক্তারের তত্ত্বাবধানে চিকিৎসা শুরু করুন।"
+      },
+      stage4: {
+        desc: "আপনার ই-জিএফআর স্টেজ ৪ কিডনি কার্যকারিতা নির্দেশ করছে (তীব্র হ্রাসপ্রাপ্ত)। এটি কিডনির উন্নত ক্ষত নির্দেশক, যেখানে বিশেষজ্ঞের নিবিড় তত্ত্বাবধান প্রয়োজন।",
+        factors: ["কিডনির জটিল কার্যকারিতা লোপ"],
+        symptoms: ["পা, হাত ও মুখ ফুলে যাওয়া", "বমি বমি ভাব, ক্ষুধামন্দা", "শ্বাসকষ্ট ও মারাত্মক ক্লান্তি"],
+        prevention: ["নেফ্রোলজিস্টের প্রেসক্রিপশন কঠোরভাবে মেনে চলুন", "কিডনি প্রতিস্থাপন বা ডায়ালাইসিসের প্রাথমিক পরিকল্পনা করুন"],
+        consult: "⚠️ অবিলম্বে নিয়মিত কিডনি বিশেষজ্ঞের নিবিড় তত্ত্বাবধানে থাকুন।"
+      },
+      stage5: {
+        desc: "আপনার ই-জিএফআর স্টেজ ৫ কিডনি কার্যকারিতা নির্দেশ করছে (কিডনি বিকলতা বা ফেইলর)। অবিলম্বে ডায়ালাইসিস বা কিডনি প্রতিস্থাপনের ব্যবস্থা নেওয়া প্রয়োজন।",
+        factors: ["এন্ড-স্টেজ রেনাল ডিজিজ (ESRD)"],
+        symptoms: ["তীব্র বমি ও ক্ষুধামন্দা", "শরীরে অতিরিক্ত পানি জমার কারণে শ্বাসকষ্ট", "প্রস্রাব প্রায় বন্ধ হয়ে যাওয়া"],
+        prevention: ["কঠোর রেনাল ডায়েট অনুসরণ করুন", "ডায়ালাইসিসের ব্যবস্থা করুন"],
+        consult: "⚠️ অবিলম্বে হাসপাতালের জরুরি বিভাগে বা কিডনি বিশেষজ্ঞের সাথে যোগাযোগ করুন।"
+      }
+    },
+    hi: {
+      stage1: {
+        desc: "आपका ईजीएफआर स्टेज 1 सीकेडी (सामान्य या उच्च किडनी फ़ंक्शन) का प्रतिनिधित्व करता है। यदि किडनी खराब होने का कोई सबूत नहीं है (जैसे मूत्र में प्रोटीन), तो आपकी किडनी स्वस्थ हैं।",
+        factors: ["इष्टतम गुर्दे की निकासी", "सामान्य मांसपेशी क्रिएटिनिन सूचकांक"],
+        symptoms: ["गुर्दे में खिंचाव का कोई लक्षण नहीं"],
+        prevention: ["हाइड्रेटेड रहें", "रक्तचाप की निगरानी करें", "मधुमेह होने पर समय-समय पर माइक्रोएल्ब्यूमिन्यूरिया की जांच कराएं"],
+        consult: "नियमित सामान्य स्वास्थ्य जांच का पालन करें।"
+      },
+      stage2: {
+        desc: "आपका ईजीएफआर स्टेज 2 सीकेडी (गुर्दे की कार्यक्षमता में हल्की कमी) का प्रतिनिधित्व करता है। वृद्ध वयस्कों के लिए यह सामान्य हो सकता है, लेकिन हल्के निस्पंदन परिवर्तन की ओर इशारा करता है।",
+        factors: ["उम्र से संबंधित निस्पंदन में गिरावट", "थ��ड़ा सा निर्जलीकरण", "हल्का प्रारंभिक उच्च रक्तचाप"],
+        symptoms: ["स्पर्शोन्मुख"],
+        prevention: ["अत्यधिक एनएसएआईडी दर्द निवारक दवाओं से बचें", "रक्तचाप और ग्लूकोज के स्तर को नियंत्रित करें"],
+        consult: "अपने अगले नियमित चेकअप पर अपने डॉक्टर से चर्चा करें।"
+      },
+      stage3a: {
+        desc: "आपका ईजीएफआर स्टेज 3ए सीकेडी (हल्के से मध्यम रूप से कम किडनी समारोह) का प्रतिनिधित्व करता है। यह प्रारंभिक चरण की किडनी की बीमारी को दर्शाता है, और हस्तक्षेप से आगे की गिरावट को रोका जा सकता है।",
+        factors: ["जीर्ण उच्च रक्तचाप", "मधुमेह अपवृक्कता", "ग्लोमेरुलर सूजन का इतिहास"],
+        symptoms: ["हल्की थकान", "मूत्र आवृत्ति में बदलाव", "सूखी या खुजलीदार त्वचा"],
+        prevention: ["किडनी के अनुकूल कम सोडियम वाला आहार अपनाएं", "रक्तचाप को सख्ती से नियंत्रित करें (<130/80)", "प्रोटीन का सेवन शरीर के वजन 0.8 ग्राम/किग्रा तक सीमित करें"],
+        consult: "अपने चिकित्सक के साथ नैदानिक ​​समीक्षा शेड्यूल करें।"
+      },
+      stage3b: {
+        desc: "आपका ईजीएफआर स्टेज 3बी सीकेडी (मध्यम से गंभीर रूप से कम किडनी समारोह) का प्रतिनिधित्व करता है। चयापचय संबंधी जटिलताओं का प्रबंधन करना आवश्यक है।",
+        factors: ["प्रगतिशील नेफ्रोन हानि", "लंबे समय तक अनियंत्रित मधुमेह/उच्च रक्तचाप"],
+        symptoms: ["पैरों या टखनों में सूजन", "थकान या एनीमिया के लक्षण", "पेशाब के पैटर्न में बदलाव"],
+        prevention: ["एनएसएआईडी से सख्ती से बचें", "गुर्दे की आहार संबंधी सिफारिशों का पालन करें (पोटेशियम और फास्फोरस को सीमित करें)"],
+        consult: "एनीमिया, अस्थि खनिज परिवर्तन और द्रव संतुलन जैसी जटिलताओं के प्रबंधन के लिए नेफ्रोलॉजिस्ट से परामर्श लें।"
+      },
+      stage4: {
+        desc: "आपका ईजीएफआर स्टेज 4 सीकेडी (गुर्दे की कार्यक्षमता में गंभीर रूप से कमी) का प्रतिनिधित्व करता है। यह उन्नत किडनी क्षति का संकेत देता है, जिसके लिए सक्रिय विशेषज्ञ देखभाल की आवश्यकता होती है।",
+        factors: ["उन्नत चरण की किडनी की चोट", "संरचनात्मक गुर्दे परिवर्तन"],
+        symptoms: ["अंगों और चेहरे पर सूजन", "मतली, धातु जैसा स्वाद, या भूख कम लगना", "एकाग्रता संबंधी चुनौतियाँ या मांसपेशियों में ऐंठन"],
+        prevention: ["नेफ्रोलॉजिस्ट मार्गदर्शन का अनुपालन करें", "भविष्य में किडनी रिप्लेसमेंट थेरेपी विकल्पों की योजना पर चर्चा करें"],
+        consult: "⚠️ नेफ्रोलॉजिस्ट द्वारा नियमित करीबी निगरानी महत्वपूर्ण है।"
+      },
+      stage5: {
+        desc: "आपका ईजीएफआर स्टेज 5 सीकेडी (किडनी विफलता) का प्रतिनिधित्व करता है। ग्लोमेरुलर निस्पंदन गंभीर रूप से ख़राब हो जाता है, जिससे विष जमा हो जाता है। तत्काल प्रतिस्थापन विकल्पों की आवश्यकता है.",
+        factors: ["अंतिम चरण की गुर्दे की बीमारी (ईएसआरडी)"],
+        symptoms: ["यूरेमिक लक्षण (गंभीर मतली, उल्टी, खुजली)", "तरल पदार्थ की अधिकता के कारण सांस की तकलीफ", "न्यूनतम मूत्र उत्पादन"],
+        prevention: ["आपातकालीन आहार प्रतिबंध का पालन करें", "गुर्दे की रिप्लेसमेंट थेरेपी (डायलिसिस या प्रत्यारोपण) के लिए तैयारी करें"],
+        consult: "⚠️ तत्काल चिकित्सा मूल्यांकन या आपातकालीन अस्पताल नेफ्रोलॉजी परामर्श लें।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-egfr-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "mgdl"; // mgdl, umoll
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const label = document.getElementById("inputLabel");
+    const unitText = currentUnit === "mgdl" ? " (mg/dL)" : " (µmol/L)";
+    label.textContent = translations[currentLang].labelCreatinine + unitText;
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valCreatinine").value = "";
+    document.getElementById("patientAge").value = "45";
+    document.getElementById("patientGender").value = "male";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function calculateEGFR() {
+    const age = parseInt(document.getElementById("patientAge").value) || 45;
+    const gender = document.getElementById("patientGender").value;
+    const valCreat = parseFloat(document.getElementById("valCreatinine").value);
+
+    if (isNaN(valCreat) || valCreat <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid Creatinine value." : "দয়া করে ক্রিয়েটিনিনের একটি সঠিক মান লিখুন।");
+      return;
+    }
+
+    let scr = valCreat;
+    if (currentUnit === "umoll") {
+      scr = valCreat / 88.4; // convert to mg/dL
+    }
+
+    // 1. CKD-EPI (2021) Equation
+    let egfrCkdEpi = 0;
+    const kappa = gender === "female" ? 0.7 : 0.9;
+    const alpha = gender === "female" ? -0.241 : -0.302;
+    const genderCoeff = gender === "female" ? 1.012 : 1.0;
+
+    const minFraction = Math.min(scr / kappa, 1);
+    const maxFraction = Math.max(scr / kappa, 1);
+
+    egfrCkdEpi = 142 * Math.pow(minFraction, alpha) * Math.pow(maxFraction, -1.200) * Math.pow(0.9938, age) * genderCoeff;
+
+    // 2. MDRD Equation
+    let egfrMdrd = 175 * Math.pow(scr, -1.154) * Math.pow(age, -0.203);
+    if (gender === "female") {
+      egfrMdrd *= 0.742;
+    }
+
+    // Choose CKD-EPI 2021 as primary gauge display
+    const finalEgfr = egfrCkdEpi;
+
+    let stageKey = "stage1";
+    let badgeKey = "badgeStage1";
+
+    if (finalEgfr < 15) {
+      stageKey = "stage5";
+      badgeKey = "badgeStage5";
+    } else if (finalEgfr >= 15 && finalEgfr < 30) {
+      stageKey = "stage4";
+      badgeKey = "badgeStage4";
+    } else if (finalEgfr >= 30 && finalEgfr < 44) {
+      stageKey = "stage3b";
+      badgeKey = "badgeStage3b";
+    } else if (finalEgfr >= 44 && finalEgfr < 60) {
+      stageKey = "stage3a";
+      badgeKey = "badgeStage3a";
+    } else if (finalEgfr >= 60 && finalEgfr < 90) {
+      stageKey = "stage2";
+      badgeKey = "badgeStage2";
+    }
+
+    // Gauge pointer (5% to 95%) - higher eGFR is normal (towards the right)
+    let pointerPct = 50;
+    if (finalEgfr >= 90) {
+      pointerPct = 90;
+    } else if (finalEgfr < 15) {
+      pointerPct = Math.max(5, (finalEgfr / 15) * 15);
+    } else {
+      pointerPct = 15 + ((finalEgfr - 15) / 75) * 70;
+    }
+
+    activeReportData = {
+      age,
+      gender,
+      scr,
+      egfrCkdEpi,
+      egfrMdrd,
+      stageKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, finalEgfr);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resAge").textContent = d.age;
+    document.getElementById("resGender").textContent = d.gender === "male" ? translations[currentLang].genderMale : translations[currentLang].genderFemale;
+
+    document.getElementById("resEGFRVal").textContent = Math.round(d.egfrCkdEpi);
+    document.getElementById("resCkdEpi").textContent = Math.round(d.egfrCkdEpi);
+    document.getElementById("resMdrd").textContent = Math.round(d.egfrMdrd);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.stageKey === "stage5" || d.stageKey === "stage4") colorClass = "critical";
+    else if (d.stageKey === "stage3b" || d.stageKey === "stage3a") colorClass = "high";
+    else if (d.stageKey === "stage2") colorClass = "low";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resEGFRVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = egfrInsights[currentLang][d.stageKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, egfr) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      egfr,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-egfr-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>eGFR: ${Math.round(item.egfr)} mL/min/1.73 m² (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- eGFR FILTRATION PROFILE REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Patient: Age ${activeReportData.age} | Gender ${activeReportData.gender}\n`;
+    t += `CKD-EPI eGFR: ${Math.round(activeReportData.egfrCkdEpi)} mL/min/1.73 m²\n`;
+    t += `MDRD eGFR: ${Math.round(activeReportData.egfrMdrd)} mL/min/1.73 m²\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `egfr-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

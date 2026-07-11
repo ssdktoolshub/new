@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Age Calculator &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Free online Age Calculator helps you find your exact age in years, months, weeks, days, minutes, and seconds, with a countdown to your next birthday.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .result-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .result-box h3 {
+      font-size: 1.45rem;
+      color: var(--accent);
+      margin-bottom: 2px;
+    }
+    .result-box span {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Age Calculator</h1>
+  <p class="page-sub">Find your exact age in various time denominations and track countdowns to your next birthday.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 24px; align-items: start;">
+      
+      <!-- Left Column: Dates Input -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Enter Date Parameters</h4>
+        
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: var(--muted); display: block; margin-bottom: 4px;">Date of Birth</label>
+          <input type="date" id="dateBirth" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); outline: none;">
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: var(--muted); display: block; margin-bottom: 4px;">Calculate Age At Date</label>
+          <input type="date" id="dateTarget" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); outline: none;">
+        </div>
+      </div>
+
+      <!-- Right Column: Outputs -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 250px; display: flex; flex-direction: column; justify-content: center;">
+        
+        <div id="ageOutputContainer" style="display: none;">
+          <h4 style="margin-bottom: 4px; text-align: center;">Your Age is</h4>
+          <h2 id="mainAgeResult" style="text-align: center; color: var(--text); font-size: 1.8rem; font-weight: 800; margin-bottom: 14px;">-</h2>
+          
+          <div class="results-grid">
+            <div class="result-box">
+              <h3 id="ageMonths">-</h3>
+              <span>Months</span>
+            </div>
+            <div class="result-box">
+              <h3 id="ageWeeks">-</h3>
+              <span>Weeks</span>
+            </div>
+            <div class="result-box">
+              <h3 id="ageDays">-</h3>
+              <span>Days</span>
+            </div>
+            <div class="result-box">
+              <h3 id="ageHours">-</h3>
+              <span>Hours</span>
+            </div>
+            <div class="result-box">
+              <h3 id="ageMinutes">-</h3>
+              <span>Minutes</span>
+            </div>
+            <div class="result-box">
+              <h3 id="ageSeconds">-</h3>
+              <span>Seconds</span>
+            </div>
+          </div>
+
+          <!-- Birthday countdown -->
+          <div style="margin-top: 18px; padding: 12px; border-radius: 8px; background: var(--bg2); border: 1px solid var(--border); text-align: center;">
+            <p style="font-size: 0.85rem; color: var(--muted); margin: 0; font-weight: 600;">
+              🎂 Next Birthday Countdown: <strong id="birthdayCountdown" style="color: var(--accent);">-</strong>
+            </p>
+          </div>
+        </div>
+
+        <div id="agePlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Configure your birth date to calculate exact statistics.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnCalc">🎂 Calculate Age</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Highly Detailed Metrics:</strong> Get breakdown metrics for total months, weeks, days, hours, and seconds.</li>
+      <li><strong>Birthday Countdown tracker:</strong> Know exactly how many months and days remain until your next birthday.</li>
+      <li><strong>Flexible Target Dates:</strong> Calculate age at today's date or at any specific historical/future target.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  // Set default target date to today
+  const today = new Date().toISOString().split('T')[0];
+  $('dateTarget').value = today;
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  $('btnCalc').onclick = () => {
+    const dobInput = $('dateBirth').value;
+    const targetInput = $('dateTarget').value;
+
+    if (!dobInput) {
+      showStatus('Please enter your Date of Birth first.', true);
+      return;
+    }
+
+    const dob = new Date(dobInput);
+    const target = new Date(targetInput);
+
+    if (dob > target) {
+      showStatus('Date of Birth cannot be after the calculation target date.', true);
+      return;
+    }
+
+    showStatus('Calculating age statistics...');
+
+    // Calculate exact difference in Year, Month, Days
+    let dobYear = dob.getFullYear();
+    let dobMonth = dob.getMonth();
+    let dobDate = dob.getDate();
+
+    let targetYear = target.getFullYear();
+    let targetMonth = target.getMonth();
+    let targetDate = target.getDate();
+
+    let years = targetYear - dobYear;
+    let months = targetMonth - dobMonth;
+    let days = targetDate - dobDate;
+
+    if (days < 0) {
+      months--;
+      // Get days in previous month
+      const prevMonth = new Date(targetYear, targetMonth, 0);
+      days += prevMonth.getDate();
+    }
+
+    if (months < 0) {
+      years--;
+      months += 12;
+    }
+
+    // Main result
+    let mainResultText = "";
+    if (years > 0) mainResultText += `${years} Year${years > 1 ? 's' : ''} `;
+    if (months > 0) mainResultText += `${months} Month${months > 1 ? 's' : ''} `;
+    if (days > 0) mainResultText += `${days} Day${days > 1 ? 's' : ''}`;
+    if (years === 0 && months === 0 && days === 0) mainResultText = "Just Born! 🎉";
+    $('mainAgeResult').textContent = mainResultText.trim();
+
+    // Total metrics
+    const diffMs = target.getTime() - dob.getTime();
+    
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const totalMinutes = Math.floor(totalSeconds / 60);
+    const totalHours = Math.floor(totalMinutes / 60);
+    const totalDays = Math.floor(totalHours / 24);
+    const totalWeeks = Math.floor(totalDays / 7);
+    
+    // Estimate total months
+    let totalMonths = (targetYear - dobYear) * 12 + (targetMonth - dobMonth);
+    if (targetDate < dobDate) {
+      totalMonths--;
+    }
+    if (totalMonths < 0) totalMonths = 0;
+
+    $('ageMonths').textContent = totalMonths.toLocaleString();
+    $('ageWeeks').textContent = totalWeeks.toLocaleString();
+    $('ageDays').textContent = totalDays.toLocaleString();
+    $('ageHours').textContent = totalHours.toLocaleString();
+    $('ageMinutes').textContent = totalMinutes.toLocaleString();
+    $('ageSeconds').textContent = totalSeconds.toLocaleString();
+
+    // Next Birthday Countdown
+    let nextBday = new Date(targetYear, dobMonth, dobDate);
+    if (nextBday < target) {
+      nextBday.setFullYear(targetYear + 1);
+    }
+    
+    let bdayDiffMs = nextBday.getTime() - target.getTime();
+    let bdayDiffDays = Math.ceil(bdayDiffMs / (1000 * 60 * 60 * 24));
+    
+    let bdayResult = "";
+    if (bdayDiffDays === 365 || bdayDiffDays === 366 || bdayDiffDays === 0) {
+      bdayResult = "Happy Birthday! 🎈🍰";
+    } else {
+      // Calculate months/days for countdown
+      let bdayMonths = nextBday.getMonth() - targetMonth;
+      let bdayDays = nextBday.getDate() - targetDate;
+      if (bdayDays < 0) {
+        bdayMonths--;
+        const prevMonth = new Date(nextBday.getFullYear(), nextBday.getMonth(), 0);
+        bdayDays += prevMonth.getDate();
+      }
+      if (bdayMonths < 0) {
+        bdayMonths += 12;
+      }
+      
+      if (bdayMonths > 0) bdayResult += `${bdayMonths} Month${bdayMonths > 1 ? 's' : ''} `;
+      if (bdayDays > 0) bdayResult += `${bdayDays} Day${bdayDays > 1 ? 's' : ''}`;
+    }
+    $('birthdayCountdown').textContent = bdayResult.trim();
+
+    $('agePlaceholder').style.display = 'none';
+    $('ageOutputContainer').style.display = 'block';
+    showStatus('✅ Age calculated successfully!');
+  };
+
+  $('btnClear').onclick = () => {
+    $('dateBirth').value = '';
+    $('dateTarget').value = today;
+    $('agePlaceholder').style.display = 'block';
+    $('ageOutputContainer').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

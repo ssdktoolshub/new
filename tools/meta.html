@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO Meta Tag Generator &bull; Social Preview Builder - SSDK TOOLS HUB</title>
+  <meta name="description" content="Generate search engine optimization meta tags, Open Graph protocols, and Twitter Card details to optimize page ranks and sharing previews.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .meta-sections {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .meta-group {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+    }
+    .meta-group h3 {
+      font-size: 1.05rem;
+      margin-bottom: 12px;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 768px) {
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .input-field {
+      display: flex;
+      flex-direction: column;
+    }
+    .input-field label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .input-field input, .input-field select, .input-field textarea {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      transition: border 0.3s;
+    }
+    .input-field input:focus, .input-field select:focus, .input-field textarea:focus {
+      border-color: var(--accent);
+    }
+    .char-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .char-badge.warning {
+      color: #ff6b6b;
+    }
+    .char-badge.success {
+      color: #2ecc71;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Meta Tag Generator</h1>
+  <p class="page-sub">Generate standards-compliant SEO meta tags, Open Graph parameters, and Twitter sharing cards instantly.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; align-items: start;">
+      
+      <!-- Left Column: Input Form -->
+      <div class="meta-sections">
+        
+        <!-- General SEO Parameters -->
+        <div class="meta-group">
+          <h3>General SEO Tags</h3>
+          <div class="input-field" style="margin-bottom: 12px;">
+            <label>Site Title <span class="char-badge" id="titleCount">0 / 60 chars</span></label>
+            <input type="text" id="metaTitle" placeholder="e.g. My Awesome Web App" oninput="updateMeta()">
+          </div>
+          <div class="input-field" style="margin-bottom: 12px;">
+            <label>Description <span class="char-badge" id="descCount">0 / 160 chars</span></label>
+            <textarea id="metaDesc" placeholder="e.g. A detailed description explaining the purpose of this website." rows="2" oninput="updateMeta()"></textarea>
+          </div>
+          <div class="input-row">
+            <div class="input-field">
+              <label>Keywords (comma separated)</label>
+              <input type="text" id="metaKeys" placeholder="e.g. tools, utility, creator" oninput="updateMeta()">
+            </div>
+            <div class="input-field">
+              <label>Author Name</label>
+              <input type="text" id="metaAuthor" placeholder="e.g. Swarnava Das" oninput="updateMeta()">
+            </div>
+          </div>
+          <div class="input-row">
+            <div class="input-field">
+              <label>Robots Indexing</label>
+              <select id="metaRobotsIndex" onchange="updateMeta()">
+                <option value="index">Index (Recommended)</option>
+                <option value="noindex">No-Index</option>
+              </select>
+            </div>
+            <div class="input-field">
+              <label>Robots Links</label>
+              <select id="metaRobotsFollow" onchange="updateMeta()">
+                <option value="follow">Follow (Recommended)</option>
+                <option value="nofollow">No-Follow</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Open Graph (Facebook / LinkedIn) -->
+        <div class="meta-group">
+          <h3>Open Graph Tags</h3>
+          <div class="input-row">
+            <div class="input-field">
+              <label>OG Title</label>
+              <input type="text" id="ogTitle" placeholder="defaults to Site Title" oninput="updateMeta()">
+            </div>
+            <div class="input-field">
+              <label>OG Site URL</label>
+              <input type="text" id="ogUrl" placeholder="e.g. https://mysite.com" oninput="updateMeta()">
+            </div>
+          </div>
+          <div class="input-field" style="margin-bottom: 12px;">
+            <label>OG Description</label>
+            <textarea id="ogDesc" placeholder="defaults to Description" rows="2" oninput="updateMeta()"></textarea>
+          </div>
+          <div class="input-field">
+            <label>OG Image URL</label>
+            <input type="text" id="ogImage" placeholder="e.g. https://mysite.com/assets/banner.png" oninput="updateMeta()">
+          </div>
+        </div>
+
+        <!-- Twitter Card Configurations -->
+        <div class="meta-group">
+          <h3>Twitter Sharing Cards</h3>
+          <div class="input-row">
+            <div class="input-field">
+              <label>Twitter Title</label>
+              <input type="text" id="twTitle" placeholder="defaults to OG Title" oninput="updateMeta()">
+            </div>
+            <div class="input-field">
+              <label>Twitter Card Type</label>
+              <select id="twCard" onchange="updateMeta()">
+                <option value="summary_large_image">Summary Card with Large Image</option>
+                <option value="summary">Standard Summary Card</option>
+              </select>
+            </div>
+          </div>
+          <div class="input-field" style="margin-bottom: 12px;">
+            <label>Twitter Description</label>
+            <textarea id="twDesc" placeholder="defaults to OG Description" rows="2" oninput="updateMeta()"></textarea>
+          </div>
+          <div class="input-field">
+            <label>Twitter Image URL</label>
+            <input type="text" id="twImage" placeholder="defaults to OG Image" oninput="updateMeta()">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Outputs -->
+      <div style="position: sticky; top: 80px;">
+        <h4 style="margin-bottom: 12px;">Generated HTML Meta Tags</h4>
+        <textarea id="metaOutput" readonly style="height: 380px; font-family: monospace; font-size: 0.8rem; padding: 12px; resize: none; width: 100%; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); white-space: pre; overflow-x: auto; line-height: 1.4;"></textarea>
+
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+          <button class="btn" id="btnCopy" style="flex: 1;">📋 Copy Meta Tags</button>
+          <button class="btn ghost" id="btnDownload" style="flex: 1;">⬇️ Download Tags</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b; margin: 0 auto; display: block;">🗑 Reset All Fields</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Character Counters:</strong> Shows real-time character usage alerts for titles and descriptions matching standard Google recommendation guidelines.</li>
+      <li><strong>Social Media Compatibility:</strong> Full structure support for standard Open Graph protocols (Facebook/LinkedIn) and Twitter Cards.</li>
+      <li><strong>Immediate Formatting:</strong> Properly spaced tag lists ready to copy and paste directly into your site header template.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">Where do meta tags go in my HTML code?<span>＋</span></div>
+        <div class="faq-a">Meta tags must be placed inside the <code>&lt;head&gt;</code> block at the top of your HTML file, usually before any stylesheet imports or script references.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What are Open Graph tags?<span>＋</span></div>
+        <div class="faq-a">Open Graph tags are meta tags defined by the Open Graph Protocol. They allow website owners to control how their web pages are formatted and displayed when shared on social networks like Facebook, LinkedIn, or Discord.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What are standard tag length limits?<span>＋</span></div>
+        <div class="faq-a">Search engines typically show the first 50–60 characters of a title tag and 150–160 characters of a description tag. Keeping your metadata within these parameters ensures that your snippets do not get truncated (cut off) in search rankings.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  function updateMeta() {
+    const titleVal = $('metaTitle').value.trim();
+    const descVal = $('metaDesc').value.trim();
+    const keysVal = $('metaKeys').value.trim();
+    const authorVal = $('metaAuthor').value.trim();
+    const robotsIdx = $('metaRobotsIndex').value;
+    const robotsFlw = $('metaRobotsFollow').value;
+
+    const ogTitleVal = $('ogTitle').value.trim() || titleVal;
+    const ogUrlVal = $('ogUrl').value.trim();
+    const ogDescVal = $('ogDesc').value.trim() || descVal;
+    const ogImageVal = $('ogImage').value.trim();
+
+    const twCardVal = $('twCard').value;
+    const twTitleVal = $('twTitle').value.trim() || ogTitleVal;
+    const twDescVal = $('twDesc').value.trim() || ogDescVal;
+    const twImageVal = $('twImage').value.trim() || ogImageVal;
+
+    // Character counters
+    const titleLen = titleVal.length;
+    const descLen = descVal.length;
+
+    $('titleCount').textContent = `${titleLen} / 60 chars`;
+    if (titleLen > 60) {
+      $('titleCount').className = 'char-badge warning';
+    } else if (titleLen > 40) {
+      $('titleCount').className = 'char-badge success';
+    } else {
+      $('titleCount').className = 'char-badge';
+    }
+
+    $('descCount').textContent = `${descLen} / 160 chars`;
+    if (descLen > 160) {
+      $('descCount').className = 'char-badge warning';
+    } else if (descLen > 100) {
+      $('descCount').className = 'char-badge success';
+    } else {
+      $('descCount').className = 'char-badge';
+    }
+
+    // Tag String Compilation
+    let tags = [];
+
+    tags.push('<!-- HTML Meta Tags -->');
+    if (titleVal) tags.push(`<title>${titleVal}</title>`);
+    if (descVal) tags.push(`<meta name="description" content="${descVal}">`);
+    if (keysVal) tags.push(`<meta name="keywords" content="${keysVal}">`);
+    if (authorVal) tags.push(`<meta name="author" content="${authorVal}">`);
+    tags.push(`<meta name="robots" content="${robotsIdx}, ${robotsFlw}">`);
+    tags.push('');
+
+    tags.push('<!-- Facebook Meta Tags -->');
+    tags.push('<meta property="og:type" content="website">');
+    if (ogUrlVal) tags.push(`<meta property="og:url" content="${ogUrlVal}">`);
+    if (ogTitleVal) tags.push(`<meta property="og:title" content="${ogTitleVal}">`);
+    if (ogDescVal) tags.push(`<meta property="og:description" content="${ogDescVal}">`);
+    if (ogImageVal) tags.push(`<meta property="og:image" content="${ogImageVal}">`);
+    tags.push('');
+
+    tags.push('<!-- Twitter Meta Tags -->');
+    tags.push(`<meta name="twitter:card" content="${twCardVal}">`);
+    if (ogUrlVal) tags.push(`<meta name="twitter:domain" content="${ogUrlVal.replace(/^https?:\/\//i, '')}">`);
+    if (ogUrlVal) tags.push(`<meta name="twitter:url" content="${ogUrlVal}">`);
+    if (twTitleVal) tags.push(`<meta name="twitter:title" content="${twTitleVal}">`);
+    if (twDescVal) tags.push(`<meta name="twitter:description" content="${twDescVal}">`);
+    if (twImageVal) tags.push(`<meta name="twitter:image" content="${twImageVal}">`);
+
+    $('metaOutput').value = tags.join('\n');
+  }
+
+  $('btnCopy').onclick = () => {
+    const code = $('metaOutput').value;
+    if (!code) {
+      showStatus('No tags compiled to copy.', true);
+      return;
+    }
+    navigator.clipboard.writeText(code).then(() => {
+      showStatus('📋 Compiled tags copied to clipboard!');
+    });
+  };
+
+  $('btnDownload').onclick = () => {
+    const code = $('metaOutput').value;
+    if (!code) {
+      showStatus('No tags compiled to download.', true);
+      return;
+    }
+    const blob = new Blob([code], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'meta-tags.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showStatus('✅ Meta tags file downloaded successfully!');
+  };
+
+  $('btnClear').onclick = () => {
+    const inputs = document.querySelectorAll('.meta-sections input, .meta-sections textarea');
+    inputs.forEach(i => i.value = '');
+    $('metaRobotsIndex').value = 'index';
+    $('metaRobotsFollow').value = 'follow';
+    $('twCard').value = 'summary_large_image';
+    updateMeta();
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Initial Compile
+  updateMeta();
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

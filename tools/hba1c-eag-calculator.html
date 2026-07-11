@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HbA1c to eAG Calculator &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Convert HbA1c percentage to Estimated Average Glucose (eAG) online. Support both mg/dL and mmol/L conversions with clinical ranges and bilingual FAQs.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .eag-display-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .eag-display-card {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .eag-val-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .eag-val-large {
+      font-size: 2.8rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+      color: var(--accent);
+    }
+
+    .eag-unit-text {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .eag-display-card, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">HbA1c to eAG Calculator</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Convert your HbA1c percentage to Estimated Average Glucose (eAG) in mg/dL or mmol/L to view average sugar trends.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Conversion Parameter</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">🗑 Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valHbA1c" data-translate="labelHbA1c">HbA1c Level (%)</label>
+              <input type="number" step="0.1" id="valHbA1c" placeholder="e.g. 7.0" min="3" max="25" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="calculateEAG()">
+            <span class="btn-icon-inside">🔄</span> <span data-translate="btnConvert">Convert to eAG</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🍬</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your HbA1c percentage and click the convert button to display average glucose values.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Estimated Average Glucose</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelInputSummary">Input HbA1c</strong>: <span id="resHbA1cVal">-</span>%</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="eag-display-card">
+            <div class="eag-val-box">
+              <div class="eag-val-large" id="resEagMgdl">-</div>
+              <div class="eag-unit-text">mg/dL</div>
+            </div>
+            <div class="eag-val-box">
+              <div class="eag-val-large" id="resEagMmoll">-</div>
+              <div class="eag-unit-text">mmol/L</div>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: HbA1c to eAG</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is eAG?</strong><br><span data-translate="eduA1">eAG (Estimated Average Glucose) represents your average blood glucose levels over the past 2 to 3 months, calculated directly from your HbA1c percentage. It helps patients relate their HbA1c readings to their daily fingerstick or continuous glucose monitor (CGM) readings.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is the ADAG formula used for this?</strong><br><span data-translate="eduA2">The American Diabetes Association (ADA) and other global bodies utilize the ADAG equation:<br><code>eAG (mg/dL) = (28.7 &times; HbA1c) - 46.7</code>.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "HbA1c to eAG Calculator",
+      toolDesc: "Convert your HbA1c percentage to Estimated Average Glucose (eAG) in mg/dL or mmol/L to view average sugar trends.",
+      inputsTitle: "🧬 Conversion Parameter",
+      clearBtn: "Reset",
+      labelHbA1c: "HbA1c Level (%)",
+      btnConvert: "Convert to eAG",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your HbA1c percentage and click the convert button to display average glucose values.",
+      reportTitle: "🔬 Estimated Average Glucose",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelInputSummary: "Input HbA1c",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Glycemic Range",
+      badgePrediabetes: "Prediabetic Averages",
+      badgeDiabetes: "Diabetic Averages",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "HbA1c থেকে eAG ক্যালকুলেটর",
+      toolDesc: "এইচবিএ১সি পার্সেন্টেজকে আনুমানিক গড় গ্লুকোজ বা eAG (mg/dL এবং mmol/L) এ রূপান্তর করুন রক্তের শর্করার গড় ধারণা পেতে।",
+      inputsTitle: "🧬 কনভার্শন ইনপুট সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelHbA1c: "এইচবিএ১সি মাত্রা (%)",
+      btnConvert: "eAG তে রূপান্তর করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার এইচবিএ১সি শতকরা হারটি লিখুন এবং রূপান্তর বোতামটি চাপুন গড় গ্লুকোজ দেখতে।",
+      reportTitle: "🔬 আনুমানিক গড় গ্লুকোজ (eAG)",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelInputSummary: "ইনপুট এইচবিএ১সি",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক শর্করার গড়",
+      badgePrediabetes: "প্রি-ডায়াবেটিক গড়",
+      badgeDiabetes: "ডায়াবেটিক গড়",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "HbA1c से eAG कैलकुलेटर",
+      toolDesc: "औसत चीनी रुझान देखने के लिए अपने HbA1c प्रतिशत को अनुमानित औसत ग्लूकोज (eAG) को mg/dL या mmol/L में बदलें।",
+      inputsTitle: "🧬 रूपांतरण पैरामीटर",
+      clearBtn: "रीसेट करें",
+      labelHbA1c: "HbA1c स्तर (%)",
+      btnConvert: "ईएजी में कनवर्ट करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना HbA1c प्रतिशत दर्ज करें और औसत ग्लूकोज मान प्रदर्शित करने के लिए कन्वर्ट बटन पर क्लिक करें।",
+      reportTitle: "🔬अनुमानित औसत ग्लूकोज",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelInputSummary: "इनपुट HbA1c",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य ग्लाइसेमिक रेंज",
+      badgePrediabetes: "प्रीडायबिटिक औसत",
+      badgeDiabetes: "मधुमेह औसत",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is eAG?", a: "eAG stands for Estimated Average Glucose. It shows what your HbA1c test result translates to in the same units used for daily blood sugar tests (mg/dL or mmol/L)." },
+      { q: "What is the formula for converting HbA1c to eAG?", a: "The ADAG formula is: <code>eAG (mg/dL) = (28.7 &times; HbA1c) - 46.7</code>. To find mmol/L, divide that result by 18." },
+      { q: "What does an HbA1c of 7.0% translate to in eAG?", a: "An HbA1c of 7.0% translates to an eAG of 154 mg/dL (8.6 mmol/L)." },
+      { q: "Why is eAG helpful?", a: "It helps patients relate their long-term 3-month test result (HbA1c) to their daily fingerstick or CGM readings." },
+      { q: "Do daily blood sugars always match eAG?", a: "No, eAG is an average over 90 days. Daily sugars will fluctuate higher after meals and lower during fasting." },
+      { q: "What is the relationship between HbA1c and eAG?", a: "They are directly proportional. For every 1.0% increase in HbA1c, your eAG increases by about 29 mg/dL (1.6 mmol/L)." },
+      { q: "How are mg/dL and mmol/L converted?", a: "To convert mmol/L to mg/dL, multiply by 18. To convert mg/dL to mmol/L, divide by 18." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "eAG কী?", a: "eAG হলো Estimated Average Glucose বা আনুমানিক গড় গ্লুকোজ। এটি এইচবিএ১সি এর মানকে সাধারণ রক্তের পরীক্ষার ইউনিটে (mg/dL বা mmol/L) প্রকাশ করে।" },
+      { q: "এইচবিএ১সি থেকে eAG রূপান্তরের সূত্র কী?", a: "সূত্রটি হলো: <code>eAG (mg/dL) = (২৮.৭ &times; HbA1c) - ৪৬.৭</code>। mmol/L এ পেতে ফলাফলকে ১৮ দিয়ে ভাগ করতে হবে।" },
+      { q: "এইচবিএ১সি ৭.০% হলে eAG কত হবে?", a: "এইচবিএ১সি ৭.০% হলে আনুমানিক গড় গ্লুকোজ (eAG) হবে ১৫৪ mg/dL (৮.৬ mmol/L)।" },
+      { q: "eAG কেন দরকারী?", a: "এটি রোগীদের দীর্ঘমেয়াদী পরীক্ষার ফলাফলকে প্রতিদিনের রক্তের সুগার পরীক্ষার ফলাফলের সাথে তুলনা করতে সাহায্য করে।" },
+      { q: "প্রতিদিনের সুগার কি eAG এর সাথে পুরোপুরি মিলবে?", a: "না, eAG হলো ৯০ দিনের একটি গড় হিসাব। প্রতিদিনের সুগার খালি পেটে কম এবং খাবারের পর বেশি হতে পারে।" },
+      { q: "এইচবিএ১সি ও eAG এর সম্পর্ক কী?", a: "এরা সমানুপাতিক। প্রতি ১% এইচবিএ১সি বৃদ্ধির জন্য eAG প্রায় ২৯ mg/dL (১.৬ mmol/L) বৃদ্ধি পায়।" },
+      { q: "mg/dL এবং mmol/L কীভাবে রূপান্তর করা হয়?", a: "mmol/L কে mg/dL এ নিতে ১৮ দিয়ে গুণ করতে হয়। mg/dL কে mmol/L এ নিতে ১৮ দিয়ে ভাগ করতে হয়।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "ईएजी क्या है?", a: "ईएजी का मतलब अनुमानित औसत ग्लूकोज है। यह दिखाता है कि दैनिक रक्त शर्करा परीक्षण (मिलीग्राम/डीएल या एमएमओएल/एल) के लिए उपयोग की जाने वाली समान इकाइयों में आपका एचबीए1सी परीक्षण परिणाम क्या दर्शाता है।" },
+      { q: "HbA1c को eAG में बदलने का सूत्र क्या है?", a: "ADAG सूत्र है: <कोड>ईएजी (एमजी/डीएल) = (28.7 × एचबीए1सी) - 46.7</कोड>। mmol/L ज्ञात करने के लिए, उस परिणाम को 18 से विभाजित करें।" },
+      { q: "7.0% का HbA1c ईएजी में क्या दर्शाता है?", a: "7.0% का HbA1c 154 mg/dL (8.6 mmol/L) के eAG में बदल जाता है।" },
+      { q: "ईएजी सहायक क्यों है?", a: "यह रोगियों को उनके दीर्घकालिक 3-महीने के परीक्षण परिणाम (HbA1c) को उनकी दैनिक फ़िंगरस्टिक या CGM रीडिंग से जोड़ने में मदद करता है।" },
+      { q: "क्या दैनिक रक्त शर्करा हमेशा ईएजी से मेल खाती है?", a: "नहीं, ईएजी औसतन 90 दिनों से अधिक का होता है। दैनिक शर्करा में भोजन के बाद अधिक उतार-चढ़ाव होगा और उपवास के दौरान कम होगा।" },
+      { q: "HbA1c और eAG के बीच क्या संबंध है?", a: "वे सीधे आनुपातिक हैं. HbA1c में प्रत्येक 1.0% वृद्धि के लिए, आपका eAG लगभग 29 mg/dL (1.6 mmol/L) बढ़ जाता है।" },
+      { q: "एमजी/डीएल और एमएमओएल/एल को कैसे परिवर्तित किया जाता है?", a: "mmol/L को mg/dL में बदलने के लिए 18 से गुणा करें। mg/dL को mmol/L में बदलने के लिए 18 से भाग दें।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। न��दान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const sugarInsights = {
+    en: {
+      normal: {
+        desc: "Your estimated average glucose matches a normal HbA1c. This suggests healthy daily insulin sensitivity and stable glucose ranges.",
+        factors: ["Balanced diet containing fiber", "Active exercise", "Effective cell glucose uptake"],
+        symptoms: ["No hyperglycemic symptoms", "Steady energy levels"],
+        prevention: ["Maintain your healthy balanced food choices", "Exercise regularly"],
+        consult: "Perform routine checkups annually."
+      },
+      prediabetes: {
+        desc: "Your eAG matches a prediabetic HbA1c range. Your daily glucose averages are slightly elevated, showing developing insulin resistance.",
+        factors: ["Sedentary habits", "Excess simple carbohydrate intake", "Insulin resistance in peripheral tissues"],
+        symptoms: ["Usually asymptomatic", "Mild tiredness"],
+        prevention: ["Cut down on sweets and sodas", "Increase weekly physical activity to 150 minutes"],
+        consult: "Discuss preventive lifestyle measures with your doctor."
+      },
+      diabetes: {
+        desc: "Your eAG matches a diabetic HbA1c range. Daily blood sugar averages are high, creating risks of vascular damage if unmanaged.",
+        factors: ["Inadequate insulin output", "Severe insulin resistance"],
+        symptoms: ["Increased thirst, frequent urination, dry mouth", "Blurry vision", "Tiredness"],
+        prevention: ["Check daily sugars", "Follow a low-carbohydrate healthy diet plan"],
+        consult: "⚠️ Seek medical evaluation to manage levels and prevent complications."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার গড় গ্লুকোজ স্বাভাবিক এইচবিএ১সি মাত্রা নির্দেশ করছে, যা রক্তে শর্করার গড় নিয়ন্ত্রণে রাখার প্রকাশ।",
+        factors: ["সুষম খাদ্য এবং স্বাস্থ্যকর জীবনযাত্রা", "নিয়মিত হালকা ব্যায়াম", "ইনসুলিনের সঠিক কার্যকারিতা"],
+        symptoms: ["স্বাভাবিক সুস্থতা"],
+        prevention: ["স্বাস্থ্যকর খাদ্যতালিকা বজায় রাখুন"],
+        consult: "বার্ষিক রুটিন ব্লাড স্ক্রীনিং করান।"
+      },
+      prediabetes: {
+        desc: "আপনার eAG প্রি-ডায়াবেটিস রেঞ্জ প্রকাশ করছে। এর অর্থ আপনার রক্তে দৈনিক সুগারের গড় স্বাভাবিকের চেয়ে একটু বেশি।",
+        factors: ["শারীরিক নিষ্ক্রিয়তা", "অতিরিক্ত মিষ্টি বা রিফাইন করা কার্বোহাইড্রেট খাওয়া"],
+        symptoms: ["সাধারণত কোনো লক্ষণ থাকে না", "হালকা ক্লান্তি"],
+        prevention: ["মিষ্টি পানীয় ও অতিরিক্ত শর্করা খাওয়া কমান", "নিয়মিত দৈনিক হাঁটার অভ্যাস গড়ে তুলুন"],
+        consult: "ডায়াবেটিস প্রতিরোধে চিকিৎসকের পরামর্শ নিন।"
+      },
+      diabetes: {
+        desc: "আপনার eAG ডায়াবেটিস সীমা প্রকাশ করছে, যা শরীরের উচ্চ শর্করার গড় নির্দেশক। চিকিৎসকের শরণাপন্ন হওয়া প্রয়োজন।",
+        factors: ["অগ্ন্যাশয় থেকে পর্যাপ্ত ইনসুলিন নিঃসরণ না হওয়া", "তীব্র ইনসুলিন রেজিস্ট্যান্স"],
+        symptoms: ["অতিরিক্ত তৃষ্ণা লাগা ও ঘন ঘন প্রস্রাব হওয়া", "ক্লান্তি"],
+        prevention: ["নিয়মিত সুগার চেক করুন ও ওষুধের নিয়ম মেনে চলুন", "মিষ্টি খাবার পরিহার করুন"],
+        consult: "⚠️ অবিলম্বে একজন বিশেষজ্ঞ চিকিৎসকের শরণাপন্ন হোন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका अनुमानित औसत ग्लूकोज सामान्य HbA1c से मेल खाता है। यह स्वस्थ दैनिक इंसुलिन संवेदनशीलता और स्थिर ग्लूकोज रेंज का सुझाव देता है।",
+        factors: ["फाइबर युक्त संतुलित आहार", "सक्रिय व्यायाम", "प्रभावी सेल ग्लूकोज ग्रहण"],
+        symptoms: ["कोई हाइपरग्लाइसेमिक लक्षण नहीं", "स्थिर ऊर्जा स्तर"],
+        prevention: ["अपने स्वस्थ संतुलित भोजन विकल्पों को बनाए रखें", "नियमित व्यायाम करें"],
+        consult: "सालाना नियमित जांच कराएं।"
+      },
+      prediabetes: {
+        desc: "आपका ईएजी प्रीडायबिटिक एचबीए1सी रेंज से मेल खाता है। आपका दैनिक ग्लूकोज औसत थोड़ा बढ़ा हुआ है, जो इंसुलिन प्रतिरोध विकसित होने को दर्शाता है।",
+        factors: ["आसीन आदतें", "अत्यधिक सरल कार्बोहाइड्रेट का सेवन", "परिधीय ऊतकों में इंसुलिन प्रतिरोध"],
+        symptoms: ["आमतौर पर स्पर्शोन्मुख", "हल्की थकान"],
+        prevention: ["मिठाई और सोडा का सेवन कम करें", "साप्ताहिक शारीरिक गतिविधि को 150 मिनट तक बढ़ाएँ"],
+        consult: "अपने चिकित्सक से निवारक जीवनशैली उपायों पर चर्चा करें।"
+      },
+      diabetes: {
+        desc: "आपका ईएजी डायबिटिक एचबीए1सी रेंज से मेल खाता है। दैनिक रक्त शर्करा का औसत उच्च है, अगर प्रबंधन न किया जाए तो संवहनी क्षति का खतरा पैदा होता है।",
+        factors: ["अपर्याप्त इंसुलिन उत्पादन", "गंभीर इंसुलिन प्रतिरोध"],
+        symptoms: ["अधिक प्यास लगना, बार-बार पेशाब आना, मुँह सूखना", "धुंधली दृष्टि", "थकान"],
+        prevention: ["दैनिक शर्करा की जाँच करें", "कम कार्बोहाइड्रेट वाले स्वस्थ आहार योजना का पालन करें"],
+        consult: "⚠️ स्तरों को प्रबंधित करने और जटिलताओं को रोकने के लिए चिकित्सा मूल्यांकन की तलाश करें।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-eag-calc-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valHbA1c").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function calculateEAG() {
+    const valHbA1c = parseFloat(document.getElementById("valHbA1c").value);
+
+    if (isNaN(valHbA1c) || valHbA1c < 3 || valHbA1c > 25) {
+      alert(currentLang === "en" ? "Please enter a valid HbA1c percentage between 3% and 25%." : "দয়া করে ৩% থেকে ২৫% এর মধ্যে একটি সঠিক এইচবিএ১সি শতকরা মান লিখুন।");
+      return;
+    }
+
+    // ADAG: eAG (mg/dL) = (28.7 * HbA1c) - 46.7
+    const eagMgdl = (28.7 * valHbA1c) - 46.7;
+    const eagMmoll = eagMgdl / 18;
+
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valHbA1c >= 5.7 && valHbA1c < 6.5) {
+      statusKey = "prediabetes";
+      badgeKey = "badgePrediabetes";
+    } else if (valHbA1c >= 6.5) {
+      statusKey = "diabetes";
+      badgeKey = "badgeDiabetes";
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valHbA1c < 5.7) {
+      pointerPct = Math.max(5, (valHbA1c / 5.7) * 45);
+    } else if (valHbA1c < 6.5) {
+      pointerPct = 45 + ((valHbA1c - 5.7) / 0.8) * 25;
+    } else {
+      pointerPct = Math.min(95, 70 + ((valHbA1c - 6.5) / 5.5) * 25);
+    }
+
+    activeReportData = {
+      valHbA1c,
+      eagMgdl,
+      eagMmoll,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valHbA1c, eagMgdl);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resHbA1cVal").textContent = d.valHbA1c.toFixed(1);
+
+    document.getElementById("resEagMgdl").textContent = Math.round(d.eagMgdl);
+    document.getElementById("resEagMmoll").textContent = d.eagMmoll.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "prediabetes") colorClass = "high";
+    else if (d.statusKey === "diabetes") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = sugarInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, hba1c, eag) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      hba1c,
+      eag,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-eag-calc-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.hba1c.toFixed(1)}% &rarr; ${Math.round(item.eag)} mg/dL (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- HbA1c TO eAG CONVERSION REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `HbA1c Level: ${activeReportData.valHbA1c.toFixed(1)}%\n`;
+    t += `Estimated Average Glucose (eAG): ${Math.round(activeReportData.eagMgdl)} mg/dL (${activeReportData.eagMmoll.toFixed(1)} mmol/L)\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `hba1c-to-eag-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

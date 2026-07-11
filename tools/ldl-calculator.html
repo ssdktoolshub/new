@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LDL Calculator &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Calculate low-density lipoprotein (LDL) 'bad' cholesterol online using the Friedewald equation. Check cardiac risk profiles.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--normal-color) 0%, 
+        var(--high-color) 60%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">LDL Calculator</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Calculate low-density lipoprotein (LDL) 'bad' cholesterol levels using the Friedewald equation.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 Lipid Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="mgdl" selected>mg/dL</option>
+                <option value="mmoll">mmol/L</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valTC" data-translate="labelTC">Total Cholesterol</label>
+              <input type="number" step="0.1" id="valTC" placeholder="e.g. 210" min="0" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valHDL" data-translate="labelHDL">HDL Cholesterol</label>
+              <input type="number" step="0.1" id="valHDL" placeholder="e.g. 50" min="0" required>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valTG" data-translate="labelTG">Triglycerides</label>
+              <input type="number" step="0.1" id="valTG" placeholder="e.g. 150" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="calculateLDL()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Calculate LDL</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Calculation Pending</h4>
+          <p data-translate="placeholderDesc">Enter Total Cholesterol, HDL, and Triglycerides, then click calculate to display calculated LDL cholesterol values.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Calculated LDL Cholesterol</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong>TC</strong>: <span id="resTC">-</span></span>
+            <span><strong>HDL</strong>: <span id="resHDL">-</span></span>
+            <span><strong>TG</strong>: <span id="resTG">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resLDLVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">mg/dL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--normal-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--high-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Calculated LDL</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">How is LDL calculated?</strong><br><span data-translate="eduA1">Low-Density Lipoprotein (LDL) 'bad' cholesterol is most commonly calculated using the **Friedewald Equation**:<br><code>LDL = Total Cholesterol - HDL - (Triglycerides / 5)</code> (in mg/dL).</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">When is this equation inaccurate?</strong><br><span data-translate="eduA2">The Friedewald equation becomes highly inaccurate if Triglycerides are **&ge; 400 mg/dL** (&ge; 4.52 mmol/L), or if the patient is not fasting. In these scenarios, a direct enzymatic LDL measurement should be ordered.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "LDL Calculator",
+      toolDesc: "Calculate low-density lipoprotein (LDL) 'bad' cholesterol levels using the Friedewald equation.",
+      inputsTitle: "🧬 Lipid Parameters",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      labelTC: "Total Cholesterol",
+      labelHDL: "HDL Cholesterol",
+      labelTG: "Triglycerides",
+      btnAnalyze: "Calculate LDL",
+      placeholderTitle: "Calculation Pending",
+      placeholderDesc: "Enter Total Cholesterol, HDL, and Triglycerides, then click calculate to display calculated LDL cholesterol values.",
+      reportTitle: "🔬 Calculated LDL Cholesterol",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Optimal LDL Cholesterol",
+      badgeNearOptimal: "Near Optimal LDL",
+      badgeHigh: "Borderline High LDL",
+      badgeCriticalHigh: "High/Very High LDL (Atherosclerosis Risk)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "এলডিএল (LDL) ক্যালকুলেটর",
+      toolDesc: "রক্তের মোট কোলেস্টেরল, এইচডিএল ও ট্রাইগ্লিসারাইড থেকে ফ্রাইডওয়াল্ড সূত্র ব্যবহার করে ক্ষতিকর এলডিএল কোলেস্টেরল হিসাব করুন।",
+      inputsTitle: "🧬 লিপিড ইনপুট",
+      clearBtn: "মুছে ফেলুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelTC: "মোট কোলেস্টেরল",
+      labelHDL: "এইচডিএল কোলেস্টেরল",
+      labelTG: "ট্রাইগ্লিসারাইড",
+      btnAnalyze: "এলডিএল হিসাব করুন",
+      placeholderTitle: "হিসাব অমীমাংসিত",
+      placeholderDesc: "মোট কোলেস্টেরল, এইচডিএল ও ট্রাইগ্লিসারাইডের মান লিখুন, তারপর হিসাব করুন বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 হিসাবকৃত এলডিএল কোলেস্টেরল",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "অনুকূল এলডিএল কোলেস্টেরল",
+      badgeNearOptimal: "স্বাভাবিকের কাছাকাছি এলডিএল",
+      badgeHigh: "সীমান্তবর্তী উচ্চ এলডিএল",
+      badgeCriticalHigh: "অতিরিক্ত উচ্চ এলডিএল (ধমনীতে বাধা ঝুঁকি)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "एलडीएल कैलकुलेटर",
+      toolDesc: "फ्राइडेवाल्ड समीकरण का उपयोग करके कम घनत्व वाले लिपोप्रोटीन (एलडीएल) 'खराब' कोलेस्ट्रॉल के स्तर की गणना करें।",
+      inputsTitle: "🧬 लिपिड पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      labelTC: "कुल कोलेस्ट्रॉल",
+      labelHDL: "एचडीएल कोलेस्ट्रॉल",
+      labelTG: "ट्राइग्लिसराइड्स",
+      btnAnalyze: "एलडीएल की गणना करें",
+      placeholderTitle: "गणना लंबित है",
+      placeholderDesc: "कुल कोलेस्ट्रॉल, एचडीएल और ट्राइग्लिसराइड्स दर्ज करें, फिर परिकलित एलडीएल कोलेस्ट्रॉल मान प्रदर्शित करने के लिए गणना पर क्लिक करें।",
+      reportTitle: "🔬 परिकलित एलडीएल कोलेस्ट्रॉल",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "इष्टतम एलडीएल कोलेस्ट्रॉल",
+      badgeNearOptimal: "ऑप्टिमल एलडीएल के पास",
+      badgeHigh: "बॉर्डरलाइन हाई एलडीएल",
+      badgeCriticalHigh: "उच्च/बहुत उच्च एलडीएल (एथेरोस्क्लेरोसिस जोखिम)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is LDL Cholesterol?", a: "LDL stands for Low-Density Lipoprotein. It is often called 'bad' cholesterol because elevated levels can cause plaque buildup in arteries." },
+      { q: "What is the Friedewald Equation?", a: "It is: <code>LDL = Total Cholesterol - HDL - (Triglycerides / 5)</code> (in mg/dL)." },
+      { q: "What is an optimal LDL level?", a: "An LDL level less than 100 mg/dL (2.59 mmol/L) is optimal for most adults." },
+      { q: "Why is the calculation invalid if Triglycerides are above 400 mg/dL?", a: "The ratio of cholesterol to triglycerides in VLDL particles is no longer constant at high triglyceride levels, rendering the division by 5 inaccurate." }
+    ],
+    bn: [
+      { q: "এলডিএল (LDL) কোলেস্টেরল কী?", a: "এটি হলো লো-ডেনসিটি লাইপোপ্রোটিন। একে 'খারাপ কোলেস্টেরল' বলা হয় কারণ এটি রক্তনালীতে চর্বি জমিয়ে হার্ট অ্যাটাকের ঝুঁকি বাড়ায়।" },
+      { q: "ফ্রাইডওয়াল্ড সমীকরণটি কী?", a: "সমীকরণটি হলো: <code>এলডিএল = মোট কোলেস্টেরল - এইচডিএল - (ট্রাইগ্লিসারাইড / ৫)</code> (mg/dL এ)।" },
+      { q: "এলডিএল এর আদর্শ মাত্রা কত?", a: "১০০ mg/dL (২.৫৯ mmol/L) এর কম থাকা যেকোনো প্রাপ্তবয়স্কের জন্য আদর্শ।" },
+      { q: "ট্রাইগ্লিসারাইড ৪০০ mg/dL এর বেশি হলে সূত্রটি কেন কাজ করে না?", a: "অতিরিক্ত ট্রাইগ্লিসারাইডের উপস্থিতিতে ভিএলডিএল কণার অনুপাত পরিবর্তন হয়ে যায়, ফলে ৫ দিয়ে ভাগের সমীকরণটি ভুল ফলাফল দেয়।" }
+    ],
+    hi: [
+      { q: "एलडीएल कोलेस्ट्रॉल क्या है?", a: "एलडीएल का मतलब लो-डेंसिटी लिपोप्रोटीन है। इसे अक्सर 'खराब' कोलेस्ट्रॉल कहा जाता है क्योंकि बढ़ा हुआ स्तर धमनियों में प्लाक निर्माण का कारण बन सकता है।" },
+      { q: "फ्राइडेवाल्ड समीकरण क्या है?", a: "यह है: <कोड>��लडीएल = कुल कोलेस्ट्रॉल - एचडीएल - (ट्राइग्लिसराइड्स / 5)</कोड> (मिलीग्राम/डीएल में)।" },
+      { q: "इष्टतम एलडीएल स्तर क्या है?", a: "100 mg/dL (2.59 mmol/L) से कम एलडीएल स्तर अधिकांश वयस्कों के लिए इष्टतम है।" },
+      { q: "यदि ट्राइग्लिसराइड्स 400 मिलीग्राम/डीएल से ऊपर हैं तो गणना अमान्य क्यों है?", a: "वीएलडीएल कणों में कोलेस्ट्रॉल और ट्राइग्लिसराइड्स का अनुपात अब उच्च ट्राइग्लिसराइड स्तरों पर स्थिर नहीं रहता है, जिससे विभाजन 5 गलत हो जाता है।" }
+    ]
+  };
+
+  const ldlInsights = {
+    en: {
+      normal: {
+        desc: "Your calculated LDL is optimal. This indicates a low probability of vascular cholesterol buildup.",
+        factors: ["Low dietary saturated fat intake", "Regular aerobic exercise", "Ideal body weight"],
+        symptoms: ["None"],
+        prevention: ["Continue your heart-healthy lifestyle and fiber-rich diets"],
+        consult: "Retest with annual panels."
+      },
+      nearOptimal: {
+        desc: "Your LDL cholesterol is near optimal. Active lifestyle management is recommended to maintain this level.",
+        factors: ["Moderate saturated fats intake", "Mild genetic predisposition"],
+        symptoms: ["None"],
+        prevention: ["Prioritize vegetables, fruits, and whole grains in diet", "Increase physical activity"],
+        consult: "Review with standard annual checkups."
+      },
+      high: {
+        desc: "Your LDL is borderline high. Implementing nutritional modifications can help lower this value.",
+        factors: ["Diets containing trans fats and refined sugars", "Insufficient cardiovascular exercise"],
+        symptoms: ["None"],
+        prevention: ["Reduce fatty meats, butter, and full-fat dairy", "Incorporate soluble fibers (oat bran, apples, beans)"],
+        consult: "Discuss with your physician to evaluate your lipid profile ratios."
+      },
+      criticalHigh: {
+        desc: "Your LDL cholesterol is high. This level is highly atherogenic and increases your cardiovascular risk profile significantly.",
+        factors: ["Diets high in saturated and trans fats", "Sedentary lifestyle", "Inherited familial hypercholesterolemia"],
+        symptoms: ["None; silent cardiovascular risk factor"],
+        prevention: ["Transition to a Mediterranean-style diet", "Begin daily aerobic exercise", "Quit smoking and tobacco use"],
+        consult: "⚠️ Recommended to seek medical evaluation. Statin or other lipid-lowering therapies are often indicated."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার এলডিএল কোলেস্টেরলের মাত্রা স্বাভাবিক ও আদর্শ সীমায় রয়েছে।",
+        factors: ["সঠিক চর্বিমুক্ত খাদ্য গ্রহণ", "নিয়মিত কায়িক পরিশ্রম"],
+        symptoms: ["কোনো লক্ষণ নেই"],
+        prevention: ["আঁশযুক্ত খাবার এবং সুষম জীবনযাপন বজায় রাখুন"],
+        consult: "বার্ষিক রুটিন চেকআপ করান।"
+      },
+      nearOptimal: {
+        desc: "আপনার এলডিএল মাত্রা স্বাভাবিকের কাছাকাছি রয়েছে। এটি নিয়ন্ত্রণে রাখতে চর্বিযুক্ত খাবার কিছুটা সীমিত করুন।",
+        factors: ["মাঝারি চর্বিযুক্ত খাবার খাওয়া", "পরিশ্রমের অভাব"],
+        symptoms: ["কোনো উপসর্গ নেই"],
+        prevention: ["শাকসবজি ও ফলমূল বেশি করে খান"],
+        consult: "পরবর্তী বার্ষিক চেকআপে পরীক্ষা করুন।"
+      },
+      high: {
+        desc: "আপনার এলডিএল মাত্রা কিছুটা বেশি (সীমান্তবর্তী)। এখনই খাদ্যাভ্যাস পরিবর্তন করে ক্ষতিকর ফ্যাট কমানো উচিত।",
+        factors: ["ভাজাপোড়া ও লাল মাংস খাওয়া", "কায়িক পরিশ্রম না করা"],
+        symptoms: ["কোনো লক্ষণ নেই"],
+        prevention: ["ডালিম, রসুন, ওটস ও সবুজ সবজি খাদ্যতালিকায় যোগ করুন"],
+        consult: "লিপিড রেশিও মূল্যায়নে ডাক্তারের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার এলডিএল মাত্রা অনেক বেশি। এটি ধমনীর দেয়ালে রক্ত চলাচলে বাধা সৃষ্টি করতে পারে এবং হৃদরোগ বা স্ট্রোকের বড় ঝুঁকি তৈরি করে।",
+        factors: ["বংশগত উচ্চ কোলেস্টেরল", "অতিরিক্ত ফ্যাট ও মিষ্টি সেবন", "স্থূলতা বা অতিরিক্ত ওজন"],
+        symptoms: ["কোনো বাহ্যিক লক্ষণ থাকে না"],
+        prevention: ["ধূমপান বর্জন করুন", "ওজন কমান", "তেলজাতীয় খাবার সম্পূর্ণ পরিহার করুন"],
+        consult: "⚠️ অবিলম্বে গ্যাস্ট্রোএন্টারোলজিস্ট বা কার্ডিওলজিস্ট চিকিৎসকের পরামর্শ নিন এবং ওষুধ সেবনের সিদ্ধান্ত নিন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका परिकलित एलडीएल इष्टतम है। यह संवहनी कोलेस्ट्रॉल निर्माण की कम संभावना को इंगित करता है।",
+        factors: ["आहार में संतृप्त वसा का कम सेवन", "नियमित एरोबिक व्यायाम", "आदर्श शारीरिक वजन"],
+        symptoms: ["कोई नहीं"],
+        prevention: ["अपनी हृदय-स्वस्थ जीवनशैली और फाइबर युक्त आहार जारी रखें"],
+        consult: "वार्षिक पैनल के साथ पुनः परीक्षण करें."
+      },
+      nearOptimal: {
+        desc: "आपका एलडीएल कोलेस्ट्रॉल इष्टतम स्तर के करीब है। इस स्तर को बनाए रखने के लिए सक्रिय जीवनशैली प्रबंधन की सिफारिश की जाती है।",
+        factors: ["मध्यम संतृप्त वसा का सेवन", "हल्की आनुवंशिक प्रवृत्ति"],
+        symptoms: ["कोई नहीं"],
+        prevention: ["आहार में सब्जियाँ, फल और साबुत अनाज को प्राथमिकता दें", "शा��ीरिक गतिविधि बढ़ाएँ"],
+        consult: "मानक वार्षिक जांच के साथ समीक्षा करें।"
+      },
+      high: {
+        desc: "आपका एलडीएल सीमा रेखा से ऊंचा है। पोषण संबंधी संशोधनों को लागू करने से इस मूल्य को कम करने में मदद मिल सकती है।",
+        factors: ["ट्रांस वसा और परिष्कृत शर्करा युक्त आहार", "अपर्याप्त हृदय व्यायाम"],
+        symptoms: ["कोई नहीं"],
+        prevention: ["वसायुक्त मांस, मक्खन और पूर्ण वसा वाले डेयरी उत्पादों का सेवन कम करें", "घुलनशील फाइबर (जई का चोकर, सेब, बीन्स) शामिल करें"],
+        consult: "अपने लिपिड प्रोफ़ाइल अनुपात का मूल्यांकन करने के लिए अपने चिकित्सक से चर्चा करें।"
+      },
+      criticalHigh: {
+        desc: "आपका एलडीएल कोलेस्ट्रॉल उच्च है। यह स्तर अत्यधिक एथेरोजेनिक है और आपके हृदय संबंधी जोखिम प्रोफाइल को काफी बढ़ा देता है।",
+        factors: ["संतृप्त और ट्रांस वसा से भरपूर आहार", "गतिहीन जीवन शैली", "वंशानुगत पारिवारिक हाइपरकोलेस्ट्रोलेमिया"],
+        symptoms: ["कोई नहीं; मूक हृदय जोखिम कारक"],
+        prevention: ["भूमध्यसागरीय शैली के आहार में परिवर्तन", "रोजाना एरोबिक व्यायाम शुरू करें", "धूम्रपान और तम्बाकू का सेवन बंद करें"],
+        consult: "⚠️ चिकित्सीय मूल्यांकन लेने की अनुशंसा की जाती है। स्टैटिन या अन्य लिपिड-कम करने वाले उपचारों का अक्सर संकेत दिया जाता है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-ldl-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "mgdl"; // mgdl, mmoll
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    document.getElementById("valTC").placeholder = currentUnit === "mgdl" ? "e.g. 200" : "e.g. 5.18";
+    document.getElementById("valHDL").placeholder = currentUnit === "mgdl" ? "e.g. 50" : "e.g. 1.29";
+    document.getElementById("valTG").placeholder = currentUnit === "mgdl" ? "e.g. 150" : "e.g. 1.69";
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valTC").value = "";
+    document.getElementById("valHDL").value = "";
+    document.getElementById("valTG").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function calculateLDL() {
+    const tc = parseFloat(document.getElementById("valTC").value);
+    const hdl = parseFloat(document.getElementById("valHDL").value);
+    const tg = parseFloat(document.getElementById("valTG").value);
+
+    if (isNaN(tc) || tc <= 0 || isNaN(hdl) || hdl <= 0 || isNaN(tg) || tg < 0) {
+      alert(currentLang === "en" ? "Please enter valid Total Cholesterol, HDL, and Triglyceride values." : "দয়া করে সঠিক লিপিড মানগুলো লিখুন।");
+      return;
+    }
+
+    // Check TG limits
+    const tgLimitMgdl = currentUnit === "mgdl" ? 400 : 400 * 0.01129;
+    if (tg >= tgLimitMgdl) {
+      alert(currentLang === "en" ? "Triglycerides are 400 mg/dL or higher. The Friedewald equation is inaccurate at these levels. A direct enzymatic LDL measurement is required." : "ট্রাইগ্লিসারাইড ৪০০ mg/dL বা তার বেশি। এই মাত্রায় ফ্রাইডওয়াল্ড সমীকরণ কাজ করে না। সরাসরি ল্যাব টেস্ট প্রয়োজন।");
+      return;
+    }
+
+    // Friedewald: LDL = TC - HDL - (TG / 5) [mg/dL]
+    // Friedewald: LDL = TC - HDL - (TG / 2.2) [mmol/L]
+    let ldl = 0;
+    if (currentUnit === "mgdl") {
+      ldl = tc - hdl - (tg / 5);
+    } else {
+      ldl = tc - hdl - (tg / 2.2);
+    }
+
+    if (ldl < 0) ldl = 0;
+
+    let limits = { normal: 100, nearOptimal: 130, high: 160 };
+    if (currentUnit === "mmoll") {
+      limits = { normal: 2.59, nearOptimal: 3.37, high: 4.14 };
+    }
+
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (ldl >= limits.normal && ldl < limits.nearOptimal) {
+      statusKey = "nearOptimal";
+      badgeKey = "badgeNearOptimal";
+    } else if (ldl >= limits.nearOptimal && ldl < limits.high) {
+      statusKey = "high";
+      badgeKey = "badgeHigh";
+    } else if (ldl >= limits.high) {
+      statusKey = "criticalHigh";
+      badgeKey = "badgeCriticalHigh";
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (ldl < limits.normal) {
+      pointerPct = Math.max(5, (ldl / limits.normal) * 40); // 5% - 40%
+    } else if (ldl >= limits.normal && ldl < limits.high) {
+      pointerPct = 40 + ((ldl - limits.normal) / (limits.high - limits.normal)) * 30; // 40% - 70%
+    } else {
+      pointerPct = Math.min(95, 70 + ((ldl - limits.high) / (limits.high * 0.5)) * 25); // 70% - 95%
+    }
+
+    activeReportData = {
+      tc, hdl, tg,
+      ldl,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, ldl, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    const unitText = d.unit === "mgdl" ? " mg/dL" : " mmol/L";
+    
+    document.getElementById("resTC").textContent = d.tc.toFixed(1) + unitText;
+    document.getElementById("resHDL").textContent = d.hdl.toFixed(1) + unitText;
+    document.getElementById("resTG").textContent = d.tg.toFixed(1) + unitText;
+
+    document.getElementById("resUnitText").textContent = unitText;
+    document.getElementById("resLDLVal").textContent = d.ldl.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "nearOptimal") colorClass = "normal";
+    else if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey === "criticalHigh") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resLDLVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = `< ${d.limits.normal.toFixed(1)}`;
+    document.getElementById("tickNormalRange").textContent = `${d.limits.normal.toFixed(1)} - ${d.limits.high.toFixed(1)}`;
+    document.getElementById("tickHigh").textContent = `${d.limits.high.toFixed(1)}+`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = ldlInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, ldl, unit) {
+    const unitText = unit === "mgdl" ? " mg/dL" : " mmol/L";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      ldl,
+      unitText,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-ldl-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>Calculated LDL: ${item.ldl.toFixed(1)}${item.unitText} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const unitText = activeReportData.unit === "mgdl" ? " mg/dL" : " mmol/L";
+    let t = `--- CALCULATED LDL CHOLESTEROL REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Total Cholesterol: ${activeReportData.tc.toFixed(1)}${unitText}\n`;
+    t += `HDL Cholesterol: ${activeReportData.hdl.toFixed(1)}${unitText}\n`;
+    t += `Triglycerides: ${activeReportData.tg.toFixed(1)}${unitText}\n`;
+    t += `Calculated LDL: ${activeReportData.ldl.toFixed(1)}${unitText}\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `calculated-ldl-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

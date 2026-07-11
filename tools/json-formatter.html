@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSON Formatter &amp; Converter &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Free JSON Formatter with diff viewer, JSONPath queries, schema generator, find &amp; replace, statistics, and syntax highlighting. All features run in your browser.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    /* ── Mode Tabs ─────────────────────────────────────────────── */
+    .mode-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0;
+    }
+    .mode-tab {
+      padding: 8px 18px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px 8px 0 0;
+      background: var(--bg3);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.25s;
+      position: relative;
+      bottom: -2px;
+    }
+    .mode-tab.active {
+      background: var(--accent);
+      color: #fff;
+      border-bottom: 2px solid var(--accent);
+    }
+    .mode-tab:hover:not(.active) {
+      background: var(--bg2);
+      color: var(--text);
+    }
+
+    /* ── Pane visibility ────────────────────────────────────────── */
+    .tool-pane { display: none; }
+    .tool-pane.active { display: block; }
+
+    /* ── Textarea / Output ──────────────────────────────────────── */
+    .json-tree-node {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      text-align: left;
+    }
+    .toggle-icon {
+      cursor: pointer;
+      color: var(--accent);
+      font-weight: bold;
+      user-select: none;
+      display: inline-block;
+      width: 14px;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+
+    /* ── Syntax-highlighted pre ─────────────────────────────────── */
+    #syntaxOutput {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.85rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-all;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 380px;
+      max-height: 480px;
+      overflow-y: auto;
+      color: var(--text);
+      tab-size: 2;
+    }
+    .hl-key    { color: var(--accent); font-weight: 600; }
+    .hl-str    { color: #10b981; }
+    .hl-num    { color: #f59e0b; }
+    .hl-bool   { color: #ef4444; font-weight: 700; }
+    .hl-null   { color: #64748b; font-style: italic; }
+
+    /* ── Stats panel ────────────────────────────────────────────── */
+    .stats-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .stat-box {
+      flex: 1 1 100px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      text-align: center;
+    }
+    .stat-box .stat-val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--accent);
+      display: block;
+    }
+    .stat-box .stat-lbl {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Diff pane ──────────────────────────────────────────────── */
+    .diff-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    #diffOutput {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-all;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 260px;
+      max-height: 440px;
+      overflow-y: auto;
+      margin-top: 14px;
+    }
+    .diff-add  { background: rgba(16,185,129,.18); color: #10b981; display: block; border-radius: 3px; padding: 0 4px; }
+    .diff-del  { background: rgba(239,68,68,.18);  color: #ef4444; display: block; border-radius: 3px; padding: 0 4px; }
+    .diff-chg  { background: rgba(245,158,11,.18); color: #f59e0b; display: block; border-radius: 3px; padding: 0 4px; }
+    .diff-same { color: var(--muted); display: block; padding: 0 4px; }
+
+    /* ── JSONPath pane ──────────────────────────────────────────── */
+    .path-bar {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .path-bar input {
+      flex: 1;
+      min-width: 180px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      font-size: 0.9rem;
+      outline: none;
+    }
+    #pathOutput {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.88rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 220px;
+      max-height: 380px;
+      overflow-y: auto;
+      color: var(--text);
+    }
+
+    /* ── Schema pane ────────────────────────────────────────────── */
+    #schemaOutput {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.85rem;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 340px;
+      max-height: 500px;
+      overflow-y: auto;
+      color: var(--text);
+    }
+
+    /* ── Find & Replace toolbar ─────────────────────────────────── */
+    .fnr-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    .fnr-bar input {
+      flex: 1;
+      min-width: 140px;
+      padding: 7px 10px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .fnr-bar label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* ── Two-col layout ─────────────────────────────────────────── */
+    .main-io {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 760px) {
+      .main-io, .diff-inputs { grid-template-columns: 1fr; }
+      .mode-tabs { gap: 4px; }
+      .mode-tab { padding: 7px 12px; font-size: 0.78rem; }
+    }
+
+    /* ── Small utility ──────────────────────────────────────────── */
+    .col-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .col-label h4 { margin: 0; font-size: 0.95rem; }
+    .mini-btn {
+      padding: 4px 10px;
+      font-size: 0.74rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      cursor: pointer;
+      transition: 0.25s;
+    }
+    .mini-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    #statusMsg { margin-top: 12px; font-weight: bold; font-size: 0.88rem; display: none; }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">JSON Formatter &amp; Converter</h1>
+  <p class="page-sub">Format, validate, diff, query, inspect, export and deeply analyse JSON — entirely in your browser.</p>
+
+  <div class="content-card tool-playground">
+
+    <!-- ── Mode Tabs ──────────────────────────────────────────── -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-pane="paneFormat">✨ Format</button>
+      <button class="mode-tab" data-pane="paneDiff">⚖️ Diff</button>
+      <button class="mode-tab" data-pane="panePath">🔍 JSONPath</button>
+      <button class="mode-tab" data-pane="paneSchema">📐 Schema</button>
+      <button class="mode-tab" data-pane="paneFnR">🔄 Find &amp; Replace</button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PANE 1 — FORMAT / HIGHLIGHT / TREE / STATS
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="paneFormat" class="tool-pane active">
+      <div class="main-io">
+
+        <!-- Input -->
+        <div>
+          <div class="col-label">
+            <h4>Input JSON</h4>
+            <button class="mini-btn" id="btnLoadSample">💡 Load Sample</button>
+          </div>
+          <textarea id="jsonInput" placeholder="Paste your raw JSON here…" style="min-height:380px;"></textarea>
+        </div>
+
+        <!-- Output -->
+        <div>
+          <div class="col-label">
+            <h4 id="outputTitle">Formatted Output</h4>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <select id="indentFormat" class="mini-btn" style="padding:4px 8px;">
+                <option value="2">2 Spaces</option>
+                <option value="4">4 Spaces</option>
+                <option value="tab">Tab</option>
+              </select>
+            </div>
+          </div>
+          <!-- Syntax-highlighted pre replaces old plain textarea -->
+          <pre id="syntaxOutput">Result will appear here…</pre>
+          <!-- Tree container (shown on tree mode) -->
+          <div id="treeOutput" class="tool-output-box" style="display:none; min-height:380px; max-height:480px; overflow-y:auto;"></div>
+        </div>
+      </div>
+
+      <!-- Stats panel (hidden until parse) -->
+      <div id="statsPanel" style="display:none; margin-top:18px;">
+        <h4 style="margin:0 0 8px; font-size:0.9rem; color:var(--muted);">📊 JSON Statistics</h4>
+        <div class="stats-row">
+          <div class="stat-box"><span class="stat-val" id="stKeys">–</span><span class="stat-lbl">Total Keys</span></div>
+          <div class="stat-box"><span class="stat-val" id="stDepth">–</span><span class="stat-lbl">Max Depth</span></div>
+          <div class="stat-box"><span class="stat-val" id="stArrays">–</span><span class="stat-lbl">Arrays</span></div>
+          <div class="stat-box"><span class="stat-val" id="stStrings">–</span><span class="stat-lbl">Strings</span></div>
+          <div class="stat-box"><span class="stat-val" id="stNumbers">–</span><span class="stat-lbl">Numbers</span></div>
+          <div class="stat-box"><span class="stat-val" id="stBools">–</span><span class="stat-lbl">Booleans</span></div>
+          <div class="stat-box"><span class="stat-val" id="stNulls">–</span><span class="stat-lbl">Nulls</span></div>
+          <div class="stat-box"><span class="stat-val" id="stBytes">–</span><span class="stat-lbl">Bytes</span></div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="tool-control" style="margin-top:20px; border-top:1px solid var(--border); padding-top:16px;">
+        <button class="btn" id="btnFormat">✨ Format &amp; Highlight</button>
+        <button class="btn" id="btnTree">🌳 Tree View</button>
+        <button class="btn" id="btnMinify">🗜 Minify</button>
+        <button class="btn ghost" id="btnToXML">🔁 XML</button>
+        <button class="btn ghost" id="btnToYAML">🔁 YAML</button>
+        <button class="btn ghost" id="btnCopy">📋 Copy</button>
+        <button class="btn ghost" id="btnDownload" style="display:none;">⬇️ Download</button>
+        <button class="btn ghost" id="btnClear" style="border-color:#ff6b6b;color:#ff6b6b;">🗑 Clear</button>
+      </div>
+      <p id="statusMsg"></p>
+    </div><!-- /paneFormat -->
+
+
+    <!-- ══════════════════════════════════════════════════════════
+         PANE 2 — DIFF VIEWER
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="paneDiff" class="tool-pane">
+      <div class="diff-inputs">
+        <div>
+          <div class="col-label"><h4>JSON A (Original)</h4></div>
+          <textarea id="diffInputA" placeholder="Paste original JSON…" style="min-height:240px;"></textarea>
+        </div>
+        <div>
+          <div class="col-label"><h4>JSON B (Modified)</h4></div>
+          <textarea id="diffInputB" placeholder="Paste modified JSON…" style="min-height:240px;"></textarea>
+        </div>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="btn" id="btnRunDiff">⚖️ Compare JSON</button>
+        <button class="btn ghost" id="btnLoadDiffSample">💡 Load Sample Pair</button>
+        <button class="btn ghost" id="btnClearDiff" style="border-color:#ff6b6b;color:#ff6b6b;">🗑 Clear</button>
+      </div>
+      <!-- Legend -->
+      <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:10px; font-size:0.78rem; color:var(--muted);">
+        <span><span style="color:#10b981; font-weight:700;">■</span> Added</span>
+        <span><span style="color:#ef4444; font-weight:700;">■</span> Removed</span>
+        <span><span style="color:#f59e0b; font-weight:700;">■</span> Changed</span>
+        <span><span style="color:var(--muted); font-weight:700;">■</span> Unchanged</span>
+      </div>
+      <div id="diffOutput">Diff results will appear here…</div>
+    </div><!-- /paneDiff -->
+
+
+    <!-- ══════════════════════════════════════════════════════════
+         PANE 3 — JSONPATH QUERY
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="panePath" class="tool-pane">
+      <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">
+        Enter JSON in the <strong>Format</strong> tab first, then query it here with dot-notation + array index syntax:<br>
+        <code style="font-size:0.82rem; color:var(--accent);">$.key &nbsp;|&nbsp; $.obj.nested &nbsp;|&nbsp; $.arr[0] &nbsp;|&nbsp; $.obj.arr[2].name</code>
+      </p>
+      <div class="path-bar">
+        <input id="pathQuery" type="text" placeholder="$.developer.skills[0]" />
+        <button class="btn" id="btnRunPath">🔍 Query</button>
+        <button class="btn ghost" id="btnClearPath">🗑 Clear</button>
+      </div>
+      <div>
+        <div class="col-label" style="margin-bottom:6px;">
+          <h4>Result</h4>
+          <span id="pathMatchCount" style="font-size:0.78rem; color:var(--muted);"></span>
+        </div>
+        <pre id="pathOutput">Query results will appear here…</pre>
+      </div>
+    </div><!-- /panePath -->
+
+
+    <!-- ══════════════════════════════════════════════════════════
+         PANE 4 — SCHEMA GENERATOR
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="paneSchema" class="tool-pane">
+      <p style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">
+        Auto-generates a <strong>JSON Schema (Draft-07)</strong> from the input JSON in the Format tab. Recurses all types: string, number, boolean, array, object, null.
+      </p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+        <button class="btn" id="btnGenSchema">📐 Generate Schema</button>
+        <button class="btn ghost" id="btnCopySchema">📋 Copy Schema</button>
+        <button class="btn ghost" id="btnDlSchema">⬇️ Download Schema</button>
+      </div>
+      <pre id="schemaOutput">Schema will appear here after clicking Generate Schema…</pre>
+    </div><!-- /paneSchema -->
+
+
+    <!-- ══════════════════════════════════════════════════════════
+         PANE 5 — FIND & REPLACE
+    ═══════════════════════════════════════════════════════════ -->
+    <div id="paneFnR" class="tool-pane">
+      <p style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;">
+        Uses the JSON from the <strong>Format</strong> tab. Finds <em>all</em> occurrences of the specified key (recursive) and replaces their values. The result is written back to the Format tab.
+      </p>
+      <div class="fnr-bar">
+        <label>Find key:</label>
+        <input id="fnrKey" type="text" placeholder="e.g. status" />
+        <label>Replace value with:</label>
+        <input id="fnrVal" type="text" placeholder="e.g. inactive" />
+        <button class="btn" id="btnRunFnR">🔄 Replace All</button>
+        <button class="btn ghost" id="btnClearFnR" style="border-color:#ff6b6b;color:#ff6b6b;">🗑 Reset</button>
+      </div>
+      <div id="fnrStatus" style="font-size:0.85rem; color:var(--muted); margin-bottom:10px;"></div>
+      <!-- Preview of replaced JSON with syntax highlight -->
+      <div class="col-label" style="margin-bottom:6px;"><h4>Preview (replaced output)</h4></div>
+      <pre id="fnrOutput">Replaced JSON will appear here…</pre>
+    </div><!-- /paneFnR -->
+
+  </div><!-- /.content-card -->
+
+
+  <!-- ── Features Card ─────────────────────────────────────────── -->
+  <div class="content-card">
+    <h3>Advanced JSON Operations</h3>
+    <ul>
+      <li><strong>Syntax-Highlighted Output:</strong> Keys, strings, numbers, booleans, and nulls rendered in distinct colours with no external dependencies.</li>
+      <li><strong>JSON Diff Viewer:</strong> Deep recursive comparison between two JSON objects — green for added, red for removed, yellow for changed values.</li>
+      <li><strong>JSONPath Query:</strong> Dot-notation + array-index path parser (e.g. <code>$.developer.skills[0]</code>) to extract nested values instantly.</li>
+      <li><strong>JSON Schema Generator:</strong> One-click Draft-07 schema generation that recurses all types, properties, and array items.</li>
+      <li><strong>Find &amp; Replace:</strong> Recursively walk the JSON tree and replace every value for a given key, then see the highlighted result immediately.</li>
+      <li><strong>Statistics Panel:</strong> Total keys, max nesting depth, type counts (arrays, strings, numbers, booleans, nulls) and byte size — shown after every parse.</li>
+      <li><strong>Interactive Tree Viewer:</strong> Browse nested arrays and objects with collapsible caret nodes.</li>
+      <li><strong>Export:</strong> Convert parsed JSON to XML or YAML and download as a file.</li>
+    </ul>
+  </div>
+
+  <!-- ── FAQ ───────────────────────────────────────────────────── -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">How does the JSON Diff Viewer work?<span>＋</span></div>
+        <div class="faq-a">Paste two JSON objects in the Diff tab and click Compare. A recursive deep-diff function walks both objects, annotating every key as added (in B but not A), removed (in A but not B), changed (value differs), or unchanged — then renders colour-coded output.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What JSONPath syntax is supported?<span>＋</span></div>
+        <div class="faq-a">The built-in parser supports the <code>$</code> root anchor, dot-separated property names, and square-bracket integer array indices — for example <code>$.developer.skills[1]</code> or <code>$.features[0].name</code>. Wildcards and filter expressions are not yet supported.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">What does the Schema Generator produce?<span>＋</span></div>
+        <div class="faq-a">It generates a valid JSON Schema (Draft-07) object with <code>$schema</code>, <code>type</code>, and <code>properties</code>. For arrays it adds an <code>items</code> sub-schema inferred from the first element. The schema can be downloaded as a <code>.json</code> file.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Is any data sent to a server?<span>＋</span></div>
+        <div class="faq-a">No. Every operation — formatting, diff, schema generation, find &amp; replace, path queries, syntax highlighting — runs entirely in your browser. Nothing leaves your device.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+/* =====================================================================
+   SSDK JSON Formatter — Full Feature Set
+   ===================================================================== */
+const $id = id => document.getElementById(id);
+
+/* ── state ──────────────────────────────────────────────────────────── */
+let currentOutputFormat = 'json';
+let currentRawOutput    = '';
+let lastParsedJSON      = null; // shared across panes
+
+/* ── Tab routing ────────────────────────────────────────────────────── */
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tool-pane').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    $id(tab.dataset.pane).classList.add('active');
+  });
+});
+
+/* ── Status helper ──────────────────────────────────────────────────── */
+function showStatus(text, isError = false) {
+  const el = $id('statusMsg');
+  el.style.display = 'block';
+  el.textContent   = text;
+  el.style.color   = isError ? '#ff6b6b' : 'var(--accent)';
+}
+
+/* ── HTML escape ────────────────────────────────────────────────────── */
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* =====================================================================
+   FEATURE 6 — Syntax Highlighted Output
+   ===================================================================== */
+function syntaxHighlight(jsonString) {
+  // Escape first, then apply coloured spans via regex
+  const escaped = escHtml(jsonString);
+  return escaped.replace(
+    /(&quot;)((?:\\.|[^&quot;\\])*)(&quot;)(\s*:)?|(\btrue\b|\bfalse\b)|\bnull\b|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g,
+    (match, q1, key, q3, colon, bool, num) => {
+      if (colon !== undefined) {
+        // It's a key  (has a colon after)
+        return `<span class="hl-key">${q1}${key}${q3}</span>${colon}`;
+      }
+      if (q1 !== undefined) {
+        // It's a string value
+        return `<span class="hl-str">${q1}${key}${q3}</span>`;
+      }
+      if (bool !== undefined) {
+        return `<span class="hl-bool">${bool}</span>`;
+      }
+      if (match === 'null') {
+        return `<span class="hl-null">null</span>`;
+      }
+      if (num !== undefined) {
+        return `<span class="hl-num">${num}</span>`;
+      }
+      return match;
+    }
+  );
+}
+
+function renderHighlighted(jsonString) {
+  $id('syntaxOutput').innerHTML = syntaxHighlight(jsonString);
+  $id('syntaxOutput').style.display = '';
+  $id('treeOutput').style.display = 'none';
+}
+
+/* =====================================================================
+   FEATURE 5 — JSON Statistics
+   ===================================================================== */
+function computeStats(obj) {
+  let keys = 0, depth = 0, arrays = 0, strings = 0, numbers = 0, bools = 0, nulls = 0;
+
+  function walk(val, d) {
+    if (d > depth) depth = d;
+    if (val === null)              { nulls++;   return; }
+    if (typeof val === 'boolean')  { bools++;   return; }
+    if (typeof val === 'number')   { numbers++; return; }
+    if (typeof val === 'string')   { strings++; return; }
+    if (Array.isArray(val)) {
+      arrays++;
+      val.forEach(v => walk(v, d + 1));
+      return;
+    }
+    if (typeof val === 'object') {
+      const ks = Object.keys(val);
+      keys += ks.length;
+      ks.forEach(k => walk(val[k], d + 1));
+    }
+  }
+  walk(obj, 0);
+  return { keys, depth, arrays, strings, numbers, bools, nulls };
+}
+
+function showStats(parsed, rawStr) {
+  const s = computeStats(parsed);
+  $id('stKeys').textContent    = s.keys;
+  $id('stDepth').textContent   = s.depth;
+  $id('stArrays').textContent  = s.arrays;
+  $id('stStrings').textContent = s.strings;
+  $id('stNumbers').textContent = s.numbers;
+  $id('stBools').textContent   = s.bools;
+  $id('stNulls').textContent   = s.nulls;
+  $id('stBytes').textContent   = new Blob([rawStr]).size;
+  $id('statsPanel').style.display = '';
+}
+
+/* ─── Parse helper ─────────────────────────────────────────────────── */
+function getParsedInput() {
+  const input = $id('jsonInput').value.trim();
+  if (!input) { showStatus('Please enter some JSON first.', true); return null; }
+  try {
+    const parsed = JSON.parse(input);
+    lastParsedJSON = parsed;
+    return parsed;
+  } catch (e) {
+    $id('syntaxOutput').textContent = e.message;
+    $id('syntaxOutput').style.color = '#ff6b6b';
+    $id('treeOutput').style.display = 'none';
+    showStatus('❌ Invalid JSON — ' + e.message, true);
+    return null;
+  }
+}
+
+/* ── Load Sample ────────────────────────────────────────────────────── */
+const SAMPLE_JSON = {
+  appName: "SSDK Tools Hub",
+  version: 2.5,
+  released: true,
+  license: null,
+  developer: {
+    name: "Swarnava Das",
+    role: "Creator & Lead Dev",
+    skills: ["JavaScript", "Python", "CSS", "HTML"]
+  },
+  features: [
+    { name: "Image Cropper",   status: "active",   users: 1200 },
+    { name: "YAML Converter",  status: "active",   users: 840  },
+    { name: "Local QR Codes",  status: "active",   users: 560  },
+    { name: "PDF Merger",      status: "inactive", users: 0    }
+  ]
+};
+
+$id('btnLoadSample').onclick = () => {
+  $id('jsonInput').value = JSON.stringify(SAMPLE_JSON, null, 2);
+  showStatus('💡 Sample JSON loaded!');
+};
+
+/* ── Format & Highlight ─────────────────────────────────────────────── */
+$id('btnFormat').onclick = () => {
+  const parsed = getParsedInput();
+  if (!parsed) return;
+
+  const indSel = $id('indentFormat').value;
+  const indent = indSel === 'tab' ? '\t' : parseInt(indSel);
+  const formatted = JSON.stringify(parsed, null, indent);
+
+  renderHighlighted(formatted);
+  $id('outputTitle').textContent = 'Formatted Output';
+  currentOutputFormat = 'json';
+  currentRawOutput    = formatted;
+  $id('btnDownload').style.display = 'inline-flex';
+  showStats(parsed, formatted);
+  showStatus('✅ JSON formatted and highlighted!');
+};
+
+/* ── Minify ─────────────────────────────────────────────────────────── */
+$id('btnMinify').onclick = () => {
+  const parsed = getParsedInput();
+  if (!parsed) return;
+
+  const mini = JSON.stringify(parsed);
+  renderHighlighted(mini);
+  $id('outputTitle').textContent = 'Minified JSON';
+  currentOutputFormat = 'json';
+  currentRawOutput    = mini;
+  $id('btnDownload').style.display = 'inline-flex';
+  showStats(parsed, mini);
+  showStatus('✅ JSON minified!');
+};
+
+/* ── Tree View ──────────────────────────────────────────────────────── */
+$id('btnTree').onclick = () => {
+  const parsed = getParsedInput();
+  if (!parsed) return;
+
+  $id('syntaxOutput').style.display = 'none';
+  const treeOut = $id('treeOutput');
+  treeOut.innerHTML = '';
+  treeOut.style.display = '';
+  $id('outputTitle').textContent = 'Interactive Tree Viewer';
+
+  renderJSONTree(parsed, treeOut);
+
+  currentOutputFormat = 'json';
+  currentRawOutput    = JSON.stringify(parsed, null, 2);
+  $id('btnDownload').style.display = 'inline-flex';
+  showStats(parsed, currentRawOutput);
+  showStatus('🌳 Tree loaded — click carets to expand/collapse nodes.');
+};
+
+/* ── Export XML ─────────────────────────────────────────────────────── */
+$id('btnToXML').onclick = () => {
+  const parsed = getParsedInput();
+  if (!parsed) return;
+
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<root>\n`;
+  xml += jsonToXml(parsed, 2);
+  xml += `</root>`;
+
+  $id('syntaxOutput').textContent = xml;
+  $id('syntaxOutput').style.color = 'var(--text)';
+  $id('syntaxOutput').style.display = '';
+  $id('treeOutput').style.display = 'none';
+  $id('outputTitle').textContent = 'Converted XML';
+  currentOutputFormat = 'xml';
+  currentRawOutput    = xml;
+  $id('statsPanel').style.display = 'none';
+  $id('btnDownload').style.display = 'inline-flex';
+  showStatus('✅ Exported to XML!');
+};
+
+/* ── Export YAML ────────────────────────────────────────────────────── */
+$id('btnToYAML').onclick = () => {
+  const parsed = getParsedInput();
+  if (!parsed) return;
+
+  const yaml = jsonToYaml(parsed, 0);
+  $id('syntaxOutput').textContent = yaml;
+  $id('syntaxOutput').style.color = 'var(--text)';
+  $id('syntaxOutput').style.display = '';
+  $id('treeOutput').style.display = 'none';
+  $id('outputTitle').textContent = 'Converted YAML';
+  currentOutputFormat = 'yaml';
+  currentRawOutput    = yaml;
+  $id('statsPanel').style.display = 'none';
+  $id('btnDownload').style.display = 'inline-flex';
+  showStatus('✅ Exported to YAML!');
+};
+
+/* ── Copy ───────────────────────────────────────────────────────────── */
+$id('btnCopy').onclick = () => {
+  if (!currentRawOutput) { showStatus('No output to copy.', true); return; }
+  navigator.clipboard.writeText(currentRawOutput)
+    .then(() => showStatus('📋 Copied to clipboard!'))
+    .catch(() => showStatus('Could not copy.', true));
+};
+
+/* ── Download ───────────────────────────────────────────────────────── */
+$id('btnDownload').onclick = () => {
+  if (!currentRawOutput) return;
+  const blob = new Blob([currentRawOutput], { type: 'text/plain;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = `ssdk-output.${currentOutputFormat}`;
+  document.body.appendChild(a); a.click();
+  URL.revokeObjectURL(url); document.body.removeChild(a);
+  showStatus(`⬇️ Downloaded ssdk-output.${currentOutputFormat}`);
+};
+
+/* ── Clear ──────────────────────────────────────────────────────────── */
+$id('btnClear').onclick = () => {
+  $id('jsonInput').value = '';
+  $id('syntaxOutput').innerHTML = 'Result will appear here…';
+  $id('syntaxOutput').style.color = 'var(--muted)';
+  $id('syntaxOutput').style.display = '';
+  $id('treeOutput').style.display = 'none';
+  $id('outputTitle').textContent = 'Formatted Output';
+  $id('btnDownload').style.display = 'none';
+  $id('statsPanel').style.display = 'none';
+  $id('statusMsg').style.display = 'none';
+  currentRawOutput = '';
+  lastParsedJSON   = null;
+};
+
+/* =====================================================================
+   HELPER — XML converter
+   ===================================================================== */
+function jsonToXml(obj, indent) {
+  let xml = '';
+  const pad = ' '.repeat(indent);
+  if (typeof obj !== 'object' || obj === null) return pad + escHtml(String(obj)) + '\n';
+  for (const key in obj) {
+    if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
+    const val = obj[key];
+    const safe = key.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    if (Array.isArray(val)) {
+      val.forEach(item => {
+        if (typeof item === 'object' && item !== null)
+          xml += `${pad}<${safe}>\n${jsonToXml(item, indent + 2)}${pad}</${safe}>\n`;
+        else
+          xml += `${pad}<${safe}>${escHtml(String(item))}</${safe}>\n`;
+      });
+    } else if (typeof val === 'object' && val !== null) {
+      xml += `${pad}<${safe}>\n${jsonToXml(val, indent + 2)}${pad}</${safe}>\n`;
+    } else {
+      xml += `${pad}<${safe}>${escHtml(String(val))}</${safe}>\n`;
+    }
+  }
+  return xml;
+}
+
+/* ── YAML converter ─────────────────────────────────────────────────── */
+function jsonToYaml(obj, indent) {
+  let yaml = '';
+  const pad = ' '.repeat(indent);
+  if (typeof obj !== 'object' || obj === null) return String(obj) + '\n';
+  if (Array.isArray(obj)) {
+    if (!obj.length) return '[]\n';
+    obj.forEach(item => {
+      if (typeof item === 'object' && item !== null)
+        yaml += `${pad}-\n${jsonToYaml(item, indent + 2)}`;
+      else
+        yaml += `${pad}- ${item}\n`;
+    });
+  } else {
+    const keys = Object.keys(obj);
+    if (!keys.length) return '{}\n';
+    keys.forEach(k => {
+      const v = obj[k];
+      if (typeof v === 'object' && v !== null)
+        yaml += `${pad}${k}:\n${jsonToYaml(v, indent + 2)}`;
+      else
+        yaml += `${pad}${k}: ${v}\n`;
+    });
+  }
+  return yaml;
+}
+
+/* ── Tree renderer ──────────────────────────────────────────────────── */
+function renderJSONTree(data, container) {
+  const root = document.createElement('div');
+  root.className = 'json-tree-node';
+  root.appendChild(createTreeNode(data, ''));
+  container.appendChild(root);
+}
+
+function createTreeNode(val, key) {
+  const node = document.createElement('div');
+  node.style.cssText = 'padding-left:20px; position:relative;';
+
+  const keySpan = document.createElement('span');
+  if (key !== '') {
+    keySpan.innerHTML = `<strong style="color:var(--accent)">"${escHtml(String(key))}"</strong>: `;
+  }
+
+  if (val === null) {
+    node.appendChild(keySpan);
+    node.insertAdjacentHTML('beforeend', '<span class="hl-null">null</span>');
+  } else if (typeof val === 'boolean') {
+    node.appendChild(keySpan);
+    node.insertAdjacentHTML('beforeend', `<span class="hl-bool">${val}</span>`);
+  } else if (typeof val === 'number') {
+    node.appendChild(keySpan);
+    node.insertAdjacentHTML('beforeend', `<span class="hl-num">${val}</span>`);
+  } else if (typeof val === 'string') {
+    node.appendChild(keySpan);
+    node.insertAdjacentHTML('beforeend', `<span class="hl-str">"${escHtml(val)}"</span>`);
+  } else if (Array.isArray(val)) {
+    node.appendChild(keySpan);
+    const open = document.createElement('span'); open.textContent = '[';
+    node.appendChild(open);
+    if (val.length > 0) {
+      const tog = buildToggle();
+      node.appendChild(tog.btn);
+      const ch = document.createElement('div');
+      val.forEach((item, i) => ch.appendChild(createTreeNode(item, i.toString())));
+      node.appendChild(ch);
+      tog.btn.onclick = e => { e.stopPropagation(); toggleChildren(ch, tog.btn); };
+    }
+    const close = document.createElement('div'); close.textContent = ']';
+    node.appendChild(close);
+  } else if (typeof val === 'object') {
+    node.appendChild(keySpan);
+    const open = document.createElement('span'); open.textContent = '{';
+    node.appendChild(open);
+    const keys = Object.keys(val);
+    if (keys.length > 0) {
+      const tog = buildToggle();
+      node.appendChild(tog.btn);
+      const ch = document.createElement('div');
+      keys.forEach(k => ch.appendChild(createTreeNode(val[k], k)));
+      node.appendChild(ch);
+      tog.btn.onclick = e => { e.stopPropagation(); toggleChildren(ch, tog.btn); };
+    }
+    const close = document.createElement('div'); close.textContent = '}';
+    node.appendChild(close);
+  }
+  return node;
+}
+
+function buildToggle() {
+  const btn = document.createElement('span');
+  btn.className = 'toggle-icon'; btn.textContent = '▾';
+  return { btn };
+}
+function toggleChildren(ch, btn) {
+  const hidden = ch.style.display === 'none';
+  ch.style.display  = hidden ? '' : 'none';
+  btn.textContent   = hidden ? '▾' : '▸';
+}
+
+/* =====================================================================
+   FEATURE 1 — JSON Diff Viewer
+   ===================================================================== */
+function deepDiff(a, b, path = '</script>
+</body>
+</html>
+) {
+  const lines = [];
+
+  if (a === b) {
+    lines.push({ type: 'same', path, val: a });
+    return lines;
+  }
+
+  const typeA = jsonType(a), typeB = jsonType(b);
+
+  if (typeA !== typeB || typeA === 'primitive') {
+    lines.push({ type: 'chg', path, from: a, to: b });
+    return lines;
+  }
+
+  if (typeA === 'array') {
+    const maxLen = Math.max(a.length, b.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (i >= a.length) {
+        lines.push({ type: 'add', path: `${path}[${i}]`, val: b[i] });
+      } else if (i >= b.length) {
+        lines.push({ type: 'del', path: `${path}[${i}]`, val: a[i] });
+      } else {
+        lines.push(...deepDiff(a[i], b[i], `${path}[${i}]`));
+      }
+    }
+    return lines;
+  }
+
+  // object
+  const allKeys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  allKeys.forEach(k => {
+    const sub = `${path}.${k}`;
+    if (!(k in a)) {
+      lines.push({ type: 'add', path: sub, val: b[k] });
+    } else if (!(k in b)) {
+      lines.push({ type: 'del', path: sub, val: a[k] });
+    } else {
+      lines.push(...deepDiff(a[k], b[k], sub));
+    }
+  });
+  return lines;
+}
+
+function jsonType(v) {
+  if (v === null) return 'primitive';
+  if (Array.isArray(v)) return 'array';
+  if (typeof v === 'object') return 'object';
+  return 'primitive';
+}
+
+function renderDiff(lines) {
+  const out = $id('diffOutput');
+  out.innerHTML = '';
+  lines.forEach(ln => {
+    const span = document.createElement('span');
+    if (ln.type === 'same') {
+      span.className = 'diff-same';
+      span.textContent = `  ${ln.path}: ${JSON.stringify(ln.val)}`;
+    } else if (ln.type === 'add') {
+      span.className = 'diff-add';
+      span.textContent = `+ ${ln.path}: ${JSON.stringify(ln.val)}`;
+    } else if (ln.type === 'del') {
+      span.className = 'diff-del';
+      span.textContent = `− ${ln.path}: ${JSON.stringify(ln.val)}`;
+    } else if (ln.type === 'chg') {
+      span.className = 'diff-chg';
+      span.textContent = `~ ${ln.path}: ${JSON.stringify(ln.from)} → ${JSON.stringify(ln.to)}`;
+    }
+    out.appendChild(span);
+  });
+  if (!lines.length) out.textContent = 'No differences found — JSON objects are identical.';
+}
+
+$id('btnRunDiff').onclick = () => {
+  const ra = $id('diffInputA').value.trim();
+  const rb = $id('diffInputB').value.trim();
+  if (!ra || !rb) { $id('diffOutput').textContent = '⚠️ Please fill both JSON inputs.'; return; }
+  let a, b;
+  try { a = JSON.parse(ra); } catch(e) { $id('diffOutput').textContent = '❌ JSON A is invalid: ' + e.message; return; }
+  try { b = JSON.parse(rb); } catch(e) { $id('diffOutput').textContent = '❌ JSON B is invalid: ' + e.message; return; }
+  const lines = deepDiff(a, b);
+  renderDiff(lines);
+};
+
+$id('btnLoadDiffSample').onclick = () => {
+  $id('diffInputA').value = JSON.stringify({ name: "Alice", age: 30, role: "admin",   active: true,  tags: ["js","css"]        }, null, 2);
+  $id('diffInputB').value = JSON.stringify({ name: "Alice", age: 31, role: "viewer",  active: false, tags: ["js","css","html"]  }, null, 2);
+};
+
+$id('btnClearDiff').onclick = () => {
+  $id('diffInputA').value = '';
+  $id('diffInputB').value = '';
+  $id('diffOutput').textContent = 'Diff results will appear here…';
+};
+
+/* =====================================================================
+   FEATURE 2 — JSONPath Query
+   ===================================================================== */
+function jsonPathQuery(root, pathStr) {
+  // Supports: $.key, $.key.nested, $.arr[0], $.a.b[2].c
+  if (!pathStr.startsWith('</script>
+</body>
+</html>
+)) return { error: 'Path must start with </script>
+</body>
+</html>
+ };
+
+  const path = pathStr.slice(1); // strip $
+  // tokenise: split on "." but also extract [n] indexes
+  const tokens = [];
+  // convert bracket notation to tokens: .arr[0].name → arr, 0, name
+  const cleaned = path.replace(/\[(\d+)\]/g, '.$1');
+  cleaned.split('.').filter(Boolean).forEach(t => tokens.push(t));
+
+  let cur = root;
+  for (const tok of tokens) {
+    if (cur === null || cur === undefined) return { error: `Cannot read "${tok}" — parent is null/undefined` };
+    if (typeof cur !== 'object') return { error: `Cannot read "${tok}" on non-object value: ${JSON.stringify(cur)}` };
+    if (Array.isArray(cur)) {
+      const idx = parseInt(tok, 10);
+      if (isNaN(idx)) return { error: `Expected array index, got "${tok}"` };
+      cur = cur[idx];
+    } else {
+      if (!(tok in cur)) return { error: `Key "${tok}" not found` };
+      cur = cur[tok];
+    }
+  }
+  return { value: cur };
+}
+
+$id('btnRunPath').onclick = () => {
+  const pathStr = $id('pathQuery').value.trim();
+  if (!pathStr) { $id('pathOutput').textContent = '⚠️ Enter a path like $.developer.skills[0]'; return; }
+
+  const src = $id('jsonInput').value.trim();
+  if (!src) { $id('pathOutput').textContent = '⚠️ No JSON in the Format tab — paste JSON first.'; return; }
+  let parsed;
+  try { parsed = JSON.parse(src); } catch(e) { $id('pathOutput').textContent = '❌ Invalid JSON: ' + e.message; return; }
+
+  const result = jsonPathQuery(parsed, pathStr);
+  if (result.error) {
+    $id('pathOutput').textContent = '❌ ' + result.error;
+    $id('pathMatchCount').textContent = '';
+  } else {
+    const formatted = JSON.stringify(result.value, null, 2);
+    $id('pathOutput').innerHTML = syntaxHighlight(formatted);
+    $id('pathMatchCount').textContent = `Type: ${jsonType(result.value) === 'primitive' ? typeof result.value : jsonType(result.value)}`;
+  }
+};
+
+$id('btnClearPath').onclick = () => {
+  $id('pathQuery').value = '';
+  $id('pathOutput').textContent = 'Query results will appear here…';
+  $id('pathMatchCount').textContent = '';
+};
+
+$id('pathQuery').addEventListener('keydown', e => { if (e.key === 'Enter') $id('btnRunPath').click(); });
+
+/* =====================================================================
+   FEATURE 3 — JSON Schema Generator
+   ===================================================================== */
+function generateSchema(val, title = 'root') {
+  if (val === null) return { type: 'null' };
+
+  const t = typeof val;
+  if (t === 'boolean') return { type: 'boolean' };
+  if (t === 'number')  return Number.isInteger(val) ? { type: 'integer' } : { type: 'number' };
+  if (t === 'string')  return { type: 'string' };
+
+  if (Array.isArray(val)) {
+    const schema = { type: 'array' };
+    if (val.length > 0) schema.items = generateSchema(val[0]);
+    return schema;
+  }
+
+  // object
+  const schema = { type: 'object', properties: {}, required: [] };
+  Object.keys(val).forEach(k => {
+    schema.properties[k] = generateSchema(val[k], k);
+    schema.required.push(k);
+  });
+  if (!schema.required.length) delete schema.required;
+  return schema;
+}
+
+$id('btnGenSchema').onclick = () => {
+  const src = $id('jsonInput').value.trim();
+  if (!src) { $id('schemaOutput').textContent = '⚠️ No JSON in the Format tab.'; return; }
+  let parsed;
+  try { parsed = JSON.parse(src); } catch(e) { $id('schemaOutput').textContent = '❌ Invalid JSON: ' + e.message; return; }
+
+  const schema = {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    title: 'Generated Schema',
+    ...generateSchema(parsed)
+  };
+  const schemaStr = JSON.stringify(schema, null, 2);
+  $id('schemaOutput').innerHTML = syntaxHighlight(schemaStr);
+  $id('schemaOutput')._raw = schemaStr;
+};
+
+$id('btnCopySchema').onclick = () => {
+  const raw = $id('schemaOutput')._raw || $id('schemaOutput').textContent;
+  if (!raw) return;
+  navigator.clipboard.writeText(raw).then(() => alert('Schema copied to clipboard!'));
+};
+
+$id('btnDlSchema').onclick = () => {
+  const raw = $id('schemaOutput')._raw || $id('schemaOutput').textContent;
+  if (!raw) return;
+  const blob = new Blob([raw], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = 'schema.json';
+  document.body.appendChild(a); a.click();
+  URL.revokeObjectURL(url); document.body.removeChild(a);
+};
+
+/* =====================================================================
+   FEATURE 4 — Find & Replace in JSON
+   ===================================================================== */
+function findReplace(obj, targetKey, newRawValue) {
+  let count = 0;
+  // Try to parse newRawValue as JSON; fall back to string
+  let replacement;
+  try { replacement = JSON.parse(newRawValue); } catch(_) { replacement = newRawValue; }
+
+  function walk(val) {
+    if (val === null || typeof val !== 'object') return val;
+    if (Array.isArray(val)) return val.map(walk);
+    const result = {};
+    Object.keys(val).forEach(k => {
+      if (k === targetKey) {
+        result[k] = replacement;
+        count++;
+      } else {
+        result[k] = walk(val[k]);
+      }
+    });
+    return result;
+  }
+  return { result: walk(obj), count };
+}
+
+$id('btnRunFnR').onclick = () => {
+  const key = $id('fnrKey').value.trim();
+  const val = $id('fnrVal').value;
+  if (!key) { $id('fnrStatus').textContent = '⚠️ Enter a key to search for.'; return; }
+
+  const src = $id('jsonInput').value.trim();
+  if (!src) { $id('fnrStatus').textContent = '⚠️ No JSON in the Format tab.'; return; }
+  let parsed;
+  try { parsed = JSON.parse(src); } catch(e) { $id('fnrStatus').textContent = '❌ Invalid JSON: ' + e.message; return; }
+
+  const { result, count } = findReplace(parsed, key, val);
+  if (count === 0) {
+    $id('fnrStatus').textContent = `⚠️ Key "${key}" not found in JSON.`;
+    $id('fnrOutput').textContent = 'No changes made.';
+    return;
+  }
+  const formatted = JSON.stringify(result, null, 2);
+  $id('fnrOutput').innerHTML = syntaxHighlight(formatted);
+  $id('fnrOutput')._raw = formatted;
+  $id('fnrStatus').textContent = `✅ Replaced ${count} occurrence(s) of key "${key}". Apply to input ↓`;
+  $id('fnrStatus').style.color = 'var(--accent)';
+
+  // Also write back to the main input so other panes benefit
+  $id('jsonInput').value = formatted;
+  lastParsedJSON = result;
+};
+
+$id('btnClearFnR').onclick = () => {
+  $id('fnrKey').value = '';
+  $id('fnrVal').value = '';
+  $id('fnrStatus').textContent = '';
+  $id('fnrOutput').textContent = 'Replaced JSON will appear here…';
+};
+
+/* ── FAQ collapse ───────────────────────────────────────────────────── */
+document.querySelectorAll('.faq-q').forEach(q => {
+  q.onclick = () => q.parentElement.classList.toggle('open');
+});
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

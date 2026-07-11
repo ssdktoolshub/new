@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glasgow Coma Scale (GCS) Calculator &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Calculate Glasgow Coma Scale (GCS) score online. Assess neurological state, eye, verbal, and motor responses with bilingual English/Bengali options.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #f59e0b;
+      --high-color: #ef4444;
+      --critical-color: #7f1d1d;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+    }
+
+    .overall-status {
+      padding: 16px;
+      border-radius: 10px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 1.2rem;
+      border-left: 6px solid var(--border);
+      background: rgba(255,255,255,0.01);
+    }
+
+    .overall-status.status-mild { border-left-color: var(--normal-color); color: var(--normal-color); }
+    .overall-status.status-mod { border-left-color: var(--low-color); color: var(--low-color); }
+    .overall-status.status-sev { border-left-color: var(--high-color); color: var(--high-color); background: rgba(239, 68, 68, 0.02); }
+
+    .score-circle-wrapper {
+      display: flex;
+      justify-content: center;
+      margin: 12px 0;
+    }
+
+    .score-circle {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      border: 4px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg3);
+      box-shadow: 0 0 15px var(--glow);
+    }
+
+    .score-num {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .score-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+
+    .results-table th, .results-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .results-table th {
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.9rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .insight-card p {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<main class="page reveal-on-scroll">
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Glasgow Coma Scale (GCS) Calculator</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Determine neurological status and trauma severity score by grading Eye, Verbal, and Motor clinical responses.</p>
+  </header>
+
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs panel -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧠 Clinical Responses</h3>
+        </div>
+
+        <div class="fields-category">
+          <!-- Eye Opening -->
+          <div class="input-wrapper">
+            <label for="valEye" data-translate="labelEye">Eye Opening Response (E)</label>
+            <select id="valEye" onchange="calculateGCS()">
+              <option value="4" selected data-translate="eye4">4 - Spontaneous opening</option>
+              <option value="3" data-translate="eye3">3 - To speech / sound</option>
+              <option value="2" data-translate="eye2">2 - To pressure / pain</option>
+              <option value="1" data-translate="eye1">1 - No response</option>
+            </select>
+          </div>
+
+          <!-- Verbal Response -->
+          <div class="input-wrapper">
+            <label for="valVerbal" data-translate="labelVerbal">Verbal Response (V)</label>
+            <select id="valVerbal" onchange="calculateGCS()">
+              <option value="5" selected data-translate="verbal5">5 - Oriented</option>
+              <option value="4" data-translate="verbal4">4 - Confused communication</option>
+              <option value="3" data-translate="verbal3">3 - Inappropriate words</option>
+              <option value="2" data-translate="verbal2">2 - Incomprehensible sounds</option>
+              <option value="1" data-translate="verbal1">1 - No response</option>
+            </select>
+          </div>
+
+          <!-- Motor Response -->
+          <div class="input-wrapper">
+            <label for="valMotor" data-translate="labelMotor">Motor Response (M)</label>
+            <select id="valMotor" onchange="calculateGCS()">
+              <option value="6" selected data-translate="motor6">6 - Obeys commands</option>
+              <option value="5" data-translate="motor5">5 - Localizes to pain</option>
+              <option value="4" data-translate="motor4">4 - Flexion withdrawal from pain</option>
+              <option value="3" data-translate="motor3">3 - Abnormal flexion (decorticate)</option>
+              <option value="2" data-translate="motor2">2 - Extension response (decerebrate)</option>
+              <option value="1" data-translate="motor1">1 - No response</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="tool-control" style="margin-top: 10px;">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeGCSReport()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Calculate Severity</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results panel -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧠</span>
+          <h4 data-translate="placeholderTitle">Calculation Pending</h4>
+          <p data-translate="placeholderDesc">Grade the neurological responses on the left, then click the calculation button to display GCS severity assessments.</p>
+        </div>
+
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Neurological GCS Assessment Report</h3>
+          </div>
+
+          <div class="patient-summary">
+            <span id="resDateStr">-</span>
+          </div>
+
+          <div class="score-circle-wrapper">
+            <div class="score-circle">
+              <span class="score-num" id="resScoreNum">15</span>
+              <span class="score-label" data-translate="labelScore">GCS Score</span>
+            </div>
+          </div>
+
+          <div class="overall-status" id="resOverallStatus">-</div>
+
+          <div style="overflow-x: auto;">
+            <table class="results-table">
+              <thead>
+                <tr>
+                  <th data-translate="thParam">Component</th>
+                  <th data-translate="thValue">Subscore</th>
+                  <th data-translate="thRef">Max Score</th>
+                </tr>
+              </thead>
+              <tbody id="resTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="insight-card" id="severityInsight">
+            <h5 data-translate="titleClinical">Neurological Clinical Guidance</h5>
+            <p id="resInsight">-</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <section class="content-card">
+    <h3 data-translate="titleRefRange">📋 GCS Reference Score Tables</h3>
+    <div style="overflow-x: auto;">
+      <table class="ref-table">
+        <thead>
+          <tr>
+            <th data-translate="thParam">GCS Score</th>
+            <th data-translate="thIndicator">Injury Classification</th>
+            <th data-translate="thUnit">Clinical Indications</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>13 – 15</td>
+            <td style="color: var(--normal-color); font-weight: 700;" data-translate="mild">Mild Brain Injury</td>
+            <td data-translate="descMild">Minor concussion, alert and oriented patient. High probability of recovery.</td>
+          </tr>
+          <tr>
+            <td>9 – 12</td>
+            <td style="color: var(--low-color); font-weight: 700;" data-translate="mod">Moderate Brain Injury</td>
+            <td data-translate="descMod">Significant trauma, confused state, lethargy. Watch closely for neurological decline.</td>
+          </tr>
+          <tr>
+            <td>3 – 8</td>
+            <td style="color: var(--high-color); font-weight: 700;" data-translate="sev">Severe Brain Injury (Coma)</td>
+            <td data-translate="descSev">Comatose patient, unconscious, high airway risk. Intubation typically indicated if score &le; 8.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Scores</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This calculator is for educational and training purposes only. It must never replace clinical examinations by certified healthcare professionals or neurosurgeons.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      toolTitle: "Glasgow Coma Scale (GCS) Calculator",
+      toolDesc: "Determine neurological status and trauma severity score by grading Eye, Verbal, and Motor clinical responses.",
+      inputsTitle: "🧠 Clinical Responses",
+      labelEye: "Eye Opening Response (E)",
+      labelVerbal: "Verbal Response (V)",
+      labelMotor: "Motor Response (M)",
+      btnAnalyze: "Calculate Severity",
+      placeholderTitle: "Calculation Pending",
+      placeholderDesc: "Grade the neurological responses on the left, then click the calculation button to display GCS severity assessments.",
+      reportTitle: "🔬 Neurological GCS Assessment Report",
+      labelScore: "GCS Score",
+      thParam: "Component",
+      thValue: "Subscore",
+      thRef: "Max Score",
+      thIndicator: "Injury Classification",
+      thUnit: "Clinical Indications",
+      titleRefRange: "📋 GCS Reference Score Tables",
+      mild: "Mild Brain Injury",
+      mod: "Moderate Brain Injury",
+      sev: "Severe Brain Injury (Coma)",
+      descMild: "Minor concussion, alert and oriented patient. High probability of recovery.",
+      descMod: "Significant trauma, confused state, lethargy. Watch closely for neurological decline.",
+      descSev: "Comatose patient, unconscious, high airway risk. Intubation typically indicated if score \u2264 8.",
+      recentRuns: "Recent Scores",
+      noHistory: "No recent runs recorded.",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This calculator is for educational and training purposes only. It must never replace clinical examinations by certified healthcare professionals or neurosurgeons.",
+      titleClinical: "Neurological Clinical Guidance",
+      copyBtn: "Copy Report",
+      printBtn: "Print Report",
+      downloadImageBtn: "Save Image",
+      clearBtn: "Reset",
+      statusMild: "Mild Brain Injury",
+      statusMod: "Moderate Neurological Deficit",
+      statusSev: "SEVERE INJURY / COMA STATE",
+      eye4: "4 - Spontaneous opening",
+      eye3: "3 - To speech / sound",
+      eye2: "2 - To pressure / pain",
+      eye1: "1 - No response",
+      verbal5: "5 - Oriented",
+      verbal4: "4 - Confused communication",
+      verbal3: "3 - Inappropriate words",
+      verbal2: "2 - Incomprehensible sounds",
+      verbal1: "1 - No response",
+      motor6: "6 - Obeys commands",
+      motor5: "5 - Localizes to pain",
+      motor4: "4 - Flexion withdrawal from pain",
+      motor3: "3 - Abnormal flexion (decorticate)",
+      motor2: "2 - Extension response (decerebrate)",
+      motor1: "1 - No response"
+    },
+    bn: {
+      toolTitle: "গ্লাসগো কোমা স্কেল (GCS) ক্যালকুলেটর",
+      toolDesc: "চোখ খোলা, মৌখিক প্রতিক্রিয়া এবং মোটর শারীরিক প্রতিক্রিয়ার গ্রেডিং করে স্নায়বিক অবস্থা এবং ট্রমাজনিত জটিলতার তীব্রতা নির্ধারণ করুন।",
+      inputsTitle: "🧠 ক্লিনিক্যাল প্রতিক্রিয়া",
+      labelEye: "চোখ খোলার প্রতিক্রিয়া (E)",
+      labelVerbal: "মৌখিক প্রতিক্রিয়া (V)",
+      labelMotor: "মোটর প্রতিক্রিয়া (M)",
+      btnAnalyze: "তীব্রতা নির্ণয় করুন",
+      placeholderTitle: "হিসাব অমীমাংসিত",
+      placeholderDesc: "বামে রোগীর স্নায়বিক সাড়ার গ্রেডিং নির্বাচন করুন, তারপর ফলাফল দেখতে বোতামটি চাপুন।",
+      reportTitle: "🔬 নিউরোলজিক্যাল GCS মূল্যায়ন রিপোর্ট",
+      labelScore: "GCS স্কোর",
+      thParam: "উপাদান",
+      thValue: "প্রাপ্ত স্কোর",
+      thRef: "সর্বোচ্চ স্কোর",
+      thIndicator: "আঘাতের তীব্রতা বিন্যাস",
+      thUnit: "ক্লিনিক্যাল গুরুত্ব",
+      titleRefRange: "📋 GCS স্বাভাবিক মান টেবিল",
+      mild: "মৃদু মস্তিষ্কের আঘাত",
+      mod: "মাঝারি মস্তিষ্কের আঘাত",
+      sev: "তীব্র মস্তিষ্কের আঘাত (কোমা)",
+      descMild: "সামান্য ধাক্কা বা আঘাত, রোগী সজাগ ও ওরিয়েন্টেড। দ্রুত সুস্থ হওয়ার সম্ভাবনা বেশি।",
+      descMod: "উল্লেখযোগ্য আঘাত, বিভ্রান্ত অবস্থা, তন্দ্রাচ্ছন্নতা। স্নায়বিক অবনতির জন্য নিবিড় পর্যবেক্ষণে রাখুন।",
+      descSev: "কোমাগ্রস্ত রোগী, অচেতন অবস্থা, শ্বাসনালীর তীব্র ঝুঁকি। স্কোর ৮ বা তার কম হলে সাধারণত কৃত্রিম শ্বাসযন্ত্র (Intubation) প্রয়োজন হয়।",
+      recentRuns: "সাম্প্রতিক স্কোরসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই ক্যালকুলেটরটি শুধুমাত্র শিক্ষামূলক ও প্রশিক্ষণের উদ্দেশ্যে তৈরি। এটি কোনোভাবেই নিউরোসার্জন বা বিশেষায়িত চিকিৎসকের ক্লিনিক্যাল পরীক্ষার বিকল্প নয়।",
+      titleClinical: "নিউরোলজিক্যাল ক্লিনিক্যাল নির্দেশনা",
+      copyBtn: "কপি করুন",
+      printBtn: "প্রিন্ট করুন",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      clearBtn: "রিসেট",
+      statusMild: "মৃদু মস্তিষ্কের আঘাত",
+      statusMod: "মাঝারি স্নায়বিক ঘাটতি",
+      statusSev: "তীব্র আঘাত / কোমা অবস্থা",
+      eye4: "৪ - স্বতঃস্ফূর্ত চোখ খোলা",
+      eye3: "৩ - কথার বা শব্দের জবাবে চোখ খোলা",
+      eye2: "২ - ব্যথায় বা চাপে চোখ খোলা",
+      eye1: "১ - কোনো সাড়া নেই",
+      verbal5: "৫ - ওরিয়েন্টেড (স্বাভাবিক কথা)",
+      verbal4: "৪ - বিভ্রান্তিকর কথা",
+      verbal3: "৩ - অসংলগ্ন শব্দ প্রয়োগ",
+      verbal2: "২ - দুর্বোধ্য আওয়াজ",
+      verbal1: "১ - কোনো সাড়া নেই",
+      motor6: "৬ - নির্দেশ পালন করা",
+      motor5: "৫ - ব্যথার জায়গা চিহ্নিত করা",
+      motor4: "৪ - ব্যথার জবাবে অঙ্গ গুটিয়ে নেওয়া",
+      motor3: "৩ - অস্বাভাবিক সংকোচন (ডিকর্টিকেট)",
+      motor2: "২ - ব্যথার জবাবে হাত-পা প্রসারিত করা (ডিসেরিব্রেট)",
+      motor1: "১ - কোনো সাড়া নেই"
+    },
+    hi: {
+      toolTitle: "ग्लासगो कोमा स्केल (जीसीएस) कैलकुलेटर",
+      toolDesc: "नेत्र, मौखिक और मोटर नैदानिक ​​​​प्रतिक्रियाओं की ग्रेडिंग करके न्यूरोलॉजिकल स्थिति और आघात गंभीरता स्कोर निर्धारित करें।",
+      inputsTitle: "🧠नैदानिक प्रतिक्रियाएं",
+      labelEye: "आंखें खोलने वाली प्रतिक्रिया (ई)",
+      labelVerbal: "मौखिक प्रतिक्रिया (वी)",
+      labelMotor: "मोटर प्रतिक्रिया (एम)",
+      btnAnalyze: "गंभीरता की गणना करें",
+      placeholderTitle: "गणना लंबित है",
+      placeholderDesc: "बाईं ओर न्यूरोलॉजिकल प्रतिक्रियाओं को ग्रेड करें, फिर जीसीएस गंभीरता आकलन प्रदर्शित करने के लिए गणना ���टन पर क्लिक करें।",
+      reportTitle: "🔬 न्यूरोलॉजिकल जीसीएस मूल्यांकन रिपोर्ट",
+      labelScore: "जीसीएस स्कोर",
+      thParam: "घटक",
+      thValue: "सबस्कोर",
+      thRef: "अधिकतम स्कोर",
+      thIndicator: "चोट वर्गीकरण",
+      thUnit: "नैदानिक संकेत",
+      titleRefRange: "📋 जीसीएस संदर्भ स्कोर तालिकाएँ",
+      mild: "मस्तिष्क में हल्की चोट",
+      mod: "मध्यम मस्तिष्क की चोट",
+      sev: "गंभीर मस्तिष्क चोट (कोमा)",
+      descMild: "मामूली आघात, सतर्क और उन्मुख रोगी। ठीक होने की उच्च संभावना.",
+      descMod: "महत्वपूर्ण आघात, भ्रमित अवस्था, सुस्ती। न्यूरोलॉजिकल गिरावट पर बारीकी से नजर रखें।",
+      descSev: "बेहोश रोगी, बेहोश, उच्च वायुमार्ग जोखिम। इंटुबैषेण आमतौर पर संकेत दिया जाता है य���ि स्कोर \u2264 8 है।",
+      recentRuns: "हालिया स्कोर",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह कैलकुलेटर केवल शैक्षिक और प्रशिक्षण उद्देश्यों के लिए है। इसे कभी भी प्रमाणित स्वास्थ्य देखभाल पेशेवरों या न्यूरोसर्जन द्वारा नैदानिक ​​​​परीक्षाओं का स्थान नहीं लेना चाहिए।",
+      titleClinical: "न्यूरोलॉजिकल क्लिनिकल मार्गदर्शन",
+      copyBtn: "रिपोर्ट कॉपी करें",
+      printBtn: "रिपोर्ट प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      clearBtn: "रीसेट करें",
+      statusMild: "मस्तिष्क में हल्की चोट",
+      statusMod: "मध्यम न्यूरोलॉजिकल घाटा",
+      statusSev: "गंभीर चोट/कोमा की स्थिति",
+      eye4: "4 - सहज उद्घाटन",
+      eye3: "3- वाणी/ध्वनि को",
+      eye2: "2- दबाव/दर्द करना",
+      eye1: "1 - कोई प्रतिक्रिया नहीं",
+      verbal5: "5 - उन्मुख",
+      verbal4: "4 - भ्रमित संचार",
+      verbal3: "3 - अनुचित शब्द",
+      verbal2: "2 - समझ से बाहर की ध्वनियाँ",
+      verbal1: "1 - कोई प्रतिक्रिया नहीं",
+      motor6: "6- आज्ञा का पालन करता है",
+      motor5: "5 - दर्द का स्थानीयकरण",
+      motor4: "4 - दर्द से लचीलेपन की वापसी",
+      motor3: "3 - असामान्य लचीलापन (सजावट)",
+      motor2: "2 - विस्तार प्रतिक्रिया (decerebrate)",
+      motor1: "1 - कोई प्रतिक्रिया नहीं"
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-gcs-history")) || [];
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        el.innerHTML = translations[lang][key];
+      }
+    });
+    renderHistoryDisplay();
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function resetForm() {
+    document.getElementById("valEye").value = "4";
+    document.getElementById("valVerbal").value = "5";
+    document.getElementById("valMotor").value = "6";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function analyzeGCSReport() {
+    const e = parseInt(document.getElementById("valEye").value);
+    const v = parseInt(document.getElementById("valVerbal").value);
+    const m = parseInt(document.getElementById("valMotor").value);
+
+    const total = e + v + m;
+    document.getElementById("resScoreNum").textContent = total;
+
+    let severity = "mild";
+    let statusTextEN = "Mild Brain Injury";
+    let statusTextBN = "মৃদু মস্তিষ্কের আঘাত";
+    let insightEN = "";
+    let insightBN = "";
+
+    if (total >= 13) {
+      severity = "mild";
+      statusTextEN = translations.en.statusMild;
+      statusTextBN = translations.bn.statusMild;
+      insightEN = "Patient exhibits mild deficit. Standard observation for concussion is typically indicated. Monitor for headache, dizziness, or vomiting.";
+      insightBN = "রোগীর মৃদু ঘাটতি রয়েছে। কনকাশন বা সামান্য আঘাতের জন্য সাধারণ পর্যবেক্ষণই যথেষ্ট। মাথা ব্যথা, বমি বমি ভাব বা মাথা ঘোরার ওপর নজর রাখুন।";
+    } else if (total >= 9) {
+      severity = "mod";
+      statusTextEN = translations.en.statusMod;
+      statusTextBN = translations.bn.statusMod;
+      insightEN = "Moderate injury. Requires active neurological monitoring, head CT scan, and clinical emergency check. High risk of deterioration.";
+      insightBN = "মাঝারি আঘাত। অবিলম্বে নিউরোলজিক্যাল পর্যবেক্ষণ, মাথায় সিটি স্ক্যান (CT Scan) এবং ক্লিনিক্যাল জরুরি সেবা প্রয়োজন। অবনতির উচ্চ ঝুঁকি রয়েছে।";
+    } else {
+      severity = "sev";
+      statusTextEN = translations.en.statusSev;
+      statusTextBN = translations.bn.statusSev;
+      insightEN = "SEVERE INJURY / COMA STATE. Airway reflexes may be lost. Clinical rule: 'GCS of 8 or less, intubate!' Urgent neurosurgical consultation required.";
+      insightBN = "তীব্র আঘাত বা কোমা অবস্থা। রোগীর শ্বাসনালী ও গিলবার ক্ষমতা নষ্ট হয়ে থাকতে পারে। ক্লিনিক্যাল সূত্র: স্কোর ৮ বা তার কম হলে কৃত্রিম শ্বাসযন্ত্র (Intubation) জরুরী। দ্রুত নিউরোসার্জারি বিভাগে স্থানান্তর করুন।";
+    }
+
+    const overallEl = document.getElementById("resOverallStatus");
+    overallEl.className = "overall-status";
+    if (severity === "mild") {
+      overallEl.classList.add("status-mild");
+      overallEl.textContent = currentLang === "en" ? statusTextEN : statusTextBN;
+    } else if (severity === "mod") {
+      overallEl.classList.add("status-mod");
+      overallEl.textContent = currentLang === "en" ? statusTextEN : statusTextBN;
+    } else {
+      overallEl.classList.add("status-sev");
+      overallEl.textContent = currentLang === "en" ? statusTextEN : statusTextBN;
+    }
+
+    const tBody = document.getElementById("resTableBody");
+    tBody.innerHTML = `
+      <tr>
+        <td data-translate="labelEye">Eye Opening Response (E)</td>
+        <td><strong>${e}</strong></td>
+        <td>4</td>
+      </tr>
+      <tr>
+        <td data-translate="labelVerbal">Verbal Response (V)</td>
+        <td><strong>${v}</strong></td>
+        <td>5</td>
+      </tr>
+      <tr>
+        <td data-translate="labelMotor">Motor Response (M)</td>
+        <td><strong>${m}</strong></td>
+        <td>6</td>
+      </tr>
+    `;
+
+    document.getElementById("resInsight").textContent = currentLang === "en" ? insightEN : insightBN;
+    document.getElementById("resDateStr").textContent = `${currentLang === "en" ? 'Evaluation Date' : 'মূল্যায়নের তারিখ'}: ${new Date().toLocaleString()}`;
+
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    // Save run logs to localStorage
+    const logItem = {
+      date: new Date().toLocaleDateString(),
+      resultEN: statusTextEN,
+      resultBN: statusTextBN,
+      score: total
+    };
+    recentHistory.unshift(logItem);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-gcs-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const list = document.getElementById("historyListContainer");
+    if (!list) return;
+    list.innerHTML = "";
+    if (recentHistory.length === 0) {
+      list.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${currentLang === "en" ? 'No recent runs recorded.' : 'কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।'}</p>`;
+      return;
+    }
+    recentHistory.forEach(item => {
+      const el = document.createElement("div");
+      el.className = "history-item";
+      el.innerHTML = `
+        <span>${item.date} - GCS Score: ${item.score}</span>
+        <strong>${currentLang === "en" ? item.resultEN : item.resultBN}</strong>
+      `;
+      list.appendChild(el);
+    });
+  }
+
+  function copyFormattedResult() {
+    const e = document.getElementById("valEye").value;
+    const v = document.getElementById("valVerbal").value;
+    const m = document.getElementById("valMotor").value;
+    const total = parseInt(e) + parseInt(v) + parseInt(m);
+    const status = document.getElementById("resOverallStatus").textContent;
+    const guid = document.getElementById("resInsight").textContent;
+
+    const text = `--- SSDK GCS ASSESSMENT REPORT ---\nEye Response (E): ${e}/4\nVerbal Response (V): ${v}/5\nMotor Response (M): ${m}/6\nTotal GCS Score: ${total}/15\nStatus: ${status}\nClinical Guidance: ${guid}\nDisclaimer: Educational reference only.`;
+    navigator.clipboard.writeText(text).then(() => alert("Report copied to clipboard!"));
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function captureReportPng() {
+    const card = document.getElementById("resultsPanel");
+    html2canvas(card, { backgroundColor: "#0f1423" }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `gcs-report-${new Date().getTime()}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    const favBtn = document.getElementById("toolFavBtn");
+    const isFav = favBtn.classList.toggle("on");
+    favBtn.textContent = isFav ? "★" : "☆";
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

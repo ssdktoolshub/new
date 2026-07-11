@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neutrophil Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze your relative and absolute Neutrophil counts online. Check for neutrophilia or neutropenia dynamically with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #ef4444;
+      --critical-color: #7f1d1d;
+      --border-color: #f59e0b;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .neut-gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .neut-val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .neut-status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--critical-color) 0%, 
+        var(--low-color) 25%, 
+        var(--normal-color) 50%, 
+        var(--border-color) 75%, 
+        var(--high-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .neut-gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Neutrophil Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze absolute and relative Neutrophil counts to check for bacterial infections, physical stress, or neutropenia.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🩸 Neutrophil Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">🗑 Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valType" data-translate="labelInputType">Value Type</label>
+              <select id="valType" onchange="switchValType()">
+                <option value="relative" selected data-translate="inputTypeRelative">Relative Percentage (%)</option>
+                <option value="absolute" data-translate="inputTypeAbsolute">Absolute Count (cells/µL)</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valNeut" id="inputLabel" data-translate="labelNeutPct">Neutrophils Percentage (%)</label>
+              <input type="number" step="0.1" id="valNeut" placeholder="e.g. 60" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeNeutrophils()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Neutrophils</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🩸</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your Neutrophils value and click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Neutrophil Diagnostics Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Value Type</strong>: <span id="resValType">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="neut-gauge-container">
+            <div class="neut-val-large" id="resNeutVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">%</div>
+            <div class="neut-status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickCriticalLow" style="color: var(--low-color);">40%</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">40% - 70%</span>
+              <span id="tickCriticalHigh" style="color: var(--high-color);">70%</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Neutrophils</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What are Neutrophils?</strong><br><span data-translate="eduA1">Neutrophils are the most abundant type of granulocytes and the first line of defense against bacterial infection. They migrate to the site of infection and engulf bacteria via phagocytosis.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is Neutropenia?</strong><br><span data-translate="eduA2">Neutropenia is a abnormally low absolute neutrophil count (ANC < 1,500 cells/µL). It severely compromises your ability to fight off bacterial infections. Severe neutropenia (ANC < 500 cells/µL) is a medical emergency.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What causes Neutrophilia?</strong><br><span data-translate="eduA3">Neutrophilia refers to elevated counts (relative > 70% or absolute > 8,000 cells/µL), commonly triggered by acute bacterial infections, tissue necrosis, burns, inflammatory conditions, or emotional/physical stress.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Neutrophil Analyzer",
+      toolDesc: "Analyze absolute and relative Neutrophil counts to check for bacterial infections, physical stress, or neutropenia.",
+      inputsTitle: "🩸 Neutrophil Parameters",
+      clearBtn: "Reset",
+      labelInputType: "Value Type",
+      inputTypeRelative: "Relative Percentage (%)",
+      inputTypeAbsolute: "Absolute Count (cells/µL)",
+      labelNeutPct: "Neutrophils Percentage (%)",
+      labelNeutAbs: "Absolute Neutrophil Count (cells/µL)",
+      btnAnalyze: "Analyze Neutrophils",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your Neutrophils value and click the analyze button to display medical summaries.",
+      reportTitle: "🔬 Neutrophil Diagnostics Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Value Type",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Neutrophils",
+      badgeLow: "Low Neutrophils (Neutropenia)",
+      badgeCriticalLow: "CRITICAL SEVERE NEUTROPENIA",
+      badgeHigh: "High Neutrophils (Neutrophilia)",
+      badgeCriticalHigh: "CRITICAL HIGH NEUTROPHILIA",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "নিউট্রোফিল বিশ্লেষক",
+      toolDesc: "নিউট্রোফিলের আপেক্ষিক (%) এবং পরম (cells/µL) পরিমাণ বিশ্লেষণ করুন। ব্যাকটেরিয়াল ইনফেকশন বা নিউট্রোপেনিয়ার ঝুঁকি পরীক্ষা করুন।",
+      inputsTitle: "🩸 নিউট্রোফিলের পরিমাপক সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelInputType: "ইনপুটের ধরন",
+      inputTypeRelative: "আপেক্ষিক শতকরা হার (%)",
+      inputTypeAbsolute: "পরম গণনা (cells/µL)",
+      labelNeutPct: "নিউট্রোফিল শতকরা হার (%)",
+      labelNeutAbs: "পরম নিউট্রোফিল গণনা (cells/µL)",
+      btnAnalyze: "নিউট্রোফিল বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার নিউট্রোফিলের মান লিখুন, তারপর বিশ্লেষণ বোতামটি চাপুন রিপোর্টের সামারি দেখতে।",
+      reportTitle: "🔬 নিউট্রোফিল ডায়াগনস্টিক রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "ইনপুটের ধরন",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক নিউট্রোফিল",
+      badgeLow: "কম নিউট্রোফিল (নিউট্রোপেনিয়া)",
+      badgeCriticalLow: "মারাত্মক ঝুঁকিপূর্ণ নিউট্রোপেনিয়া",
+      badgeHigh: "উচ্চ নিউট্রোফিল (নিউট্রোফিলিয়া)",
+      badgeCriticalHigh: "মারাত্মক ঝুঁকিপূর্ণ নিউট্রোফিলিয়া",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "न्यूट्रोफिल विश्लेषक",
+      toolDesc: "जीवाणु संक्रमण, शारीरिक तनाव या न्यूट्रोपेनिया की जांच के लिए पूर्ण और सापेक्ष न्यूट्रोफिल गणना का विश्लेषण करें।",
+      inputsTitle: "🩸 न्यूट्रोफिल पै��ामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelInputType: "मूल्य प्रकार",
+      inputTypeRelative: "सापेक्ष प्रतिशत (%)",
+      inputTypeAbsolute: "निरपेक्ष गणना (कोशिकाएं/µL)",
+      labelNeutPct: "न्यूट्रोफिल प्रतिशत (%)",
+      labelNeutAbs: "निरपेक्ष न्यूट्रोफिल गणना (कोशिकाएं/µL)",
+      btnAnalyze: "न्यूट्रोफिल का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना न्यूट्रोफिल मान दर्ज करें और चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 न्यूट्रोफिल डायग्नोस्टिक्स रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "मूल्य प्रकार",
+      labelDate: "तारीख",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य न्यूट्रोफिल",
+      badgeLow: "कम न्यूट्रोफिल (न्यूट्रोपेनिया)",
+      badgeCriticalLow: "गंभीर गंभीर न्यूट्रोपेनिया",
+      badgeHigh: "उच्च न्यूट्रोफिल (न्यूट्रोफिलिया)",
+      badgeCriticalHigh: "गंभीर उच्च न्यूट्रोफिलिया",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What are neutrophils?", a: "Neutrophils are the most common type of white blood cells, acting as the primary immune defenders against bacterial infections." },
+      { q: "What is a normal Neutrophil range?", a: "Relative normal range is 40% to 70%. Absolute normal range is 1,500 to 8,000 cells/µL." },
+      { q: "What causes high neutrophils (Neutrophilia)?", a: "It is commonly caused by acute bacterial infections, tissue injuries, inflammatory diseases, or physical/emotional stress." },
+      { q: "What causes low neutrophils (Neutropenia)?", a: "Causes include viral infections, autoimmune disorders, chemotherapy, drug reactions, or bone marrow suppression." },
+      { q: "What is the absolute neutrophil count (ANC)?", a: "ANC measures the actual number of neutrophils per microliter of blood. It is a critical check for chemotherapy patients' infection risk." },
+      { q: "What are the symptoms of neutrophilia?", a: "Symptoms relate to the cause (e.g. fever, swelling, pain from a bacterial infection)." },
+      { q: "What are the symptoms of neutropenia?", a: "Neutropenia has no direct symptoms, but it leads to frequent, severe infections, fevers, mouth sores, or skin abscesses." },
+      { q: "When is neutropenia considered a critical emergency?", a: "An ANC under 500 cells/µL is severe neutropenia, which poses critical life-threatening infection risks." },
+      { q: "Can stress increase neutrophils?", a: "Yes. Epinephrine and cortisol release during acute physical stress or extreme anxiety mobilizes neutrophils into the bloodstream." },
+      { q: "How can I raise neutrophils naturally?", a: "By eating nutrient-dense foods (proteins, vitamin C, zinc), practicing excellent hygiene to avoid infection, and treating underlying immune conditions." },
+      { q: "Does smoking affect neutrophil counts?", a: "Yes. Chronic smoking triggers airway inflammation, which often keeps blood neutrophil counts elevated." },
+      { q: "Do pregnant women have different ranges?", a: "Yes, during late pregnancy and labor, neutrophil counts naturally elevate, raising total WBC counts." },
+      { q: "What is a left shift in neutrophil readings?", a: "It means the bone marrow is releasing immature neutrophils (bands) to combat an active, severe bacterial infection." },
+      { q: "Does alcohol suppress neutrophils?", a: "Yes. Heavy chronic alcohol consumption suppresses bone marrow activity, reducing both neutrophil production and function." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "নিউট্রোফিল কী?", a: "নিউট্রোফিল হলো সবচেয়ে সাধারণ শ্বেত রক্তকণিকা, যা ব্যাকটেরিয়াল ইনফেকশনের বিরুদ্ধে প্রথম প্রতিরোধ গড়ে তোলে।" },
+      { q: "নিউট্রোফিলের স্বাভাবিক মাত্রা কত?", a: "আপেক্ষিক স্বাভাবিক মাত্রা ৪০% থেকে ৭০%। পরম স্বাভাবিক মাত্রা ১,৫০০ থেকে ৮,০০০ cells/µL।" },
+      { q: "নিউট্রোফিল বৃদ্ধির (নিউট্রোফিলিয়া) কারণ কী?", a: "ব্যাকটেরিয়াল ইনফেকশন, টিস্যুর আঘাত, প্রদাহজনিত রোগ বা অতিরিক্ত মানসিক/শারীরিক চাপ।" },
+      { q: "নিউট্রোফিল কমে যাওয়ার (নিউট্রোপেনিয়া) কারণ কী?", a: "ভাইরাল ইনফেকশন, অটোইমিউন রোগ, কেমোথেরাপি বা অস্থিমজ্জার সমস্যা।" },
+      { q: "পরম নিউট্রোফিল গণনা (ANC) কী?", a: "ANC হলো প্রতি মাইক্রোলিটার রক্তে নিউট্রোফিলের প্রকৃত সংখ্যা। এটি রোগীর সংক্রমণের ঝুঁকি মূল্যায়নে অত্যন্ত গুরুত্বপূর্ণ।" },
+      { q: "নিউট্রোফিলিয়া হলে কী লক্ষণ দেখা যায়?", a: "এর লক্ষণগুলো মূল রোগের সাথে জড়িত (যেমন ব্যাকটেরিয়াল ইনফেকশনে জ্বর, ফোলা ভাব বা ব্যথা)।" },
+      { q: "নিউট্রোপেনিয়া হলে কী লক্ষণ দেখা যায়?", a: "নিউট্রোপেনিয়ার সরাসরি কোনো লক্ষণ নেই, তবে এর ফলে ঘন ঘন ইনফেকশন, জ্বর, মুখে ঘা বা ত্বকে ফোড়া দেখা দেয়।" },
+      { q: "কখন নিউট্রোপেনিয়া মারাত্মক জরুরি অবস্থা ধরা হয়?", a: "ANC ৫০০ cells/µL এর নিচে নেমে গেলে তা অত্যন্ত ঝুঁকিপূর্ণ অবস্থা হিসেবে ধরা হয় যা তীব্র সংক্রমণের ঝুঁকি তৈরি করে।" },
+      { q: "মানসিক চাপ কি নিউট্রোফিল বাড়াতে পারে?", a: "হ্যাঁ। তীব্র মানসিক উত্তেজনা বা উদ্বেগের ফলে কর্টিসল হরমোন নিঃসরণ হয়ে রক্তে নিউট্রোফিলের পরিমাণ বাড়িয়ে দেয়।" },
+      { q: "প্রাকৃতিক উপায়ে কীভাবে নিউট্রোফিল বাড়ানো যায়?", a: "পুষ্টিকর খাবার (প্রোটিন, ভিটামিন সি, জিঙ্ক) খেয়ে, পরিষ্কার-পরিচ্ছন্ন থেকে এবং রোগ প্রতিরোধ ক্ষমতা বাড়াতে পর্যাপ্ত বিশ্রাম নিয়ে।" },
+      { q: "ধূমপান কি নিউট্রোফিলকে প্রভাবিত করে?", a: "হ্যাঁ। দীর্ঘমেয়াদী ধূমপান ফুসফুসে মৃদু প্রদাহ তৈরি করে, যা রক্তে নিউট্রোফিলের মাত্রা বাড়িয়ে দেয়।" },
+      { q: "গর্ভবতী নারীদের কি নিউট্রোফিল সীমা আলাদা?", a: "হ্যাঁ, গর্ভাবস্থার শেষের দিকে এবং প্রসবকালীন সময়ে নিউট্রোফিলের মাত্রা স্বাভাবিকভাবেই কিছুটা বেড়ে যেতে পারে।" },
+      { q: "লেফট শিফট (Left Shift) কী?", a: "এটি একটি ক্লিনিক্যাল শব্দ যা নির্দেশ করে যে অস্থিমজ্জা ব্যাকটেরিয়াল ইনফেকশন মোকাবিলায় রক্তের অপরিণত নিউট্রোফিল ছেড়ে দিচ্ছে।" },
+      { q: "মদ্যপান কি নিউট্রোফিল কমায়?", a: "হ্যাঁ। দীর্ঘমেয়াদী অতিরিক্ত মদ্যপান অস্থিমজ্জার উৎপাদন ক্ষমতা হ্রাস করে নিউট্রোফিলের মাত্রা ও কর্মক্ষমতা কমিয়ে দেয়।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "न्यूट्रोफिल क्या हैं?", a: "न्यूट्रोफिल श्वेत रक्त कोशिकाओं का सबसे आम प्रकार है, जो जीवाणु संक्रमण के खिलाफ प्राथमिक प्रतिरक्षा रक्षक के रूप में कार्य करता है।" },
+      { q: "सामान्य न्यूट्रोफिल रेंज क्या है?", a: "सापेक्ष सामान्य सीमा 40% से 70% है। पूर्ण सामान्य सीमा 1,500 से 8,000 सेल/μL है।" },
+      { q: "उच्च न्यूट्रोफिल (न्यूट्रोफिलिया) का क्या कारण है?", a: "यह आमतौर पर तीव्र जीवाणु संक्रमण, ऊतक चोटों, सूजन संबंधी बीमारियों या शारीरिक/भावनात्मक तनाव के कारण होता है।" },
+      { q: "कम न्यूट्रोफिल (न्यूट्रोपेनिया) का क्या कारण है?", a: "कारणों में वायरल संक्रमण, ऑटोइम्यून विकार, कीमोथेरेपी, दवा प्रतिक्रिया या अस्थि मज्जा दमन शामिल हैं।" },
+      { q: "एब्सोल्यूट न्यूट्रोफिल काउंट (एएनसी) क्या है?", a: "एएनसी प्रति माइक्रोलीटर रक्त में न्यूट्रोफिल की वास्तविक संख्या को मापता है। यह कीमोथेरेपी रोगियों के संक्रमण जोखिम के लिए एक महत्वपूर्ण जाँच है।" },
+      { q: "न्यूट्रोफिलिया के लक्षण क्या हैं?", a: "लक्षण कारण से संबंधित होते हैं (जैसे बुखार, सूजन, जीवाणु संक्रमण से दर्द)।" },
+      { q: "न्यूट्रोपेनिया के लक्षण क्या हैं?", a: "न्यूट्रोपेनिया का कोई प्रत्यक्ष लक्षण नहीं है, लेकिन इसके कारण बार-बार, गंभीर संक्रमण, बुखार, मुंह में छाले या त्वचा पर फोड़े हो जाते हैं।" },
+      { q: "न्यूट्रोपेनिया को कब गंभीर आपातकाल माना जाता है?", a: "500 कोशिकाओं/μL से कम का एएनसी गंभीर न्यूट्रोपेनिया है, जो गंभीर जीवन-घातक संक्रमण जोखिम पैदा करत��� है।" },
+      { q: "क्या तनाव से न्यूट्रोफिल बढ़ सकता है?", a: "हाँ। तीव्र शारीरिक तनाव या अत्यधिक चिंता के दौरान एपिनेफ्रिन और कोर्टिसोल का स्राव रक्तप्रवाह में न्यूट्रोफिल को एकत्रित करता है।" },
+      { q: "मैं स्वाभाविक रूप से न्यूट्रोफिल कैसे बढ़ा सकता हू��?", a: "पोषक तत्वों से भरपूर खाद्य पदार्थ (प्रोटीन, विटामिन सी, जिंक) खाने से, संक्रमण से बचने के लिए उत्कृष्ट स्वच्छता का अभ्यास करने और अंतर्निहित प्रतिरक्षा स्थितियों का इलाज करने से।" },
+      { q: "क्या धूम्रपान न्यूट्रोफिल गिनती को प्रभावित करता है?", a: "हाँ। लगातार धूम्रपान करने से वायुमार्ग में सूजन हो जाती है, जिससे अक्सर रक्त में न्यूट्रोफिल की संख्या बढ़ जाती है।" },
+      { q: "क्या गर्भवती महिलाओं की अलग-अलग श्रेणियां होती हैं?", a: "हाँ, देर से गर्भावस्था और प्रसव के दौरान, न्यूट्रोफिल की संख्या स्वाभाविक रूप से बढ़ जाती है, जिससे कुल WBC की संख्या बढ़ जाती है।" },
+      { q: "न्यूट्रोफिल रीडिंग में बायां बदलाव क्या है?", a: "इसका मतलब है कि अस्थि मज्जा एक सक्रिय, गंभीर जीवाणु संक्रमण से निपटने के लिए अपरिपक्व न्यूट्रोफिल (बैंड) जारी कर रहा है।" },
+      { q: "क्या शराब न्यूट्रोफिल को दबाती है?", a: "हाँ। भारी दीर्घकालिक शराब का सेवन अस्थि मज्जा गतिविधि को दबा देता है, जिससे न्यूट्रोफिल उत्पादन और कार्य दोनों कम हो जाते हैं।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए ��नाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const neutInsights = {
+    en: {
+      normal: {
+        desc: "Your Neutrophil count is within the standard normal limits. This suggests a balanced immune response with no active acute bacterial infections or marrow suppression.",
+        causes: ["Normal bone marrow function", "No acute systemic bacterial pathogens present", "No severe stress factors"],
+        symptoms: ["Healthy bacterial infection control", "No unexplained fevers"],
+        prevention: ["Eat a diet rich in immune-supportive vitamins", "Stay hydrated and get adequate sleep"],
+        consult: "Regular annual health screenings are recommended to monitor long-term trends."
+      },
+      low: {
+        desc: "Your Neutrophil count is low, indicating Neutropenia. This lowers your body's defenses against bacterial invaders.",
+        causes: ["Viral infections (which temporarily suppress marrow)", "Autoimmune destruction", "B12 or folate deficiency", "Certain medications"],
+        symptoms: ["Increased susceptibility to bacterial infections", "Recurrent fevers or mouth ulcers", "Slow-healing wounds"],
+        prevention: ["Practice strict hand hygiene", "Avoid close contact with sick individuals", "Eat fully cooked foods"],
+        consult: "Consult your doctor to identify if this is a temporary post-viral drop or requires further blood screens."
+      },
+      criticalLow: {
+        desc: "Your Neutrophil count is critically low (Absolute ANC < 500 cells/µL or Relative < 15%). This represents severe neutropenia, which exposes you to life-threatening bacterial infections.",
+        causes: ["Chemotherapy or radiation therapy", "Aplastic anemia or leukemia", "Severe septic shock"],
+        symptoms: ["High fever or shaking chills", "Severe sore throat or cough", "Rapid breathing or confusion"],
+        prevention: ["Isolate from public areas to avoid pathogens", "Strictly avoid raw foods", "Seek emergency clinical aid immediately if a fever develops"],
+        consult: "⚠️ Seek immediate medical evaluation or visit an emergency room. Prophylactic antibiotics or hospital admission is often required."
+      },
+      high: {
+        desc: "Your Neutrophil count is elevated, indicating Neutrophilia. This shows your immune system is responding to a pathogen or acute physical stress.",
+        causes: ["Acute bacterial infections (appendicitis, pneumonia, etc.)", "Significant physical injury, tissue damage, or burns", "Severe emotional or physical stress", "Corticosteroid medications"],
+        symptoms: ["Fever, localized pain, swelling, or redness", "General body aches or fatigue"],
+        prevention: ["Promptly treat any localized bacterial infections", "Clean and bandage cuts and wounds", "Incorporate stress management techniques"],
+        consult: "Consult your general physician to check for active bacterial infections or evaluate inflammatory triggers."
+      },
+      criticalHigh: {
+        desc: "Your Neutrophil count is critically elevated (Absolute > 20,000 cells/µL or Relative > 85%). This indicates a massive myeloproliferative reaction, severe infection, or leukemia.",
+        causes: ["Severe systemic sepsis", "Leukemoid reaction", "Myeloid leukemia (AML or CML)"],
+        symptoms: ["High persistent fever, chills, or night sweats", "Splenomegaly (left-sided abdominal fullness)", "Unexplained weight loss or bruising"],
+        prevention: ["Rest immediately", "Avoid strenuous physical activity"],
+        consult: "⚠️ Seek urgent medical attention. Further hematology screens (like blood smear or marrow biopsy) are required."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার নিউট্রোফিলের মাত্রা স্বাভাবিক সীমার মধ্যে রয়েছে। এটি শরীরের সঠিক রোগ প্রতিরোধ ক্ষমতা ও স্বাভাবিক ব্যাকটেরিয়াল সংক্রমণ মুক্ত অবস্থাকে নির্দেশ করে।",
+        causes: ["অস্থিমজ্জার সঠিক কার্যকারিতা", "তীব্র ব্যাকটেরিয়াল সংক্রমণের অনুপস্থিতি", "অতিরিক্ত শারীরিক বা মানসিক চাপের অভাব"],
+        symptoms: ["স্বাভাবিক শারীরিক সুস্থতা", "কোনো কালশিটে বা তীব্র জ্বরের অনুপস্থিতি"],
+        prevention: ["আয়রন ও ভিটামিন সমৃদ্ধ পুষ্টিকর খাবার খান", "রোগ প্রতিরোধ ক্ষমতা বাড়াতে দৈনিক ৭-৮ ঘণ্টা ঘুমান"],
+        consult: "দীর্ঘমেয়াদী রক্তস্বাস্থ্য ট্র্যাক করতে বছরে অন্তত একবার রুটিন ব্লাড স্ক্রীনিং করা ভালো।"
+      },
+      low: {
+        desc: "আপনার নিউট্রোফিল কাউন্ট স্বাভাবিকের চেয়ে কম, যা নিউট্রোপেনিয়া নির্দেশ করে। এর অর্থ ব্যাকটেরিয়ার বিরুদ্ধে শরীরের রোগ প্রতিরোধ ক্ষমতা হ্রাস পেয়েছে।",
+        causes: ["ভাইরাল সংক্রমণ (যা অস্থিমজ্জার কার্যকারিতা সাময়িকভাবে কমায়)", "অটোইমিউন রোগ", "ভিটামিন বি১২ বা ফোলেটের অভাব"],
+        symptoms: ["সহজে ব্যাকটেরিয়াল ইনফেকশনে আক্রান্ত হওয়া", "মুখ বা গলায় ঘন ঘন ঘা হওয়া", "ক্ষত শুকাতে দেরি হওয়া"],
+        prevention: ["পরিষ্কার-পরিচ্ছন্ন থাকুন (ঘন ঘন হাত ধোবেন)", "অসুস্থ ব্যক্তিদের সংস্পর্শ এড়িয়ে চলুন", "সম্পূর্ণ সেদ্ধ করা খাবার খান"],
+        consult: "নিউট্রোপেনিয়ার সঠিক কারণ নির্ণয় ও ভাইরাল মার্কারগুলো পরীক্ষা করতে একজন ডাক্তারের পরামর্শ নিন।"
+      },
+      criticalLow: {
+        desc: "আপনার নিউট্রোফিল কাউন্ট মারাত্মক কম (পরম গণনা ৫০০ cells/µL এর নিচে বা আপেক্ষিক ১৫% এর নিচে)। এটি রোগ প্রতিরোধ ক্ষমতার তীব্র ঘাটতি নির্দেশ করে যা মারাত্মক ইনফেকশনের ঝুঁকি তৈরি করে।",
+        causes: ["কেমোথেরাপি বা রেডিয়েশন থেরাপির প্রভাব", "অস্থিমজ্জার অকার্যকারিতা বা লিউকেমিয়া", "গুরুতর সেপসিস"],
+        symptoms: ["তীব্র জ্বর বা কাঁপুনি", "তীব্র গলায় ব্যথা বা কাশি", "শ্বাসকষ্ট বা মানসিক বিভ্রান্তি"],
+        prevention: ["গণসমাগম এড়িয়ে চলুন", "খাবার ও রান্নার ক্ষেত্রে সর্বোচ্চ জীবাণুমুক্ত পরিবেশ বজায় রাখুন", "কাঁচা ফলমূল বা সালাদ পরিহার করুন"],
+        consult: "⚠️ অবিলম্বে হাসপাতালের জরুরি বিভাগে যোগাযোগ করুন। ব্যাকটেরিয়াল ইনফেকশন ঠেকাতে প্রতিরোধমূলক অ্যান্টিবায়োটিক বা বিশেষ পর্যবেক্ষণের প্রয়োজন হতে পারে।"
+      },
+      high: {
+        desc: "আপনার নিউট্রোফিল কাউন্ট স্বাভাবিক সীমার চেয়ে বেশি (নিউট্রোফিলিয়া)। এর অর্থ আপনার রোগ প্রতিরোধ ব্যবস্থা বর্তমানে কোনো ব্যাকটেরিয়া বা আঘাতের বিরুদ্ধে সক্রিয়ভাবে কাজ করছে।",
+        causes: ["তীব্র ব্যাকটেরিয়াল সংক্রমণ (যেমন নিউমোনিয়া, অ্যাপেন্ডিসাইটিস)", "গুরুতর আঘাত, টিস্যুর ক্ষতি বা পোড়া ক্ষত", "তীব্র শারীরিক বা মানসিক চাপ", "স্টেরয়েড জাতীয় ওষুধ"],
+        symptoms: ["জ্বর, শরীরের কোনো অংশ লাল হয়ে ফুলে যাওয়া বা ব্যথা", "গায়ে ব্যথা বা অতিরিক্ত ক্লান্তি"],
+        prevention: ["ইনফেকশনের কারণ খুঁজে বের করে দ্রুত চিকিৎসা নিন", "ক্ষতস্থান দ্রুত পরিষ্কার করে ব্যান্ডেজ করুন", "মানসিক চাপ নিয়ন্ত্রণ করুন"],
+        consult: "ইনফেকশন বা ব্যাকটেরিয়াল সংক্রমণ নির্ণয় করতে চিকিৎসকের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার নিউট্রোফিল কাউন্ট মারাত্মক বেশি (পরম গণনা ২০,০০০ cells/µL এর বেশি বা আপেক্ষিক ৮৫% এর বেশি)। এটি শরীরের তীব্র সংক্রমণ, সেপসিস বা অস্থিমজ্জার কোনো জটিল রোগের লক্ষণ হতে পারে।",
+        causes: ["তীব্র সিস্টেমিক সেপসিস", "লিউকেময়েড রিঅ্যাকশন", "মাইলোইড লিউকেমিয়া (রক্তের ক্যান্সার)"],
+        symptoms: ["তীব্র জ্বর, রাতে ঘাম হওয়া বা কাঁপুনি", "বাম পাশে পেটে ভারী ভাব (প্লিহা ফুলে যাওয়া)", "সহজেই চামড়ার নিচে কালশিটে দাগ পড়া বা ওজন হ্রাস"],
+        prevention: ["ভারী শারীরিক পরিশ্রম বন্ধ রাখুন", "পর্যাপ্ত পরিমাণে পানি ও তরল খাবার খান"],
+        consult: "⚠️ জরুরি ভিত্তিতে বিশেষজ্ঞ ডাক্তারের সাথে যোগাযোগ করুন বা হাসপাতালে যান। রক্তের ফিল্ম পরীক্ষা বা অস্থিমজ্জার বায়োপসি করার প্রয়োজন হতে পারে।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपकी न्यूट्रोफिल गिनती मानक सामान्य सीमा के भीतर है। यह बिना किसी सक्रिय तीव्र जीवाणु संक्रमण या मज्जा दमन के एक संतुलित प्रतिरक्षा प्रतिक्रिया का सुझाव देता है।",
+        causes: ["अस्थि मज्जा का सामान्य कार्य", "कोई तीव्र प्रणालीगत जीवाणु रोगज़नक़ मौजूद नहीं है", "कोई गंभीर तनाव कारक नहीं"],
+        symptoms: ["स्वस्थ जीवाणु संक्रमण नियंत्रण", "कोई अस्पष्टीकृत बुखार नहीं"],
+        prevention: ["प्रतिरक्षा-सहायक विटामिन से भरपूर आहार लें", "हाइड्रेटेड रहें और पर्याप्त नींद लें"],
+        consult: "दीर्घकालिक रुझानों पर नज़र रखने के लिए नियमित वार्षिक स्वास्थ्य जांच की सिफारिश की जाती है।"
+      },
+      low: {
+        desc: "आपकी न्यूट्रोफिल गिनती कम है, जो न्यूट्रोपेनिया का संकेत है। यह बैक्टीरिया आक्रमणकारियों के खिलाफ आपके शरीर की सुरक्षा को कम करता है।",
+        causes: ["वायरल संक्रमण (जो अस्थायी रूप से मज्जा को दबा देते हैं)", "स्वप्रतिरक्षी विनाश", "बी12 या फोलेट की कमी", "कुछ दवाएँ"],
+        symptoms: ["जीवाणु संक्रमण के प्रति संवेदनशीलता में वृद्धि", "बार-बार बुखार आना या मुँह में छाले होना", "घाव धीरे-धीरे ठीक होना"],
+        prevention: ["हाथ की सख्त स्वच्छता का अभ्यास करें", "बीमार व्यक्तियों के निकट संपर्क से बचें", "पूरी तरह से पका हुआ खान��� खाएं"],
+        consult: "यह पहचानने के लिए अपने डॉक्टर से परामर्श लें कि क्या यह एक अस्थायी पोस्ट-वायरल ड्रॉप है या आगे रक्त जांच की आवश्यकता है।"
+      },
+      criticalLow: {
+        desc: "आपकी न्यूट्रोफिल गिनती गंभीर रूप से कम है (पूर्ण एएनसी <500 कोशिकाएं/μL या सापेक्ष <15%)। यह गंभीर न्यूट्रोपेनिया का प्रतिनिधित्व करता है, जो आपको जीवन-घातक जीवाणु संक्रमण के संपर्क में लाता है।",
+        causes: ["कीमोथेरेपी या विकिरण चिकित्सा", "अप्लास्टिक एनीमिया या ल्यूकेमिया", "गंभीर सेप्टिक शॉक"],
+        symptoms: ["तेज़ बुखार या कंपकंपी वाली ठंड लगना", "गले में गंभीर खराश या खांसी", "तेजी से सांस लेना या भ्रम होना"],
+        prevention: ["रोगजनकों से बचने के लिए सार्वजनिक क्षेत्रों से अलग रहें", "कच्चे खाद्य पदार्थों से सख्ती से बचें", "बुखार होने पर तुरंत आपातकालीन चिकित्सीय सहायता लें"],
+        consult: "⚠️ तत्काल चिकित्सा मूल्यांकन लें या आपातकालीन कक्ष में जाएँ। रोगनिरोधी एंटीबायोटिक्स या अस्पताल में भर्ती की अक्सर आवश्यकता होती है।"
+      },
+      high: {
+        desc: "आपकी न्यूट्रोफिल गिनती बढ़ी हुई है, जो न्यूट्रोफिलिया का संकेत देती है। इससे पता चलता है कि आपकी प्रतिरक्षा प्रणाली किसी रोगज़नक़ या तीव्र शारीरिक तनाव पर प्रत���क्रिया कर रही है।",
+        causes: ["तीव्र जीवाणु संक्रमण (एपेंडिसाइटिस, निमोनिया, आदि)", "महत्वपूर्ण शारीरिक चोट, ऊतक क्षति, या जलन", "गंभीर भावनात्मक या शारीरिक तनाव", "कॉर्टिकोस्टेरॉइड दवाएं"],
+        symptoms: ["बुखार, स्थानीयकृत दर्द, सूजन, या लालिमा", "सामान्य शरीर में दर्द या थकान"],
+        prevention: ["किसी भी स्थानीय जीवाणु संक्रमण का तुरंत इलाज करें", "कटे और घावों को साफ करें और पट्टी बांधें", "तनाव प्रबंधन तकनीकों को शामिल करें"],
+        consult: "सक्रिय जीवाणु संक्रमण की जांच करने या सूजन ट्रिगर का मूल्यांकन करने के लिए अपने सामान्य चिकित्सक से परामर्श लें।"
+      },
+      criticalHigh: {
+        desc: "आपकी न्यूट्रोफिल गिनती गंभीर रूप से बढ़ी हुई है (पूर्ण > 20,000 कोशिकाएं/μL या ��ापेक्ष > 85%)। यह बड़े पैमाने पर मायलोप्रोलिफेरेटिव प्रतिक्रिया, गंभीर संक्रमण या ल्यूकेमिया का संकेत देता है।",
+        causes: ["गंभीर प्रणालीगत सेप्सिस", "ल्यूकेमॉइड प्रतिक्रिया", "माइलॉयड ल्यूकेमिया (एएमएल या सीएमएल)"],
+        symptoms: ["तेज़ लगातार बुखार, ठंड लगना या रात में पसीना आना", "स्प्लेनोमेगाली (बाएं तरफ पेट का भरा होना)", "बिना कारण वजन कम होना या चोट लगना"],
+        prevention: ["तुरंत आराम करें", "ज़ोरदार शारीरिक गतिविधि से बचें"],
+        consult: "⚠️ तत्काल चिकित्सा सहायता लें। आगे हेमेटोलॉजी स्क्रीन (जैसे रक्त स्मीयर या मज्जा बायोप्सी) की आवश्यकता होती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-neut-history")) || [];
+  let activeReportData = null;
+  let currentValType = "relative"; // relative, absolute
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateActiveTicks();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchValType() {
+    currentValType = document.getElementById("valType").value;
+    const label = document.getElementById("inputLabel");
+    const input = document.getElementById("valNeut");
+    
+    if (currentValType === "relative") {
+      label.textContent = translations[currentLang].labelNeutPct;
+      input.placeholder = "e.g. 60";
+    } else {
+      label.textContent = translations[currentLang].labelNeutAbs;
+      input.placeholder = "e.g. 4500";
+    }
+    
+    resetForm();
+    updateActiveTicks();
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valNeut").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits() {
+    if (currentValType === "relative") {
+      return { min: 40, max: 70, criticalMin: 15, criticalMax: 85 };
+    } else {
+      return { min: 1500, max: 8000, criticalMin: 500, criticalMax: 20000 };
+    }
+  }
+
+  function updateActiveTicks() {
+    const limits = getReferenceLimits();
+    const unit = currentValType === "relative" ? "%" : " cells/µL";
+    document.getElementById("tickNormalRange").textContent = `${limits.min.toLocaleString()}${unit} - ${limits.max.toLocaleString()}${unit}`;
+    document.getElementById("tickCriticalLow").textContent = `${limits.criticalMin.toLocaleString()}${unit} (Crit)`;
+    document.getElementById("tickCriticalHigh").textContent = `${limits.criticalMax.toLocaleString()}${unit} (Crit)`;
+  }
+
+  function analyzeNeutrophils() {
+    const valNeut = parseFloat(document.getElementById("valNeut").value);
+
+    if (isNaN(valNeut) || valNeut < 0) {
+      alert(currentLang === "en" ? "Please enter a valid Neutrophil value." : "দয়া করে নিউট্রোফিলের একটি সঠিক মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits();
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valNeut < limits.min) {
+      if (valNeut <= limits.criticalMin) {
+        statusKey = "criticalLow";
+        badgeKey = "badgeCriticalLow";
+      } else {
+        statusKey = "low";
+        badgeKey = "badgeLow";
+      }
+    } else if (valNeut > limits.max) {
+      if (valNeut >= limits.criticalMax) {
+        statusKey = "criticalHigh";
+        badgeKey = "badgeCriticalHigh";
+      } else {
+        statusKey = "high";
+        badgeKey = "badgeHigh";
+      }
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valNeut >= limits.min && valNeut <= limits.max) {
+      const range = limits.max - limits.min;
+      pointerPct = range > 0 ? 40 + ((valNeut - limits.min) / range) * 20 : 50;
+    } else if (valNeut < limits.min) {
+      const range = limits.min - limits.criticalMin;
+      pointerPct = range > 0 ? Math.max(5, 5 + ((valNeut - limits.criticalMin) / range) * 35) : 20;
+    } else {
+      const range = limits.criticalMax - limits.max;
+      pointerPct = range > 0 ? Math.min(95, 60 + ((valNeut - limits.max) / range) * 35) : 80;
+    }
+
+    activeReportData = {
+      valNeut,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString(),
+      type: currentValType
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valNeut, currentValType);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resValType").textContent = d.type === "relative" ? translations[currentLang].inputTypeRelative : translations[currentLang].inputTypeAbsolute;
+    document.getElementById("resDate").textContent = d.date;
+
+    const unit = d.type === "relative" ? "%" : " cells/µL";
+    document.getElementById("resUnitText").textContent = unit;
+    document.getElementById("resNeutVal").textContent = d.valNeut.toLocaleString();
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey.startsWith("critical")) colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resNeutVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = neutInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.causes.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valNeut, type) {
+    const unit = type === "relative" ? "%" : " cells/µL";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valNeut,
+      unit,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-neut-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valNeut.toLocaleString()}${item.unit} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const unit = activeReportData.type === "relative" ? "%" : " cells/µL";
+    let t = `--- NEUTROPHIL DIAGNOSTIC REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Value: ${activeReportData.valNeut.toLocaleString()}${unit} (Ref: ${activeReportData.limits.min}-${activeReportData.limits.max}${unit})\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `neutrophil-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

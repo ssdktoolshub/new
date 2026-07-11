@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Basophil Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze your relative and absolute Basophil counts online. Check for basophilia dynamically with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #ef4444;
+      --critical-color: #7f1d1d;
+      --border-color: #f59e0b;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .baso-gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .baso-val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .baso-status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--normal-color) 0%, 
+        var(--border-color) 50%, 
+        var(--high-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .baso-gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Basophil Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze absolute and relative Basophil counts to check for basophilia, chronic allergies, or myeloproliferative status indicators.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🩸 Basophil Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">🗑 Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valType" data-translate="labelInputType">Value Type</label>
+              <select id="valType" onchange="switchValType()">
+                <option value="relative" selected data-translate="inputTypeRelative">Relative Percentage (%)</option>
+                <option value="absolute" data-translate="inputTypeAbsolute">Absolute Count (cells/µL)</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valBaso" id="inputLabel" data-translate="labelBasoPct">Basophils Percentage (%)</label>
+              <input type="number" step="0.1" id="valBaso" placeholder="e.g. 0.8" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeBasophils()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Basophils</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🩸</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your Basophils value and click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Basophil Diagnostics Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Value Type</strong>: <span id="resValType">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="baso-gauge-container">
+            <div class="baso-val-large" id="resBasoVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">%</div>
+            <div class="baso-status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLowRange" style="color: var(--normal-color);">0%</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">0.5% - 1%</span>
+              <span id="tickCriticalHigh" style="color: var(--high-color);">3% (Crit)</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Basophils</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What are Basophils?</strong><br><span data-translate="eduA1">Basophils are the rarest type of granulocytic white blood cell in circulation. They contain large dark-blue granules packed with histamine (triggers vasodilation in allergies) and heparin (prevents rapid clotting).</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What is Basophilia?</strong><br><span data-translate="eduA2">Basophilia is an elevated basophil count (relative > 1% or absolute > 100 cells/µL). It is rare and points to severe allergic diseases, chronic inflammation, or bone marrow disorders like chronic myeloid leukemia.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">Does Basopenia matter?</strong><br><span data-translate="eduA3">Basopenia is a low count (< 0.5% relative). Because healthy individuals frequently have basophil percentages close to 0%, basopenia is rarely of clinical concern unless associated with severe shock or steroid excess.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Basophil Analyzer",
+      toolDesc: "Analyze absolute and relative Basophil counts to check for basophilia, chronic allergies, or myeloproliferative status indicators.",
+      inputsTitle: "🩸 Basophil Parameters",
+      clearBtn: "Reset",
+      labelInputType: "Value Type",
+      inputTypeRelative: "Relative Percentage (%)",
+      inputTypeAbsolute: "Absolute Count (cells/µL)",
+      labelBasoPct: "Basophils Percentage (%)",
+      labelBasoAbs: "Absolute Basophil Count (cells/µL)",
+      btnAnalyze: "Analyze Basophils",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your Basophils value and click the analyze button to display medical summaries.",
+      reportTitle: "🔬 Basophil Diagnostics Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Value Type",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Basophils",
+      badgeLow: "Low Basophils (Basopenia)",
+      badgeHigh: "High Basophils (Basophilia)",
+      badgeCriticalHigh: "CRITICAL HIGH BASOPHILIA",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "বেসোফিল বিশ্লেষক",
+      toolDesc: "বেসোফিলের আপেক্ষিক (%) এবং পরম (cells/µL) পরিমাণ বিশ্লেষণ করুন। তীব্র অ্যালার্জি বা ক্রনিক রক্তের রোগের ঝুঁকি পরীক্ষা করুন।",
+      inputsTitle: "🩸 বেসোফিলের পরিমাপক সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelInputType: "ইনপুটের ধরন",
+      inputTypeRelative: "আপেক্ষিক শতকরা হার (%)",
+      inputTypeAbsolute: "পরম গণনা (cells/µL)",
+      labelBasoPct: "বেসোফিল শতকরা হার (%)",
+      labelBasoAbs: "পরম বেসোফিল গণনা (cells/µL)",
+      btnAnalyze: "বেসোফিল বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার বেসোফিলের মান লিখুন, তারপর বিশ্লেষণ বোতামটি চাপুন রিপোর্টের সামারি দেখতে।",
+      reportTitle: "🔬 বেসোফিল ডায়াগনস্টিক রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "ইনপুটের ধরন",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক বেসোফিল",
+      badgeLow: "কম বেসোফিল (বেসোপেনিয়া)",
+      badgeHigh: "উচ্চ বেসোফিল (বেসোফিলিয়া)",
+      badgeCriticalHigh: "মারাত্মক ঝুঁকিপূর্ণ বেসোফিলিয়া",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "बेसोफिल विश्लेषक",
+      toolDesc: "बेसोफिलिया, क्रोनिक एलर्जी, या मायलोप्रोलिफेरेटिव स्थिति संकेतकों की जांच के लिए पूर्ण और सापेक्ष बेसोफिल गणना का विश्लेषण करें।",
+      inputsTitle: "🩸 बेसोफिल पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelInputType: "मूल्य प्रकार",
+      inputTypeRelative: "सापेक्ष प्रतिशत (%)",
+      inputTypeAbsolute: "निरपेक्ष गणना (कोशिकाएं/µL)",
+      labelBasoPct: "बेसोफिल्स प्रतिशत (%)",
+      labelBasoAbs: "निरपेक्ष बेसोफिल गणना (कोशिकाएं/µL)",
+      btnAnalyze: "बेसोफिल्स का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना बेसोफिल्स मान दर्ज करें और चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 बेसोफिल डायग्नोस्टिक्स रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "मूल्य प्रकार",
+      labelDate: "तारीख",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य बेसोफिल्स",
+      badgeLow: "कम बेसोफिल्स (बेसोपेनिया)",
+      badgeHigh: "उच्च बेसोफिल्स (बेसोफिलिया)",
+      badgeCriticalHigh: "क्रिटिकल हाई बेसोफिलिया",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What are basophils?", a: "Basophils are a type of rare granulocyte leukocyte that releases histamine and heparin during inflammatory and allergic reactions." },
+      { q: "What is a normal Basophil range?", a: "Relative normal range is 0.5% to 1.0%. Absolute normal range is 0 to 100 cells/µL." },
+      { q: "What causes high basophils (Basophilia)?", a: "It is commonly caused by chronic inflammatory conditions, severe allergies, or bone marrow disorders like CML or Polycythemia Vera." },
+      { q: "What causes low basophils (Basopenia)?", a: "Basopenia can be triggered by severe allergic shock (anaphylaxis), hyperthyroidism, acute severe infections, or steroids." },
+      { q: "Why do basophils contain histamine?", a: "Histamine dilates blood vessels, allowing other immune cells to migrate quickly to the site of an allergy or infection." },
+      { q: "What are symptoms of basophilia?", a: "Symptoms resemble the underlying disorder: itching, hives, fatigue, abdominal fullness (splenomegaly), or joint pains." },
+      { q: "Is basopenia a serious clinical finding?", a: "No. Because normal levels can be zero, finding low or zero basophils is common and usually not pathological." },
+      { q: "When is basophilia considered critical?", a: "A relative count above 3% or absolute count above 300 cells/µL is clinically significant and warrants hematology evaluation." },
+      { q: "How can I lower basophils naturally?", a: "Identify allergens, treat systemic inflammation with anti-inflammatory diets, and consult a doctor for bone marrow screening if chronic." },
+      { q: "What is the relation between basophils and leukemia?", a: "Chronic Myeloid Leukemia (CML) is characterized by an abundance of mature and immature granulocytes, frequently showing highly elevated basophils." },
+      { q: "Can thyroid disease affect basophils?", a: "Yes. Hyperthyroidism can cause low basophil levels, while hypothyroidism can occasionally cause mild basophilia." },
+      { q: "What is the relation between basophils and mast cells?", a: "Both release histamine and look similar, but mast cells reside in connective tissues while basophils circulate in the blood." },
+      { q: "Are normal basophil ranges different for children?", a: "No. Pediatric normal basophil ranges match adult ranges and remain steady throughout growth." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "বেসোফিল কী?", a: "বেসোফিল হলো এক ধরণের অত্যন্ত বিরল শ্বেত রক্তকণিকা যা অ্যালার্জি বা প্রদাহের সময় হিস্টামিন ও রক্ত জমাট রোধে হেপারিন নিঃসৃত করে।" },
+      { q: "বেসোফিলের স্বাভাবিক মাত্রা কত?", a: "আপেক্ষিক স্বাভাবিক মাত্রা ০.৫% থেকে ১.০%। পরম স্বাভাবিক মাত্রা ০ থেকে ১০০ cells/µL।" },
+      { q: "বেসোফিল বৃদ্ধির (বেসোফিলিয়া) কারণ কী?", a: "তীব্র অ্যালার্জি প্রতিক্রিয়া, দীর্ঘস্থায়ী প্রদাহ বা অস্থিমজ্জার রোগ (যেমন মাইলোইড লিউকেমিয়া বা পলিসাইথেমিয়া ভেরা)।" },
+      { q: "বেসোফিল কমে যাওয়ার (বেসোপেনিয়া) কারণ কী?", a: "অ্যালার্জিজনিত শক (Anaphylaxis), থাইরয়েডের অতি-সক্রিয়তা (Hyperthyroidism) বা তীব্র সংক্রমণ।" },
+      { q: "বেসোফিলের মধ্যে হিস্টামিন কেন থাকে?", a: "হিস্টামিন রক্তনালীকে প্রসারিত করে যাতে রোগ প্রতিরোধকারী কোষগুলো দ্রুত অ্যালার্জি বা ক্ষতস্থানে পৌঁছাতে পারে।" },
+      { q: "বেসোফিলিয়া হলে কী লক্ষণ দেখা যায়?", a: "চুলকানি, ফুসকুড়ি, ক্লান্তি, পেটের বাম পাশে ভারাক্রান্ত ভাব (প্লিহা বড় হওয়া) বা জয়েন্টে ব্যথা।" },
+      { q: "বেসোপেনিয়া কি কোনো গুরুতর লক্ষণ?", a: "না। যেহেতু রক্তে এর স্বাভাবিক মাত্রা শূন্য হতে পারে, তাই রিপোর্টে এটি কম পাওয়া খুবই স্বাভাবিক এবং ক্ষতিকর নয়।" },
+      { q: "বেসোফিল কত বেশি হলে তা মারাত্মক?", a: "বেসোফিলের অনুপাত ৩% এর বেশি বা পরম সংখ্যা ৩০০ cells/µL অতিক্রম করলে তা অস্থিমজ্জার জটিলতা পরীক্ষা করতে ডাক্তারের পরামর্শ নির্দেশ করে।" },
+      { q: "প্রাকৃতিক উপায়ে কীভাবে বেসোফিল কমানো যায়?", a: "শরীরের অ্যালার্জেন চিহ্নিত করে পরিহারের মাধ্যমে, ওমেগা-৩ সমৃদ্ধ খাবার খেয়ে এবং কোনো দীর্ঘমেয়াদী প্রদাহের সঠিক চিকিৎসা করে।" },
+      { q: "লিউকেমিয়ার সাথে কি বেসোফিলের সম্পর্ক আছে?", a: "হ্যাঁ। ক্রনিক মাইলোইড লিউকেমিয়া (CML) রোগে রক্তে প্রচুর শ্বেত কণিকার সাথে বেসোফিলের মাত্রা অস্বাভাবিকভাবে বৃদ্ধি পায়।" },
+      { q: "থাইরয়েড রোগ কি বেসোফিলকে প্রভাবিত করতে পারে?", a: "হ্যাঁ। হাইপারথাইরয়েডিজমের কারণে বেসোফিল কমতে পারে এবং হাইপোথাইরয়েডিজমের কারণে এটি সামান্য বাড়তে পারে।" },
+      { q: "বেসোফিল ও মাস্ট কোষের (Mast cells) পার্থক্য কী?", a: "উভয়ই হিস্টামিন নিঃসরণ করে, তবে মাস্ট কোষ শরীরের বিভিন্ন কলা বা টিস্যুতে থাকে এবং বেসোফিল রক্তপ্রবাহে চলাচল করে।" },
+      { q: "শিশুদের বেসোফিল স্বাভাবিক মাত্রা কি আলাদা?", a: "না। শিশুদের স্বাভাবিক বেসোফিল সীমা বড়দের মতোই থাকে এবং কোনো বয়সের জন্য আলাদা হয় না।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "बेसोफिल क्या हैं?", a: "बेसोफिल्स एक प्रकार का दुर्लभ ग्रैनुलोसाइट ल्यूकोसाइट है जो सूजन और एलर्जी प्रतिक्रियाओं के दौरान हिस्टामाइन और हेपरिन जारी करता है।" },
+      { q: "सामान्य बेसोफिल रेंज क्या है?", a: "सापेक्ष सामान्य सीमा 0.5% से 1.0% है। पूर्ण सामान्य सीमा 0 से 100 सेल/μL है।" },
+      { q: "उच्च बेसोफिल (बेसोफिलिया) का क्या कारण है?", a: "यह आमतौर पर पुरानी सूजन संबंधी स्थितियों, गंभीर एलर्जी या सीएमएल या पॉलीसिथेमिया वेरा जैसे अस्थि मज्जा विकारों के कारण होता है।" },
+      { q: "कम बेसोफिल्स (बैसोपेनिया) का क्या कारण है?", a: "बासोपेनिया को गंभीर एलर्जिक शॉक (एनाफिलेक्सिस), हाइपरथायरायडिज्म, तीव्र गंभीर संक्रमण या स्टेरॉयड से ट्रिगर किया जा सकता है।" },
+      { q: "बेसोफिल में हिस्टामाइन क्यों होता है?", a: "हिस्टामाइन रक्त वाहिकाओं को फैलाता है, जिससे अन्य प्रतिरक्षा कोशिकाएं एलर्जी या संक्रमण के स्थल पर ते���ी से स्थानांतरित हो जाती हैं।" },
+      { q: "बेसोफिलिया के लक्षण क्या हैं?", a: "लक्षण अंतर्निहित विकार से मिलते जुलते हैं: खुजली, पित्ती, थकान, पेट में परिपूर्णता (स्प्लेनोमेगाली), या जोड़ों में दर्द।" },
+      { q: "क्या बेसोपेनिया एक गंभीर नैदानिक ​​खोज है?", a: "नहीं, क्योंकि सामान्य स्तर शून्य हो सकता है, कम या शून्य बेसोफिल का पता लगाना आम बात है और आमतौर पर पैथोलॉजिकल नहीं होता है।" },
+      { q: "बेसोफिलिया को कब गंभीर माना जाता है?", a: "3% से ऊपर की सापेक्ष गणना या 300 कोशिकाओं/μL से ऊपर की पूर्ण गणना चिकित्सकीय रूप से महत्वपूर्ण है और हेमेटोलॉजी मूल्यांकन की गारंटी देती है।" },
+      { q: "मैं प्राकृतिक रूप से बेसोफिल कैसे कम कर सकता हूँ?", a: "एलर्जी पैदा करने वाले कारकों की पहचान करें, सूजन-रोधी आहार से प्रणालीगत सूजन का इलाज करें और पुरानी होने पर अस्थि मज्जा जांच के लिए डॉक्टर से परामर्श लें।" },
+      { q: "बेसोफिल्स और ल्यूकेमिया के बीच क्या संबंध है?", a: "क्रोनिक माइलॉयड ल्यूकेमिया (सीएमएल) की विशेषता परिपक्व और अपरिपक्व ग्रैन्यूलोसाइट्स की बहुतायत है, जो अक्सर अत्यधिक ऊंचे बेसोफिल दिखाते हैं।" },
+      { q: "क्या थायराइड रोग बेसोफिल्स को प्रभावित कर सकता है?", a: "हाँ। हाइपरथायरायडिज्म कम बेसोफिल स्तर का कारण बन सकता है, जबकि हाइपोथायरायडिज्म कभी-कभी हल्के बेसोफिलिया का कारण बन सकता है।" },
+      { q: "बेसोफिल और मस्तूल कोशिकाओं के बीच क्या संबंध है?", a: "दोनों हिस्टामाइन छोड़ते हैं और एक जैसे दिखते हैं, लेकिन मस्तूल कोशिकाएं संयोजी ऊतकों में रहती हैं जबकि बेसोफिल रक्त में घूमते हैं।" },
+      { q: "क्या बच्चों के लिए सामान्य बेसोफिल श्रेणियाँ भिन्न होती हैं?", a: "नहीं, बाल चिकित्सा में सामान्य बेसोफिल स्तर वयस्क स्तर से मेल खाते हैं और पूरे विकास के दौरान स्थिर रहते हैं।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const basoInsights = {
+    en: {
+      normal: {
+        desc: "Your Basophil count is within the standard normal limits. This suggests no active systemic hyper-allergic responses or major myeloproliferative bone marrow disorders.",
+        causes: ["Normal immune baseline", "No active acute allergy reactions", "Healthy bone marrow activity"],
+        symptoms: ["No allergy flares", "No signs of chronic itching or flushing"],
+        prevention: ["Eat a healthy balanced diet", "Avoid known environmental allergens"],
+        consult: "Regular annual health screenings are recommended to monitor long-term trends."
+      },
+      low: {
+        desc: "Your Basophil count is low, indicating Basopenia. This has zero negative clinical significance on its own, as normal values frequently drop to 0% in healthy individuals.",
+        causes: ["Normal biological variation", "Recent corticosteroid use", "Acute stress or thyroid overactivity"],
+        symptoms: ["None associated with low levels"],
+        prevention: ["Continue normal healthy habits"],
+        consult: "No follow-up is necessary unless recommended alongside general white cell count evaluations."
+      },
+      high: {
+        desc: "Your Basophil count is elevated, indicating Basophilia. This shows your immune system is responding to an allergen or persistent inflammatory trigger.",
+        causes: ["Chronic inflammation (rheumatoid arthritis, ulcerative colitis)", "Severe allergic disorders (food or environmental hypersensitivities)", "Hypothyroidism"],
+        symptoms: ["Itching (pruritus) or hives", "Joint stiffness or abdominal pain", "Fatigue"],
+        prevention: ["Identify and manage allergic triggers", "Incorporate anti-inflammatory foods (rich in polyphenols)"],
+        consult: "Consult a general physician to rule out chronic inflammatory triggers or check thyroid function."
+      },
+      criticalHigh: {
+        desc: "Your Basophil count is critically elevated (Absolute > 300 cells/µL or Relative > 3%). This represents severe basophilia, which warrants thorough investigation to rule out myeloproliferative disorders.",
+        causes: ["Chronic Myeloid Leukemia (CML)", "Polycythemia Vera or primary myelofibrosis", "Rare systemic mastocytosis variants"],
+        symptoms: ["Unexplained weight loss, fever, or night sweats", "Splenomegaly (left-sided abdominal fullness)", "Skin lesions or intense itching after warm water contact"],
+        prevention: ["Rest immediately", "Avoid strenuous physical activity"],
+        consult: "⚠️ Seek urgent medical attention. A peripheral blood smear or cytogenetic analysis is required to rule out bone marrow clonal diseases."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার বেসোফিলের মাত্রা স্বাভাবিক সীমার মধ্যে রয়েছে। এটি শরীরের সঠিক রোগ প্রতিরোধ ক্ষমতা ও অ্যালার্জি বা রক্তের রোগ মুক্ত অবস্থাকে নির্দেশ করে।",
+        causes: ["স্বাভাবিক রোগ প্রতিরোধ ক্ষমতা", "তীব্র অ্যালার্জি প্রতিক্রিয়ার অনুপস্থিতি", "অস্থিমজ্জার সঠিক কার্যকারিতা"],
+        symptoms: ["স্বাভাবিক শারীরিক সুস্থতা", "কোনো অ্যালার্জির উপসর্গ না থাকা"],
+        prevention: ["সবুজ শাকসবজি ও সুষম পুষ্টিকর খাবার বেশি খান", "পরিবেশগত অ্যালার্জেন এড়িয়ে চলুন"],
+        consult: "দীর্ঘমেয়াদী রক্তস্বাস্থ্য ট্র্যাক করতে বছরে অন্তত একবার রুটিন ব্লাড স্ক্রীনিং করা ভালো।"
+      },
+      low: {
+        desc: "আপনার বেসোফিল কাউন্ট স্বাভাবিকের চেয়ে কম (বেসোপেনিয়া)। সাধারণত এর একক কোনো গুরুত্ব নেই, কারণ সুস্থ মানুষের রিপোর্টেও এটি ০% থাকতে পারে।",
+        causes: ["স্বাভাবিক জৈবিক ভিন্নতা", "স্টেরয়েড জাতীয় ওষুধ", "থাইরয়েডের অতি-সক্রিয়তা"],
+        symptoms: ["কম মাত্রার সরাসরি কোনো লক্ষণ নেই"],
+        prevention: ["পর্যাপ্ত পরিমাণে পানি পান করুন", "সুস্থ জীবনযাত্রা বজায় রাখুন"],
+        consult: "অন্যান্য শ্বেতকণিকা স্বাভাবিক থাকলে কম বেসোফিল নিয়ে চিন্তার কারণ নেই।"
+      },
+      high: {
+        desc: "আপনার বেসোফিল কাউন্ট স্বাভাবিক সীমার চেয়ে বেশি (বেসোফিলিয়া)। এর অর্থ আপনার রোগ প্রতিরোধ ব্যবস্থা বর্তমানে কোনো অ্যালার্জি বা ক্রনিক প্রদাহের বিরুদ্ধে কাজ করছে।",
+        causes: ["দীর্ঘস্থায়ী প্রদাহ (যেমন রিউমাটয়েড আর্থ্রাইটিস, কোলাইটিস)", "তীব্র অ্যালার্জি প্রতিক্রিয়া", "হাইপোথাইরয়েডিজম"],
+        symptoms: ["ত্বকে চুলকানি, লালচে ভাব বা ফুসকুড়ি", "জোড়ে ব্যথা বা পেটে অস্বস্তি", "ক্লান্তি"],
+        prevention: ["অ্যালার্জি সৃষ্টিকারী খাবার বা পরিবেশ এড়িয়ে চলুন", "আদা, হলুদের মতো প্রদাহবিরোধী খাবার বেশি খান"],
+        consult: "বেসোফিল বেশি থাকার সঠিক কারণ নির্ণয় ও থাইরয়েড পরীক্ষা করতে চিকিৎসকের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার বেসোফিল কাউন্ট মারাত্মক বেশি (পরম গণনা ৩০০ cells/µL এর বেশি বা আপেক্ষিক ৩% এর বেশি)। এটি অত্যন্ত ঝুঁকিপূর্ণ বেসোফিলিয়া অবস্থা যা অস্থিমজ্জার কোনো জটিল রক্তের ক্যান্সার নির্দেশ করতে পারে।",
+        causes: ["ক্রনিক মাইলোইড লিউকেমিয়া (CML)", "পলিসাইথেমিয়া ভেরা বা প্লিহার রোগ", "সিস্টেমিক মাস্টোসাইটোসিস"],
+        symptoms: ["ওজন হ্রাস, রাতে ঘাম হওয়া বা জ্বর", "বাম পাশে পেটে ভারী ভাব (প্লিহা ফুলে যাওয়া)", "গরম পানির সংস্পর্শে আসলে তীব্র চুলকানি"],
+        prevention: ["ভারী শারীরিক পরিশ্রম বন্ধ রাখুন", "পর্যাপ্ত পরিমাণে পানি পান করুন"],
+        consult: "⚠️ জরুরি ভিত্তিতে একজন বিশেষজ্ঞ চিকিৎসকের শরণাপন্ন হোন। রক্তের ফিল্ম পরীক্ষা বা সাইটোজেনেটিক পরীক্ষা করা প্রয়োজন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपकी बेसोफिल गिनती मानक सामान्य सीमा के भीतर है। यह कोई सक्रिय प्रणालीगत हाइपर-एलर्जी प्रतिक्रिया या प्रमुख मायलोप्रोलिफेरेटिव अस्थि मज्जा विकारों का सुझाव नहीं देता है।",
+        causes: ["सामान्य प्रतिरक्षा आधार रेखा", "कोई सक्रिय तीव्र एलर्जी प्रतिक्रिया नहीं", "स्वस्थ अस्थि मज्जा गतिविधि"],
+        symptoms: ["कोई एलर्जी नहीं भड़कती", "पुरानी खुजली या लालिमा का कोई लक्षण नहीं"],
+        prevention: ["स्वस्थ संतुलित आहार लें", "ज्ञात पर्यावरणीय एलर्जी से बचें"],
+        consult: "दीर्घकालिक रुझानों पर नज़र रखने के लिए नियमित वार्षिक स्वास्थ्य जांच की सिफारिश की जाती है।"
+      },
+      low: {
+        desc: "आपकी बेसोफिल गिनती कम है, जो बेसोपेनिया का संकेत है। इसका अपने आप में शून्य नकारात्मक नैदानिक ​​महत्व है, क्योंकि स्वस्थ व्यक्तियों में सामान्य मान अक्सर 0% तक गिर जाता है।",
+        causes: ["सामान्य जैविक भिन्नता", "हाल ही में कॉर्टिकोस्टेरॉइड का उपयोग", "तीव्र तनाव या थायराइड अतिसक्रियता"],
+        symptoms: ["कोई भी निम्न स्तर से संबद्ध नहीं है"],
+        prevention: ["सामान्य स्वस्थ आदतें जारी रखें"],
+        consult: "जब तक सामान्य श्वेत कोशिका गणना मूल्यांकन के साथ अनुशंसित न किया जाए, तब तक कोई अनुवर्ती कार्रवाई आवश्यक नहीं है।"
+      },
+      high: {
+        desc: "आपकी बेसोफिल गिनती बढ़ी हुई है, जो बेसोफिलिया का संकेत देती है। इससे पता चलता है कि आपकी प्रतिरक्षा प्रणाली किसी एलर्जेन या लगातार सूजन वाले ट्रिगर पर प्रतिक्रिया कर रही है।",
+        causes: ["जीर्ण सूजन (संधिशोथ, अल्सरेटिव कोलाइटिस)", "गंभीर एलर्जी संबंधी विकार (भोजन या पर्यावरणीय अतिसंवेदनशीलता)", "हाइपोथायरायडिज्म"],
+        symptoms: ["खुजली (खुजली) या पित्ती", "जोड़ों में अकड़न या पेट में दर्द", "थकान"],
+        prevention: ["एलर्जी ट्रिगर्स को पहचानें और प्रबंधित करें", "सूजनरोधी खाद्य पदार्थों को शामिल करें (पॉलीफेनोल्स से भरपूर)"],
+        consult: "पुरानी सूजन के ट्रिगर को दूर करने या थायरॉइड फ़ंक्शन की जांच करने के लिए एक सामान्य चिकित्सक से परामर्श लें।"
+      },
+      criticalHigh: {
+        desc: "आपकी बेसोफिल गिनती गंभीर रूप से बढ़ी हुई है (पूर्ण> 300 कोशिकाएं/μL या सापेक्ष> 3%)। यह गंभीर बेसोफिलिया का प्रतिनिधित्व करता है, जिसके लिए मायलोप्रोलिफेरेटिव विकारों को दूर करने के लिए गहन जांच की आवश्यकता होती है।",
+        causes: ["क्रोनिक माइलॉयड ल्यूकेमिया (सीएमएल)", "पॉलीसिथेमिया वेरा या प्राथमिक मायलोफाइब्रोसिस", "दुर्लभ प्रणालीगत मास्टोसाइटोसिस वेरिएंट"],
+        symptoms: ["बिना कारण वजन कम होना, बुखार या रात को पसीना आना", "स्प्लेनोमेगाली (बाएं तरफ पेट का भरा होना)", "गर्म पानी के संपर्क के बाद त्वचा पर घाव या तीव्र खुजली"],
+        prevention: ["तुरंत आराम करें", "ज़ोरदार शारीरिक गतिविधि से बचें"],
+        consult: "⚠️ तत्काल चिकित्सा सहायता लें। अस्थि मज्जा क्लोनल रोगों का पता लगाने के लिए एक परिधीय रक्त स्मीयर या साइटोजेनेटिक विश्लेषण की आवश्यकता होती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-baso-history")) || [];
+  let activeReportData = null;
+  let currentValType = "relative"; // relative, absolute
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateActiveTicks();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchValType() {
+    currentValType = document.getElementById("valType").value;
+    const label = document.getElementById("inputLabel");
+    const input = document.getElementById("valBaso");
+    
+    if (currentValType === "relative") {
+      label.textContent = translations[currentLang].labelBasoPct;
+      input.placeholder = "e.g. 0.8";
+    } else {
+      label.textContent = translations[currentLang].labelBasoAbs;
+      input.placeholder = "e.g. 50";
+    }
+    
+    resetForm();
+    updateActiveTicks();
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valBaso").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits() {
+    if (currentValType === "relative") {
+      return { min: 0.5, max: 1.0, criticalMin: 0, criticalMax: 3.0 };
+    } else {
+      return { min: 25, max: 100, criticalMin: 0, criticalMax: 300 };
+    }
+  }
+
+  function updateActiveTicks() {
+    const limits = getReferenceLimits();
+    const unit = currentValType === "relative" ? "%" : " cells/µL";
+    document.getElementById("tickNormalRange").textContent = `${limits.min.toLocaleString()}${unit} - ${limits.max.toLocaleString()}${unit}`;
+    document.getElementById("tickLowRange").textContent = `0${unit}`;
+    document.getElementById("tickCriticalHigh").textContent = `${limits.criticalMax.toLocaleString()}${unit} (Crit)`;
+  }
+
+  function analyzeBasophils() {
+    const valBaso = parseFloat(document.getElementById("valBaso").value);
+
+    if (isNaN(valBaso) || valBaso < 0) {
+      alert(currentLang === "en" ? "Please enter a valid Basophil value." : "দয়া করে বেসোফিলের একটি সঠিক মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits();
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valBaso < limits.min) {
+      statusKey = "low";
+      badgeKey = "badgeLow";
+    } else if (valBaso > limits.max) {
+      if (valBaso >= limits.criticalMax) {
+        statusKey = "criticalHigh";
+        badgeKey = "badgeCriticalHigh";
+      } else {
+        statusKey = "high";
+        badgeKey = "badgeHigh";
+      }
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valBaso >= limits.min && valBaso <= limits.max) {
+      const range = limits.max - limits.min;
+      pointerPct = range > 0 ? 40 + ((valBaso - limits.min) / range) * 20 : 50;
+    } else if (valBaso < limits.min) {
+      const range = limits.min;
+      pointerPct = range > 0 ? Math.max(5, 5 + (valBaso / range) * 35) : 20;
+    } else {
+      const range = limits.criticalMax - limits.max;
+      pointerPct = range > 0 ? Math.min(95, 60 + ((valBaso - limits.max) / range) * 35) : 80;
+    }
+
+    activeReportData = {
+      valBaso,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString(),
+      type: currentValType
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valBaso, currentValType);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resValType").textContent = d.type === "relative" ? translations[currentLang].inputTypeRelative : translations[currentLang].inputTypeAbsolute;
+    document.getElementById("resDate").textContent = d.date;
+
+    const unit = d.type === "relative" ? "%" : " cells/µL";
+    document.getElementById("resUnitText").textContent = unit;
+    document.getElementById("resBasoVal").textContent = d.valBaso.toLocaleString();
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey.startsWith("critical")) colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resBasoVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = basoInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.causes.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valBaso, type) {
+    const unit = type === "relative" ? "%" : " cells/µL";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valBaso,
+      unit,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-baso-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valBaso.toLocaleString()}${item.unit} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const unit = activeReportData.type === "relative" ? "%" : " cells/µL";
+    let t = `--- BASOPHIL DIAGNOSTIC REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Value: ${activeReportData.valBaso.toLocaleString()}${unit} (Ref: ${activeReportData.limits.min}-${activeReportData.limits.max}${unit})\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `basophil-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

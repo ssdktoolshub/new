@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSS Gradient Generator &bull; Live Color Palettes - SSDK TOOLS HUB</title>
+  <meta name="description" content="Design and customize beautiful linear and radial CSS gradients, add custom color stops, and copy code snippets instantly.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .gradient-preview {
+      width: 100%;
+      height: 200px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+      position: relative;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+      transition: background 0.1s;
+    }
+    .preview-badge {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .panel-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .setting-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .setting-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .setting-group input, .setting-group select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+    }
+    .stop-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      background: var(--bg2);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .stop-row input[type="color"] {
+      border: none;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      background: none;
+      outline: none;
+    }
+    .stop-row input[type="number"] {
+      width: 70px;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      text-align: center;
+      font-size: 0.8rem;
+    }
+    .preset-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .preset-btn {
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text);
+    }
+    .preset-btn:hover {
+      border-color: var(--accent);
+      transform: scale(1.03);
+    }
+    .btn-stop-action {
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0 4px;
+      line-height: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">CSS Gradient Generator</h1>
+  <p class="page-sub">Design, customize, and preview complex linear and radial gradients and copy perfect CSS snippets.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    
+    <!-- Large Interactive Preview -->
+    <div class="gradient-preview" id="gradPreview">
+      <span class="preview-badge">Live Preview</span>
+    </div>
+
+    <div class="tool-io" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start;">
+      
+      <!-- Left Column: Color Stops & Type -->
+      <div>
+        <h4 style="margin-bottom: 12px;">Gradient Configuration</h4>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+          <div class="setting-group">
+            <label for="gradType">Type</label>
+            <select id="gradType" onchange="toggleGradSettings()">
+              <option value="linear">Linear</option>
+              <option value="radial">Radial</option>
+            </select>
+          </div>
+          <div class="setting-group" id="angleContainer">
+            <label for="gradAngle">Angle: <span id="angleValue">135</span>&deg;</label>
+            <input type="range" id="gradAngle" min="0" max="360" value="135" oninput="updateAngleText()">
+          </div>
+          <div class="setting-group" id="positionContainer" style="display: none;">
+            <label for="gradPosition">Shape & Position</label>
+            <select id="gradPosition" onchange="generateGradient()">
+              <option value="circle at center">Circle - Center</option>
+              <option value="circle at top left">Circle - Top Left</option>
+              <option value="circle at top right">Circle - Top Right</option>
+              <option value="circle at bottom left">Circle - Bottom Left</option>
+              <option value="circle at bottom right">Circle - Bottom Right</option>
+              <option value="ellipse at center">Ellipse - Center</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label style="font-size: 0.8rem; font-weight: 700; color: var(--muted);">Color Stops</label>
+          <button class="preset-btn" style="padding: 4px 10px; border-color: var(--accent); color: var(--accent);" onclick="addColorStop()">+ Add Stop</button>
+        </div>
+        
+        <div id="stopsList"></div>
+      </div>
+
+      <!-- Right Column: Outputs & Code -->
+      <div>
+        <h4 style="margin-bottom: 12px;">Generated CSS Markup</h4>
+        <textarea id="cssOutput" readonly style="height: 120px; font-family: monospace; font-size: 0.85rem; padding: 12px; resize: none; width: 100%; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); color: var(--text);"></textarea>
+
+        <h4 style="margin-bottom: 6px; margin-top: 16px;">Quick Presets</h4>
+        <div class="preset-container">
+          <button class="preset-btn" onclick="loadPreset(['#ff9a9e', '#fecfef'], 120)">🌸 Sweet Pink</button>
+          <button class="preset-btn" onclick="loadPreset(['#f6d365', '#fda085'], 120)">🌅 Sunset Glow</button>
+          <button class="preset-btn" onclick="loadPreset(['#a1c4fd', '#c2e9fb'], 135)">🌊 Ocean Breeze</button>
+          <button class="preset-btn" onclick="loadPreset(['#11998e', '#38ef7d'], 90)">🌿 Neon Jungle</button>
+          <button class="preset-btn" onclick="loadPreset(['#fc00ff', '#00dbde'], 135)">🔮 Synthwave</button>
+          <button class="preset-btn" onclick="loadPreset(['#0f2027', '#203a43', '#2c5364'], 180)">🌌 Deep Space</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnCopy">📋 Copy CSS</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Reset Stops</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Infinite Color Nodes:</strong> Add and configure as many stops as you want. Modify percentages to refine blending coordinates.</li>
+      <li><strong>Linear / Radial Configurations:</strong> Toggle between circular projections and linear paths with precision controls.</li>
+      <li><strong>100% Native Code:</strong> Generated values conform to W3C standards and work natively on all modern browsers.</li>
+    </ul>
+  </div>
+
+  <!-- How to use gradients Section -->
+  <div class="content-card">
+    <h3>Using Gradients in CSS</h3>
+    <p>Gradients are classified as images in CSS. Therefore, you should apply them to the <code>background</code> or <code>background-image</code> attributes rather than standard color rules:</p>
+    <pre style="background: var(--bg2); padding: 12px; border-radius: 8px; font-size: 0.8rem; border: 1px solid var(--border); color: var(--text); overflow-x: auto; margin-top: 8px;">
+.my-cool-container {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+}</pre>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">What is the difference between Linear and Radial gradients?<span>＋</span></div>
+        <div class="faq-a">A Linear gradient shifts color along a straight line defined by an angle (e.g. 135 degrees), whereas a Radial gradient radiates outward from a central focal point in circular or elliptical patterns.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Do gradients affect page load performance?<span>＋</span></div>
+        <div class="faq-a">No. Since CSS gradients are rendered natively by the browser's graphics engine, they are extremely efficient and load instantly without downloading heavy external graphic image assets.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  let stops = [
+    { color: '#ff6b6b', pos: 0 },
+    { color: '#4ecdc4', pos: 100 }
+  ];
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  function toggleGradSettings() {
+    const type = $('gradType').value;
+    if (type === 'linear') {
+      $('angleContainer').style.display = 'flex';
+      $('positionContainer').style.display = 'none';
+    } else {
+      $('angleContainer').style.display = 'none';
+      $('positionContainer').style.display = 'flex';
+    }
+    generateGradient();
+  }
+
+  function updateAngleText() {
+    $('angleValue').textContent = $('gradAngle').value;
+    generateGradient();
+  }
+
+  function renderStops() {
+    const list = $('stopsList');
+    list.innerHTML = '';
+    
+    stops.forEach((stop, index) => {
+      const row = document.createElement('div');
+      row.className = 'stop-row';
+      
+      const colorInput = document.createElement('input');
+      colorInput.type = 'color';
+      colorInput.value = stop.color;
+      colorInput.oninput = (e) => {
+        stops[index].color = e.target.value;
+        generateGradient();
+      };
+      
+      const label = document.createElement('span');
+      label.textContent = `Stop #${index + 1}:`;
+      label.style.fontSize = '0.8rem';
+      label.style.fontWeight = '700';
+      label.style.color = 'var(--muted)';
+      
+      const numInput = document.createElement('input');
+      numInput.type = 'number';
+      numInput.min = '0';
+      numInput.max = '100';
+      numInput.value = stop.pos;
+      numInput.oninput = (e) => {
+        let val = parseInt(e.target.value);
+        if (isNaN(val)) val = 0;
+        if (val < 0) val = 0;
+        if (val > 100) val = 100;
+        stops[index].pos = val;
+        generateGradient();
+      };
+
+      const percentSign = document.createElement('span');
+      percentSign.textContent = '%';
+      percentSign.style.fontSize = '0.85rem';
+      percentSign.style.color = 'var(--muted)';
+      
+      row.appendChild(colorInput);
+      row.appendChild(label);
+      row.appendChild(numInput);
+      row.appendChild(percentSign);
+      
+      // Delete button if we have more than 2 stops
+      if (stops.length > 2) {
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-stop-action';
+        delBtn.innerHTML = '🗑';
+        delBtn.title = 'Remove Stop';
+        delBtn.onclick = () => {
+          stops.splice(index, 1);
+          renderStops();
+          generateGradient();
+        };
+        row.appendChild(delBtn);
+      }
+      
+      list.appendChild(row);
+    });
+  }
+
+  function addColorStop() {
+    if (stops.length >= 8) {
+      showStatus('Maximum 8 color stops are supported.', true);
+      return;
+    }
+    // Interpolate a sensible default position
+    const lastPos = stops[stops.length - 1].pos;
+    let nextPos = lastPos + 15;
+    if (nextPos > 100) nextPos = 100;
+    
+    stops.push({ color: '#ffbd59', pos: nextPos });
+    renderStops();
+    generateGradient();
+  }
+
+  function generateGradient() {
+    const type = $('gradType').value;
+    // Sort stops by position for standard rendering
+    const sortedStops = [...stops].sort((a,b) => a.pos - b.pos);
+    const stopString = sortedStops.map(s => `${s.color} ${s.pos}%`).join(', ');
+    
+    let gradCode = '';
+    if (type === 'linear') {
+      const angle = $('gradAngle').value;
+      gradCode = `linear-gradient(${angle}deg, ${stopString})`;
+    } else {
+      const pos = $('gradPosition').value;
+      gradCode = `radial-gradient(${pos}, ${stopString})`;
+    }
+
+    const cssVal = `background: ${gradCode};`;
+    $('gradPreview').style.background = gradCode;
+    $('cssOutput').value = cssVal;
+  }
+
+  function loadPreset(colors, angle) {
+    $('gradType').value = 'linear';
+    $('angleContainer').style.display = 'flex';
+    $('positionContainer').style.display = 'none';
+    $('gradAngle').value = angle;
+    $('angleValue').textContent = angle;
+
+    stops = [];
+    const step = Math.floor(100 / (colors.length - 1));
+    colors.forEach((col, idx) => {
+      stops.push({ color: col, pos: idx * step });
+    });
+
+    renderStops();
+    generateGradient();
+  }
+
+  $('btnCopy').onclick = () => {
+    const code = $('cssOutput').value;
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => {
+      showStatus('📋 CSS snippet copied to clipboard!');
+    });
+  };
+
+  $('btnClear').onclick = () => {
+    stops = [
+      { color: '#ff6b6b', pos: 0 },
+      { color: '#4ecdc4', pos: 100 }
+    ];
+    $('gradType').value = 'linear';
+    $('gradAngle').value = 135;
+    $('angleValue').textContent = 135;
+    toggleGradSettings();
+    renderStops();
+    generateGradient();
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Initial load
+  renderStops();
+  generateGradient();
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keyword Density Analyzer &bull; SEO Text Optimizer - SSDK TOOLS HUB</title>
+  <meta name="description" content="Check word frequency count and keyword density of your text. Filter English stop words and optimize web page contents for search engine rankings.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .density-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 14px;
+    }
+    .density-table th, .density-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .density-table th {
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .density-table tr:hover {
+      background: rgba(255,255,255,0.02);
+    }
+    .bar-outer {
+      background: var(--bg2);
+      border-radius: 4px;
+      height: 8px;
+      width: 100px;
+      display: inline-block;
+      overflow: hidden;
+      margin-left: 8px;
+      vertical-align: middle;
+      border: 1px solid var(--border);
+    }
+    .bar-inner {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      border-radius: 4px;
+    }
+    .setting-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .setting-card h3 {
+      font-size: 0.95rem;
+      color: var(--accent);
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+    }
+    .config-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .chk-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .chk-container input {
+      accent-color: var(--accent);
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+    .range-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+    }
+    .range-group input[type="range"] {
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Keyword Density Analyzer</h1>
+  <p class="page-sub">Analyze the frequency of words in your content, filter out common stop words, and improve SEO copy density.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    
+    <!-- Analyzer Settings -->
+    <div class="setting-card">
+      <h3>Analysis Parameters</h3>
+      <div class="config-row">
+        <label class="chk-container">
+          <input type="checkbox" id="filterStopwords" checked>
+          <span>Ignore common stop words (e.g. the, and, is)</span>
+        </label>
+        
+        <label class="chk-container">
+          <input type="checkbox" id="caseSensitive">
+          <span>Case Sensitive Comparison</span>
+        </label>
+        
+        <div class="range-group">
+          <span>Min Word Length: <strong id="minLenVal" style="color:var(--accent);">3</strong></span>
+          <input type="range" id="minWordLen" min="1" max="10" value="3" oninput="$('minLenVal').textContent=this.value">
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-io" style="display: grid; grid-template-columns: 1fr 1.1fr; gap: 24px; align-items: start;">
+      
+      <!-- Left Column: Input Text -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Enter Text Content</h4>
+        <textarea id="textInput" rows="12" placeholder="Paste your article, blog post, or web page content here..." style="font-size: 0.85rem;"></textarea>
+      </div>
+
+      <!-- Right Column: Results Grid -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 350px; display: flex; flex-direction: column; justify-content: center;">
+        
+        <div id="resultsWrapper" style="display: none;">
+          <h4 style="margin-bottom: 6px;">Density breakdown (<span id="totalWordCount">0</span> total words analyzed)</h4>
+          
+          <div style="max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg2);">
+            <table class="density-table" id="densityTable">
+              <thead>
+                <tr>
+                  <th style="width: 40px; text-align: center;">#</th>
+                  <th>Keyword</th>
+                  <th>Frequency</th>
+                  <th>Density %</th>
+                </tr>
+              </thead>
+              <tbody id="densityTableBody">
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 14px;">
+            <button class="btn" id="btnCopyReport" style="flex: 1.2; background: var(--grad2);">📋 Copy Report</button>
+            <button class="btn ghost" id="btnDownloadReport" style="flex: 1;">Download CSV</button>
+          </div>
+        </div>
+
+        <div id="resultsPlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Insert article text and trigger analysis to review keywords prominence rankings.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnAnalyze">📊 Analyze Density</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none; text-align: center;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Stop Words Filtration:</strong> Automatically ignores English structural words like <code>a, the, representing, is</code> to yield pure content keywords.</li>
+      <li><strong>Character Length Constraints:</strong> Exclude short prepositions and pronouns by adjusting the minimum character slider.</li>
+      <li><strong>CSV Report Generation:</strong> Directly export full keyword frequency charts to CSV spreadsheets files.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-list content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-item">
+      <div class="faq-q">What is Keyword Density in SEO?<span>＋</span></div>
+      <div class="faq-a">Keyword density is the percentage of times a keyword or phrase appears on a web page compared to the total number of words on that page. In SEO, it is used as a signal to determine if a web page is relevant to a specific search query.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What is an ideal Keyword Density score?<span>＋</span></div>
+      <div class="faq-a">There is no single ideal score, but most SEO experts suggest maintaining a keyword density between **1% and 2.5%** for your target keyword. Going higher (e.g. above 4-5%) may be classified as "keyword stuffing", which search engines penalize.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What are stop words?<span>＋</span></div>
+      <div class="faq-a">Stop words are commonly used words in a language (such as "the", "a", "an", "in", "to", "and", "or", "but") that search engine indexing algorithms are often programmed to ignore when analyzing textual database ranks, since they carry minimal standalone semantic meaning.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  // Common English stop words
+  const stopWords = new Set([
+    'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am', 'an', 'and', 'any', 'are', 'arent', 'as', 'at', 
+    'be', 'because', 'been', 'before', 'being', 'below', 'between', 'both', 'but', 'by', 'cant', 'cannot', 'could', 
+    'couldnt', 'did', 'didnt', 'do', 'does', 'doesnt', 'doing', 'dont', 'down', 'during', 'each', 'few', 'for', 'from', 
+    'further', 'had', 'hadnt', 'has', 'hasnt', 'have', 'havent', 'having', 'he', 'hed', 'hell', 'hes', 'her', 'here', 
+    'heres', 'hers', 'herself', 'him', 'himself', 'his', 'how', 'hows', 'i', 'id', 'ill', 'im', 'ive', 'if', 'in', 
+    'into', 'is', 'isnt', 'it', 'its', 'itself', 'lets', 'me', 'more', 'most', 'mustnt', 'my', 'myself', 'no', 'nor', 
+    'not', 'of', 'off', 'on', 'once', 'only', 'or', 'other', 'ought', 'our', 'ours', 'ourselves', 'out', 'over', 'own', 
+    'same', 'shant', 'she', 'shed', 'shell', 'shes', 'should', 'shouldnt', 'so', 'some', 'such', 'than', 'that', 'thats', 
+    'the', 'their', 'theirs', 'them', 'themselves', 'then', 'there', 'theres', 'these', 'they', 'theyd', 'theyll', 
+    'theyre', 'theyve', 'this', 'those', 'through', 'to', 'too', 'under', 'until', 'up', 'very', 'was', 'wasnt', 'we', 
+    'wed', 'well', 'were', 'weve', 'werent', 'what', 'whats', 'when', 'whens', 'where', 'wheres', 'which', 'while', 
+    'who', 'whos', 'whom', 'why', 'whys', 'with', 'wont', 'would', 'wouldnt', 'you', 'youd', 'youll', 'youre', 'youve', 
+    'your', 'yours', 'yourself', 'yourselves'
+  ]);
+
+  let analyzedKeywords = []; // Array of {word, count, density}
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  $('btnAnalyze').onclick = () => {
+    const textVal = $('textInput').value.trim();
+    if (!textVal) {
+      showStatus('Please enter some text to analyze.', true);
+      return;
+    }
+
+    showStatus('Analyzing keyword frequencies...');
+
+    const filterStop = $('filterStopwords').checked;
+    const caseSens = $('caseSensitive').checked;
+    const minLen = parseInt($('minWordLen').value) || 1;
+
+    // Standard split: matches alphanumeric tokens
+    // We normalize punctuation by replacing with space, then splitting
+    let cleanText = textVal.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'’]/g, " ");
+    let words = cleanText.split(/\s+/).filter(w => w.length > 0);
+
+    const freqMap = {};
+    let totalCount = 0;
+
+    words.forEach(rawWord => {
+      let word = caseSens ? rawWord : rawWord.toLowerCase();
+      
+      // Filter constraints
+      if (word.length < minLen) return;
+      if (filterStop && stopWords.has(word.toLowerCase())) return;
+
+      freqMap[word] = (freqMap[word] || 0) + 1;
+      totalCount++;
+    });
+
+    if (totalCount === 0) {
+      showStatus('No words matched the search criteria (check length settings).', true);
+      return;
+    }
+
+    // Convert map to sorted array
+    analyzedKeywords = Object.keys(freqMap).map(word => {
+      const count = freqMap[word];
+      const density = (count / totalCount) * 100;
+      return { word, count, density };
+    });
+
+    // Sort by count descending, then alphabetical
+    analyzedKeywords.sort((a, b) => b.count - a.count || a.word.localeCompare(b.word));
+
+    // Render Table
+    const tbody = $('densityTableBody');
+    tbody.innerHTML = '';
+
+    const limit = Math.min(30, analyzedKeywords.length);
+    const maxFreq = analyzedKeywords[0]?.count || 1;
+
+    for (let i = 0; i < limit; i++) {
+      const item = analyzedKeywords[i];
+      const tr = document.createElement('tr');
+      
+      const pct = (item.count / maxFreq) * 100;
+      const progressWidget = `<div class="bar-outer"><div class="bar-inner" style="width: ${pct}%"></div></div>`;
+
+      tr.innerHTML = `
+        <td style="text-align: center; font-weight: bold; color: var(--muted);">${i + 1}</td>
+        <td style="font-weight: 700; color: var(--text);">${item.word}</td>
+        <td style="font-weight: bold;">${item.count}</td>
+        <td>${item.density.toFixed(2)}% ${progressWidget}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    $('totalWordCount').textContent = totalCount;
+    $('resultsPlaceholder').style.display = 'none';
+    $('resultsWrapper').style.display = 'block';
+    
+    showStatus('✅ Text density analyzed successfully!');
+  };
+
+  $('btnCopyReport').onclick = () => {
+    if (analyzedKeywords.length === 0) return;
+    
+    let report = 'Keyword,Frequency,Density%\n';
+    analyzedKeywords.forEach(item => {
+      report += `"${item.word}",${item.count},${item.density.toFixed(2)}%\n`;
+    });
+
+    navigator.clipboard.writeText(report).then(() => {
+      showStatus('📋 CSV Report copied to clipboard!');
+    });
+  };
+
+  $('btnDownloadReport').onclick = () => {
+    if (analyzedKeywords.length === 0) return;
+
+    let report = 'Keyword,Frequency,Density%\n';
+    analyzedKeywords.forEach(item => {
+      report += `"${item.word}",${item.count},${item.density.toFixed(2)}%\n`;
+    });
+
+    const blob = new Blob([report], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'keyword-density-report.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showStatus('✅ CSV Report downloaded successfully!');
+  };
+
+  $('btnClear').onclick = () => {
+    $('textInput').value = '';
+    analyzedKeywords = [];
+    $('resultsPlaceholder').style.display = 'block';
+    $('resultsWrapper').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Free T4 (fT4) Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze Free T4 (fT4) levels online. Evaluate active thyroid hormone levels, detect hyperthyroidism or hypothyroidism, and view clinical insights.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+
+  <!-- html2canvas for PNG export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) { .lab-grid { grid-template-columns: 1fr; } }
+
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255,255,255,0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+
+    .input-wrapper { display: flex; flex-direction: column; gap: 4px; }
+    .input-wrapper label { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+    .input-wrapper input,
+    .input-wrapper select {
+      padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg3); color: var(--text); outline: none;
+      font-size: 0.9rem; transition: all 0.25s;
+    }
+    .input-wrapper input:focus,
+    .input-wrapper select:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--glow); }
+
+    .lang-toggle-container { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+    .lang-btn {
+      background: var(--bg3); border: 1px solid var(--border); color: var(--muted);
+      padding: 6px 14px; border-radius: 20px; cursor: pointer;
+      font-size: 0.8rem; font-weight: 700; transition: all 0.3s;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .lang-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 10px var(--glow); }
+
+    .results-display {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px; min-height: 400px;
+    }
+
+    .results-placeholder { text-align: center; padding: 80px 20px; color: var(--muted); }
+    .results-placeholder .icon { font-size: 3.5rem; margin-bottom: 12px; opacity: 0.5; display: block; }
+
+    .report-card { display: flex; flex-direction: column; gap: 16px; }
+
+    .patient-summary {
+      background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 16px;
+      display: flex; justify-content: space-between; font-size: 0.85rem;
+    }
+    .patient-summary span strong { color: var(--accent); }
+
+    .gauge-container {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px; text-align: center; position: relative;
+    }
+    .val-large { font-size: 3.2rem; font-weight: 900; line-height: 1.1; margin-bottom: 4px; }
+    .status-label { font-weight: 800; font-size: 1.1rem; text-transform: uppercase; margin-bottom: 16px; }
+
+    .range-slider-bar {
+      height: 16px; border-radius: 8px;
+      background: linear-gradient(to right,
+        var(--low-color) 0%,
+        var(--normal-color) 45%,
+        var(--critical-color) 100%
+      );
+      position: relative; margin-bottom: 10px;
+    }
+    .range-pointer {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #fff; border: 3px solid var(--bg1);
+      position: absolute; top: 50%; transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+    .range-ticks { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); font-weight: 700; }
+
+    .insight-card {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px; margin-top: 14px;
+    }
+    .insight-card h5 { font-size: 0.95rem; font-weight: 800; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+    .insight-card p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+    .insight-card ul { margin-left: 18px; font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+
+    .history-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-top: 16px; }
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; background: var(--bg3); border-radius: 6px;
+      font-size: 0.75rem; border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245,158,11,0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px; padding: 14px; margin-top: 16px;
+      font-size: 0.8rem; color: #fbbf24; line-height: 1.5;
+    }
+
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding-top: 0 !important; }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon { display: none !important; }
+      .results-display { border: none !important; background: #fff !important; color: #000 !important; min-height: auto !important; padding: 0 !important; }
+      .gauge-container, .insight-card { border: 1px solid #ddd !important; background: #fff !important; color: #000 !important; }
+      .lab-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumb -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Free T4 (fT4) Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze Free Thyroxine (fT4) levels to evaluate active thyroid hormone status and thyroid health.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Tool Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🦋 Free T4 Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="ngdl" selected>ng/dL</option>
+                <option value="pmoll">pmol/L</option>
+              </select>
+            </div>
+            <div class="input-wrapper">
+              <label for="valFT4" id="inputLabel" data-translate="labelFT4">Free T4 Value (ng/dL)</label>
+              <input type="number" step="0.01" id="valFT4" placeholder="e.g. 1.2" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info note -->
+        <div style="font-size:0.78rem; color:var(--muted); padding:8px 12px; border:1px solid var(--border); border-radius:8px; margin-bottom:14px; line-height:1.5;">
+          <strong style="color:var(--text);">ℹ️ Note:</strong> <span data-translate="unitNote">Reference range: 0.8 – 1.8 ng/dL (10.30 – 23.17 pmol/L). 1 ng/dL = 12.87 pmol/L.</span>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width:100%; justify-content:center;" onclick="analyzeFT4()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Free T4</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🦋</span>
+          <h4 data-translate="placeholderTitle">Analysis Pending</h4>
+          <p data-translate="placeholderDesc">Enter your Free T4 level and click Analyze to view thyroid interpretation.</p>
+        </div>
+
+        <div class="report-card" id="reportCardSec" style="display:none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Free T4 Analysis</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" title="Copy" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" title="Print" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" title="Save Image" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Free T4 (fT4)</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resFT4Val">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">ng/dL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left:50%;"></div>
+            </div>
+            <div class="range-ticks">
+              <span id="tickLow" style="color:var(--low-color);">&lt; 0.8 ng/dL</span>
+              <span id="tickNormalRange" style="color:var(--normal-color);">0.8 – 1.8 ng/dL</span>
+              <span id="tickHigh" style="color:var(--critical-color);">&gt; 1.8 ng/dL</span>
+            </div>
+          </div>
+
+          <!-- Dynamic insight section -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Free T4</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Free T4 (fT4)?</strong><br><span data-translate="eduA1">Free Thyroxine (fT4) is the unbound, active form of thyroxine hormone produced by the thyroid gland. Unlike bound T4, Free T4 enters body tissues directly to fuel metabolic operations. It makes up only about 0.03% of total T4 in circulation.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Why test Free T4 alongside TSH?</strong><br><span data-translate="eduA2">TSH is the first-line screening tool, but Free T4 is essential to determine clinical thyroid conditions. For instance, high TSH with low fT4 confirms Overt Hypothyroidism, while high TSH with normal fT4 implies Subclinical Hypothyroidism.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What affects Free T4 measurements?</strong><br><span data-translate="eduA3">Pregnancy, estrogen-containing medications, severe systemic illness, or biotin supplements (which can cause analytical interference in lab assays) can influence measured thyroid levels. Always consult your clinic regarding biotin intake prior to testing.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Free T4 Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQ Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Medical Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for thyroid evaluation and treatment decisions.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical &amp; Lab Tools",
+      toolTitle: "Free T4 (fT4) Analyzer",
+      toolDesc: "Analyze Free Thyroxine (fT4) levels to evaluate active thyroid hormone status and thyroid health.",
+      inputsTitle: "🦋 Free T4 Parameters",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      labelFT4: "Free T4 Value",
+      unitNote: "Reference range: 0.8 – 1.8 ng/dL (10.30 – 23.17 pmol/L). 1 ng/dL = 12.87 pmol/L.",
+      btnAnalyze: "Analyze Free T4",
+      placeholderTitle: "Analysis Pending",
+      placeholderDesc: "Enter your Free T4 level and click Analyze to view thyroid interpretation.",
+      reportTitle: "🔬 Free T4 Analysis",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Free T4 Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always consult a qualified physician for thyroid evaluation and treatment decisions.",
+      titleEdu: "📚 Clinical Pathology Notes: Free T4",
+      eduQ1: "What is Free T4 (fT4)?",
+      eduA1: "Free Thyroxine (fT4) is the unbound, active form of thyroxine hormone produced by the thyroid gland. Unlike bound T4, Free T4 enters body tissues directly to fuel metabolic operations. It makes up only about 0.03% of total T4 in circulation.",
+      eduQ2: "Why test Free T4 alongside TSH?",
+      eduA2: "TSH is the first-line screening tool, but Free T4 is essential to determine clinical thyroid conditions. For instance, high TSH with low fT4 confirms Overt Hypothyroidism, while high TSH with normal fT4 implies Subclinical Hypothyroidism.",
+      eduQ3: "What affects Free T4 measurements?",
+      eduA3: "Pregnancy, estrogen-containing medications, severe systemic illness, or biotin supplements (which can cause analytical interference in lab assays) can influence measured thyroid levels. Always consult your clinic regarding biotin intake prior to testing.",
+      badgeLow: "Low Free T4 (Hypothyroidism / Non-Thyroidal Illness)",
+      badgeNormal: "Normal Free T4 (Euthyroid)",
+      badgeHigh: "High Free T4 (Hyperthyroidism / Thyrotoxicosis)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Management Tips",
+      titleConsult: "When to See a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ফ্রি T4 (fT4) বিশ্লেষক",
+      toolDesc: "সক্রিয় থাইরয়েড হরমোনের মাত্রা মূল্যায়ন করতে ফ্রি থাইরক্সিন (fT4) এর স্তর বিশ্লেষণ করুন।",
+      inputsTitle: "🦋 ফ্রি T4 প্যারামিটার",
+      clearBtn: "মুছুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelFT4: "ফ্রি T4 মান",
+      unitNote: "স্বাভাবিক মাত্রা: ০.৮ – ১.৮ ng/dL (১০.৩০ – ২৩.১৭ pmol/L)। ১ ng/dL = ১২.৮৭ pmol/L।",
+      btnAnalyze: "fT4 বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ অমীমাংসিত",
+      placeholderDesc: "আপনার ফ্রি T4 মান লিখুন এবং থাইরয়েড বিশ্লেষণ দেখতে বিশ্লেষণ বাটনে ক্লিক করুন।",
+      reportTitle: "🔬 ফ্রি T4 বিশ্লেষণ রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক fT4 বিশ্লেষণ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড নেই।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য অবশ্যই ডাক্তারের পরামর্শ নিন।",
+      titleEdu: "📚 ক্লিনিক্যাল নোটস: ফ্রি T4",
+      eduQ1: "ফ্রি T4 (fT4) কী?",
+      eduA1: "ফ্রি থাইরক্সিন (fT4) হলো থাইরয়েড গ্রন্থি দ্বারা উৎপাদিত থাইরক্সিন হরমোনের মুক্ত, সক্রিয় রূপ। এটি রক্তের প্রোটিনের সাথে আবদ্ধ না থেকে সরাসরি টিস্যুতে প্রবেশ করে এবং বিপাকক্রিয়া নিয়ন্ত্রণ করে।",
+      eduQ2: "TSH-এর সাথে ফ্রি T4 কেন পরীক্ষা করা হয়?",
+      eduA2: "TSH থাইরয়েড স্ক্রীনিংয়ের জন্য প্রথম ধাপ, কিন্তু সঠিক অবস্থা বুঝতে ফ্রি T4 প্রয়োজন। উদাহরণস্বরূপ, উচ্চ TSH এবং কম fT4 ওভার্ট হাইপোথাইরয়েডিজম নিশ্চিত করে, আর স্বাভাবিক fT4 থাকলে সাবক্লিনিক্যাল বোঝায়।",
+      eduQ3: "ফ্রি T4 পরীক্ষার ফলে কী প্রভাব ফেলতে পারে?",
+      eduA3: "গর্ভাবস্থা, ইস্ট্রোজেনযুক্ত ওষুধ, তীব্র পদ্ধতিগত রোগ বা বায়োটিন সাপ্লিমেন্ট ল্যাব টেস্টের ফলাফলে বিভ্রান্তি সৃষ্টি করতে পারে। পরীক্ষার পূর্বে বায়োটিন সেবন থেকে বিরত থাকুন।",
+      badgeLow: "কম ফ্রি T4 (হাইপোথাইরয়েডিজম / নন-থাইরয়েডাল অসুস্থতা)",
+      badgeNormal: "স্বাভাবিক ফ্রি T4 (ইউথাইরয়েড)",
+      badgeHigh: "উচ্চ ফ্রি T4 (হাইপারথাইরয়েডিজম / থাইরোটক্সিকোসিস)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "ব্যবস্থাপনা পরামর্শ",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "निःशुल्क T4 (fT4) विश्लेषक",
+      toolDesc: "सक्रिय थायराइड हार्मोन की स्थिति और थायराइड स्वास्थ्य का मूल्यांकन करने के लिए फ्री थायरोक्सिन (एफटी4) स्तर का विश्लेषण करें।",
+      inputsTitle: "🦋 निःशुल्क T4 ���ैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      labelFT4: "निःशुल्क T4 मान",
+      unitNote: "संदर्भ सीमा: 0.8 - 1.8 एनजी/डीएल (10.30 - 23.17 pmol/L)। 1 एनजी/डीएल = 12.87 pmol/L.",
+      btnAnalyze: "निःशुल्क T4 का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण लंबित",
+      placeholderDesc: "अपना निःशुल्क T4 स्तर दर्ज करें और थायरॉयड व्याख्या देखने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 निःशुल्क टी4 विश्लेषण",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हाल की निःशुल्क T4 व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किय�� गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। थायरॉयड मूल्यांकन और उपचार निर्णयों के लिए हमेशा एक योग्य चिकित्सक से परामर्श लें।",
+      titleEdu: "📚 क्लिनिकल पैथोलॉजी नोट्स: निःशुल्क टी4",
+      eduQ1: "निःशुल्क T4 (fT4) क्या है?",
+      eduA1: "फ्री थायरोक्सिन (एफटी4) थायरॉयड ग्रंथि द्वारा उत्पादित थायरोक्सिन हार्मोन का अनबाउंड, सक्रिय रूप है। बाध्य T4 के विपरीत, मुक्त T4 चयापचय संचालन को बढ़ावा देने के लिए सीधे शरीर के ऊतकों में प्रवेश करता है। यह प्रचलन में कुल T4 का लगभग 0.03% ही बनाता है।",
+      eduQ2: "TSH के साथ निःशुल्क T4 का परीक्षण क्यों करें?",
+      eduA2: "टीएसएच प्रथम-पंक्ति स्क्रीनिंग उपकरण है, लेकिन क्लिनिकल थायरॉयड स्थितियों को निर्धारित करने के लिए फ्री टी4 आवश्यक है। उदाहरण के लिए, कम एफटी4 के साथ उच्च टीएसएच प्रत्यक्ष हाइपोथायरायडिज्म की पुष्टि करता है, जबकि सामान्य एफटी4 के साथ उच्च टीएसएच उपनैदानिक ​​हाइपोथायरायडिज्म का संकेत देता है।",
+      eduQ3: "मुफ़्त T4 माप को क्या प्रभावित करता है?",
+      eduA3: "गर्भावस्था, एस्ट्रोजन युक्त दवाएं, गंभीर प्रणालीगत बीमारी, या बायोटिन की खुराक (जो प्रयोगशाला परीक्षणों में विश्लेषणात्मक हस्तक्षेप का कारण बन सकती है) मापा थायराइड स्तर को प्रभावित कर सकती है। परीक्षण से पहले बायोटिन सेवन के संबंध में हमेशा अपने क्लिनिक से परामर्श लें।",
+      badgeLow: "कम मुक्त T4 (हाइपोथायरायडिज्म / गैर-थायराइडल बीमारी)",
+      badgeNormal: "सामान्य मुक्त T4 (यूथायरॉइड)",
+      badgeHigh: "उच्च मुक्त T4 (हाइपरथायरायडिज्म / थायरोटॉक्सिकोसिस)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "प्रबंधन युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is the normal reference range for Free T4?", a: "The normal clinical range for Free T4 is typically 0.8 to 1.8 ng/dL (10.3 to 23.2 pmol/L). Ranges may vary slightly depending on the analyzing laboratory." },
+      { q: "What causes low Free T4 levels?", a: "Low fT4 usually points to hypothyroidism (underactive thyroid) or central hypothyroidism (pituitary/hypothalamus issues). It can also occur in severe illness, known as euthyroid sick syndrome." },
+      { q: "What causes elevated Free T4 levels?", a: "High fT4 indicates hyperthyroidism, Graves' disease, toxic nodular goiter, thyroiditis, or excessive doses of thyroid hormone medication." },
+      { q: "How are units converted for Free T4?", a: "Multiply ng/dL by 12.87 to get pmol/L. Conversely, divide pmol/L by 12.87 to get ng/dL." }
+    ],
+    bn: [
+      { q: "ফ্রি T4 এর স্বাভাবিক মাত্রা কত?", a: "ফ্রি T4 এর স্বাভাবিক মাত্রা সাধারণত ০.৮ থেকে ১.৮ ng/dL (১০.৩ থেকে ২৩.২ pmol/L)। বিভিন্ন ল্যাবে এর পরিসীমা সামান্য পরিবর্তিত হতে পারে।" },
+      { q: "কম ফ্রি T4 হরমোনের কারণ কী?", a: "কম fT4 হাইপোথাইরয়েডিজম বা পিটুইটারি গ্রন্থির সমস্যার কারণে হতে পারে। এছাড়া অন্যান্য গুরুতর দীর্ঘস্থায়ী অসুস্থতায়ও এটি হ্রাস পেতে পারে।" },
+      { q: "উচ্চ ফ্রি T4 হরমোনের কারণ কী?", a: "উচ্চ fT4 প্রধানত হাইপারথাইরয়েডিজম, গ্রেভস রোগ, থাইরয়েড প্রদাহ বা অতিরিক্ত পরিমাণে থাইরয়েড হরমোন রিপ্লেসমেন্ট ওষুধ সেবনের নির্দেশক।" },
+      { q: "ফ্রি T4 এর ইউনিট কীভাবে পরিবর্তন করব?", a: "ng/dL-কে ১২.৮৭ দিয়ে গুণ করলে pmol/L পাওয়া যায়। পক্ষান্তরে, pmol/L-কে ১২.৮৭ দিয়ে ভাগ করলে ng/dL পাওয়া যায়।" }
+    ],
+    hi: [
+      { q: "फ्री टी4 के लिए सामान्य संदर्भ सीमा क्या है?", a: "फ्री टी4 के लिए सामान्य क्लिनिकल रेंज आमतौर पर 0.8 से 1.8 एनजी/डीएल (10.3 से 23.2 पीएमओएल/एल) है। विश्लेषण प्रयोगशाला के आधार पर रेंज थोड़ी भिन्न हो सकती है।" },
+      { q: "निम्न मुक्त T4 स्तर का क्या कारण है?", a: "कम एफटी4 आमतौर पर हाइपोथायरायडिज्म (अंडरएक्टिव थायरॉयड) या केंद्रीय हाइपोथायरायडिज्म (पिट्यूटरी/हाइपोथैलेमस समस्याएं) की ओर इशारा करता है। यह गंभीर बीमारी में भी हो सकता है, जिसे यूथायरॉइड सिक सिंड्रोम कहा जाता है।" },
+      { q: "मुक्त T4 स्तर बढ़ने का क्या कारण है?", a: "उच्च fT4 हाइपरथायरायडिज्म, ग्र���व्स रोग, विषाक्त गांठदार गण्डमाला, थायरॉयडिटिस, या थायराइड हार्मोन दवा की अत्यधिक खुराक का संकेत देता है।" },
+      { q: "निःशुल्क T4 के लिए इकाइयों को कैसे परिवर्तित किया जाता है?", a: "pmol/L प्राप्त करने के लिए ng/dL को 12.87 से गुणा करें। इसके विपरीत, एनजी/डीएल प्राप्त करने के लिए pmol/L को 12.87 से विभाजित करें।" }
+    ]
+  };
+
+  const insights = {
+    en: {
+      low: {
+        desc: "Your Free T4 level is below the normal limit (< 0.8 ng/dL). This indicates that the thyroid gland is not producing enough primary thyroid hormone, leading to a slowed metabolic state.",
+        factors: ["Hypothyroidism (Hashimoto's thyroiditis or autoimmune destruction)", "Previous thyroid surgery or radioiodine ablation", "Iodine deficiency (less common in developed countries)", "Severe systemic illness (Non-Thyroidal Illness Syndrome)", "Pituitary or hypothalamic failure (Central Hypothyroidism)"],
+        symptoms: ["Unusual fatigue, drowsiness, and low energy", "Weight gain without changes in diet", "Severe cold intolerance (constant feeling of chill)", "Dry, coarse skin and hair, brittle nails", "Muscle weakness, joint aches", "Constipation and slow pulse", "Depressed mood or slowed mental processes"],
+        prevention: ["Ensure adequate dietary iodine (iodized salt, dairy, seafood)", "Take prescribed thyroid replacement hormones (levothyroxine) exactly as instructed", "Monitor TSH and fT4 levels every 6 to 8 weeks after dose changes"],
+        consult: "Consult a primary care doctor or endocrinologist. A matching TSH test will determine if it is primary thyroid disease or secondary/central thyroid failure."
+      },
+      normal: {
+        desc: "Your Free T4 level is within the healthy reference range (0.8 – 1.8 ng/dL). Your thyroid gland is secreting appropriate levels of thyroxine.",
+        factors: ["Properly functioning pituitary-thyroid feedback loop", "Adequate iodine levels", "Healthy thyroid tissues"],
+        symptoms: ["No classic hypo- or hyperthyroid metabolic symptoms expected."],
+        prevention: ["Consume a nutritious diet containing key thyroid building blocks (iodine, selenium, iron)", "Maintain active physical routine", "Perform regular yearly health monitoring"],
+        consult: "No immediate clinical treatment needed for Free T4. Pair with TSH and Free T3 for a complete thyroid health evaluation."
+      },
+      high: {
+        desc: "Your Free T4 level is elevated (> 1.8 ng/dL). This indicates excess thyroid hormone production, accelerating your body's metabolic functions.",
+        factors: ["Graves' disease (autoimmune stimulation of thyroid)", "Toxic multinodular goiter or toxic adenoma", "Excessive levothyroxine dosage", "Subacute or silent thyroiditis (temporary hormone leak)"],
+        symptoms: ["Anxiety, nervousness, and emotional irritability", "Rapid or irregular heart rate (palpitations, tachycardia)", "Weight loss despite normal or increased eating", "Heat intolerance and profuse sweating", "Hand tremors or muscle weakness", "Insomnia or light sleep", "Frequent bowel movements"],
+        prevention: ["Avoid iodine-rich supplements (kelp, potassium iodide)", "Limit caffeine and other cardiotonic stimulants", "Regular follow-ups to adjust thyroid suppression therapy"],
+        consult: "⚠️ URGENT: Seek medical advice from an endocrinologist. Further diagnosis (thyroid scan, TSH, antibody panels) is required to determine the cause and start antithyroid medications or beta-blockers."
+      }
+    },
+    bn: {
+      low: {
+        desc: "আপনার ফ্রি T4 স্বাভাবিকের চেয়ে কম (< ০.৮ ng/dL)। এটি নির্দেশ করে যে থাইরয়েড গ্রন্থি পর্যাপ্ত পরিমাণ হরমোন তৈরি করছে না, যার ফলে শরীরের বিপাকক্রিয়া ধীর হয়ে গেছে।",
+        factors: ["হাইপোথাইরয়েডিজম (হাশিমোটো থাইরয়েডাইটিস বা অটোইমিউন রোগ)", "থাইরয়েড সার্জারি বা রেডিওআইওডিন থেরাপির পরবর্তী অবস্থা", "খাদ্যে আয়োডিনের তীব্র অভাব", "গুরুতর শারীরিক অসুস্থতা (নন-থাইরয়েডাল অসুস্থতা)", "পিটুইটারি গ্রন্থির নিষ্ক্রিয়তা (সেন্ট্রাল হাইপোথাইরয়েডিজম)"],
+        symptoms: ["অস্বাভাবিক ক্লান্তি, ঘুম ঘুম ভাব ও শক্তির অভাব", "খাবারের পরিমাণ না বাড়লেও ওজন বৃদ্ধি পাওয়া", "অতিরিক্ত শীত অনুভূত হওয়া", "শুষ্ক ও খসখসে ত্বক, চুল পড়া", "পেশী ও জয়েন্টে ব্যথা", "কোষ্ঠকাঠিন্য ও ধীর হৃদস্পন্দন", "মানসিক অবসাদ বা বিষণ্ণতা"],
+        prevention: ["খাদ্যে পর্যাপ্ত আয়োডিন রাখুন (যেমন আয়োডিনযুক্ত লবণ, ডিম, দুধ)", "নির্ধারিত লেভোথাইরক্সিন ওষুধ খালি পেটে প্রতিদিন নির্দিষ্ট সময়ে সেবন করুন", "ওষুধের ডোজ পরিবর্তনের ৬-৮ সপ্তাহ পর TSH ও fT4 পরীক্ষা করুন"],
+        consult: "অনতিবিলম্বে একজন ডাক্তার বা এন্ডোক্রিনোলজিস্টের পরামর্শ নিন। রক্তে TSH মাত্রার সাথে এটি তুলনা করা আবশ্যক।"
+      },
+      normal: {
+        desc: "আপনার ফ্রি T4 এর মান স্বাভাবিক সীমার মধ্যে রয়েছে (০.৮ – ১.৮ ng/dL)। আপনার থাইরয়েড গ্রন্থি সুস্থ ও স্বাভাবিকভাবে কাজ করছে।",
+        factors: ["স্বাভাবিক পিটুইটারি-থাইরয়েড চক্র", "পর্যাপ্ত আয়োডিন ও খনিজ উপাদান", "থাইরয়েড গ্রন্থির সুস্থতা"],
+        symptoms: ["থাইরয়েড সম্পর্কিত কোনো বিপাকীয় লক্ষণ নেই।"],
+        prevention: ["সুষম খাদ্য তালিকা বজায় রাখুন", "নিয়মিত ব্যায়াম ও পর্যাপ্ত ঘুম নিশ্চিত করুন", "বার্ষিক রুটিন স্বাস্থ্য পরীক্ষা সম্পন্ন করুন"],
+        consult: "কোনো চিকিৎসার প্রয়োজন নেই। থাইরয়েডের সার্বিক চিত্র পেতে TSH এবং Free T3 এর সাথে মিলিয়ে দেখুন।"
+      },
+      high: {
+        desc: "আপনার ফ্রি T4 এর মান অতিরিক্ত (> ১.৮ ng/dL)। এটি অতিরিক্ত থাইরয়েড হরমোন নিঃসরণ নির্দেশ করে, যা শরীরের বিপাকীয় গতি বৃদ্ধি করে।",
+        factors: ["গ্রেভস রোগ (থাইরয়েডের অটোইমিউন রোগ)", "টক্সিক নোডিউল বা থাইরয়েড গ্রন্থির অতিরিক্ত বৃদ্ধি", "থাইরয়েড ওষুধের অতিরিক্ত ডোজ গ্রহণ", "থাইরয়েড গ্রন্থির প্রদাহজনিত সাময়িক হরমোন নিঃসরণ"],
+        symptoms: ["উদ্বেগ, অতিরিক্ত অস্থিরতা ও খিটখিটে মেজাজ", "বুক ধড়ফড়ানি বা দ্রুত অনিয়মিত হৃদস্পন্দন", "খাবার বেশি খাওয়া সত্ত্বেও ওজন হ্রাস পাওয়া", "গরম সহ্য করতে না পারা এবং অতিরিক্ত ঘাম", "হাত কাঁপুনি এবং পেশীর দুর্বলতা", "অনিদ্রা বা ঘুমের সমস্যা", "ঘন ঘন মলত্যাগ"],
+        prevention: ["খাদ্যে অতিরিক্ত আয়োডিন এবং সামুদ্রিক খাবার বর্জন করুন", "চা-কফি বা ক্যাফেইন জাতীয় পানীয় সম্পূর্ণ পরিহার করুন", "ডাক্তারের পরামর্শ অনুযায়ী থাইরয়েড ওষুধ নিয়মমতো সেবন করুন"],
+        consult: "⚠️ জরুরি: অবিলম্বে এন্ডোক্রিনোলজিস্টের পরামর্শ নিন। উচ্চ ফ্রি T4 নিয়ন্ত্রণে অ্যান্টিথাইরয়েড ওষুধ বা বিটা-ব্লকার সেবন করা প্রয়োজন।"
+      }
+    },
+    hi: {
+      low: {
+        desc: "आपका निःशुल्क टी4 स्तर सामान्य सीमा (<0.8 एनजी/डीएल) से नीचे है। यह इंगित करता है कि थायरॉयड ग्रंथि पर्याप्त प्राथमिक थायराइड हार्मोन का उत्पादन नहीं कर रही है, जिससे चयापचय की स्थिति धीमी हो जाती है।",
+        factors: ["हाइपोथायरायडिज्म (हाशिमोटो का थायरॉयडिटिस या ऑटोइम्यून विनाश)", "पिछली थायरॉयड सर���जरी या रेडियोआयोडीन पृथक्करण", "आयोडीन की कमी (विकसित देशों में कम आम)", "गंभीर प्रणालीगत बीमारी (गैर-थायराइडल बीमारी सिंड्रोम)", "पिट्यूटरी या हाइपोथैलेमिक विफलता (केंद्रीय हाइपोथायरायडिज्म)"],
+        symptoms: ["असामान्य थकान, उनींदापन और कम ऊर्जा", "आहार में बदलाव के बिना वजन बढ़ना", "गंभीर ठंड असहिष्णुता (ठंड का लगातार एहसास)", "सूखी, खुरदुरी त्वचा और बाल, भंगुर नाखून", "मांसपेशियों में कमजोरी, जोड़ों में दर्द", "कब्ज और धीमी नाड़ी", "उदास मनोदशा या धीमी मानसिक प्रक्रियाएँ"],
+        prevention: ["पर्याप्त आहार आयोडीन सुनिश्चित करें (आयोडीनयुक्त नमक, डेयरी, समुद्री भोजन)", "निर्धारित थायराइड रिप्लेसमेंट हार्मोन (लेवोथायर��क्सिन) बिल्कुल निर्देशानुसार लें", "खुराक में बदलाव के बाद हर 6 से 8 सप्ताह में टीएसएच और एफटी4 स्तर की निगरानी करें"],
+        consult: "प्राथमिक देखभाल चिकित्सक या एंडोक्राइनोलॉजिस्ट से परामर्श लें। एक मिलान टीएसएच परीक्षण यह निर्धारित करेगा कि क्या यह प्राथमिक थायरॉयड रोग है या माध्यमिक/केंद्रीय थायरॉयड विफलता है।"
+      },
+      normal: {
+        desc: "आपका मुफ़्त टी4 स्तर स्वस्थ संदर्भ सीमा (0.8 - 1.8 एनजी/डीएल) के भीतर है। आपकी थायरॉइड ग्रंथि उचित स्तर पर थायरोक्सिन का स्राव कर रही है।",
+        factors: ["पिट्यूटरी-थायराइड फीडबैक लूप ठीक से काम कर रहा है", "पर्याप्त आयोड���न स्तर", "स्वस्थ थायरॉयड ऊतक"],
+        symptoms: ["कोई क्लासिक हाइपो- या हाइपरथायराइड मेटाबोलिक लक्षण अपेक्षित नहीं है।"],
+        prevention: ["प्रमुख थायरॉयड बिल्डिंग ब्लॉक्स (आयोडीन, सेलेनियम, आयरन) युक्त पौष्टिक आहार का सेवन करें।", "सक्रिय शारीरिक दिनचर्या बनाए रखें", "नियमित वार्षिक स्वास्थ्य निगरानी करें"],
+        consult: "फ्री टी4 के लिए तत्काल नैदानिक ​​उपचार की आवश्यकता नहीं है। संपूर्ण थायरॉयड स्वास्थ्य मूल्यांकन के लिए टीएसएच और फ्री टी3 के साथ संयोजन करें।"
+      },
+      high: {
+        desc: "आपका निःशुल्क T4 स्तर ऊंचा (> 1.8 ng/dL) है। य�� अतिरिक्त थायराइड हार्मोन उत्पादन को इंगित करता है, जो आपके शरीर के चयापचय कार्यों को तेज करता है।",
+        factors: ["ग्रेव्स रोग (थायराइड की स्वप्रतिरक्षी उत्तेजना)", "विषाक्त बहुकोशिकीय गण्डमाला या विषाक्त एडेनोमा", "अत्यधिक लेवोथायरोक्सिन खुराक", "सबस्यूट या साइलेंट थायरॉयडिटिस (अस्थायी हार्मोन रिसाव)"],
+        symptoms: ["चिंता, घबराहट और भावनात्मक चिड़चिड़ापन", "तीव्र या अनियमित हृदय गति (धड़कन, क्षिप्रहृदयता)", "सामान्य या अधिक खाने के बावजूद वजन कम होना", "गर्मी असहिष्णुता और अत्यधिक पसीना आना", "हाथ कांपना या मांसपेशियों में कमजोरी", "अनिद्रा या हल्की नींद", "बार-बार मल त्याग करना"],
+        prevention: ["आयोडीन युक्त पूरक (समुद्री ��ास, पोटेशियम आयोडाइड) से बचें", "कैफीन और अन्य कार्डियोटोनिक उत्तेजक पदार्थों को सीमित करें", "थायराइड दमन चिकित्सा को समायोजित करने के लिए नियमित अनुवर्ती कार्रवाई"],
+        consult: "⚠️ अत्यावश्यक: किसी एंडोक्रिनोलॉजिस्ट से चिकित्सीय सलाह लें। कारण निर्धारित करने और एंटीथायरॉइड दवाएं या बीटा-ब्लॉकर्स शुरू करने के लिए आगे के निदान (थायराइड स्कैन, टीएसएच, एंटीबॉडी पैनल) की आवश्यकता होती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-ft4-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "ngdl";
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    const btn = document.getElementById("langToggleBtn");
+    if (btn) btn.innerHTML = lang === "bn" ? '🇬🇧 <span>English</span>' : '🇧🇩 <span>Bengali</span>';
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    if (activeReportData) updateReportDisplay();
+  }
+
+  function toggleLanguage() { setLanguage(currentLang === "en" ? "bn" : "en"); }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const label = document.getElementById("inputLabel");
+    const unit = currentUnit === "ngdl" ? "ng/dL" : "pmol/L";
+    label.textContent = (currentLang === "en" ? "Free T4 Value" : "ফ্রি T4 মান") + " (" + unit + ")";
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach(faq => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `<div class="faq-q">${faq.q}<span>＋</span></div><div class="faq-a">${faq.a}</div>`;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "300px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valFT4").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+    activeReportData = null;
+  }
+
+  function getStatusFromFT4(valNgDl) {
+    if (valNgDl < 0.8) return { key: "low", badge: "badgeLow", color: "low" };
+    if (valNgDl <= 1.8) return { key: "normal", badge: "badgeNormal", color: "normal" };
+    return { key: "high", badge: "badgeHigh", color: "critical" };
+  }
+
+  function calcPointer(valNgDl) {
+    // Normal 0.8 - 1.8
+    if (valNgDl <= 0) return 5;
+    if (valNgDl < 0.8) return 5 + (valNgDl / 0.8) * 40;
+    if (valNgDl <= 1.8) return 45 + ((valNgDl - 0.8) / 1.0) * 30;
+    return Math.min(95, 75 + ((valNgDl - 1.8) / 3.2) * 20);
+  }
+
+  function analyzeFT4() {
+    const rawVal = parseFloat(document.getElementById("valFT4").value);
+    if (isNaN(rawVal) || rawVal < 0) {
+      alert(currentLang === "en" ? "Please enter a valid Free T4 value." : "দয়া করে সঠিক ফ্রি T4 মান লিখুন।");
+      return;
+    }
+
+    let valNgDl = rawVal;
+    let valPmolL = rawVal;
+
+    if (currentUnit === "pmoll") {
+      valNgDl = rawVal / 12.87;
+    } else {
+      valPmolL = rawVal * 12.87;
+    }
+
+    const status = getStatusFromFT4(valNgDl);
+    const pointerPct = calcPointer(valNgDl);
+
+    activeReportData = {
+      rawVal, valNgDl, valPmolL, status, pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+    addToHistory(status.badge, rawVal, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitStr = d.unit === "ngdl" ? "ng/dL" : "pmol/L";
+
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resUnitText").textContent = unitStr;
+    document.getElementById("resFT4Val").textContent = d.rawVal.toFixed(2);
+
+    const colorVar = `var(--${d.status.color}-color)`;
+    document.getElementById("resFT4Val").style.color = colorVar;
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.status.badge];
+    statusLabel.style.color = colorVar;
+
+    const ptr = document.getElementById("rangePointer");
+    ptr.style.left = `${d.pointerPct}%`;
+    ptr.style.borderColor = colorVar;
+
+    // Ticks reference
+    if (d.unit === "pmoll") {
+      document.getElementById("tickLow").textContent = "< 10.30 pmol/L";
+      document.getElementById("tickNormalRange").textContent = "10.30 – 23.17 pmol/L";
+      document.getElementById("tickHigh").textContent = "> 23.17 pmol/L";
+    } else {
+      document.getElementById("tickLow").textContent = "< 0.8 ng/dL";
+      document.getElementById("tickNormalRange").textContent = "0.8 – 1.8 ng/dL";
+      document.getElementById("tickHigh").textContent = "> 1.8 ng/dL";
+    }
+
+    // Render insight
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+    const details = insights[currentLang][d.status.key];
+    if (!details) return;
+
+    const card = document.createElement("div");
+    card.className = "insight-card";
+    card.style.borderLeft = `4px solid ${colorVar}`;
+
+    const causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+    const symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+    const tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+    card.innerHTML = `
+      <h5>${translations[currentLang].titleInterpretation}</h5>
+      <p>${details.desc}</p>
+      <div style="font-size: 0.8rem; margin: 10px 0; color: var(--accent);">
+        <strong>Converted Values:</strong> ${d.valNgDl.toFixed(2)} ng/dL (${d.valPmolL.toFixed(2)} pmol/L)
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:14px;">
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+          <ul>${causesList}</ul>
+        </div>
+        <div>
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+          <ul>${symptomsList}</ul>
+        </div>
+      </div>
+      <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:10px;">
+        <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+        <ul>${tipsList}</ul>
+      </div>
+      <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+        <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+      </div>
+    `;
+    insightSection.appendChild(card);
+  }
+
+  function addToHistory(badgeKey, val, unit) {
+    const unitStr = unit === "ngdl" ? " ng/dL" : " pmol/L";
+    const item = { date: new Date().toLocaleDateString(), badgeKey, val, unitStr, id: Date.now() };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-ft4-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `<span>📅 ${item.date}</span><strong>${item.val.toFixed(2)}${item.unitStr} — ${statusText}</strong>`;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() { window.print(); }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const d = activeReportData;
+    const unitStr = d.unit === "ngdl" ? " ng/dL" : " pmol/L";
+    let t = `--- FREE T4 ANALYSIS REPORT ---\n`;
+    t += `Date: ${d.date}\n`;
+    t += `Free T4 Value: ${d.rawVal.toFixed(2)}${unitStr}\n`;
+    t += `Values in both units: ${d.valNgDl.toFixed(2)} ng/dL / ${d.valPmolL.toFixed(2)} pmol/L\n`;
+    t += `Assessment: ${translations[currentLang][d.status.badge]}\n`;
+    t += `Reference Range: 0.8 – 1.8 ng/dL (10.30 – 23.17 pmol/L)\n`;
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, { backgroundColor: "#0a0e17", scale: 2 }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `fT4-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => { setLanguage(currentLang); });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

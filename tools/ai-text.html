@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Text Generator &bull; Free Content Writer - SSDK TOOLS HUB</title>
+  <meta name="description" content="Generate blog intros, emails, ad headlines, and product descriptions instantly. Configurable content models and tones with zero server overhead.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 14px;
+    }
+    .input-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .input-group input, .input-group select, .input-group textarea {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      outline: none;
+      font-size: 0.85rem;
+      transition: border 0.3s;
+    }
+    .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+      border-color: var(--accent);
+    }
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 600px) {
+      .input-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    .text-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .text-card h4 {
+      font-size: 0.85rem;
+      margin-top: 0;
+      margin-bottom: 8px;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .text-content {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: var(--text);
+      white-space: pre-wrap;
+      margin-bottom: 12px;
+    }
+    .text-copy-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      padding: 4px 8px;
+      font-size: 0.7rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      border-radius: 4px;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .text-copy-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">AI Text Generator</h1>
+  <p class="page-sub">Generate headlines, email correspondence templates, or blog outlines instantly and securely offline.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 24px; align-items: start;">
+      
+      <!-- Left: Form inputs -->
+      <div>
+        <h4 style="margin-bottom: 12px;">Content Configurations</h4>
+        
+        <div class="input-group">
+          <label for="textTopic">Focus Keywords / Main Topic</label>
+          <input type="text" id="textTopic" placeholder="e.g. mobile fitness app, remote team collaboration tool">
+        </div>
+
+        <div class="input-row">
+          <div class="input-group">
+            <label for="contentType">Content Format</label>
+            <select id="contentType">
+              <option value="blog" selected>Blog Introduction</option>
+              <option value="email">Business Email Draft</option>
+              <option value="headlines">Catchy Ad Headlines</option>
+              <option value="product">Product Value Description</option>
+            </select>
+          </div>
+          
+          <div class="input-group">
+            <label for="contentTone">Tone of Voice</label>
+            <select id="contentTone">
+              <option value="professional" selected>Professional / Corporate</option>
+              <option value="creative">🚀 Creative / Bold</option>
+              <option value="friendly">👋 Friendly / Casual</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Generated outputs -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 250px; display: flex; flex-direction: column; justify-content: center;">
+        
+        <div id="textWrapper" style="display: none;">
+          <!-- Option 1 -->
+          <div class="text-card">
+            <h4>Generated Draft: Option A</h4>
+            <div class="text-content" id="optAText"></div>
+            <button class="text-copy-btn" onclick="copyText('optAText')">Copy</button>
+          </div>
+
+          <!-- Option 2 -->
+          <div class="text-card">
+            <h4>Generated Draft: Option B</h4>
+            <div class="text-content" id="optBText"></div>
+            <button class="text-copy-btn" onclick="copyText('optBText')">Copy</button>
+          </div>
+        </div>
+
+        <div id="textPlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Configure your keywords and layout formats to generate copy drafts.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnGenerate" style="background: var(--grad2);">✍️ Write Drafts</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b; display: none;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none; text-align: center;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Procedural NLG:</strong> Resolves core nouns, verbs, and adjectives dynamically to produce readable drafts.</li>
+      <li><strong>Varied formats:</strong> Shift between structured email grids, blog introductory lines, value proposition sheets, or high-click headlines.</li>
+      <li><strong>Zero Server Load:</strong> Generates outputs completely client-side in sub-second times without requiring expensive API token keys.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-list content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-item">
+      <div class="faq-q">Are these drafts free to use commercially?<span>＋</span></div>
+      <div class="faq-a">Yes. All outputs generated by this tool are procedurally compiled in-browser and belong to you. Feel free to copy, modify, and use them for marketing campaigns or emails.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">Does this require an internet connection?<span>＋</span></div>
+      <div class="faq-a">No. Once the page is loaded, the NLG scripting engine runs completely offline without sending requests to external server nodes.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  // Multi-dimensional templates for procedural natural language outputs
+  const writerTemplates = {
+    blog: {
+      professional: [
+        "In today's fast-paced environment, optimization of [Topic] is essential. Companies that prioritize [Topic] often experience enhanced productivity and streamlined workflow structures. In this article, we analyze key strategies to successfully integrate [Topic] into your current workflows.",
+        "Realigning processes around [Topic] has become a primary target for modern teams. While [Topic] presents unique operational challenges, its structured integration drives measurable output efficiency. Here is how your business can leverage [Topic] for continuous growth."
+      ],
+      creative: [
+        "Imagine a world where [Topic] is no longer a bottleneck, but your primary superpower. For years, creators struggled with scaling [Topic] due to legacy constraints. In this guide, we break down revolutionary ideas to turn [Topic] into a force of inspiration.",
+        "Ready to revolutionize how you approach [Topic]? It is time to drop standard formulas and explore bold new configurations. Let's look at how unlocking [Topic] can completely transform your project outcomes."
+      ],
+      friendly: [
+        "Let's be honest: keeping up with [Topic] can feel like a full-time job. We have all struggled with aligning [Topic] rules without losing our sanity. That is why I wrote this post — to share some quick, game-changing tips to make [Topic] easy for everyone.",
+        "If you are looking for a simple, no-nonsense way to get a grip on [Topic], you are in the right place. Let's dive into some easy setups that will save you time and make [Topic] actually fun."
+      ]
+    },
+    email: {
+      professional: [
+        "Subject: Streamlining [Topic] Workflows\n\nDear Team,\n\nI am writing to propose a structured realignment of our current initiatives regarding [Topic]. Realizing the importance of [Topic] to our overall workflow, optimizing these parameters will help us meet targets faster.\n\nLet's schedule a brief call to align on these goals.\n\nBest regards,\n[Your Name]",
+        "Subject: Realignment: [Topic] Project Outline\n\nDear [Name],\n\nI hope this email finds you well. I wanted to follow up on our recent milestone review concerning [Topic]. To achieve optimal efficiency, we should look into refining [Topic] tasks on our calendar.\n\nLooking forward to your suggestions.\n\nSincerely,\n[Your Name]"
+      ],
+      creative: [
+        "Subject: Elevate: Let's Transform [Topic]!\n\nHi [Name],\n\nWhat if we could completely shake up how we manage [Topic]? I've been brainstorming some bold concepts to elevate our [Topic] integrations and push our limits.\n\nLet's catch up soon to share ideas.\n\nCheers,\n[Your Name]",
+        "Subject: Bold Ideas for [Topic] Collaboration\n\nHey Team,\n\nIt is time to think outside the box on [Topic]. We have a massive opportunity to capture growth by realigning [Topic] features this quarter.\n\nLet's make it happen!\n\nBest,\n[Your Name]"
+      ],
+      friendly: [
+        "Subject: Quick thoughts on [Topic] ☕\n\nHey [Name],\n\nJust checking in! I was looking over our setup for [Topic] and thought of a few quick wins we could deploy to make things run a bit smoother.\n\nLet me know if you are free for a quick chat today!\n\nBest,\n[Your Name]",
+        "Subject: Let's talk about [Topic] soon 👋\n\nHi Team,\n\nHope everyone is having a great week. I wanted to see if anyone has some spare cycles to help clean up the backlog on [Topic].\n\nAny help would be awesome!\n\nCheers,\n[Your Name]"
+      ]
+    },
+    headlines: {
+      professional: [
+        "1. Streamline [Topic] for Maximum Team Output\n2. The Professional Guide to Optimizing [Topic]\n3. Realigning [Topic] Workflow Structures\n4. Accelerate Growth through [Topic] Integrations\n5. Drive Efficiency: Advanced [Topic] Strategy",
+        "1. The Core Metrics of Successful [Topic]\n2. How to Successfully Integrate [Topic] in 5 Steps\n3. Leverage [Topic] to Boost Operational Value\n4. Scaling [Topic] Safely in Corporate Environments\n5. Real-Time [Topic] Solutions for Modern Teams"
+      ],
+      creative: [
+        "1. Revolutionize Your Day: The Power of [Topic]!\n2. Say Goodbye to [Topic] Stress Forever\n3. Unlock the Magic of [Topic] Today\n4. The Bold Blueprint to Mastering [Topic]\n5. Transform Your Project Outlines with [Topic]",
+        "1. Why [Topic] Is Your Team's Hidden Superpower\n2. Breakthrough Strategies for [Topic] Innovation\n3. Think Different: A New Era of [Topic]\n4. Accelerate Your Career by Mastering [Topic]\n5. Scale New Peaks with [Topic] Focus"
+      ],
+      friendly: [
+        "1. Honestly, [Topic] Doesn't Have to Be Hard\n2. The Lazy Creator's Guide to [Topic]\n3. 5 Game-Changing Tips for [Topic]\n4. Let's Make [Topic] Fun Again!\n5. How I Finally Got the Hang of [Topic]",
+        "1. Quick and Easy Hacks for [Topic]\n2. Why Everyone is Talking About [Topic] Right Now\n3. The Friendly Guide to Sorting [Topic]\n4. 3 Simple Tricks to Save Time on [Topic]\n5. Let's Talk [Topic]: Vibe Check!"
+      ]
+    },
+    product: {
+      professional: [
+        "Product Description:\n\nOur new solution offers structured management of [Topic] to drive operational efficiency. Designed for modern enterprises, it automates [Topic] parameters, providing clear metrics tracking and seamless integrations.\n\nKey Benefits:\n- Optimizes [Topic] tasks\n- Streamlines data flow\n- Reduces manual scheduling conflicts",
+        "Product Description:\n\nRefine your team's approach to [Topic] with our high-performance suite. Built to scale, this utility optimizes [Topic] workflows, allowing teams to deliver high-quality outputs with minimal resource friction.\n\nKey Features:\n- Advanced tracking metrics\n- Automated reporting structures\n- Secure workspace profiles"
+      ],
+      creative: [
+        "Product Description:\n\nSay hello to the ultimate game-changer in [Topic]. We built this utility to revolutionize how you design, execute, and scale [Topic] concepts. Break free from constraints and elevate your creative outcomes.\n\nWhy You'll Love It:\n- Instant [Topic] configurations\n- Visual design locks\n- Bold performance boosters",
+        "Product Description:\n\nTransform your daily grind with our breakthrough [Topic] utility. Designed to spark inspiration and clear blockages, it helps you shape [Topic] concepts with bold, beautiful ease.\n\nFeatures:\n- Zero server lag interface\n- Dynamic templates library\n- One-click asset publishing"
+      ],
+      friendly: [
+        "Product Description:\n\nIf you are tired of struggling with [Topic], this is the tool you've been waiting for. We kept things super simple so you can get [Topic] sorted in under five minutes. No complicated manuals, just clean, happy results.\n\nHighlights:\n- Buttery smooth UI\n- Zero learning curve\n- One-click copy/paste",
+        "Product Description:\n\nGet a grip on [Topic] without the headache. Our utility helps you organize, edit, and export [Topic] files in a snap. Perfect for freelancers, creators, and busy teams who just want to get things done.\n\nQuick Wins:\n- Easy drag-and-drop\n- Lightweight offline mode\n- Fast text conversions"
+      ]
+    }
+  };
+
+  $('btnGenerate').onclick = () => {
+    const topic = $('textTopic').value.trim();
+    if (!topic) {
+      showStatus('Please enter focus keywords or topic.', true);
+      return;
+    }
+
+    showStatus('Compiling drafts...');
+
+    const format = $('contentType').value;
+    const tone = $('contentTone').value;
+
+    const templates = writerTemplates[format][tone];
+
+    // Capitalize topic first letter for aesthetic inline inclusion
+    const capitalizedTopic = topic.charAt(0).toUpperCase() + topic.substring(1);
+
+    // Apply template interpolation
+    let optA = templates[0].replace(/\[Topic\]/g, capitalizedTopic);
+    let optB = templates[1].replace(/\[Topic\]/g, capitalizedTopic);
+
+    $('optAText').textContent = optA;
+    $('optBText').textContent = optB;
+
+    $('textPlaceholder').style.display = 'none';
+    $('textWrapper').style.display = 'block';
+    $('btnClear').style.display = 'inline-flex';
+
+    showStatus('✅ Text drafts generated successfully!');
+  };
+
+  window.copyText = (textId) => {
+    const txt = $(textId).textContent;
+    if (!txt) return;
+    navigator.clipboard.writeText(txt).then(() => {
+      showStatus('📋 Draft copied to clipboard!');
+    });
+  };
+
+  $('btnClear').onclick = () => {
+    $('textTopic').value = '';
+    $('contentType').value = 'blog';
+    $('contentTone').value = 'professional';
+
+    $('textPlaceholder').style.display = 'block';
+    $('textWrapper').style.display = 'none';
+    $('btnClear').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

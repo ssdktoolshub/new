@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lymphocyte Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze your relative and absolute Lymphocyte counts online. Check for lymphocytosis or lymphopenia dynamically with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #ef4444;
+      --critical-color: #7f1d1d;
+      --border-color: #f59e0b;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .lymph-gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .lymph-val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .lymph-status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--critical-color) 0%, 
+        var(--low-color) 25%, 
+        var(--normal-color) 50%, 
+        var(--border-color) 75%, 
+        var(--high-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .lymph-gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Lymphocyte Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze absolute and relative Lymphocyte counts to check for viral infections, immune cell density, or lymphopenia.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🩸 Lymphocyte Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">🗑 Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valType" data-translate="labelInputType">Value Type</label>
+              <select id="valType" onchange="switchValType()">
+                <option value="relative" selected data-translate="inputTypeRelative">Relative Percentage (%)</option>
+                <option value="absolute" data-translate="inputTypeAbsolute">Absolute Count (cells/µL)</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valLymph" id="inputLabel" data-translate="labelLymphPct">Lymphocytes Percentage (%)</label>
+              <input type="number" step="0.1" id="valLymph" placeholder="e.g. 30" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeLymphocytes()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Lymphocytes</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🩸</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your Lymphocytes value and click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Lymphocyte Diagnostics Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Value Type</strong>: <span id="resValType">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="lymph-gauge-container">
+            <div class="lymph-val-large" id="resLymphVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">%</div>
+            <div class="lymph-status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickCriticalLow" style="color: var(--low-color);">20%</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">20% - 40%</span>
+              <span id="tickCriticalHigh" style="color: var(--high-color);">40%</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Lymphocytes</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What are Lymphocytes?</strong><br><span data-translate="eduA1">Lymphocytes are mononuclear WBCs essential for adaptive immunity. They divide into T-cells (directly destroy infected cells), B-cells (produce custom antibodies), and Natural Killer (NK) cells.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What causes Lymphocytosis?</strong><br><span data-translate="eduA2">Lymphocytosis is an elevated count (relative > 40% or absolute > 4,800 cells/µL). It is typical during viral infections (mononucleosis, cold, hepatitis, chickenpox), chronic infections, or lymphoid leukemia (CLL).</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">What is Lymphopenia?</strong><br><span data-translate="eduA3">Lymphopenia refers to sub-normal counts (relative < 20% or absolute < 1,000 cells/µL). This leaves you vulnerable to viral pathogens and can indicate general immune suppression, HIV infection, or systemic corticosteroid treatment.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Lymphocyte Analyzer",
+      toolDesc: "Analyze absolute and relative Lymphocyte counts to check for viral infections, immune cell density, or lymphopenia.",
+      inputsTitle: "🩸 Lymphocyte Parameters",
+      clearBtn: "Reset",
+      labelInputType: "Value Type",
+      inputTypeRelative: "Relative Percentage (%)",
+      inputTypeAbsolute: "Absolute Count (cells/µL)",
+      labelLymphPct: "Lymphocytes Percentage (%)",
+      labelLymphAbs: "Absolute Lymphocyte Count (cells/µL)",
+      btnAnalyze: "Analyze Lymphocytes",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your Lymphocytes value and click the analyze button to display medical summaries.",
+      reportTitle: "🔬 Lymphocyte Diagnostics Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Value Type",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Lymphocytes",
+      badgeLow: "Low Lymphocytes (Lymphopenia)",
+      badgeCriticalLow: "CRITICAL SEVERE LYMPHOPENIA",
+      badgeHigh: "High Lymphocytes (Lymphocytosis)",
+      badgeCriticalHigh: "CRITICAL HIGH LYMPHOCYTOSIS",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "লিম্ফোসাইট বিশ্লেষক",
+      toolDesc: "লিম্ফোসাইটের আপেক্ষিক (%) এবং পরম (cells/µL) পরিমাণ বিশ্লেষণ করুন। ভাইরাল ইনফেকশন বা লিম্ফোপেনিয়ার ঝুঁকি পরীক্ষা করুন।",
+      inputsTitle: "🩸 লিম্ফোসাইটের পরিমাপক সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelInputType: "ইনপুটের ধরন",
+      inputTypeRelative: "আপেক্ষিক শতকরা হার (%)",
+      inputTypeAbsolute: "পরম গণনা (cells/µL)",
+      labelLymphPct: "লিম্ফোসাইট শতকরা হার (%)",
+      labelLymphAbs: "পরম লিম্ফোসাইট গণনা (cells/µL)",
+      btnAnalyze: "লিম্ফোসাইট বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার লিম্ফোসাইটের মান লিখুন, তারপর বিশ্লেষণ বোতামটি চাপুন রিপোর্টের সামারি দেখতে।",
+      reportTitle: "🔬 লিম্ফোসাইট ডায়াগনস্টিক রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "ইনপুটের ধরন",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক লিম্ফোসাইট",
+      badgeLow: "কম লিম্ফোসাইট (লিম্ফোপেনিয়া)",
+      badgeCriticalLow: "মারাত্মক ঝুঁকিপূর্ণ লিম্ফোপেনিয়া",
+      badgeHigh: "উচ্চ লিম্ফোসাইট (লিম্ফোসাইটোসিস)",
+      badgeCriticalHigh: "মারাত্মক ঝুঁকিপূর্ণ লিম্ফোসাইটোসিস",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "लिम्फोसाइट विश्लेषक",
+      toolDesc: "वायरल संक्रमण, प्रतिरक्षा कोशिका घनत्व, या लिम्फोपेनिया की जांच के लिए पूर्ण और सापेक्ष लिम्फोसाइट गिनती का विश्लेषण करें।",
+      inputsTitle: "🩸लिम्फोस��इट पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelInputType: "मूल्य प्रकार",
+      inputTypeRelative: "सापेक्ष प्रतिशत (%)",
+      inputTypeAbsolute: "निरपेक्ष गणना (कोशिकाएं/µL)",
+      labelLymphPct: "लिम्फोसाइट्स प्रतिशत (%)",
+      labelLymphAbs: "निरपेक्ष लिम्फोसाइट गिनती (कोशिकाएं/µL)",
+      btnAnalyze: "लिम्फोसाइटों का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना लिम्फोसाइट्स मान दर्ज करें और चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬लिम्फोसाइट डायग्नोस्टिक्स रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "मूल्य प्रकार",
+      labelDate: "तारीख",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य लिम्फोसाइट्स",
+      badgeLow: "कम लिम्फोसाइट्स (लिम्फोपेनिया)",
+      badgeCriticalLow: "गंभीर गंभीर लिम्फोपेनिया",
+      badgeHigh: "उच्च लिम्फोसाइट्स (लिम्फोसाइटोसिस)",
+      badgeCriticalHigh: "गंभीर उच्च लिम्फोसाइटोसिस",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What are lymphocytes?", a: "Lymphocytes are mononuclear white blood cells that coordinate your body's adaptive immune system, targeting viral invaders." },
+      { q: "What are normal Lymphocyte ranges?", a: "Relative normal range is 20% to 40%. Absolute normal range is 1,000 to 4,800 cells/µL." },
+      { q: "What causes high lymphocytes (Lymphocytosis)?", a: "It is commonly triggered by acute viral infections (mononucleosis, mumps, measles, flu) or chronic infections." },
+      { q: "What causes low lymphocytes (Lymphopenia)?", a: "Causes include immune deficiencies (like HIV), chronic severe illness, autoimmune diseases, or steroid therapies." },
+      { q: "What is the difference between B-cells and T-cells?", a: "B-cells produce custom antibodies. T-cells identify and destroy cells infected with viruses or cancer." },
+      { q: "What are the symptoms of lymphocytosis?", a: "Many patients have no symptoms, but some experience fever, sore throat, or swollen lymph nodes linked to the viral trigger." },
+      { q: "What are the symptoms of lymphopenia?", a: "It weakens your immune defenses, leading to frequent infections, skin infections, mouth sores, or general weakness." },
+      { q: "When is lymphopenia considered critical?", a: "An absolute lymphocyte count below 500 cells/µL is critically low, suggesting high vulnerability to pathogens." },
+      { q: "Can stress decrease lymphocytes?", a: "Yes. Chronic psychological stress elevates cortisol levels, which is known to deplete circulating lymphocytes." },
+      { q: "How can I raise lymphocytes naturally?", a: "Focus on sleep, zinc, Vitamin D, healthy fats, and moderate exercise to support cell replication and immune functions." },
+      { q: "Can a viral infection cause low lymphocytes?", a: "Yes, some severe viral infections can temporarily draw lymphocytes out of the blood and into tissues, showing temporary drops." },
+      { q: "Are pediatric ranges different?", a: "Yes. Infants and young children naturally have much higher lymphocyte levels than adults, often reaching up to 60% of total WBC." },
+      { q: "What is the relation between lymphocytes and spleen?", a: "The spleen filters blood and stores lymphocytes. An enlarged spleen (splenomegaly) can trap cells, altering counts." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "লিম্ফোসাইট কী?", a: "লিম্ফোসাইট হলো এক ধরণের শ্বেত রক্তকণিকা যা শরীরের অভিযোজিত রোগ প্রতিরোধ ক্ষমতা পরিচালনা করে ভাইরাল জীবাণু ধ্বংস করে।" },
+      { q: "লিম্ফোসাইটের স্বাভাবিক মাত্রা কত?", a: "আপেক্ষিক স্বাভাবিক মাত্রা ২০% থেকে ৪০%। পরম স্বাভাবিক মাত্রা ১,০০০ থেকে ৪,৮০০ cells/µL।" },
+      { q: "লিম্ফোসাইট বৃদ্ধির (লিম্ফোসাইটোসিস) কারণ কী?", a: "ভাইরাল সংক্রমণ (যেমন মোনোনুপ্রিওসিস, হাম, জলবসন্ত, ইনফ্লুয়েঞ্জা) বা দীর্ঘস্থায়ী কোনো ইনফেকশন।" },
+      { q: "লিম্ফোসাইট কমে যাওয়ার (লিম্ফোপেনিয়া) কারণ কী?", a: "রোগ প্রতিরোধ ক্ষমতার ঘাটতি (যেমন এইচআইভি), ক্রনিক ইনফেকশন, অটোইমিউন রোগ বা স্টেরয়েড চিকিৎসা।" },
+      { q: "বি-সেল (B-cells) ও টি-সেলের (T-cells) পার্থক্য কী?", a: "বি-সেল অ্যান্টিবডি তৈরি করে। টি-সেল সরাসরি ভাইরাস বা ক্যান্সার আক্রান্ত কোষ ধ্বংস করে।" },
+      { q: "লিম্ফোসাইটোসিসের লক্ষণ কী কী?", a: "লক্ষণগুলো ভাইরাসের ওপর নির্ভর করে: যেমন জ্বর, গলায় ব্যথা বা গ্ল্যান্ড বা লিম্ফ নোড ফুলে যাওয়া।" },
+      { q: "লিম্ফোপেনিয়ার লক্ষণ কী কী?", a: "ঘন ঘন সংক্রমণ, মুখে ঘা, ত্বকের সমস্যা ও শারীরিক দুর্বলতা।" },
+      { q: "লিম্ফোসাইট কত কম হলে তা মারাত্মক?", a: "পরম লিম্ফোসাইট সংখ্যা ৫০০ cells/µL এর নিচে নামলে তা মারাত্মক এবং ব্যাকটেরিয়াল বা ফাঙ্গাল ইনফেকশনের ঝুঁকি বাড়িয়ে দেয়।" },
+      { q: "মানসিক চাপ কি লিম্ফোসাইট কমাতে পারে?", a: "হ্যাঁ। দীর্ঘমেয়াদী দুশ্চিন্তার ফলে কর্টিসল হরমোন বাড়ে, যা রক্ত থেকে লিম্ফোসাইটের পরিমাণ কমিয়ে দিতে পারে।" },
+      { q: "প্রাকৃতিক উপায়ে লিম্ফোসাইট কীভাবে বাড়ানো যায়?", a: "পর্যাপ্ত ঘুম, জিঙ্ক ও ভিটামিন ডি যুক্ত খাবার খাওয়া, স্বাস্থ্যকর চর্বি গ্রহণ এবং হালকা ব্যায়ামের মাধ্যমে।" },
+      { q: "ভাইরাল ইনফেকশন কি লিম্ফোসাইট কমাতে পারে?", a: "হ্যাঁ, কিছু মারাত্মক ভাইরাসের কারণে সাময়িকভাবে রক্ত থেকে লিম্ফোসাইট টিস্যুতে চলে যায়, যার ফলে রিপোর্টে কম দেখায়।" },
+      { q: "শিশুদের লিম্ফোসাইটের মাত্রা কি ভিন্ন?", a: "হ্যাঁ, ছোট বাচ্চাদের স্বাভাবিক লিম্ফোসাইটের মাত্রা বড়দের চেয়ে অনেক বেশি থাকে, যা মোট শ্বেতকণিকার ৬০% পর্যন্ত হতে পারে।" },
+      { q: "লিম্ফোসাইট ও প্লিহার সম্পর্ক কী?", a: "প্লিহা বা Spleen লিম্ফোসাইট জমা রাখে। প্লিহা আকারে বড় হলে (Splenomegaly) তা লিম্ফোসাইট আটকে ফেলে রক্তে এর মাত্রা কমিয়ে দেয়।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "लिम्फोसाइट्स क्या हैं?", a: "लिम्फोसाइट्स मोनोन्यूक्लियर श्वेत रक्त कोशिकाएं हैं जो वायरल आक्रमणकारियों को लक्षित करते हुए आपके शरीर की अनुकूली प्रतिरक्षा प्रणाली का समन्वय करती हैं।" },
+      { q: "सामान्य लिम्फोसाइट श्रेणियाँ क्या हैं?", a: "सापेक्ष सामान्य सीमा 20% से 40% है। पूर्ण सामान्य सीमा 1,000 से 4,800 सेल/μL है।" },
+      { q: "उच्च लिम्फोसाइट्स (लिम्फोसाइटोसिस) का क्या कारण है?", a: "यह आमतौर पर तीव्र वायरल संक्रमण (मोनोन्यूक्लिओसिस, कण्ठमाला, खसरा, फ्लू) या पुराने संक्रमण से शुरू होता है।" },
+      { q: "कम लिम्फोसाइट्स (लिम्फो���ेनिया) का क्या कारण है?", a: "कारणों में प्रतिरक्षा की कमी (जैसे एचआईवी), पुरानी गंभीर बीमारी, ऑटोइम्यून रोग या स्टेरॉयड थेरेपी शामिल हैं।" },
+      { q: "बी-कोशिकाओं और टी-कोशिकाओं के बीच क्या अंतर है?", a: "बी-कोशिकाएं कस्टम एंटीबॉडी का उत्पादन करती हैं। टी-कोशिकाएं वायरस या कैंसर से संक्रमित कोशिकाओं की पहचान करती हैं और उन्हें नष्ट कर देती हैं।" },
+      { q: "लिम्फोसाइटोसिस के लक्षण क्या हैं?", a: "कई रोगियों में कोई लक्षण नहीं होते हैं, लेकिन कुछ को बुखार, गले में खराश, या वायरल ट्रिगर से जुड़े लिम्फ नोड्स में सूजन का अनुभव होता है।" },
+      { q: "लिम्फोपेनिया के लक्षण क्या हैं?", a: "यह आपकी प्रतिरक्षा सुरक्षा को कमजोर करता है, जिससे बार-बार संक्रमण, त्वचा संक्रमण, मुंह में छाले या सामान्य कमजोरी होती है।" },
+      { q: "लिम्फोपेनिया को कब गंभीर माना जाता है?", a: "500 कोशिकाओं/μL से नीचे पूर्ण लिम्फोसाइ��� गिनती गंभीर रूप से कम है, जो रोगजनकों के प्रति उच्च संवेदनशीलता का संकेत देती है।" },
+      { q: "क्या तनाव से लिम्फोसाइट्स कम हो सकते हैं?", a: "हाँ। दीर्घकालिक मनोवैज्ञानिक तनाव कोर्टिसोल के स्तर को बढ़ाता है, जो परिसंचारी लिम्फोसाइटों को ख़त्म करने के लिए जाना जाता है।" },
+      { q: "मैं स्वाभाविक रूप से लिम्फोसाइट्स कैसे बढ़ा सकता हूँ?", a: "कोशिका प्रतिकृति और प्रतिरक्षा कार्यों का समर्थन करने के लिए नींद, जिंक, विटामिन डी, स्वस्थ वसा और मध्यम व्यायाम पर ध्यान दें।" },
+      { q: "क्या वायरल संक्रमण के कारण लिम्फोसाइट्स कम हो सकते हैं?", a: "हां, कुछ गंभीर वायरल संक्रमण अस्थायी रूप से लिम्फोसाइटों को रक्त से बाहर और ऊतकों में खींच सकते हैं, जिससे अस्थायी गिरावट दिखाई देती है।" },
+      { q: "क्या बाल चिकित्सा श्रेणियाँ भिन्न हैं?", a: "हाँ। शिशुओं और छोटे बच्चों में स्वाभाविक रूप से वयस्कों की तुलना में लिम्फोसाइट स्तर बहुत अधिक होता है, जो अक्सर कुल डब्ल्यूबीसी के 60% तक पहुंच जाता है।" },
+      { q: "लिम्फोसाइट्स और प्लीहा के बीच क्या संबंध है?", a: "प्लीहा रक्त को फ़िल्टर करता है और लिम्फोसाइटों को संग्रहीत करता है। बढ़ी हुई प्लीहा (स्प्लेनोमेगाली) कोशिकाओं क�� फँसा सकती है, जिससे गिनती बदल सकती है।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const lymphInsights = {
+    en: {
+      normal: {
+        desc: "Your Lymphocyte count is within the standard normal limits. This suggests a healthy adaptive immune system with normal viral defense capabilities.",
+        causes: ["Normal immune function", "No active systemic viral pathogens present", "No severe immunological stress factors"],
+        symptoms: ["Healthy response to viral challenges", "No chronic fevers"],
+        prevention: ["Eat a diet rich in immune-supportive vitamins (C, D)", "Exercise moderately to maintain circulation"],
+        consult: "Regular annual health screenings are recommended to monitor long-term trends."
+      },
+      low: {
+        desc: "Your Lymphocyte count is low, indicating Lymphopenia. This means your body may have weakened adaptive immune defenses, especially against viruses.",
+        causes: ["Recent viral infections (influenza, COVID-19, hepatitis)", "Autoimmune conditions", "Corticosteroid therapies", "Underlying immunodeficiency diseases"],
+        symptoms: ["Increased susceptibility to viral infections", "Slow recovery from minor illnesses", "Sore throat or fatigue"],
+        prevention: ["Practice hand hygiene", "Avoid close contact with sick individuals", "Consider Vitamin D and zinc support"],
+        consult: "Consult your doctor to evaluate the cause, particularly if you have been taking steroids or experiencing recurrent viral symptoms."
+      },
+      criticalLow: {
+        desc: "Your Lymphocyte count is critically low (Absolute < 500 cells/µL or Relative < 10%). This indicates a severe immunodeficiency, rendering you highly susceptible to opportunistic infections.",
+        causes: ["Advanced HIV/AIDS", "Bone marrow suppression or chemotherapy", "Severe autoimmune disorders", "Severe systemic sepsis"],
+        symptoms: ["High persistent fever", "Oral thrush or severe mouth ulcers", "Shortness of breath or persistent cough", "Physical exhaustion"],
+        prevention: ["Minimize exposure to public areas or crowds", "Avoid raw or unpasteurized foods", "Monitor body temperature closely"],
+        consult: "⚠️ Seek immediate medical evaluation or visit an emergency room. Prophylactic therapies are often urgently required."
+      },
+      high: {
+        desc: "Your Lymphocyte count is elevated, indicating Lymphocytosis. This shows your immune system is actively responding to a pathogen, typically a virus.",
+        causes: ["Acute viral infections (Mononucleosis, Mumps, Measles, Varicella)", "Chronic bacterial infections (Tuberculosis, Pertussis)", "Chronic inflammatory conditions"],
+        symptoms: ["Fever, fatigue, or body aches", "Swollen lymph nodes in neck or armpits", "Sore throat or upper respiratory symptoms"],
+        prevention: ["Get plenty of rest to support recovery", "Stay well-hydrated", "Treat active infections under medical supervision"],
+        consult: "Consult your general physician to check for viral markers or evaluate persistent lymph node swelling."
+      },
+      criticalHigh: {
+        desc: "Your Lymphocyte count is critically elevated (Absolute > 15,000 cells/µL or Relative > 65%). This indicates a massive proliferation of lymphocytes, often requiring urgent hematology review.",
+        causes: ["Chronic Lymphocytic Leukemia (CLL)", "Acute Lymphoblastic Leukemia (ALL)", "Severe acute infectious mononucleosis (rare extreme cases)"],
+        symptoms: ["Extreme fatigue or drenching night sweats", "Unexplained weight loss or easy bruising", "Noticeably swollen, painless lymph nodes", "Left upper abdominal pain (spleen enlargement)"],
+        prevention: ["Avoid strenuous activities", "Keep hydrated"],
+        consult: "⚠️ Seek urgent medical evaluation. A peripheral blood smear or immunophenotyping is required to rule out lymphoid malignancies."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার লিম্ফোসাইটের মাত্রা স্বাভাবিক সীমার মধ্যে রয়েছে। এটি শরীরের সঠিক রোগ প্রতিরোধ ক্ষমতা ও স্বাভাবিক ভাইরাল সংক্রমণ মুক্ত অবস্থাকে নির্দেশ করে।",
+        causes: ["রোগ প্রতিরোধ ক্ষমতার সঠিক কার্যকারিতা", "তীব্র ভাইরাল সংক্রমণের অনুপস্থিতি", "অস্থিমজ্জার সঠিক কার্যকারিতা"],
+        symptoms: ["স্বাভাবিক শারীরিক সুস্থতা", "কোনো অস্বাভাবিক জ্বরের অনুপস্থিতি"],
+        prevention: ["ভিটামিন সি ও ডি সমৃদ্ধ পুষ্টিকর খাবার খান", "রোগ প্রতিরোধ ক্ষমতা বাড়াতে নিয়মিত ঘুমান"],
+        consult: "দীর্ঘমেয়াদী রক্তস্বাস্থ্য ট্র্যাক করতে বছরে অন্তত একবার রুটিন ব্লাড স্ক্রীনিং করা ভালো।"
+      },
+      low: {
+        desc: "আপনার লিম্ফোসাইট কাউন্ট স্বাভাবিকের চেয়ে কম, যা লিম্ফোপেনিয়া নির্দেশ করে। এর অর্থ ভাইরাসের বিরুদ্ধে শরীরের প্রতিরোধ ক্ষমতা হ্রাস পেয়েছে।",
+        causes: ["সম্প্রতি কোনো ভাইরাল সংক্রমণ (ইনফ্লুয়েঞ্জা, কোভিড-১৯, হেপাটাইটিস)", "অটোইমিউন রোগ", "স্টেরয়েড জাতীয় ওষুধ", "ইমিউনোডেফিসিয়েন্সি রোগ"],
+        symptoms: ["সহজে ভাইরাল ইনফেকশনে আক্রান্ত হওয়া", "মুখ বা গলায় ঘা হওয়া", "অসুস্থতা থেকে শুকাতে দেরি হওয়া"],
+        prevention: ["পরিষ্কার-পরিচ্ছন্ন থাকুন", "অসুস্থ ব্যক্তিদের সংস্পর্শ এড়িয়ে চলুন", "ভিটামিন ডি ও জিঙ্ক সমৃদ্ধ খাবার খান"],
+        consult: "লিম্ফোপেনিয়ার সঠিক কারণ নির্ণয় ও হরমোনের প্রভাব পরীক্ষা করতে ডাক্তারের পরামর্শ নিন।"
+      },
+      criticalLow: {
+        desc: "আপনার লিম্ফোসাইট কাউন্ট মারাত্মক কম (পরম গণনা ৫০০ cells/µL এর নিচে বা আপেক্ষিক ১০% এর নিচে)। এটি রোগ প্রতিরোধ ক্ষমতার তীব্র ঘাটতি নির্দেশ করে যা মারাত্মক ফাঙ্গাল বা ভাইরাল ইনফেকশনের ঝুঁকি তৈরি করে।",
+        causes: ["উন্নত এইচআইভি/এইডস", "কেমোথেরাপি বা অস্থিমজ্জার চাপ", "গুরুতর অটোইমিউন রোগ", "তীব্র সিস্টেমিক সেপসিস"],
+        symptoms: ["টানা উচ্চ জ্বর", "মুখে মারাত্মক ঘা বা ওরাল থ্রাশ", "শ্বাসকষ্ট বা ফুসফুসের সংক্রমণ", "চরম শারীরিক অবসাদ"],
+        prevention: ["গণসমাগম এড়িয়ে চলুন", "খাবার ও রান্নার ক্ষেত্রে সর্বোচ্চ জীবাণুমুক্ত পরিবেশ বজায় রাখুন", "কাঁচা ফলমূল বা সালাদ পরিহার করুন"],
+        consult: "⚠️ অবিলম্বে হাসপাতালের জরুরি বিভাগে যোগাযোগ করুন। প্রতিরোধমূলক অ্যান্টিভাইরাল বা বিশেষ পর্যবেক্ষণের প্রয়োজন হতে পারে।"
+      },
+      high: {
+        desc: "আপনার লিম্ফোসাইট কাউন্ট স্বাভাবিক সীমার চেয়ে বেশি (লিম্ফোসাইটোসিস)। এর অর্থ আপনার রোগ প্রতিরোধ ব্যবস্থা বর্তমানে কোনো ভাইরাসের বিরুদ্ধে সক্রিয়ভাবে কাজ করছে।",
+        causes: ["তীব্র ভাইরাল সংক্রমণ (যেমন মনোনুক্লীওসিস, হাম, বসন্ত, গালফুলা রোগ)", "ক্রনিক ব্যাকটেরিয়াল ইনফেকশন (যেমন যক্ষ্মা)", "দীর্ঘস্থায়ী প্রদাহ"],
+        symptoms: ["জ্বর, গা ব্যথা বা অতিরিক্ত ক্লান্তি", "গলা বা বগলের লিম্ফ গ্ল্যান্ড ফুলে যাওয়া", "গলা ব্যথা"],
+        prevention: ["পর্যাপ্ত বিশ্রাম নিন ও দুশ্চিন্তামুক্ত থাকুন", "পর্যাপ্ত পরিমাণে তরল খাবার পান করুন", "ডাক্তারের পরামর্শ অনুযায়ী ইনফেকশনের সঠিক চিকিৎসা নিন"],
+        consult: "ইনফেকশন বা ভাইরাল সংক্রমণ নির্ণয় ও লিম্ফ নোড ফোলা পরীক্ষা করতে চিকিৎসকের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার লিম্ফোসাইট কাউন্ট মারাত্মক বেশি (পরম গণনা ১৫,০০০ cells/µL এর বেশি বা আপেক্ষিক ৬৫% এর বেশি)। এটি লিম্ফোসাইটের মারাত্মক বৃদ্ধির সংকেত দেয় যা রক্তের ক্যান্সারের লক্ষণ হতে পারে।",
+        causes: ["ক্রনিক লিম্ফোসাইটিক লিউকেমিয়া (CLL)", "একিউট লিম্ফোব্লাস্টিক লিউকেমিয়া (ALL)", "গুরুতর ইনফেকশাস মনোনুক্লীওসিসের বিরল চরম অবস্থা"],
+        symptoms: ["তীব্র ক্লান্তি বা রাতে অতিরিক্ত ঘাম হওয়া", "সহজেই চামড়ার নিচে কালশিটে দাগ পড়া বা ওজন হ্রাস", "গলা ও বগলে ব্যথা ছাড়া লিম্ফ নোড ফুলে যাওয়া", "বাম পাশে পেটে ভারী ভাব (প্লিহা ফুলে যাওয়া)"],
+        prevention: ["ভারী শারীরিক পরিশ্রম বন্ধ রাখুন", "পর্যাপ্ত পরিমাণে পানি ও তরল খাবার পান করুন"],
+        consult: "⚠️ জরুরি ভিত্তিতে বিশেষজ্ঞ ডাক্তারের সাথে যোগাযোগ করুন। রক্তের ফিল্ম পরীক্ষা বা ইমিউনোফেনোটাইপিং করার প্রয়োজন হতে পারে।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपकी लिम्फोसाइट गिनती मानक सामान्य सीमा के भीतर है। यह सामान्य वायरल रक्षा क्षमताओं के साथ एक स्वस्थ अनुकूली प्रतिरक्षा प्रणाली का सुझाव देता है।",
+        causes: ["सामान्य प्रतिरक्षा कार्य", "कोई सक्रिय प्रणालीगत वायरल रोगज़नक़ मौजूद नहीं है", "कोई गंभीर प्रतिरक्षाविज्ञानी तनाव कारक नहीं"],
+        symptoms: ["वायरल चुनौतियों के प्रति स्वस्थ प्रतिक्रिया", "कोई पुराना बुखार नहीं"],
+        prevention: ["प्रतिरक्षा-सहायक विटामिन (सी, डी) से भरपूर आहार लें", "परिसंचरण को बनाए रखने के लि�� मध्यम व्यायाम करें"],
+        consult: "दीर्घकालिक रुझानों पर नज़र रखने के लिए नियमित वार्षिक स्वास्थ्य जांच की सिफारिश की जाती है।"
+      },
+      low: {
+        desc: "आपकी लिम्फोसाइट गिनती कम है, जो लिम्फोपेनिया का संकेत है। इसका मतलब है कि आपके शरीर की अनुकूली प्रतिरक्षा सुरक्षा कमजोर हो गई है, खासकर वायरस के खिलाफ।",
+        causes: ["हाल के वायरल संक्रमण (इन्फ्लूएंजा, सीओवीआईडी-19, हेपेटाइटिस)", "स्वप्रतिरक्षी स्थितियाँ", "कॉर्टिकोस्टेरॉइड थेरेपी", "अंतर्निहित इम्युनोडेफिशिएंसी रोग"],
+        symptoms: ["वायरल संक्रमण के प्रति संवेदनशीलता में वृद्धि", "छोटी-मोटी बीमारियों से धीरे-धीरे ठीक होना", "गले में खराश या थकान"],
+        prevention: ["हाथ की स्वच्छता का अभ्यास करें", "बीमार व्यक्तियों के निकट संपर्क से बचें", "विटामिन डी और जिंक समर्थन पर विचार करें"],
+        consult: "कारण का मूल्यांकन करने के लिए अपने डॉक्टर से परामर्श लें, खासकर यदि आप स्टेरॉयड ले रहे हैं या बार-बार वायरल लक्षणों का अनुभव कर रहे हैं।"
+      },
+      criticalLow: {
+        desc: "आपकी लिम्फोसाइट गिनती गंभीर रूप से कम है (पूर्ण <500 कोशिकाएं/μL या सापेक्ष <10%)। यह गंभीर इम्युनोडेफिशिएंसी का संकेत देता है, जिससे आप अवसरवादी संक्रमणों के प्रति अतिसंवेदनशील हो जाते हैं।",
+        causes: ["उन्नत एचआईवी/एड्स", "अस्थि मज्जा दमन या कीमोथेरेपी", "गंभीर ऑटोइम्यून विकार", "गंभीर प्रणालीगत सेप्सिस"],
+        symptoms: ["लगातार तेज़ बुखार रहना", "ओरल थ्रश या गंभीर मुँह के छाले", "सांस लेने में तकलीफ या लगातार खांसी", "शारीरिक थकावट"],
+        prevention: ["सार्वजनिक क्षेत्रों या भीड़ में कम से कम जाएँ", "कच्चे या अपाश्चुरीकृत खाद्य पदार्थों से बचें", "शरीर के तापमान की बारीकी से निगरानी करें"],
+        consult: "⚠️ तत्काल चिकित्सा मूल्यांकन लें या आपातकालीन कक्ष में जाएँ। रोगनिरोधी उपचारों की अक्सर तत्काल आवश्यकता होती है।"
+      },
+      high: {
+        desc: "आपकी लिम्फोसाइट गिनती बढ़ी हुई है, जो लि��्फोसाइटोसिस का संकेत है। इससे पता चलता है कि आपकी प्रतिरक्षा प्रणाली सक्रिय रूप से एक रोगज़नक़, आमतौर पर एक वायरस पर प्रतिक्रिया कर रही है।",
+        causes: ["तीव्र वायरल संक्रमण (मोनोन्यूक्लिओसिस, कण्ठमाला, खसरा, वैरीसेला)", "जीर्ण जीवाणु संक्रमण (क्षय रोग, पर्टुसिस)", "जीर्ण सूजन की स्थिति"],
+        symptoms: ["बुखार, थकान या शरीर में दर्द", "गर्दन या बगल में लिम्फ नोड्स में सूजन", "गले में ख़राश या ऊपरी श्वसन लक्षण"],
+        prevention: ["पुनर्प्राप्ति में सहायता के लिए भरपूर आराम करें", "अच्छी तरह से हाइड्रेटेड रहें", "चिकित्सकीय देखरेख में सक्रिय संक्रमण का इलाज करें"],
+        consult: "वायरल मार्करों की जांच करने या लग���तार लिम्फ नोड सूजन का मूल्यांकन करने के लिए अपने सामान्य चिकित्सक से परामर्श लें।"
+      },
+      criticalHigh: {
+        desc: "आपकी लिम्फोसाइट गिनती गंभीर रूप से बढ़ी हुई है (पूर्ण > 15,000 कोशिकाएं/µL या सापेक्ष > 65%)। यह लिम्फोसाइटों के बड़े पैमाने पर प्रसार को इंगित करता है, जिसके लिए अक्सर तत्काल हेमेटोलॉजी समीक्षा की आवश्यकता होती है।",
+        causes: ["क्रोनिक लिम्फोसाइटिक ल्यूकेमिया (सीएलएल)", "तीव्र लिम्फोब्लास्टिक ल्यूकेमिया (सभी)", "गंभीर तीव्र संक्रामक मोनोन्यूक्लिओसिस (दुर्लभ चरम मामले)"],
+        symptoms: ["अत्यधिक थकान या रात में भीगने वाला पसीना", "बिना कारण वजन कम होना या आसानी से चोट लगना", "स्पष्ट रूप से सूजी हुई, दर्द रहित लिम्फ नोड्स", "बाएं ऊपरी पेट में दर्द (तिल्ली का बढ़ना)"],
+        prevention: ["ज़ोरदार गतिविधियों से बचें", "हाइड्रेटेड रखें"],
+        consult: "⚠️ तत्काल चिकित्सा मूल्यांकन की मांग करें। लिम्फोइड दुर्दमताओं को दूर करने के लिए एक परिधीय रक्त स्मीयर या इम्यूनोफेनोटाइपिंग की आवश्यकता होती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-lymph-history")) || [];
+  let activeReportData = null;
+  let currentValType = "relative"; // relative, absolute
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateActiveTicks();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchValType() {
+    currentValType = document.getElementById("valType").value;
+    const label = document.getElementById("inputLabel");
+    const input = document.getElementById("valLymph");
+    
+    if (currentValType === "relative") {
+      label.textContent = translations[currentLang].labelLymphPct;
+      input.placeholder = "e.g. 30";
+    } else {
+      label.textContent = translations[currentLang].labelLymphAbs;
+      input.placeholder = "e.g. 2500";
+    }
+    
+    resetForm();
+    updateActiveTicks();
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valLymph").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits() {
+    if (currentValType === "relative") {
+      return { min: 20, max: 40, criticalMin: 10, criticalMax: 65 };
+    } else {
+      return { min: 1000, max: 4800, criticalMin: 500, criticalMax: 15000 };
+    }
+  }
+
+  function updateActiveTicks() {
+    const limits = getReferenceLimits();
+    const unit = currentValType === "relative" ? "%" : " cells/µL";
+    document.getElementById("tickNormalRange").textContent = `${limits.min.toLocaleString()}${unit} - ${limits.max.toLocaleString()}${unit}`;
+    document.getElementById("tickCriticalLow").textContent = `${limits.criticalMin.toLocaleString()}${unit} (Crit)`;
+    document.getElementById("tickCriticalHigh").textContent = `${limits.criticalMax.toLocaleString()}${unit} (Crit)`;
+  }
+
+  function analyzeLymphocytes() {
+    const valLymph = parseFloat(document.getElementById("valLymph").value);
+
+    if (isNaN(valLymph) || valLymph < 0) {
+      alert(currentLang === "en" ? "Please enter a valid Lymphocyte value." : "দয়া করে লিম্ফোসাইটের একটি সঠিক মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits();
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valLymph < limits.min) {
+      if (valLymph <= limits.criticalMin) {
+        statusKey = "criticalLow";
+        badgeKey = "badgeCriticalLow";
+      } else {
+        statusKey = "low";
+        badgeKey = "badgeLow";
+      }
+    } else if (valLymph > limits.max) {
+      if (valLymph >= limits.criticalMax) {
+        statusKey = "criticalHigh";
+        badgeKey = "badgeCriticalHigh";
+      } else {
+        statusKey = "high";
+        badgeKey = "badgeHigh";
+      }
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valLymph >= limits.min && valLymph <= limits.max) {
+      const range = limits.max - limits.min;
+      pointerPct = range > 0 ? 40 + ((valLymph - limits.min) / range) * 20 : 50;
+    } else if (valLymph < limits.min) {
+      const range = limits.min - limits.criticalMin;
+      pointerPct = range > 0 ? Math.max(5, 5 + ((valLymph - limits.criticalMin) / range) * 35) : 20;
+    } else {
+      const range = limits.criticalMax - limits.max;
+      pointerPct = range > 0 ? Math.min(95, 60 + ((valLymph - limits.max) / range) * 35) : 80;
+    }
+
+    activeReportData = {
+      valLymph,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString(),
+      type: currentValType
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valLymph, currentValType);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resValType").textContent = d.type === "relative" ? translations[currentLang].inputTypeRelative : translations[currentLang].inputTypeAbsolute;
+    document.getElementById("resDate").textContent = d.date;
+
+    const unit = d.type === "relative" ? "%" : " cells/µL";
+    document.getElementById("resUnitText").textContent = unit;
+    document.getElementById("resLymphVal").textContent = d.valLymph.toLocaleString();
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey.startsWith("critical")) colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resLymphVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = lymphInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.causes.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valLymph, type) {
+    const unit = type === "relative" ? "%" : " cells/µL";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valLymph,
+      unit,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-lymph-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valLymph.toLocaleString()}${item.unit} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const unit = activeReportData.type === "relative" ? "%" : " cells/µL";
+    let t = `--- LYMPHOCYTE DIAGNOSTIC REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Value: ${activeReportData.valLymph.toLocaleString()}${unit} (Ref: ${activeReportData.limits.min}-${activeReportData.limits.max}${unit})\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `lymphocyte-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

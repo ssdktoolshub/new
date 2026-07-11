@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File to ZIP Compressor &bull; Online Archive Maker - SSDK TOOLS HUB</title>
+  <meta name="description" content="Bundle and compress multiple files into a single ZIP archive locally in your browser. Secure client-side compression using JSZip.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <!-- Load JSZip compression library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    .file-list {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      font-size: 0.85rem;
+    }
+    .file-list th, .file-list td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .file-list th {
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .file-list tr:hover {
+      background: rgba(0,0,0,0.1);
+    }
+    .progress-bar-container {
+      width: 100%;
+      background: var(--bg2);
+      border-radius: 8px;
+      height: 12px;
+      overflow: hidden;
+      margin-top: 10px;
+      display: none;
+      border: 1px solid var(--border);
+    }
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      transition: width 0.1s ease;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">File to ZIP Compressor</h1>
+  <p class="page-sub">Bundle and compress files of any type into a single ZIP folder instantly in memory.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 1fr; gap: 24px;">
+      
+      <!-- Upload Box -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Select Files to Compress</h4>
+        <div id="dropZone" style="border: 2px dashed var(--border); padding: 35px 24px; border-radius: 12px; text-align: center; cursor: pointer; background: var(--bg2); transition: 0.3s; margin-bottom: 16px;">
+          <span style="font-size: 2.8rem; display: block; margin-bottom: 8px;">📁</span>
+          <p style="font-size: 0.9rem; color: var(--muted); margin: 0;">Drag & drop files here, or <span style="color: var(--accent); font-weight: 700;">browse</span></p>
+          <input type="file" id="fileInput" multiple style="display: none;">
+        </div>
+      </div>
+
+      <!-- File Queue Management -->
+      <div id="queueContainer" style="display: none;">
+        <h4 style="margin-bottom: 6px;">Files Queue (<span id="queueCount">0</span> selected)</h4>
+        <div style="max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--bg3);">
+          <table class="file-list">
+            <thead>
+              <tr>
+                <th>File Name</th>
+                <th>Size</th>
+                <th>Type</th>
+                <th style="width: 50px; text-align: center;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="fileQueueBody">
+            </tbody>
+          </table>
+        </div>
+
+        <div style="margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: end;">
+          <div class="input-group" style="display: flex; flex-direction: column;">
+            <label for="zipName" style="font-size: 0.8rem; font-weight: 700; color: var(--muted); margin-bottom: 4px;">ZIP File Name</label>
+            <input type="text" id="zipName" placeholder="archive.zip" value="archive.zip" style="padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); outline: none; font-size: 0.85rem;">
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: stretch; justify-content: flex-end; height: 100%;">
+            <div class="progress-bar-container" id="progressBarContainer">
+              <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <span id="compressProgressText" style="font-size: 0.75rem; color: var(--muted); font-weight: bold; margin-top: 4px; display: none;">Compressing: 0%</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnCompress" style="display: none; background: var(--grad2);">🗜 Compress to ZIP</button>
+      <button class="btn ghost" id="btnClear" style="display: none; border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear Queue</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>100% Offline Processing:</strong> Files are compressed directly in your browser's virtual memory block. No data is transferred to any cloud.</li>
+      <li><strong>No Size Limits:</strong> Packages text, documents, images, and binary content formats efficiently.</li>
+      <li><strong>Dynamic Progress Meters:</strong> Watch real-time packaging percentage feedback during compression runs.</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">How does browser-based compression work?<span>＋</span></div>
+        <div class="faq-a">This tool uses a client-side JavaScript engine (JSZip) to parse files into binary byte arrays, apply DEFLATE compression algorithms, and output a raw `.zip` archive stream, all operating locally in-memory.</div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Is my file data private?<span>＋</span></div>
+        <div class="faq-a">Absolutely. Since there are no server-side scripts or API connections handling your uploads, your files never leave your computer. Privacy is 100% guaranteed.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  let fileQueue = [];
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  // Handle Drag & Drop
+  const dropZone = $('dropZone');
+  dropZone.onclick = () => $('fileInput').click();
+
+  dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--accent)';
+  };
+  dropZone.ondragleave = () => {
+    dropZone.style.borderColor = 'var(--border)';
+  };
+  dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files.length) {
+      appendFiles(e.dataTransfer.files);
+    }
+  };
+  $('fileInput').onchange = (e) => {
+    if (e.target.files.length) {
+      appendFiles(e.target.files);
+    }
+  };
+
+  function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  function appendFiles(filesList) {
+    for (let i = 0; i < filesList.length; i++) {
+      const file = filesList[i];
+      // Check for duplicate names in queue
+      if (fileQueue.some(f => f.name === file.name)) {
+        continue;
+      }
+      fileQueue.push(file);
+    }
+
+    renderQueue();
+    showStatus(`✅ Added ${filesList.length} files to the queue.`);
+  }
+
+  function renderQueue() {
+    const tbody = $('fileQueueBody');
+    tbody.innerHTML = '';
+    
+    if (fileQueue.length === 0) {
+      $('queueContainer').style.display = 'none';
+      $('btnCompress').style.display = 'none';
+      $('btnClear').style.display = 'none';
+      return;
+    }
+
+    $('queueContainer').style.display = 'block';
+    $('btnCompress').style.display = 'inline-flex';
+    $('btnClear').style.display = 'inline-flex';
+    $('queueCount').textContent = fileQueue.length;
+
+    fileQueue.forEach((file, index) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="word-break: break-all; font-weight: 600;">${file.name}</td>
+        <td>${formatBytes(file.size)}</td>
+        <td style="color: var(--muted); font-size: 0.75rem;">${file.type || 'unknown'}</td>
+        <td style="text-align: center;">
+          <button class="btn-rule-del" onclick="removeFromFileQueue(${index})" title="Remove">🗑</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  window.removeFromFileQueue = (idx) => {
+    fileQueue.splice(idx, 1);
+    renderQueue();
+    showStatus('Removed file from queue.');
+  };
+
+  $('btnCompress').onclick = () => {
+    if (fileQueue.length === 0) return;
+    if (typeof JSZip === 'undefined') {
+      showStatus('Error: JSZip compression library failed to load. Check your internet connection.', true);
+      return;
+    }
+
+    showStatus('Starting archive compilation...');
+    
+    // Reset progress
+    $('progressBarContainer').style.display = 'block';
+    $('compressProgressText').style.display = 'block';
+    $('progressBar').style.width = '0%';
+    $('compressProgressText').textContent = 'Compressing: 0%';
+
+    const zip = new JSZip();
+    fileQueue.forEach(file => {
+      zip.file(file.name, file);
+    });
+
+    let zipFileName = $('zipName').value.trim();
+    if (!zipFileName) zipFileName = 'archive.zip';
+    if (!zipFileName.toLowerCase().endsWith('.zip')) {
+      zipFileName += '.zip';
+    }
+
+    zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }, (metadata) => {
+      const pct = Math.round(metadata.percent);
+      $('progressBar').style.width = `${pct}%`;
+      $('compressProgressText').textContent = `Compressing: ${pct}%`;
+    })
+    .then((blob) => {
+      // Trigger download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = zipFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showStatus('✅ Compression completed! Download triggered.');
+      $('progressBarContainer').style.display = 'none';
+      $('compressProgressText').style.display = 'none';
+    })
+    .catch((err) => {
+      showStatus(`❌ Compression failed: ${err.message}`, true);
+      $('progressBarContainer').style.display = 'none';
+      $('compressProgressText').style.display = 'none';
+    });
+  };
+
+  $('btnClear').onclick = () => {
+    fileQueue = [];
+    $('fileInput').value = '';
+    renderQueue();
+    $('progressBarContainer').style.display = 'none';
+    $('compressProgressText').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

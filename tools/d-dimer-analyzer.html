@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D-Dimer Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate serum D-Dimer levels online. Check for active blood clotting, venous thromboembolism risk, or inflammatory conditions.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, #10b981 0%, #f59e0b 50%, #ef4444 100%);
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">D-Dimer Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze plasma D-Dimer levels to screen for deep vein thrombosis, pulmonary embolism, and fibrinolytic disorders.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 D-Dimer Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valUnit" data-translate="labelUnit">Measurement Unit</label>
+              <select id="valUnit" onchange="switchUnit()">
+                <option value="ngFEU" selected>ng/mL FEU</option>
+                <option value="ugFEU">µg/mL FEU</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valDimer" id="inputLabel" data-translate="labelDimer">D-Dimer Value</label>
+              <input type="number" step="0.01" id="valDimer" placeholder="e.g. 350" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeDimer()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze D-Dimer</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your D-Dimer value and click analyze to check clinical risk status.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 D-Dimer Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: D-Dimer (FEU)</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;" id="resUnitText">ng/mL FEU</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--normal-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--high-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: D-Dimer</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is D-Dimer?</strong><br><span data-translate="eduA1">D-Dimer is a protein fragment produced when a blood clot dissolves in the body. When a blood vessel is injured, the body creates clots (fibrin meshes) to stop bleeding. When the clot degrades, D-Dimer is released.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">How is D-Dimer clinically useful?</strong><br><span data-translate="eduA2">D-Dimer has high negative predictive value. A normal D-Dimer level (<500 ng/mL FEU) essentially rules out dangerous deep vein thrombosis (DVT) or pulmonary embolism (PE) in patients with low-to-moderate pre-test clinical probability.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "D-Dimer Analyzer",
+      toolDesc: "Analyze plasma D-Dimer levels to screen for deep vein thrombosis, pulmonary embolism, and fibrinolytic disorders.",
+      inputsTitle: "🧬 D-Dimer Parameters",
+      clearBtn: "Reset",
+      labelUnit: "Measurement Unit",
+      labelDimer: "D-Dimer Value",
+      btnAnalyze: "Analyze D-Dimer",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your D-Dimer value and click analyze to check clinical risk status.",
+      reportTitle: "🔬 D-Dimer Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal D-Dimer (Thromboembolism Highly Unlikely)",
+      badgeElevated: "Elevated D-Dimer (Possible Clotting Activity / Inflammation)",
+      badgeHigh: "High D-Dimer (Active Coagulation / Critical Thrombosis Risk)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "ডি-ডাইমার বিশ্লেষক",
+      toolDesc: "ডিপ ভেইন থ্রম্বোসিস, পালমোনারি এমবোলিজম এবং ফিব্রিনোলাইটিক রোগ সনাক্তকরণের জন্য প্লাজমা ডি-ডাইমার মাত্রা বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 ডি-ডাইমার পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelUnit: "পরিমাপের ইউনিট",
+      labelDimer: "ডি-ডাইমারের মান",
+      btnAnalyze: "ডি-ডাইমার বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার ডি-ডাইমার মান লিখুন এবং বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 ডি-ডাইমার ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক ডি-ডাইমার (রক্ত জমাট বাঁধার সম্ভাবনা কম)",
+      badgeElevated: "উদ্বেগজনক ডি-ডাইমার (রক্ত জমাট বা শারীরিক প্রদাহ)",
+      badgeHigh: "উচ্চ ডি-ডাইমার (তীব্র রক্ত জমাট বাঁধার ঝুঁকি)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "डी-डिमर विश्लेषक",
+      toolDesc: "गहरी शिरा घनास्त्रता, फुफ्फुसीय अन्त: शल्यता और फाइब्रिनोलिटिक विकारों की जांच के लिए प्लाज्मा डी-डिमर स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬 डी-डिमर पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelUnit: "मापन इकाई",
+      labelDimer: "डी-डिमर मान",
+      btnAnalyze: "डी-डिमर का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना डी-डिमर मान दर्ज करें और नैदानिक ​​जोखिम स्थिति की जांच करने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 डी-डिमर डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "परीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य डी-डिमर (थ्रोम्बोएम्बोलिज्म की अत्यधिक संभावना नहीं)",
+      badgeElevated: "ऊंचा डी-डिमर (संभावित थक्का जमने की गतिविधि/सूजन)",
+      badgeHigh: "उच्च डी-डिमर (सक्रिय जमावट / गंभीर घनास्त्रता जोखिम)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is D-Dimer?", a: "It is a tiny protein fragment leftover in the blood when the body dissolves a fibrin clot." },
+      { q: "What is a normal D-Dimer range?", a: "A normal level is less than 500 ng/mL FEU (or less than 0.50 µg/mL FEU)." },
+      { q: "What does an elevated D-Dimer mean?", a: "It indicates increased clotting and fibrin breakdown activity. However, it does not confirm a clot, as infection, pregnancy, injury, or surgery also cause elevation." },
+      { q: "What is the difference between FEU and DDU?", a: "FEU (Fibrinogen Equivalent Units) and DDU (D-Dimer Units) are two ways of reporting. 1 FEU is roughly equal to 2 DDU (e.g. 500 ng/mL FEU = 250 ng/mL DDU)." }
+    ],
+    bn: [
+      { q: "ডি-ডাইমার (D-Dimer) কী?", a: "এটি রক্তে দ্রবীভূত রক্ত জমাটের ফাইবারগুলির অবশিষ্টাংশ।" },
+      { q: "ডি-ডাইমারের স্বাভাবিক মাত্রা কত?", a: "৫০০ ng/mL FEU এর কম (অথবা ০.৫০ µg/mL FEU এর কম)।" },
+      { q: "ডি-ডাইমার বাড়ার অর্থ কী?", a: "এর অর্থ শরীরে রক্ত জমাট বাঁধা এবং তা গলানোর প্রক্রিয়া সক্রিয় আছে। তবে এটি রক্তনালীতে জমাটের নিশ্চিত প্রমাণ নয়, কারণ কোনো আঘাত, গর্ভাবস্থা বা ইনফেকশনেও এটি বাড়ে।" },
+      { q: "FEU এবং DDU এর মধ্যে পার্থক্য কী?", a: "১ FEU সাধারণত ২ DDU এর সমান (যেমন: ৫০০ ng/mL FEU = ২৫০ ng/mL DDU)। আমাদের এই টুলটি FEU পরিমাপে হিসাব করে।" }
+    ],
+    hi: [
+      { q: "डी-डिमर क्या है?", a: "जब शरीर फाइब्रिन के थक्के को पिघला देता है तो यह रक्त में बचा हुआ एक छोटा प्रोटीन टुकड़ा होता है।" },
+      { q: "सामान्य डी-डिमर रेंज क्या है?", a: "सामान्य स्तर 500 एनजी/एमएल एफईयू (या 0.50 µजी/एमएल एफईयू से कम) से कम है।" },
+      { q: "ऊंचे डी-डिमर का क्या मतलब है?", a: "यह बढ़े हुए थक्के और फाइब्रिन टूटने की गतिविधि को इंगित करता है। हालाँकि, यह थक्के की पुष्टि नहीं करता है, क्योंकि संक्रमण, गर्भावस्था, चोट या सर्जरी के कारण भी रक्त का थक्का जम जाता है।" },
+      { q: "एफईयू और डीडीयू में क्या अंतर है?", a: "एफईयू (फाइब्रिनोजेन समतुल्य इकाइयां) और डीडीयू (डी-डिमर इकाइयां) रिपोर्टिंग के दो तरीके हैं। 1 एफईयू लगभग 2 डीडीयू के बराबर है (उदाहरण के लिए 500 एनजी/एमएल एफईयू = 250 एनजी/एमएल डीडीयू)।" }
+    ]
+  };
+
+  const dimerInsights = {
+    en: {
+      normal: {
+        desc: "Your D-Dimer level is normal. Active thrombotic conditions like deep vein thrombosis or pulmonary embolism are highly unlikely.",
+        factors: ["Normal intravascular fibrin turnover", "Absence of major acute systemic inflammation", "Healthy clot degradation balance"],
+        symptoms: ["No sudden unilateral leg swelling, warmth, or sharp pleuritic chest pain"],
+        prevention: ["Stay mobile during long flights or periods of inactivity", "Stay adequately hydrated"],
+        consult: "No cardiac or vascular follow-up needed unless classic symptoms develop."
+      },
+      elevated: {
+        desc: "Your D-Dimer is elevated. While a blood clot is possible, many benign or non-clot-related conditions can also cause this level.",
+        factors: ["Recent minor trauma, injury, or surgery", "Advanced age (>60 years)", "Normal pregnancy (levels naturally rise)", "Mild systemic infections or inflammation"],
+        symptoms: ["Mild swelling, redness, or localized tenderness in one leg", "Slightly increased breathing rate"],
+        prevention: ["Avoid sitting in one position for more than 2 hours", "Perform simple ankle flexions periodically"],
+        consult: "Discuss this result with your physician to evaluate clinical probability (e.g. Wells Score) and determine if an ultrasound is needed."
+      },
+      high: {
+        desc: "Your D-Dimer level is critically high. This indicates massive fibrin formation and breakdown, carrying a high clinical probability of an active thromboembolic event.",
+        factors: ["Acute Deep Vein Thrombosis (DVT)", "Pulmonary Embolism (PE)", "Disseminated Intravascular Coagulation (DIC)", "Sepsis or major bacterial infection", "Malignancy"],
+        symptoms: ["Sudden leg swelling, severe calf pain, and warmth", "Acute shortness of breath, rapid heart rate, or chest pain", "Coughing up blood"],
+        prevention: ["Do not massage or apply heat to swollen legs (could dislodge a clot)", "Sit comfortably and wait for medical directions"],
+        consult: "⚠️ Seek immediate medical evaluation. Diagnostic imaging (Doppler ultrasound or CT pulmonary angiogram) is usually urgently required."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার ডি-ডাইমার মাত্রা স্বাভাবিক। রক্তনালীতে বিপজ্জনক রক্ত জমাট বাঁধার সম্ভাবনা খুবই কম।",
+        factors: ["স্বাভাবিক রক্ত জমাট চক্র", "শরীরে কোনো তীব্র ইনফেকশন না থাকা"],
+        symptoms: ["হঠাৎ পা ফোলা, তীব্র ব্যথা বা শ্বাসকষ্টের সমস্যা না থাকা"],
+        prevention: ["দীর্ঘ ভ্রমণে বা বসে থাকার সময় মাঝে মাঝে পা নাড়াচড়া করুন", "পর্যাপ্ত পানি পান করুন"],
+        consult: "সাধারণ স্বাস্থ্য মনিটরিং বজায় রাখুন।"
+      },
+      elevated: {
+        desc: "আপনার ডি-ডাইমার কিছুটা বৃদ্ধি পেয়েছে। এটি কেবল রক্ত জমাট ছাড়াও ইনফেকশন, গর্ভাবস্থা বা সাম্প্রতিক কোনো আঘাতের জন্য হতে পারে।",
+        factors: ["সাম্প্রতিক আঘাত বা সার্জারি", "বার্ধক্য (৬০ বছরের বেশি বয়স)", "স্বাভাবিক গর্ভাবস্থা", "শরীরে হালকা প্রদাহ বা ইনফেকশন"],
+        symptoms: ["এক পায়ে মৃদু ফোলা বা লালচে ভাব", "হালকা শ্বাসকষ্ট"],
+        prevention: ["একটানা ২ ঘণ্টার বেশি বসে থাকবেন না", "পা সচল রাখুন এবং তরল খাবার গ্রহণ করুন"],
+        consult: "ডাক্তারের পরামর্শ নিয়ে নিশ্চিত হোন আপনার কোনো ভেইন ডপলার আল্ট্রাসাউন্ড করার প্রয়োজন আছে কিনা।"
+      },
+      high: {
+        desc: "আপনার ডি-ডাইমার মাত্রা অনেক বেশি। এটি ফুসফুস বা পায়ে তীব্র রক্ত জমাট বা মারাত্মক কোনো ইনফেকশনের লক্ষণ হতে পারে। অবিলম্বে পরীক্ষা জরুরি।",
+        factors: ["ডিপ ভেইন থ্রম্বোসিস (DVT)", "পালমোনারি এমবোলিজম (PE - ফুসফুসে ব্লকেজ)", "সেপসিস বা মারাত্মক ইনফেকশন", "ডিআইসি (DIC)"],
+        symptoms: ["এক পায়ের গোড়ালি বা কাফ মাসল হঠাৎ অতিরিক্ত ফুলে যাওয়া ও গরম অনুভূত হওয়া", "হঠাৎ তীব্র শ্বাসকষ্ট ও বুক ধড়ফড় করা", "কাশি দিয়ে রক্ত বের হওয়া"],
+        prevention: ["ফুলে যাওয়া পায়ে কোনো ম্যাসাজ বা গরম সেঁক দেবেন না (এতে রক্তপিন্ড ছুটে মস্তিষ্কে বা ফুসফুসে চলে যেতে পারে)"],
+        consult: "⚠️ অবিলম্বে হাসপাতালে যোগাযোগ করুন। জরুরি ভিত্তিতে পায়ের ডপলার বা বুকের সিটি স্ক্যান (CTPA) প্রয়োজন হতে পারে।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका डी-डिमर स्तर सामान्य है। गहरी शिरा घनास्त्रता या फुफ्फुसीय अन्त: शल्यता जैसी सक्रिय थ्रोम्बोटिक स्थितियाँ अत्यधिक असंभावित हैं।",
+        factors: ["सामान्य इंट्रावास्कुलर फाइब्रिन टर्नओवर", "प्रमुख तीव्र प्रणालीगत सूजन की अनुपस्थिति", "स्वस्थ थक्का गिरावट संतुलन"],
+        symptoms: ["कोई अचानक एकतरफा पैर की सूजन, गर्मी, या तेज फुफ्फुस संबंधी सीने में दर्द नहीं"],
+        prevention: ["लंबी उड़ानों या निष्क्रियता की अवधि के दौरान गतिशील रहें", "पर्याप्त रूप से हाइड्रेटेड रहें"],
+        consult: "जब तक क्लासिक लक्षण विकसित न हों, हृदय या संवहनी अनुवर्ती की आवश्यकता नहीं है।"
+      },
+      elevated: {
+        desc: "आपका डी-डिमर बढ़ा हुआ है। जबकि रक्त का थक्का बनना संभव है, कई सौम्य या गैर-थक्का-संबंधी स्थितियां भी इस स्तर का कारण बन सकती हैं।",
+        factors: ["हाल ही में मामूली आघात, चोट, या सर्जरी", "उन्नत आयु (>60 वर्ष)", "सामान्य गर्भावस्था (स्तर स्वाभाविक रूप से बढ़ता है)", "हल्के प्रणालीगत संक्रमण या सूजन"],
+        symptoms: ["एक पैर में हल्की सूजन, लालिमा या स्थानीय कोमलता", "साँस लेने की गति थोड़ी बढ़ गई"],
+        prevention: ["2 घंटे से ज्यादा एक ही स्थिति में बैठने से बचें", "समय-समय पर साधारण टखने मोड़ें"],
+        consult: "नैदानिक ​​संभाव्यता (जैसे वेल्स स्कोर) का मूल्यांकन करने और अल्ट्रासाउंड की आवश्यकता है या नहीं यह निर्धारित करने के लिए अपने चिकित्सक के साथ इस परिणाम पर चर्चा करें।"
+      },
+      high: {
+        desc: "आपका डी-डिमर स्तर गंभीर रूप से उच्च है। यह बड़े पैमाने पर फाइब्रिन के गठन और टूटने का संकेत देता है, जिससे सक्रिय थ्रोम्बोम्बोलिक घटना की उच्च नैदानिक ​​​​संभावना होती है।",
+        factors: ["तीव्र गहरी शिरा घनास्त्रता (DVT)", "पल्मोनरी एम्बोलिज्म (पीई)", "प्रसारित इंट्रावास्कुलर जमावट (डीआईसी)", "सेप्सिस या प्रमुख जीवाणु संक्रमण", "दुर्दमता"],
+        symptoms: ["अचानक पैर में सूजन, पिंडली में तेज दर्द और गर्मी", "सांस की तीव्र कमी, तेज़ हृदय गति, या सीने में दर्द", "खांसी के साथ खून आना"],
+        prevention: ["सूजे हुए पैरों पर मालिश न करें या गर्मी न लगाएं (थक्का निकल सकता है)", "आराम से बैठें और चिकित्सा निर्देशों की प्रतीक्षा करें"],
+        consult: "⚠️ तत्काल चिकित्सा मूल्यांकन की मांग करें। डायग्नोस्टिक इमेजिंग (डॉपलर अल्ट्रासाउंड या सीटी पल्मोनरी एंजियोग्राम) की आमतौर पर तत्काल आवश्यकता होती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-ddimer-history")) || [];
+  let activeReportData = null;
+  let currentUnit = "ngFEU"; // ngFEU, ugFEU
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelUnits();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function switchUnit() {
+    currentUnit = document.getElementById("valUnit").value;
+    updateLabelUnits();
+    resetForm();
+  }
+
+  function updateLabelUnits() {
+    const label = document.getElementById("inputLabel");
+    const unitText = currentUnit === "ngFEU" ? " (ng/mL FEU)" : " (µg/mL FEU)";
+    label.textContent = translations[currentLang].labelDimer + unitText;
+  }
+
+  function getReferenceLimits() {
+    let normalLimit = 500;
+    let highLimit = 2000;
+
+    if (currentUnit === "ugFEU") {
+      normalLimit = 0.5;
+      highLimit = 2.0;
+    }
+    return { normalLimit, highLimit };
+  }
+
+  function analyzeDimer() {
+    const valDimer = parseFloat(document.getElementById("valDimer").value);
+
+    if (isNaN(valDimer) || valDimer < 0) {
+      alert(currentLang === "en" ? "Please enter a valid D-Dimer value." : "দয়া করে ডি-ডাইমার এর একটি সঠিক মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits();
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valDimer >= limits.normalLimit && valDimer <= limits.highLimit) {
+      statusKey = "elevated";
+      badgeKey = "badgeElevated";
+    } else if (valDimer > limits.highLimit) {
+      statusKey = "high";
+      badgeKey = "badgeHigh";
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valDimer < limits.normalLimit) {
+      pointerPct = Math.max(5, (valDimer / limits.normalLimit) * 33);
+    } else if (valDimer <= limits.highLimit) {
+      const range = limits.highLimit - limits.normalLimit;
+      pointerPct = range > 0 ? 33 + ((valDimer - limits.normalLimit) / range) * 33 : 50;
+    } else {
+      pointerPct = Math.min(95, 66 + ((valDimer - limits.highLimit) / (limits.highLimit * 1.5)) * 29);
+    }
+
+    activeReportData = {
+      valDimer,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      unit: currentUnit,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valDimer, currentUnit);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+
+    const unitText = d.unit === "ngFEU" ? " ng/mL FEU" : " µg/mL FEU";
+    document.getElementById("resUnitText").textContent = unitText;
+    document.getElementById("resVal").textContent = d.valDimer.toFixed(currentUnit === "ugFEU" ? 2 : 0);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "elevated") colorClass = "high";
+    else if (d.statusKey === "high") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Update ticks
+    document.getElementById("tickLow").textContent = `< ${d.limits.normalLimit}`;
+    document.getElementById("tickNormalRange").textContent = `${d.limits.normalLimit} - ${d.limits.highLimit}`;
+    document.getElementById("tickHigh").textContent = `${d.limits.highLimit}+`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = dimerInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function resetForm() {
+    document.getElementById("valDimer").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function addToHistory(badgeKey, valDimer, unit) {
+    const unitText = unit === "ngFEU" ? " ng/mL FEU" : " µg/mL FEU";
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valDimer,
+      unitText,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-ddimer-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valDimer.toFixed(item.unitText.includes("µg") ? 2 : 0)}${item.unitText} (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    const unitText = activeReportData.unit === "ngFEU" ? " ng/mL FEU" : " µg/mL FEU";
+    let t = `--- D-DIMER REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Value: ${activeReportData.valDimer.toFixed(activeReportData.unit === "ugFEU" ? 2 : 0)}${unitText}\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `ddimer-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

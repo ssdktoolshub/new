@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AFP Analyzer (Alpha-Fetoprotein) &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate Alpha-Fetoprotein (AFP) levels. Understand normal, borderline, elevated, and high ranges for oncology and prenatal screen with bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --low-color: #3b82f6;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--normal-color) 0%, 
+        var(--high-color) 45%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">AFP Analyzer (Alpha-Fetoprotein)</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze Alpha-Fetoprotein (AFP) level to assess hepatic cell integrity, prenatal screening parameters, and germ cell marker index.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 AFP Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="valAFP" id="inputLabel" data-translate="labelAFP">AFP Level (ng/mL)</label>
+              <input type="number" step="0.01" id="valAFP" placeholder="e.g. 5.4" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeAFP()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze AFP</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your AFP level and click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 AFP Diagnostics</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelType">Test</strong>: Alpha-Fetoprotein (AFP)</span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resAFPVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">ng/mL</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--normal-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--high-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: AFP</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Alpha-Fetoprotein (AFP)?</strong><br><span data-translate="eduA1">AFP is a major plasma protein produced by the yolk sac and liver of a developing fetus. It is the fetal analog of serum albumin. In healthy non-pregnant adults, AFP levels are extremely low. Elevated levels serve as a primary tumor marker.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">When is AFP clinically elevated?</strong><br><span data-translate="eduA2">AFP rises significantly in Hepatocellular Carcinoma (primary liver cancer) and non-seminomatous germ cell tumors (testicular or ovarian origin). It is also temporarily elevated during pregnancy, liver regeneration (e.g. recovering from acute hepatitis), and in chronic liver disease.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "AFP Analyzer (Alpha-Fetoprotein)",
+      toolDesc: "Analyze Alpha-Fetoprotein (AFP) level to assess hepatic cell integrity, prenatal screening parameters, and germ cell marker index.",
+      inputsTitle: "🧬 AFP Parameters",
+      clearBtn: "Reset",
+      labelAFP: "AFP Level",
+      btnAnalyze: "Analyze AFP",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your AFP level and click the analyze button to display medical summaries.",
+      reportTitle: "🔬 AFP Diagnostics",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelType: "Test",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal AFP (<10 ng/mL)",
+      badgeBorderline: "Borderline / Mildly Elevated AFP (10-100 ng/mL)",
+      badgeElevated: "Moderately Elevated AFP (100-400 ng/mL)",
+      badgeHigh: "Severely Elevated AFP (>400 ng/mL)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Clinical Tips",
+      titleConsult: "Clinical Recommendation"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "এএফপি বিশ্লেষক",
+      toolDesc: "লিভারের সুস্থতা, গর্ভাবস্থার স্ক্রীনিং এবং টেস্টিকুলার/ডিম্বাশয়ের টিউমার পরীক্ষা করতে আলফা-ফেটোপ্রোটিন (AFP) মাত্রা বিশ্লেষণ করুন।",
+      inputsTitle: "🧬 এএফপি পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelAFP: "এএফপি লেভেল",
+      btnAnalyze: "এএফপি বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "এএফপির মান লিখুন এবং বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 এএফপি ডায়াগনস্টিক",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelType: "পরীক্ষা",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক এএফপি (<১০ ng/mL)",
+      badgeBorderline: "সীমান্তবর্তী / সামান্য বর্ধিত এএফপি (১০-১০০ ng/mL)",
+      badgeElevated: "মাঝারি বর্ধিত এএফপি (১০০-৪০০ ng/mL)",
+      badgeHigh: "তীব্রভাবে উচ্চ এএফপি (>৪০০ ng/mL)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "স্বাস্থ্য ও মনিটরিং টিপস",
+      titleConsult: "ক্লিনিক্যাল নির্দেশনা"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "एएफपी विश्लेषक (अल्फा-भ्रूणप्रोटीन)",
+      toolDesc: "हेपेटिक सेल अखंडता, प्रसवपूर्व स्क्रीनिंग पैरामीटर और जर्म सेल मार्कर इंडेक्स का आकलन करने के लिए अल्फा-फेटोप्रोटीन (एएफपी) स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬एएफपी पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelAFP: "एएफपी स्तर",
+      btnAnalyze: "एएफपी का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपना एएफपी स्तर दर्ज करें और चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 एएफपी डायग्नोस्टिक्स",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelType: "��रीक्षण",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस��वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य एएफपी (<10 एनजी/एमएल)",
+      badgeBorderline: "सीमा रेखा / हल्का ऊंचा एएफपी (10-100 एनजी/एमएल)",
+      badgeElevated: "मध्यम रूप से ऊंचा एएफपी (100-400 एनजी/एमएल)",
+      badgeHigh: "अत्यधिक ऊंचा एएफपी (>400 एनजी/एमएल)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "कार्रवाईयोग्य नैदानिक युक्तियाँ",
+      titleConsult: "नैदानिक ​​सिफ़ारिश"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is a normal AFP level?", a: "In healthy adult men and non-pregnant women, AFP is normally less than 10 ng/mL." },
+      { q: "What are the common causes of elevated AFP?", a: "Causes include Hepatocellular Carcinoma (HCC - primary liver cancer), germ cell tumors of the testes or ovaries, liver cirrhosis, acute or chronic viral hepatitis, and pregnancy." },
+      { q: "Why does AFP rise during pregnancy?", a: "AFP is produced by the fetus and leaks into the mother's blood. In prenatal screening (triple/quad screen), abnormally high AFP may suggest neural tube defects (e.g. spina bifida), while low AFP may suggest Down syndrome." },
+      { q: "Is AFP used alone to diagnose liver cancer?", a: "No, AFP is a screening and monitoring tool. Diagnosing liver cancer requires liver imaging studies (like CT/MRI) and sometimes biopsy." },
+      { q: "Can acute hepatitis cause borderline AFP elevations?", a: "Yes, when liver cells regenerate after acute damage (from virus, alcohol, or toxins), they synthesize AFP temporarily, causing transient borderline levels (10-100 ng/mL)." }
+    ],
+    bn: [
+      { q: "এএফপি (AFP) এর স্বাভাবিক মাত্রা কত?", a: "সুস্থ পুরুষ এবং গর্ভবতী নন এমন নারীদের রক্তে এএফপি-র স্বাভাবিক মাত্রা ১০ ng/mL এর কম।" },
+      { q: "এএফপি বৃদ্ধির প্রধান কারণগুলো কী কী?", a: "হেপাটোসেলুলার কার্সিনোমা (লিভার ক্যান্সার), অণ্ডকোষ বা ডিম্বাশয়ের জার্ম সেল টিউমার, লিভার সিরোসিস, হেপাটাইটিস সংক্রমণ এবং গর্ভাবস্থা।" },
+      { q: "গর্ভাবস্থায় এএফপি কেন বৃদ্ধি পায়?", a: "এএফপি ভ্রূণের যকৃতে তৈরি হয় এবং মায়ের রক্তে প্রবেশ করে। পরীক্ষার মাধ্যমে ভ্রূণের কোনো জন্মগত ত্রুটি (যেমন স্পাইনা বাইফিডা) আছে কিনা তা যাচাই করা যায়।" },
+      { q: "শুধু এএফপি দিয়ে কি লিভার ক্যান্সার নিশ্চিত করা যায়?", a: "না, লিভার ক্যান্সার নিশ্চিত করার জন্য এএফপি-র সাথে লিভারের আল্ট্রাসাউন্ড, সিটি স্ক্যান বা এমআরআই করা অত্যন্ত প্রয়োজনীয়।" },
+      { q: "হেপাটাইটিসে কি এএফপি সাময়িকভাবে বৃদ্ধি পেতে পারে?", a: "হ্যাঁ, হেপাটাইটিসে লিভারের কোষ পুনর্গঠনের সময় সাময়িকভাবে এএফপি স্তর ১০-১০০ ng/mL পর্যন্ত বৃদ্ধি পেতে পারে।" }
+    ],
+    hi: [
+      { q: "सामान्य एएफपी स्तर क्या है?", a: "स्वस्थ वयस्क पुरुषों और गैर-गर्भवती महिलाओं में, एएफपी सामान्यतः 10 एनजी/एमएल से कम होता है।" },
+      { q: "ऊंचे एएफपी के सामान्य कारण क्या हैं?", a: "कारणों में हेपैटोसेलुलर कार्सिनोमा (एचसीसी - प्राथमिक लीवर कैंसर), वृषण या अंडाशय के जर्म सेल ट्यूमर, लीवर सिरोसिस, तीव्र या क्रोनिक वायरल हेपेटाइटिस और गर्भावस्था शामिल हैं।" },
+      { q: "गर्भावस्था के दौरान एएफपी क्यों बढ़ जाता है?", a: "एएफपी भ्रूण द्वारा निर्मित होता है और मां के रक्त में रिस जाता है। प्रसवपूर्व जांच (ट्रिपल/क्वाड स्क्रीन) में, असामान्य रूप से उच्च एएफपी न्यूरल ट्यूब दोष (जैसे स्पाइना बिफिडा) का संकेत दे सकता है, जबकि कम एएफपी डाउन सिंड्रोम का संकेत दे सकता है।" },
+      { q: "क्या लिवर कैंसर के निदान के लिए एएफपी का अकेले उपयोग किया जाता है?", a: "नहीं, एएफपी एक स्क्रीनिंग और निगरानी उपकरण है। लीवर कैंसर के निदान के लिए लीवर इमेजिंग अध्ययन (जैसे सीटी/एमआरआई) और कभी-कभी बायोप्सी की आवश्यकता होती है।" },
+      { q: "क्या तीव्र हेपेटाइटिस सीमा रेखा एएफपी उन्नयन का कारण बन सकता है?", a: "हां, जब लीवर कोशिकाएं तीव्र क्षति (वायरस, अल्कोहल या विषाक्त पदार्थों से) के बाद पुनर्जीवित होती हैं, तो वे अस्थायी रूप से एएफपी को संश्लेषित करती हैं, जिससे क्षणिक सीमा रेखा स्तर (10-100 एनजी/एमएल) होता है।" }
+    ]
+  };
+
+  const afpInsights = {
+    en: {
+      normal: {
+        desc: "Your AFP level is normal (<10 ng/mL). Active yolk sac/germ cell proliferation or abnormal liver tissue regeneration is not indicated.",
+        factors: ["Healthy hepatocyte function", "Absence of AFP-secreting germ cell tumors"],
+        symptoms: ["No upper abdominal swelling", "No testicular lumps (in men)"],
+        prevention: ["Get vaccinated against Hepatitis B", "Limit alcohol consumption to protect liver cells"],
+        consult: "Continue regular health checkups. No specialized diagnostic screening is needed."
+      },
+      borderline: {
+        desc: "Your AFP level is borderline/mildly elevated (10-100 ng/mL). This often represents benign liver cell regeneration, chronic liver diseases, or early benign ovarian/testicular changes.",
+        factors: ["Chronic hepatitis or liver regeneration after inflammation", "Liver cirrhosis", "Early pregnancy (in women)", "Mild chronic liver injury"],
+        symptoms: ["Fatigue", "Mild right-side abdominal discomfort", "Mild nausea"],
+        prevention: ["Avoid liver toxins and alcohol", "Monitor liver enzyme panels (ALT, AST)"],
+        consult: "Consult a doctor to evaluate liver function tests (LFTs) and check for chronic viral hepatitis infection."
+      },
+      elevated: {
+        desc: "Your AFP level is moderately elevated (100-400 ng/mL). In clinical settings, this requires active diagnostic exploration to rule out primary liver tumors or germ cell malignancies.",
+        factors: ["Hepatocellular carcinoma (HCC) in early stages", "Testicular or ovarian germ cell tumors (non-seminomas)", "Active severe flare of chronic hepatitis"],
+        symptoms: ["Unexplained weight loss", "Jaundice (yellowing of eyes/skin)", "Abdominal mass", "Testicular swelling or lump"],
+        prevention: ["Avoid self-medication", "Initiate specialized abdominal imaging"],
+        consult: "We strongly advise consulting a hepatologist or oncologist promptly. Abdominal ultrasound or CT scans are usually recommended."
+      },
+      high: {
+        desc: "Your AFP level is severely elevated (>400 ng/mL). Clinically, values in this range are highly diagnostic for hepatocellular carcinoma (HCC) or non-seminomatous germ cell tumors.",
+        factors: ["Hepatocellular carcinoma (HCC)", "Metastatic liver cancer", "Malignant testicular/ovarian germ cell tumors"],
+        symptoms: ["Severe weight loss", "Jaundice", "Abdominal swelling (ascites)", "Right upper quadrant abdominal pain", "Testicular mass"],
+        prevention: ["Seek emergency medical and oncological consult", "Ensure strict rest"],
+        consult: "Immediate specialist (oncologist/urologist/hepatologist) evaluation is crucial. High-resolution imaging (contrast-enhanced CT/MRI) and diagnostic biopsy are prioritized."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার এএফপি মাত্রা স্বাভাবিক সীমার মধ্যে রয়েছে (<১০ ng/mL)। এটি সুস্থ যকৃতের কোষ এবং টিউমারের অনুপস্থিতি নির্দেশ করে।",
+        factors: ["লিভারের সুস্থ কার্যক্ষমতা", "জার্ম সেল টিউমারের অনুপস্থিতি"],
+        symptoms: ["পেটে ভারী ভাব বা যকৃতে অস্বস্তি না থাকা"],
+        prevention: ["হেপাটাইটিস বি এর টিকা গ্রহণ করুন", "লিভার সুরক্ষায় মদ্যপান ও ভাজাপোড়া খাবার এড়িয়ে চলুন"],
+        consult: "নিয়মিত স্বাস্থ্য পরীক্ষা চালিয়ে যান। বিশেষ কোনো পরীক্ষা প্রয়োজন নেই।"
+      },
+      borderline: {
+        desc: "আপনার এএফপি মাত্রা সামান্য বা বর্ডারলাইন ঊর্ধ্বমুখী (১০-১০০ ng/mL)। এটি লিভারের কোষের ক্ষতি পরবর্তী পুনর্গঠন বা দীর্ঘস্থায়ী লিভারের মৃদু প্রদাহের কারণে হতে পারে।",
+        factors: ["ক্রনিক হেপাটাইটিস বা লিভার ইনফেকশন", "লিভার সিরোসিস", "গর্ভাবস্থা (মহিলাদের ক্ষেত্রে)"],
+        symptoms: ["ক্লান্তি ও অবসাদ", "পেটের ডান পাশে হালকা ব্যথা", "বমি বমি ভাব"],
+        prevention: ["লিভারের ক্ষতি করতে পারে এমন ওষুধ ও অ্যালকোহল পরিহার করুন", "লিভারের এনজাইম (ALT, AST) পরীক্ষা করুন"],
+        consult: "ডাক্তারের পরামর্শ নিন। তিনি লিভারের কার্যকারিতা পরীক্ষা (LFT) এবং হেপাটাইটিস স্ক্রীনিং করার নির্দেশ দিতে পারেন।"
+      },
+      elevated: {
+        desc: "আপনার এএফপি মাত্রা মাঝারি ঊর্ধ্বমুখী (১০০-৪০০ ng/mL)। এটি লিভারের টিউমার বা টেস্টিকুলার/ডিম্বাশয়ের জটিলতা যাচাই করার জন্য দ্রুত আল্ট্রাসাউন্ড করার সংকেত দেয়।",
+        factors: ["প্রাথমিক পর্যায়ের লিভার ক্যান্সার (HCC)", "টেস্টিকুলার বা ওভারিয়ান জার্ম সেল টিউমার", "তীব্র হেপাটাইটিস আক্রমণ"],
+        symptoms: ["অস্বাভাবিক ওজন হ্রাস", "জন্ডিস (চোখ ও ত্বক হলুদ হওয়া)", "পেটে চাকা বা পিণ্ড অনুভব হওয়া"],
+        prevention: ["বাড়িতে ফেলে না রেখে দ্রুত পরীক্ষা করুন", "ভারী পরিশ্রম এড়িয়ে চলুন"],
+        consult: "অবিলম্বে একজন হেপাটোলজিস্ট বা অনকোলজিস্টের শরণাপন্ন হোন। লিভারের আল্ট্রাসাউন্ড বা সিটি স্ক্যান করার প্রয়োজন পড়বে।"
+      },
+      high: {
+        desc: "আপনার এএফপি মাত্রা অত্যন্ত বেশি (>৪০০ ng/mL)। এটি সাধারণত লিভার ক্যান্সার (হেপাটোসেলুলার কার্সিনোমা) বা অণ্ডকোষ/ডিম্বাশয়ের মারাত্মক টিউমারের শক্তিশালী সংকেত বহন করে।",
+        factors: ["হেপাটোসেলুলার কার্সিনোমা (HCC)", "লিভারে ছড়িয়ে পড়া ক্যান্সার", "মারাত্মক জার্ম সেল টিউমার"],
+        symptoms: ["চরম ওজন হ্রাস", "মারাত্মক জন্ডিস", "পেটে জল জমা (Ascites)", "পেটের ডান দিকে তীব্র ব্যথা"],
+        prevention: ["কোনো বিলম্ব না করে অবিলম্বে বিশেষায়িত হাসপাতালে যোগাযোগ করুন", "চিকিৎসকের পরামর্শ গুরুত্ব সহকারে পালন করুন"],
+        consult: "জরুরী ভিত্তিতে অনকোলজিস্ট, ইউরোলজিস্ট বা হেপাটোলজিস্টের তত্ত্বাবধানে চিকিৎসা শুরু করা উচিত। সাধারণত এমআরআই, সিটি স্ক্যান এবং বায়োপসি করা হয়।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका एएफपी स्तर सामान्य है (<10 एनजी/एमएल)। सक्रिय जर्दी थैली/रोगाणु कोशिका प्रसार या असामान्य यकृत ऊतक पुनर्जनन का संकेत नहीं दिया गया है।",
+        factors: ["स्वस्थ हेपेटोसाइट कार्य", "एएफपी-स्रावित जर्म सेल ट्यूमर की अनुपस्थिति"],
+        symptoms: ["पेट के ऊपरी हिस्से में कोई सूजन नहीं", "कोई वृषण गांठ नहीं (पुरुषों में)"],
+        prevention: ["हेपेटाइटिस बी से बचाव का टीका लगवाएं", "लीवर कोशिकाओं की सुरक्षा के लिए शराब का सेवन सीमित करें"],
+        consult: "नियमित स्वास्थ्य जांच जारी रखें. किसी विशेष नैदानिक ​​जांच की आवश्यकता नहीं है।"
+      },
+      borderline: {
+        desc: "आपका एएफपी स्तर सीमा रेखा/हल्का ऊंचा (10-100 एनजी/एमएल) है। यह अक्सर सौम्य यकृत कोशिका पुनर्जनन, पुरानी यकृत रोग, या प्रारंभिक सौम्य डिम्बग्रंथि/वृषण परिवर्तन का प्रतिनिधित्व करता है।",
+        factors: ["सूजन के बाद क्रोनिक हेपेटाइटि��� या यकृत पुनर्जनन", "लीवर सिरोसिस", "प्रारंभिक गर्भावस्था (महिलाओं में)", "हल्की पुरानी जिगर की चोट"],
+        symptoms: ["थकान", "दाहिनी ओर पेट में हल्की परेश��नी", "हल्की मतली"],
+        prevention: ["लीवर के विषाक्त पदार्थों और शराब से बचें", "मॉनिटर लीवर एंजाइम पैनल (ALT, AST)"],
+        consult: "लिवर फंक्शन टेस्ट (एलएफटी) का मूल्यांकन करने और क्रोनिक वायरल हेपेटाइटिस संक्रमण की जांच के लिए डॉक्टर से परामर्श लें।"
+      },
+      elevated: {
+        desc: "आपका एएफपी स्तर मध्यम ऊंचा (100-400 एनजी/एमएल) है। नैदानिक ​​​​सेटिंग्स में, प्राथमिक यकृत ट्यूमर या रोगाणु कोशिका घातकताओं को दूर करने के लिए सक्रिय नैदानिक ​​अन्वेषण की आवश्यकता होती है।",
+        factors: ["प्रारंभिक चरण में हेपैटोसेलुलर कार्सिनोमा (एचसीसी)।", "वृषण या डिम्बग्रंथि जर्म सेल ट्यूमर (गैर-सेमिनोमस)", "क्रोनिक हेपेटाइटिस का सक्रिय गंभीर प्रकोप"],
+        symptoms: ["अस्पष्टीकृत वजन घटना", "पीलिया (आंखों/त्वचा का पीला पड़ना)", "उदर द्रव्यमान", "वृषण में सूजन या गांठ"],
+        prevention: ["स्व-दवा से बचें", "पेट की विशेष इमेजिंग शुरू करें"],
+        consult: "हम दृढ़तापूर्वक सलाह देते हैं ���ि तुरंत हेपेटोलॉजिस्ट या ऑन्कोलॉजिस्ट से परामर्श लें। आमतौर पर पेट के अल्ट्रासाउंड या सीटी स्कैन की सलाह दी जाती है।"
+      },
+      high: {
+        desc: "आपका एएफपी स्तर गंभीर रूप से ऊंचा (>400 एनजी/एमएल) है। चिकित्सकीय रूप से, इस श्रेणी के मान हेपैटोसेलुलर कार्सिनोमा (एचसीसी) या गैर-सेमिनोमेटस जर्म सेल ट्यूमर के लिए अत्यधिक नैदानिक ​​हैं।",
+        factors: ["हेपैटोसेलुलर कार्सिनोमा (एचसीसी)", "मेटास्टैटिक लिवर कैंसर", "घातक वृषण/डिम्बग्रंथि जर्म सेल ट्यूमर"],
+        symptoms: ["गंभीर वजन घटना", "पीलिया", "पेट में सूजन (जलोदर)", "दाहिने ऊपरी चतुर्थांश पेट में दर्द", "वृषण द्रव्यमान"],
+        prevention: ["आपातकालीन चिकित्सा और ऑन्कोलॉजिकल परामर्श लें", "सख्त आराम सुनिश्चित करें"],
+        consult: "तत्काल विशेषज्ञ (ऑन्कोलॉजिस्ट/यूरोलॉजिस्ट/हेपेटोलॉजिस्ट) मूल्यांकन महत्वपूर्ण है। उच्च-रिज़ॉल्यूशन इमेजिंग (कंट्रास्ट-एन्हांस्ड सीटी/एमआरआई) और डायग्नोस्टिक बायोप्सी को प्राथमिकता दी जाती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-afp-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("valAFP").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function analyzeAFP() {
+    const valAFP = parseFloat(document.getElementById("valAFP").value);
+
+    if (isNaN(valAFP) || valAFP < 0) {
+      alert(currentLang === "en" ? "Please enter a valid AFP value." : "দয়া করে এএফপি এর সঠিক মান লিখুন।");
+      return;
+    }
+
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valAFP >= 10 && valAFP <= 100) {
+      statusKey = "borderline";
+      badgeKey = "badgeBorderline";
+    } else if (valAFP > 100 && valAFP <= 400) {
+      statusKey = "elevated";
+      badgeKey = "badgeElevated";
+    } else if (valAFP > 400) {
+      statusKey = "high";
+      badgeKey = "badgeHigh";
+    }
+
+    // Gauge pointer calculation
+    let pointerPct = 10;
+    if (valAFP <= 10) {
+      pointerPct = Math.max(5, (valAFP / 10) * 25);
+    } else if (valAFP <= 100) {
+      pointerPct = 25 + ((valAFP - 10) / 90) * 25;
+    } else if (valAFP <= 400) {
+      pointerPct = 50 + ((valAFP - 100) / 300) * 25;
+    } else {
+      pointerPct = Math.min(95, 75 + ((valAFP - 400) / 600) * 20);
+    }
+
+    activeReportData = {
+      valAFP,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valAFP);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resAFPVal").textContent = d.valAFP.toFixed(2);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "borderline") colorClass = "high";
+    else if (d.statusKey === "elevated" || d.statusKey === "high") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resAFPVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = "0 - 10 (Normal)";
+    document.getElementById("tickNormalRange").textContent = "10 - 100 (Borderline)";
+    document.getElementById("tickHigh").textContent = "100 - 400+ (Elevated)";
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = afpInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valAFP) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valAFP,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-afp-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valAFP.toFixed(2)} ng/mL (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- ALPHA-FETOPROTEIN (AFP) REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `AFP Value: ${activeReportData.valAFP.toFixed(2)} ng/mL\n`;
+    t += `Clinical Status: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `afp-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

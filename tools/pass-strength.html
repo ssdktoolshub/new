@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Strength Checker &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Free online Password Strength Checker analyzes your password's entropy, estimates brute-force crack times, and lists improvements locally.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    .input-wrap {
+      position: relative;
+      width: 100%;
+    }
+    .input-wrap input {
+      width: 100%;
+      padding: 14px 50px 14px 18px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      color: var(--text);
+      font-size: 1.05rem;
+      outline: none;
+      transition: 0.3s;
+    }
+    .input-wrap input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 16px var(--glow);
+    }
+    .eye-toggle {
+      position: absolute;
+      right: 16px;
+      top: 14px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 1.2rem;
+      color: var(--muted);
+      transition: color 0.25s;
+    }
+    .eye-toggle:hover {
+      color: var(--accent);
+    }
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .checklist-item.met {
+      color: #10b981;
+    }
+    .checklist-item.unmet {
+      color: #ef233c;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Password Strength Checker</h1>
+  <p class="page-sub">Analyze password entropy security, estimate crack time durations, and verify rules locally.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    <div class="tool-io" style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 24px; align-items: start;">
+      
+      <!-- Left: Password Input & Criteria Checklist -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Enter Password to Test</h4>
+        <div class="input-wrap" style="margin-bottom: 18px;">
+          <input type="password" id="passInput" placeholder="Enter password to analyze...">
+          <span class="eye-toggle" id="btnEye">👁️</span>
+        </div>
+
+        <h4 style="margin-bottom: 8px;">Security Requirements</h4>
+        <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 18px;">
+          <div class="checklist-item" id="chkLen">❌ Minimum 8-12 characters</div>
+          <div class="checklist-item" id="chkUpper">❌ Contains Uppercase letters</div>
+          <div class="checklist-item" id="chkLower">❌ Contains Lowercase letters</div>
+          <div class="checklist-item" id="chkNum">❌ Contains Numbers</div>
+          <div class="checklist-item" id="chkSym">❌ Contains Symbols</div>
+          <div class="checklist-item" id="chkCommon">✅ Free from common patterns</div>
+        </div>
+      </div>
+
+      <!-- Right: Strength ratings -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 290px; display: flex; flex-direction: column; justify-content: center;">
+        <div id="statsSec" style="display: none;">
+          <h4 style="margin-bottom: 4px; text-align: center;">Security Level</h4>
+          <h2 id="strengthLabel" style="text-align: center; font-size: 1.8rem; font-weight: 800; margin-bottom: 12px;">-</h2>
+          
+          <div style="background: var(--border); height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 16px;">
+            <div class="strength-bar" id="strengthBar" style="width: 0%; height: 6px; transition: 0.3s;"></div>
+          </div>
+
+          <div style="background: var(--bg2); border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase;">Entropy bits</span>
+            <p id="entropyBits" style="font-size: 1.2rem; font-weight: 800; color: var(--text); margin-top: 2px;">0 bits</p>
+          </div>
+
+          <div style="background: var(--bg2); border: 1px solid var(--border); padding: 12px; border-radius: 8px;">
+            <span style="font-size: 0.75rem; font-weight: 700; color: var(--muted); text-transform: uppercase;">Estimated Crack Time</span>
+            <p id="crackTime" style="font-size: 1.2rem; font-weight: 800; color: var(--text); margin-top: 2px;">Instantly</p>
+            <p style="font-size: 0.65rem; color: var(--muted); margin-top: 4px; margin-bottom: 0; font-weight: 600;">(At 10 Billion guesses per second)</p>
+          </div>
+        </div>
+
+        <div id="statsPlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Enter a password on the left to see full details.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear Workspace</button>
+    </div>
+  </div>
+
+  <!-- Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Live Analysis:</strong> Runs immediately as you type. Checklists and brute force meters update in real-time.</li>
+      <li><strong>Common pattern checks:</strong> Scans against common sequences like `123`, `abc`, `qwerty`, or `password` to keep your credentials unique.</li>
+      <li><strong>100% Client-Side:</strong> Evaluated inside browser Javascript sandbox. The input text is never saved or logged.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  const input = $('passInput');
+  const eye = $('btnEye');
+
+  // Password visibility toggle
+  eye.onclick = () => {
+    if (input.type === 'password') {
+      input.type = 'text';
+      eye.textContent = '🙈';
+    } else {
+      input.type = 'password';
+      eye.textContent = '👁️';
+    }
+  };
+
+  function testPassword() {
+    const val = input.value;
+    if (!val) {
+      $('statsSec').style.display = 'none';
+      $('statsPlaceholder').style.display = 'block';
+      resetChecklist();
+      return;
+    }
+
+    $('statsPlaceholder').style.display = 'none';
+    $('statsSec').style.display = 'block';
+
+    // Criteria checks
+    const hasLength = val.length >= 8;
+    const hasUpper = /[A-Z]/.next ? /[A-Z]/.test(val) : false;
+    const hasLower = /[a-z]/.test(val);
+    const hasNum = /[0-9]/.test(val);
+    const hasSym = /[^A-Za-z0-9]/.test(val);
+
+    // Common patterns check
+    const commonPatterns = ['123', 'abc', 'qwerty', 'password', 'admin', 'pass', '12345'];
+    let isCommon = false;
+    commonPatterns.forEach(pat => {
+      if (val.toLowerCase().includes(pat)) isCommon = true;
+    });
+
+    updateCheckItem('chkLen', hasLength);
+    updateCheckItem('chkUpper', hasUpper);
+    updateCheckItem('chkLower', hasLower);
+    updateCheckItem('chkNum', hasNum);
+    updateCheckItem('chkSym', hasSym);
+    updateCheckItem('chkCommon', !isCommon);
+
+    // Calculate Entropy Bits
+    // pool sizes
+    let pool = 0;
+    if (hasLower) pool += 26;
+    if (hasUpper) pool += 26;
+    if (hasNum) pool += 10;
+    if (hasSym) pool += 33; // Standard symbol count
+
+    if (pool === 0) pool = 1;
+
+    // entropy = L * log2(pool)
+    const entropy = Math.round(val.length * Math.log2(pool));
+    $('entropyBits').textContent = `${entropy} bits`;
+
+    // Estimate Crack Time
+    // Guesses at 10 Billion per second
+    const speed = 10 * 1000 * 1000 * 1000;
+    const totalGuesses = Math.pow(pool, val.length);
+    const seconds = totalGuesses / speed;
+
+    $('crackTime').textContent = formatCrackTime(seconds);
+
+    // Strength Meter UI
+    const bar = $('strengthBar');
+    const label = $('strengthLabel');
+
+    if (entropy < 40) {
+      bar.style.width = '25%';
+      bar.style.backgroundColor = '#ef233c';
+      label.textContent = 'Weak 🔴';
+      label.style.color = '#ef233c';
+    } else if (entropy >= 40 && entropy < 60) {
+      bar.style.width = '50%';
+      bar.style.backgroundColor = '#f59e0b';
+      label.textContent = 'Medium 🟡';
+      label.style.color = '#f59e0b';
+    } else if (entropy >= 60 && entropy < 80) {
+      bar.style.width = '75%';
+      bar.style.backgroundColor = '#3b82f6';
+      label.textContent = 'Strong 🔵';
+      label.style.color = '#3b82f6';
+    } else {
+      bar.style.width = '100%';
+      bar.style.backgroundColor = '#10b981';
+      label.textContent = 'Very Secure 🟢';
+      label.style.color = '#10b981';
+    }
+  }
+
+  function updateCheckItem(id, isMet) {
+    const el = $(id);
+    if (isMet) {
+      el.classList.add('met');
+      el.classList.remove('unmet');
+      el.textContent = el.textContent.replace('❌', '✅');
+    } else {
+      el.classList.add('unmet');
+      el.classList.remove('met');
+      el.textContent = el.textContent.replace('✅', '❌');
+    }
+  }
+
+  function resetChecklist() {
+    ['chkLen', 'chkUpper', 'chkLower', 'chkNum', 'chkSym'].forEach(id => {
+      const el = $(id);
+      el.classList.remove('met', 'unmet');
+      el.textContent = el.textContent.replace('✅', '❌');
+    });
+    const common = $('chkCommon');
+    common.classList.remove('met', 'unmet');
+    common.textContent = common.textContent.replace('❌', '✅');
+  }
+
+  function formatCrackTime(seconds) {
+    if (seconds < 1) return 'Instantly ⚡';
+    if (seconds < 60) return `${Math.round(seconds)} seconds`;
+    const minutes = seconds / 60;
+    if (minutes < 60) return `${Math.round(minutes)} minutes`;
+    const hours = minutes / 60;
+    if (hours < 24) return `${Math.round(hours)} hours`;
+    const days = hours / 24;
+    if (days < 365) return `${Math.round(days)} days`;
+    const years = days / 365;
+    if (years < 1000) return `${Math.round(years)} years`;
+    const centuries = years / 100;
+    if (centuries < 100000) return `${Math.round(centuries)} centuries`;
+    return 'Infinity 🌌';
+  }
+
+  input.oninput = testPassword;
+
+  $('btnClear').onclick = () => {
+    input.value = '';
+    testPassword();
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

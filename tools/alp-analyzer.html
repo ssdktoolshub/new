@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alkaline Phosphatase (ALP) Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Evaluate serum Alkaline Phosphatase (ALP) levels online. Check for bone diseases, biliary tract obstructions, or pregnancy physiological changes.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #f59e0b;
+      --critical-color: #ef4444;
+      --border-color: #fbbf24;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--low-color) 0%, 
+        var(--normal-color) 35%, 
+        var(--high-color) 70%, 
+        var(--critical-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Alkaline Phosphatase (ALP) Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze serum Alkaline Phosphatase (ALP) levels to evaluate biliary tract, liver cell, and bone metabolism health.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🧬 ALP Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="patientAge" data-translate="labelAge">Age (Years)</label>
+              <input type="number" id="patientAge" min="1" max="120" value="30" onchange="togglePregnancy()" required>
+            </div>
+            
+            <div class="input-wrapper">
+              <label for="patientGender" data-translate="labelGender">Gender</label>
+              <select id="patientGender" onchange="togglePregnancy()">
+                <option value="male" selected data-translate="genderMale">Male</option>
+                <option value="female" data-translate="genderFemale">Female</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper" id="pregWrapper" style="display: none;">
+              <label for="patientPreg" data-translate="labelPreg">Is the patient pregnant?</label>
+              <select id="patientPreg">
+                <option value="no" selected data-translate="optNo">No</option>
+                <option value="yes" data-translate="optYes">Yes (Third Trimester physiological spike)</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valALP" id="inputLabel" data-translate="labelALP">Serum ALP Level</label>
+              <input type="number" step="0.1" id="valALP" placeholder="e.g. 80" min="0" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzeALP()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze ALP Level</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🧪</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter patient details and ALP level, then click analyze to display diagnostic biliary and skeletal evaluations.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 ALP Analysis Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelAge">Age</strong>: <span id="resAge">-</span></span>
+            <span><strong data-translate="labelGender">Gender</strong>: <span id="resGender">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="gauge-container">
+            <div class="val-large" id="resALPVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">U/L</div>
+            <div class="status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickLow" style="color: var(--low-color);">-</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">-</span>
+              <span id="tickHigh" style="color: var(--critical-color);">-</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Alkaline Phosphatase</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Alkaline Phosphatase (ALP)?</strong><br><span data-translate="eduA1">ALP is an enzyme present mostly in the liver (specifically in cells lining the bile ducts) and bones. Significant elevations are usually caused by biliary tract diseases or bone cell hyperactivity.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">Why is children's ALP naturally higher?</strong><br><span data-translate="eduA2">Osteoblasts (bone-forming cells) release ALP as they lay down new bone tissue. During childhood and adolescent growth spurts, rapid bone growth naturally elevates ALP, which is normal and physiological.</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Alkaline Phosphatase (ALP) Analyzer",
+      toolDesc: "Analyze serum Alkaline Phosphatase (ALP) levels to evaluate biliary tract, liver cell, and bone metabolism health.",
+      inputsTitle: "🧬 ALP Parameters",
+      clearBtn: "Reset",
+      labelAge: "Age (Years)",
+      labelGender: "Gender",
+      genderMale: "Male",
+      genderFemale: "Female",
+      labelPreg: "Is the patient pregnant?",
+      optNo: "No",
+      optYes: "Yes",
+      labelALP: "Serum ALP Level",
+      btnAnalyze: "Analyze ALP Level",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter patient details and ALP level, then click analyze to display diagnostic biliary and skeletal evaluations.",
+      reportTitle: "🔬 ALP Analysis Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal ALP Activity (Healthy Liver/Bone)",
+      badgeLow: "Low ALP Activity (Malnutrition Risk)",
+      badgeHigh: "Elevated ALP (Biliary/Skeletal Strain)",
+      badgeCriticalHigh: "CRITICAL HIGH ALP (Biliary Obstruction/Paget's)",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Factors",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "এএলপি (ALP) বিশ্লেষক",
+      toolDesc: "Alkaline Phosphatase (ALP) এনজাইমের মাত্রা বিশ্লেষণ করে পিত্তনালী, লিভার ও হাড়ের রোগ পরীক্ষা করুন।",
+      inputsTitle: "🧬 এএলপি পরিমাপক",
+      clearBtn: "মুছে ফেলুন",
+      labelAge: "বয়স (বছর)",
+      labelGender: "লিঙ্গ",
+      genderMale: "পুরুষ",
+      genderFemale: "নারী",
+      labelPreg: "রোগী কি গর্ভবতী?",
+      optNo: "না",
+      optYes: "হ্যাঁ",
+      labelALP: "সিরাম এএলপি স্তর",
+      btnAnalyze: "এএলপি স্তর বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "রোগীর বয়স, লিঙ্গ এবং এএলপি মান লিখুন, তারপর বিশ্লেষণ বোতামটি চাপুন রিপোর্টের তথ্য দেখতে।",
+      reportTitle: "🔬 এএলপি বিশ্লেষণ রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক এএলপি (সুস্থ লিভার/হাড়)",
+      badgeLow: "কম এএলপি (অপুষ্টির ঝুঁকি)",
+      badgeHigh: "উচ্চ এএলপি (পিত্তনালী/হাড়ের ওপর চাপ)",
+      badgeCriticalHigh: "মারাত্মক উচ্চ এএলপি (পিত্তনালীর বাধা/প্যাজেটস রোগ)",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য প্রভাবক সমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "क्षारीय फॉस्फेट (एएलपी) विश्लेषक",
+      toolDesc: "पित्त पथ, यकृत कोशिका और हड्डी के चयापचय स्वास्थ्य का मूल्यांकन करने के लिए सीरम क्षारीय फॉस्फेट (एएलपी) स्तर का विश्लेषण करें।",
+      inputsTitle: "🧬 एएलपी पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelAge: "आयु (वर्ष)",
+      labelGender: "लिंग",
+      genderMale: "पुरुष",
+      genderFemale: "स्त्री",
+      labelPreg: "क्या मरी��़ गर्भवती है?",
+      optNo: "नहीं",
+      optYes: "हाँ",
+      labelALP: "सीरम एएलपी स्तर",
+      btnAnalyze: "एएलपी स्तर का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "रोगी विवरण और एएलपी स्तर दर्ज करें, फिर नैदानिक ​​पित्त और कंकाल मूल्यांकन प्रदर्शित करने के लिए विश्लेषण पर क्लिक करें।",
+      reportTitle: "🔬 एएलपी विश्लेषण रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "छाप",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "दिनांक",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चि��ित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य एएलपी गतिविधि (स्वस्थ लिवर/हड्डी)",
+      badgeLow: "कम एएलपी गतिविधि (कुपोषण जोखिम)",
+      badgeHigh: "उन्नत एएलपी (पित्त/कंकाल तनाव)",
+      badgeCriticalHigh: "गंभीर उच्च एएलपी (पित्त बाधा/पगेट)",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारक",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Alkaline Phosphatase (ALP)?", a: "ALP is an enzyme concentrated in the cells lining your bile ducts and inside growing bone tissue." },
+      { q: "What is a normal ALP range?", a: "For adult males and females: 44 - 147 U/L. Children and teens can show ranges up to 350-450 U/L during rapid bone growth." },
+      { q: "What causes elevated ALP?", a: "Cholestasis (bile blockage), hepatitis, bone fracture healing, Paget's disease, or bone metastasis." },
+      { q: "Does pregnancy affect ALP?", a: "Yes. The placenta produces alkaline phosphatase. In the third trimester, normal pregnancy can double or triple maternal ALP levels." },
+      { q: "What causes low ALP?", a: "Low levels are rare but can indicate malnutrition, severe zinc or magnesium deficiency, or hypothyroidism." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool is built purely for educational purposes. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "এএলপি (ALP) কী?", a: "এএলপি হলো পিত্তনালী ও হাড়ের কোষে থাকা এক ধরণের এনজাইম।" },
+      { q: "এএলপির স্বাভাবিক মাত্রা কত?", a: "প্রাপ্তবয়স্কদের ক্ষেত্রে: ৪৪ - ১৪৭ U/L। তবে শিশু ও কিশোরদের ক্ষেত্রে হাড় বৃদ্ধির সময় এটি ৩৫০-৪৫০ U/L পর্যন্ত বৃদ্ধি পেতে পারে।" },
+      { q: "এএলপি বৃদ্ধির কারণ কী?", a: "পিত্তনালীতে বাধা (কলিস্ট্যাসিস), হেপাটাইটিস, হাড় ভাঙার পর জোড়া লাগা, প্যাজেটস ডিজিজ বা হাড়ের ক্যান্সার।" },
+      { q: "গর্ভাবস্থা কি এএলপিকে প্রভাবিত করে?", a: "হ্যাঁ। গর্ভফুল বা প্লাসেন্টা এএলপি তৈরি করে। গর্ভাবস্থার শেষ ৩ মাসে মায়ের এএলপি ২ থেকে ৩ গুণ বাড়তে পারে।" },
+      { q: "এএলপি কমে যাওয়ার কারণ কী?", a: "অপুষ্টি, জিঙ্ক বা ম্যাগনেসিয়ামের মারাত্মক ঘাটতি অথবা থাইরয়েডের হরমোন কমে যাওয়া (হাইপোথাইরয়েডিজম)।" },
+      { q: "এই অনলাইন বিশ্লেষকটি কি ডাক্তারের বিকল্প?", a: "না। এই ক্যালকুলেটরটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "क्षारीय फॉस्फेट (एएलपी) क्या है?", a: "एएलपी एक एंजाइम है जो आपके पित्त नलिकाओं की परत और बढ़ते हड्डी के ऊतकों की कोशिकाओं में केंद्रित होता है।" },
+      { q: "सामान्य एएलपी रेंज क्या है?", a: "वयस्क पुरुषों और महिलाओं के लिए: 44 - 147 यू/एल। तेजी से हड्��ियों के विकास के दौरान बच्चे और किशोर 350-450 यू/एल तक की सीमा दिखा सकते हैं।" },
+      { q: "ऊंचे एएलपी का क्या कारण है?", a: "कोलेस्टेसिस (पित्त अवरोध), हेपेटाइटिस, हड्डी के फ्रैक्चर का उपचार, पेजेट रोग, या हड्डी मेटास्टेसिस।" },
+      { q: "क्या गर्भावस्था एएलपी को प्रभावित करती है?", a: "हाँ। प्लेसेंटा क्षारीय फॉस्फेट का उत्पादन करता है। तीसरी तिमाही में, सामान्य गर्भावस्था मातृ एएलपी स्तर को दोगुना या तिगुना कर सकती है।" },
+      { q: "कम एएलपी का क्या कारण है?", a: "निम्न स्तर दुर्लभ हैं लेकिन कुपोषण, गंभीर जस्ता या मैग्नीशियम की कमी या हाइपोथा���रायडिज्म का संकेत दे सकते हैं।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण पूरी तरह शैक्षिक उद्देश्यों के लिए बनाया गया है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const alpInsights = {
+    en: {
+      normal: {
+        desc: "Your ALP level is within the normal reference range. Biliary secretion and bone cell turnover are working healthily.",
+        factors: ["Clear bile pathways", "Healthy bone turnover baseline", "Balanced mineral nutrition"],
+        symptoms: ["No clinical signs of bone pain or bile stasis"],
+        prevention: ["Maintain balanced calcium and Vitamin D levels", "Ensure adequate zinc/magnesium in diet"],
+        consult: "Continue regular annual metabolic panel checks."
+      },
+      low: {
+        desc: "Your ALP level is below normal. This is rare but can reflect malnutrition or deficiency in essential mineral cofactors.",
+        factors: ["Zinc or magnesium deficiency", "Malnutrition or severe protein deficiency", "Hypothyroidism", "Wilson's disease (rare genetic copper disorder)"],
+        symptoms: ["Fatigue, unexplained weight changes if linked to thyroid"],
+        prevention: ["Incorporate zinc-rich foods (seeds, nuts, lean meat)", "Ensure overall adequate protein calorie intake"],
+        consult: "Consult your doctor if you have symptoms of fatigue, cold intolerance, or suspected nutritional malnutrition."
+      },
+      high: {
+        desc: "Your ALP level is elevated (mild-to-moderate strain). This is common in mild bile duct congestion, bone growth/healing, or normal third-trimester pregnancy.",
+        factors: ["Mild cholestasis (gallbladder sludge or early stones)", "Bone fractures currently healing", "Physiological third-trimester pregnancy", "Mild drug-induced liver load"],
+        symptoms: ["Often asymptomatic", "Mild localized bone soreness or right upper quadrant discomfort"],
+        prevention: ["Stay hydrated to help biliary flow", "Maintain a low-fat diet to reduce gallbladder contraction stress"],
+        consult: "Consult a doctor to evaluate GGT (gamma-glutamyl transferase) or fractionate ALP to verify if the source is liver or bone."
+      },
+      criticalHigh: {
+        desc: "Your ALP level is critically high. This suggests severe biliary obstruction (cholestasis) or progressive bone disorder. Clinical follow-up is essential.",
+        factors: ["Severe biliary tree obstruction (common bile duct stones, strictures)", "Paget's disease of bone (rapid abnormal bone remodeling)", "Osteomalacia or severe vitamin D deficiency", "Bone metastasis"],
+        symptoms: ["Pruritus (severe generalized itching)", "Jaundice, pale stools, dark urine", "Bone pain or frequent fractures"],
+        prevention: ["Strictly avoid fatty foods", "Drink plenty of water"],
+        consult: "⚠️ Seek immediate medical evaluation. Liver/abdominal ultrasound or bone density scans are commonly required next."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার এএলপি লেভেল স্বাভাবিক সীমার মধ্যে রয়েছে। পিত্তথলি ও হাড়ের কোষে স্বাভাবিক বিপাক প্রক্রিয়া নির্দেশ করছে।",
+        factors: ["স্বাভাবিক পিত্ত প্রবাহ", "সুস্থ হাড়ের ঘনত্ব"],
+        symptoms: ["জয়েন্ট বা হাড়ে ব্যথা না থাকা"],
+        prevention: ["ক্যালসিয়াম ও ভিটামিন ডি সমৃদ্ধ খাবার গ্রহণ করুন"],
+        consult: "স্বাস্থ্যের অবস্থা ট্র্যাক করতে বার্ষিক চেকআপ বজায় রাখুন।"
+      },
+      low: {
+        desc: "আপনার এএলপি মাত্রা কম। এটি সচরাচর ঘটে না তবে পুষ্টিহীনতা বা জিঙ্ক ও ম্যাগনেসিয়ামের ঘাটতি নির্দেশ করতে পারে।",
+        factors: ["জিঙ্ক বা ম্যাগনেসিয়ামের ঘাটতি", "মারাত্মক অপুষ্টি", "থাইরয়েড হরমোনের ঘাটতি"],
+        symptoms: ["ক্লান্তি, চুল পড়া"],
+        prevention: ["জিঙ্ক ও প্রোটিন সমৃদ্ধ খাবার (বীজ, বাদাম, লাল মাংস) ডায়েটে যোগ করুন"],
+        consult: "অপুষ্টি বা হরমোনের ঘাটতির লক্ষণ থাকলে ডাক্তারের পরামর্শ নিন।"
+      },
+      high: {
+        desc: "আপনার এএলপি লেভেল কিছুটা বেশি (মৃদু/মাঝারি চাপ)। এটি পিত্তথলিতে মৃদু কাদা জমলে, গর্ভাবস্থায় বা হাড় জোড়া লাগার সময় হতে পারে।",
+        factors: ["পিত্তথলিতে পাথর বা কাদা জমা", "হাড় ভাঙা পরবর্তী নিরাময় ধাপ", "গর্ভাবস্থার শেষ ৩ মাস (স্বাভাবিক শারীরিক পরিবর্তন)"],
+        symptoms: ["হালকা ব্যথা"],
+        prevention: ["পর্যাপ্ত পানি পান করুন", "কম চর্বিযুক্ত খাবার ডায়েটে যোগ করুন"],
+        consult: "উচ্চ এএলপির মূল উৎস (লিভার নাকি হাড়) নিশ্চিত করতে ডাক্তারের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার এএলপি মাত্রা মারাত্মক বেশি। এটি পিত্তনালীর তীব্র বাধা বা হাড়ের কোনো জটিল রোগ নির্দেশ করে। অবিলম্বে চিকিৎসা প্রয়োজন।",
+        factors: ["পিত্তনালীতে পাথর দ্বারা সম্পূর্ণ বাধা (Cholestasis)", "হাড়ের প্যাজেটস রোগ (Paget's Disease)", "ভিটামিন ডি এর মারাত্মক অভাব"],
+        symptoms: ["সারা শরীরে তীব্র চুলকানি", "জন্ডিস, অতিরিক্ত গাড় প্রস্রাব ও ফ্যাকাশে মল", "হাড়ে তীব্র ব্যথা"],
+        prevention: ["চর্বিযুক্ত খাবার পরিহার করুন"],
+        consult: "⚠️ অবিলম্বে একজন গ্যাস্ট্রোএন্টারোলজিস্ট বা অর্থোপেডিক বিশেষজ্ঞের শরণাপন্ন হোন।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका एएलपी स्तर सामान्य संदर्भ सीमा के भीतर है। पित्त स्राव और अस्थि कोशिका कारोबार स्वस्थ रूप से काम कर रहे हैं।",
+        factors: ["पित्त पथ साफ़ करें", "स्वस्थ हड्डी टर्नओवर बेसलाइन", "संतुलित खनिज पोषण"],
+        symptoms: ["हड्डी में दर्द या पित्त ठहराव का कोई नैदानिक लक्षण नहीं"],
+        prevention: ["कैल्शियम और विटामिन डी का स्तर संतुलित रखें", "आहार में पर्याप्त जिंक/मैग्नीशियम सुनिश्चित करें"],
+        consult: "नियमित वार्षिक मेटाबॉलिक पैनल जांच जारी रखें।"
+      },
+      low: {
+        desc: "आपका एएलपी स्तर सामान्य से नीचे है। यह दुर्लभ है लेकिन कुपोषण या आवश्यक खनिज सहकारकों की कमी को दर्शा सकता है।",
+        factors: ["जिंक या मैग्नीशियम की कमी", "कुपोषण या गंभीर प्रोटीन की कमी", "हाइपोथायरायड��ज्म", "विल्सन रोग (दुर्लभ आनुवंशिक तांबा विकार)"],
+        symptoms: ["थायराइड से जुड़े होने पर थकान, अस्पष्टीकृत वजन में परिवर्तन"],
+        prevention: ["जिंक युक्त खाद्य पदार्थ (बीज, मेवे, दुबला मांस) शामिल करें", "समग्र रूप से पर्याप्त प्रोटी��� कैलोरी का सेवन सुनिश्चित करें"],
+        consult: "यदि आपको थकान, ठंड असहिष्णुता, या संदिग्ध पोषण संबंधी कुपोषण के लक्षण हैं तो अपने डॉक्टर से परामर्श लें।"
+      },
+      high: {
+        desc: "आपका एएलपी स्तर ऊंचा (हल्के से मध्यम तनाव) है। यह हल्के पित्त नलिका जमाव, हड्डी के विकास/उपचार, या सामान्य तीसरी तिमाही की गर्भावस्था में आम है।",
+        factors: ["हल्का कोलेस्टेसिस (पित्ताशय की थैली का कीचड़ या प्रारंभिक पथरी)", "हड्डी का फ्रैक्चर फिलहाल ठीक हो रहा है", "शारीरिक तीसरी तिमाही गर्भावस्था", "हल्का दवा-प्रेरित यकृत भार"],
+        symptoms: ["अक्सर लक्षणरहित", "हल्की स्थानीयकृत हड्डी में दर्द या दाहिने ऊपरी चतुर्थांश में असुविधा"],
+        prevention: ["पित्त प्रवाह में मदद के लिए हाइड्रेटेड रहें", "पित्ताशय संकुचन तनाव को कम करने के लिए कम वसा वाला आहार बनाए रखें"],
+        consult: "यह सत्यापित करने के लिए कि स्रोत यकृत या हड्डी है या नहीं, जीजीटी (गामा-ग्लूटामाइल ट्रांसफरेज) या आंशिक एएलपी का मूल्यांकन करने के लिए डॉक्टर से परामर्श लें।"
+      },
+      criticalHigh: {
+        desc: "आपका एएलपी स्तर गंभीर रूप से उच्च है। यह गंभीर पित्त अवरोध (कोलेस्टेसिस) या प्रगतिशील हड्डी विकार का सुझाव देता है। क्लिनिकल फॉलो-अप आवश्यक है।",
+        factors: ["गंभीर पित्त वृक्ष रुकावट (सामान्य पित्त नली की पथरी, सख्ती)", "पगेट की हड्डी की बीमारी (तेजी से असामान्य हड्डी रीमॉडलिंग)", "ऑस्टियोमलेशिया या गंभीर विटामिन डी की कमी", "अस्थि मेटास्टेसिस"],
+        symptoms: ["प्रुरिटस (गंभीर सामान्यीकृत खुजली)", "पीलिया, पीला मल, गहरे रंग का मूत्र", "हड्डियों ���ें दर्द या बार-बार फ्रैक्चर होना"],
+        prevention: ["वसायुक्त भोजन से सख्ती से बचें", "खूब पानी पियें"],
+        consult: "⚠️ तत्काल चिकित्सा मूल्यांकन की मांग करें। इसके बाद आमतौर पर लिवर/पेट का अल्ट्रासाउंड या हड्डी घनत्व स्कैन की आवश्यकता होती है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-alp-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateLabelTicks();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function togglePregnancy() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    const pregWrapper = document.getElementById("pregWrapper");
+    
+    if (gender === "female" && age >= 12 && age <= 50) {
+      pregWrapper.style.display = "flex";
+    } else {
+      pregWrapper.style.display = "none";
+      document.getElementById("patientPreg").value = "no";
+    }
+    updateLabelTicks();
+  }
+
+  function resetForm() {
+    document.getElementById("valALP").value = "";
+    document.getElementById("patientAge").value = "30";
+    document.getElementById("patientGender").value = "male";
+    document.getElementById("patientPreg").value = "no";
+    document.getElementById("pregWrapper").style.display = "none";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits(age, gender, pregnant) {
+    let min = 44;
+    let max = 147;
+    let criticalMax = 350;
+
+    if (age < 16) {
+      // Growing kids have high normal osteoblast activity
+      min = 80;
+      max = 350;
+      criticalMax = 500;
+    } else if (gender === "female" && pregnant === "yes") {
+      // Normal pregnancy placental spike
+      min = 80;
+      max = 300;
+      criticalMax = 450;
+    }
+
+    return { min, max, criticalMax };
+  }
+
+  function updateLabelTicks() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    const pregnant = document.getElementById("patientPreg").value;
+    const limits = getReferenceLimits(age, gender, pregnant);
+    
+    document.getElementById("tickLow").textContent = `< ${limits.min}`;
+    document.getElementById("tickNormalRange").textContent = `${limits.min} - ${limits.max}`;
+    document.getElementById("tickHigh").textContent = `${limits.criticalMax}+`;
+  }
+
+  function analyzeALP() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    const pregnant = document.getElementById("patientPreg").value;
+    const valALP = parseFloat(document.getElementById("valALP").value);
+
+    if (isNaN(valALP) || valALP <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid ALP value." : "দয়া করে এএলপি এর একটি সঠিক মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits(age, gender, pregnant);
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valALP < limits.min) {
+      statusKey = "low";
+      badgeKey = "badgeLow";
+    } else if (valALP > limits.max) {
+      if (valALP >= limits.criticalMax) {
+        statusKey = "criticalHigh";
+        badgeKey = "badgeCriticalHigh";
+      } else {
+        statusKey = "high";
+        badgeKey = "badgeHigh";
+      }
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valALP >= limits.min && valALP <= limits.max) {
+      const range = limits.max - limits.min;
+      pointerPct = range > 0 ? 35 + ((valALP - limits.min) / range) * 35 : 50;
+    } else if (valALP < limits.min) {
+      pointerPct = Math.max(5, (valALP / limits.min) * 30);
+    } else {
+      const range = limits.criticalMax - limits.max;
+      pointerPct = range > 0 ? Math.min(95, 70 + ((valALP - limits.max) / range) * 20) : 80;
+    }
+
+    activeReportData = {
+      age,
+      gender,
+      pregnant,
+      valALP,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct,
+      date: new Date().toLocaleDateString()
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valALP);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resDate").textContent = d.date;
+    document.getElementById("resAge").textContent = d.age;
+    document.getElementById("resGender").textContent = d.gender === "male" ? translations[currentLang].genderMale : translations[currentLang].genderFemale;
+
+    document.getElementById("resALPVal").textContent = d.valALP.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey === "criticalHigh") colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resALPVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    // Ticks
+    document.getElementById("tickLow").textContent = `< ${d.limits.min}`;
+    document.getElementById("tickNormalRange").textContent = `${d.limits.min} - ${d.limits.max}`;
+    document.getElementById("tickHigh").textContent = `${d.limits.criticalMax}+`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = alpInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.factors.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valALP) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valALP,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-alp-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valALP.toFixed(1)} U/L (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- ALP ANALYSIS REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Value: ${activeReportData.valALP.toFixed(1)} U/L\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `alp-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

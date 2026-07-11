@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSV to Excel / JSON Converter &bull; Parse Spreadsheets - SSDK TOOLS HUB</title>
+  <meta name="description" content="Free online CSV and Excel sheet parser. Paste CSV or load .xlsx files, inspect tabular previews, and export to CSV, Excel, or JSON.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <!-- Load SheetJS for rich spreadsheet processing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    .excel-table-container {
+      width: 100%;
+      max-height: 280px;
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg3);
+      margin-top: 14px;
+    }
+    .excel-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+    .excel-table th, .excel-table td {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      text-align: left;
+      white-space: nowrap;
+    }
+    .excel-table th {
+      background: var(--bg2);
+      color: var(--accent);
+      font-weight: 700;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .excel-table tr:hover {
+      background: rgba(255,255,255,0.02);
+    }
+    .export-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .export-buttons button {
+      flex: 1;
+      min-width: 120px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">CSV / Excel Parser</h1>
+  <p class="page-sub">Parse spreadsheet files or comma-separated texts into clean tables and export between formats offline.</p>
+
+  <!-- Working Tool Section -->
+  <div class="content-card tool-playground">
+    
+    <div class="tool-io" style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; align-items: start;">
+      
+      <!-- Left Column: Inputs -->
+      <div>
+        <h4 style="margin-bottom: 8px;">Upload Spreadsheet File</h4>
+        <div id="dropZone" style="border: 2px dashed var(--border); padding: 24px; border-radius: 12px; text-align: center; cursor: pointer; background: var(--bg2); transition: 0.3s; margin-bottom: 14px;">
+          <span style="font-size: 2.2rem; display: block; margin-bottom: 6px;">📊</span>
+          <p style="font-size: 0.85rem; color: var(--muted); margin: 0;">Drag & drop <strong>.csv, .xlsx, .xls</strong> here, or <span style="color: var(--accent); font-weight: 700;">browse</span></p>
+          <input type="file" id="sheetInput" accept=".csv, .xlsx, .xls" style="display: none;">
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <label for="csvPaste" style="font-weight: 700; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px;">Or Paste CSV Raw Text</label>
+          <textarea id="csvPaste" rows="5" placeholder="Name,Age,Role&#10;Alice,24,Designer&#10;Bob,30,Developer"></textarea>
+        </div>
+      </div>
+
+      <!-- Right Column: Previews & Info -->
+      <div style="background: var(--bg3); border: 1px dashed var(--border); border-radius: 12px; padding: 20px; min-height: 250px; display: flex; flex-direction: column; justify-content: center;">
+        
+        <div id="previewWrapper" style="display: none;">
+          <h4 style="margin-bottom: 4px;">Data Sheet Preview <span style="font-size:0.75rem; color:var(--muted); font-weight:normal;" id="rowInfo"></span></h4>
+          
+          <div class="excel-table-container">
+            <table class="excel-table" id="dataTable">
+            </table>
+          </div>
+
+          <div class="export-buttons">
+            <button class="btn" onclick="exportData('xlsx')" style="background:var(--grad2)">⬇️ Excel (.xlsx)</button>
+            <button class="btn ghost" onclick="exportData('csv')">⬇️ CSV File</button>
+            <button class="btn ghost" onclick="exportData('json')">⬇️ JSON File</button>
+          </div>
+        </div>
+
+        <div id="previewPlaceholder" style="text-align: center;">
+          <p style="color: var(--muted); font-size: 0.85rem; padding: 40px 0;">Upload a sheet document or paste CSV string parameters to inspect and convert table models.</p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="tool-control" style="margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px;">
+      <button class="btn" id="btnParse">⚙️ Parse Spreadsheet</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; display: none; text-align: center;"></p>
+  </div>
+
+  <!-- Key Features Section -->
+  <div class="content-card">
+    <h3>Key Features</h3>
+    <ul>
+      <li><strong>Rich Formatting Engine:</strong> Integrates <code>SheetJS</code> to parse multi-sheet spreadsheets, CSV arrays, and tab-delimited values.</li>
+      <li><strong>Flexible Exports:</strong> Convert raw pasted comma logs into structured Excel documents, CSV blocks, or code JSON templates.</li>
+      <li><strong>100% Client-Side:</strong> Execution handles files up to multiple Megabytes entirely inside browser heap memory (no data leaks).</li>
+    </ul>
+  </div>
+
+  <!-- FAQ Section -->
+  <div class="faq-list content-card">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-item">
+      <div class="faq-q">Is my spreadsheet data safe?<span>＋</span></div>
+      <div class="faq-a">Yes. Your spreadsheets are processed locally inside your browser using JavaScript. No files are uploaded to our servers, ensuring your business data remains completely private.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q">What file size limits does it support?<span>＋</span></div>
+      <div class="faq-a">Since calculations are performed client-side, the performance is limited by your computer's RAM and processor. Most browsers can comfortably handle sheets with tens of thousands of rows (files up to 20-30MB) without issues.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+
+  let activeDataAOA = []; // Array of Arrays representation
+  let fileNamePrefix = 'spreadsheet';
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  // Handle Drag & Drop
+  const dropZone = $('dropZone');
+  dropZone.onclick = () => $('sheetInput').click();
+
+  dropZone.ondragover = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--accent)';
+  };
+  dropZone.ondragleave = () => {
+    dropZone.style.borderColor = 'var(--border)';
+  };
+  dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'var(--border)';
+    if (e.dataTransfer.files.length) {
+      loadFile(e.dataTransfer.files[0]);
+    }
+  };
+  $('sheetInput').onchange = (e) => {
+    if (e.target.files.length) {
+      loadFile(e.target.files[0]);
+    }
+  };
+
+  async function loadFile(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['csv', 'xlsx', 'xls'].includes(ext)) {
+      showStatus('Invalid file format. Please upload a .csv, .xlsx, or .xls file.', true);
+      return;
+    }
+    
+    fileNamePrefix = file.name.substring(0, file.name.lastIndexOf('.')) || 'spreadsheet';
+    showStatus(`Reading file "${file.name}"...`);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Grab first sheet
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        
+        // Convert to array of arrays (AOA)
+        activeDataAOA = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        renderTablePreview();
+        
+        showStatus('✅ File parsed successfully! Review the preview.');
+      } catch (err) {
+        console.error(err);
+        showStatus(`❌ Failed to parse sheet: ${err.message}`, true);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  $('btnParse').onclick = () => {
+    const pasteVal = $('csvPaste').value.trim();
+    if (pasteVal) {
+      showStatus('Parsing CSV text...');
+      try {
+        fileNamePrefix = 'csv-data';
+        const workbook = XLSX.read(pasteVal, { type: 'string' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        activeDataAOA = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        
+        renderTablePreview();
+        showStatus('✅ Paste data parsed successfully!');
+      } catch (err) {
+        showStatus(`❌ Failed to parse text: ${err.message}`, true);
+      }
+    } else {
+      showStatus('Please upload a file or paste CSV text first.', true);
+    }
+  };
+
+  function renderTablePreview() {
+    if (activeDataAOA.length === 0) return;
+
+    const table = $('dataTable');
+    table.innerHTML = '';
+
+    // Show only first 50 rows for preview to protect browser layout speeds
+    const limit = Math.min(50, activeDataAOA.length);
+    $('rowInfo').textContent = `(Showing first ${limit} of ${activeDataAOA.length} rows)`;
+
+    // Render Headers (Row 0)
+    const headerRow = activeDataAOA[0] || [];
+    const thead = document.createElement('thead');
+    const trHead = document.createElement('tr');
+    
+    // Add row numbers col header
+    const thNum = document.createElement('th');
+    thNum.textContent = '#';
+    trHead.appendChild(thNum);
+
+    headerRow.forEach((colVal) => {
+      const th = document.createElement('th');
+      th.textContent = colVal !== undefined ? colVal : '';
+      trHead.appendChild(th);
+    });
+    thead.appendChild(trHead);
+    table.appendChild(thead);
+
+    // Render Body (Rows 1+)
+    const tbody = document.createElement('tbody');
+    for (let r = 1; r < limit; r++) {
+      const tr = document.createElement('tr');
+      const rowData = activeDataAOA[r] || [];
+
+      // Add row index number cell
+      const tdNum = document.createElement('td');
+      tdNum.style.fontWeight = 'bold';
+      tdNum.style.color = 'var(--muted)';
+      tdNum.textContent = r;
+      tr.appendChild(tdNum);
+
+      // Make sure cells count matches header length
+      for (let c = 0; c < headerRow.length; c++) {
+        const td = document.createElement('td');
+        const val = rowData[c];
+        td.textContent = val !== undefined ? val : '';
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    table.appendChild(tbody);
+
+    $('previewPlaceholder').style.display = 'none';
+    $('previewWrapper').style.display = 'block';
+  }
+
+  window.exportData = (type) => {
+    if (activeDataAOA.length === 0) return;
+    
+    showStatus('Preparing export file...');
+    try {
+      const worksheet = XLSX.utils.aoa_to_sheet(activeDataAOA);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+
+      if (type === 'xlsx') {
+        XLSX.writeFile(workbook, `${fileNamePrefix}.xlsx`);
+        showStatus('✅ Excel sheet exported and download triggered!');
+      } else if (type === 'csv') {
+        XLSX.writeFile(workbook, `${fileNamePrefix}.csv`, { bookType: 'csv' });
+        showStatus('✅ CSV sheet exported and download triggered!');
+      } else if (type === 'json') {
+        // Convert to Array of Objects representation for natural JSON exports
+        const headers = activeDataAOA[0] || [];
+        const records = [];
+        for (let r = 1; r < activeDataAOA.length; r++) {
+          const row = activeDataAOA[r] || [];
+          const obj = {};
+          headers.forEach((h, idx) => {
+            if (h !== undefined) {
+              obj[h] = row[idx];
+            }
+          });
+          records.push(obj);
+        }
+
+        const jsonStr = JSON.stringify(records, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fileNamePrefix}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showStatus('✅ JSON file exported and download triggered!');
+      }
+    } catch (err) {
+      console.error(err);
+      showStatus(`❌ Export failed: ${err.message}`, true);
+    }
+  };
+
+  $('btnClear').onclick = () => {
+    activeDataAOA = [];
+    $('sheetInput').value = '';
+    $('csvPaste').value = '';
+    $('previewPlaceholder').style.display = 'block';
+    $('previewWrapper').style.display = 'none';
+    $('statusMsg').style.display = 'none';
+  };
+
+  // Bind FAQ
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      q.parentElement.classList.toggle('open');
+    };
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>

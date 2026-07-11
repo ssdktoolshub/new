@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hematocrit (PCV) Analyzer &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Analyze your Hematocrit / Packed Cell Volume (PCV) level online. Check for anemia, dehydration, or polycythemia with dynamic reference ranges and bilingual support.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- html2canvas for screenshot download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  
+  <style>
+    :root {
+      --normal-color: #10b981;
+      --low-color: #3b82f6;
+      --high-color: #ef4444;
+      --critical-color: #7f1d1d;
+      --border-color: #f59e0b;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    
+    @media (max-width: 1024px) {
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .panel-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .panel-title-bar h3 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .fields-category {
+      background: rgba(255, 255, 255, 0.01);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .form-inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .input-wrapper label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .input-wrapper input, .input-wrapper select {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      outline: none;
+      font-size: 0.9rem;
+      transition: all 0.25s;
+    }
+
+    .input-wrapper input:focus, .input-wrapper select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    
+    .lang-toggle-container {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+    }
+    
+    .lang-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 700;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .lang-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 10px var(--glow);
+    }
+
+    .results-display {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      min-height: 400px;
+    }
+
+    .results-placeholder {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--muted);
+    }
+
+    .results-placeholder .icon {
+      font-size: 3.5rem;
+      margin-bottom: 12px;
+      opacity: 0.5;
+      display: block;
+    }
+
+    .report-card {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .patient-summary {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+    }
+
+    .patient-summary span strong {
+      color: var(--accent);
+    }
+
+    .pcv-gauge-container {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      position: relative;
+    }
+
+    .pcv-val-large {
+      font-size: 3.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .pcv-status-label {
+      font-weight: 800;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .range-slider-bar {
+      height: 16px;
+      border-radius: 8px;
+      background: linear-gradient(to right, 
+        var(--critical-color) 0%, 
+        var(--low-color) 25%, 
+        var(--normal-color) 50%, 
+        var(--border-color) 75%, 
+        var(--high-color) 100%
+      );
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .range-pointer {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--bg1);
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      transition: left 0.5s cubic-bezier(0.1, 0.8, 0.1, 1);
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    .range-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .insight-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .insight-card h5 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .insight-card p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .insight-card ul {
+      margin-left: 18px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+
+    .history-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background: var(--bg3);
+      border-radius: 6px;
+      font-size: 0.75rem;
+      border: 1px solid var(--border);
+    }
+
+    .medical-disclaimer-box {
+      background: rgba(245, 158, 11, 0.03);
+      border: 1px dashed var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: #fbbf24;
+      line-height: 1.5;
+    }
+
+    @media print {
+      body {
+        background: #fff !important;
+        color: #000 !important;
+        padding-top: 0 !important;
+      }
+      .bg-fx, nav, footer, .tool-control, .lang-toggle-container, .fields-category, .tool-meta, .faq-section, .history-card, .btn, .btn-icon {
+        display: none !important;
+      }
+      .results-display {
+        border: none !important;
+        background: #fff !important;
+        color: #000 !important;
+        min-height: auto !important;
+        padding: 0 !important;
+      }
+      .pcv-gauge-container, .insight-card {
+        border: 1px solid #ddd !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .lab-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Top Language Toggle -->
+
+
+<main class="page reveal-on-scroll">
+  <!-- Breadcrumbs -->
+  
+
+  <!-- Tool Header -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" data-translate="toolTitle">Hematocrit (PCV) Analyzer</h1>
+      <button class="fav-btn" id="toolFavBtn" onclick="toggleFavorite()" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" data-translate="toolDesc">Analyze your Hematocrit or Packed Cell Volume (PCV) percentage. Evaluate red blood cell ratio and hydration dynamically.</p>
+  </header>
+  <!-- Unified Premium Dashboard Toolbar -->
+  <div class="tool-toolbar">
+    
+    <button class="btn-action" onclick="copyFormattedResult()" id="btnCopyReport">
+      <span>📋</span> <span data-translate="copyBtn">Copy Report</span>
+    </button>
+    <button class="btn-action" onclick="printReport()" id="btnPrintReport">
+      <span>🖨️</span> <span data-translate="printBtn">Print Report</span>
+    </button>
+    <button class="btn-action" onclick="captureReportPng()" id="btnSaveImage">
+      <span>📥</span> <span data-translate="downloadImageBtn">Save Image</span>
+    </button>
+    <button class="btn-action btn-danger" onclick="resetForm()" id="btnResetFields">
+      <span>🔄</span> <span data-translate="clearBtn">Reset</span>
+    </button>
+  </div>
+
+  <!-- Dashboard Playground -->
+  <div class="content-card tool-playground">
+    <div class="lab-grid">
+      
+      <!-- LEFT: Inputs -->
+      <div>
+        <div class="panel-title-bar">
+          <h3 data-translate="inputsTitle">🩸 Hematocrit Parameters</h3>
+          <button class="btn-icon" onclick="resetForm()" data-translate="clearBtn">🗑 Reset</button>
+        </div>
+
+        <div class="fields-category">
+          <div class="form-inputs-grid">
+            <div class="input-wrapper">
+              <label for="patientAge" data-translate="labelAge">Age (Years)</label>
+              <input type="number" id="patientAge" min="1" max="120" value="30" required>
+            </div>
+            
+            <div class="input-wrapper">
+              <label for="patientGender" data-translate="labelGender">Gender</label>
+              <select id="patientGender">
+                <option value="male" selected data-translate="genderMale">Male</option>
+                <option value="female" data-translate="genderFemale">Female</option>
+                <option value="pregnant" data-translate="genderPregnant">Pregnant Female</option>
+              </select>
+            </div>
+
+            <div class="input-wrapper">
+              <label for="valPCV" data-translate="labelPCV">Hematocrit (PCV) [%]</label>
+              <input type="number" step="0.1" id="valPCV" placeholder="e.g. 42.0" min="5" max="80" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="tool-control">
+          <button class="btn" style="width: 100%; justify-content: center;" onclick="analyzePCV()">
+            <span class="btn-icon-inside">🚀</span> <span data-translate="btnAnalyze">Analyze Hematocrit</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Results -->
+      <div class="results-display" id="resultsPanel">
+        <div class="results-placeholder" id="placeholderSec">
+          <span class="icon">🩸</span>
+          <h4 data-translate="placeholderTitle">Analysis Report Pending</h4>
+          <p data-translate="placeholderDesc">Enter your age, gender, and Hematocrit value, then click the analyze button to display medical summaries.</p>
+        </div>
+
+        <!-- Dynamic Output -->
+        <div class="report-card" id="reportCardSec" style="display: none;">
+          <div class="panel-title-bar">
+            <h3 data-translate="reportTitle">🔬 Hematocrit (PCV) Diagnostics Report</h3>
+            <div class="output-actions">
+              <button class="btn-icon" onclick="copyFormattedResult()" data-translate="copyBtn">📋</button>
+              <button class="btn-icon" onclick="printReport()" data-translate="printBtn">🖨️</button>
+              <button class="btn-icon" onclick="captureReportPng()" data-translate="downloadImageBtn">🖼️</button>
+            </div>
+          </div>
+
+          <div class="patient-summary">
+            <span><strong data-translate="labelAge">Age</strong>: <span id="resAge">-</span></span>
+            <span><strong data-translate="labelGender">Gender</strong>: <span id="resGender">-</span></span>
+            <span><strong data-translate="labelDate">Date</strong>: <span id="resDate">-</span></span>
+          </div>
+
+          <div class="pcv-gauge-container">
+            <div class="pcv-val-large" id="resPcvVal">-</div>
+            <div style="font-size:0.85rem; color:var(--muted); margin-bottom:12px;">%</div>
+            <div class="pcv-status-label" id="resStatusLabel">-</div>
+            
+            <div class="range-slider-bar">
+              <div class="range-pointer" id="rangePointer" style="left: 50%;"></div>
+            </div>
+            
+            <div class="range-ticks">
+              <span id="tickCriticalLow" style="color: var(--low-color);">20.0 (Crit)</span>
+              <span id="tickNormalRange" style="color: var(--normal-color);">40.7 - 50.3</span>
+              <span id="tickCriticalHigh" style="color: var(--high-color);">60.0 (Crit)</span>
+            </div>
+          </div>
+
+          <!-- Dynamic medical feedback -->
+          <div class="insight-section" id="insightSection"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Educational Notes -->
+  <section class="content-card">
+    <h3 data-translate="titleEdu">📚 Clinical Pathology Notes: Hematocrit (PCV)</h3>
+    <div style="display:flex; flex-direction:column; gap:12px; font-size:0.85rem; line-height:1.6; color:var(--muted);">
+      <p><strong style="color:var(--text);" data-translate="eduQ1">What is Hematocrit (PCV)?</strong><br><span data-translate="eduA1">Hematocrit (also known as Packed Cell Volume or PCV) measures the percentage of your total blood volume that consists of red blood cells. It is a critical diagnostic index for monitoring hydration and red cell density.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ2">What causes changes in PCV?</strong><br><span data-translate="eduA2">Low PCV usually aligns with anemias (either due to underproduction of cells or nutrient deficiencies) or fluid overload. High PCV indicates concentrated red cells, most commonly caused by dehydration or lung disorders.</span></p>
+      <p><strong style="color:var(--text);" data-translate="eduQ3">How do values change with pregnancy?</strong><br><span data-translate="eduA3">In pregnancy, plasma volume increases significantly more than red blood cell volume. This causes a physiological dilution effect, lowering normal limits for Hematocrit (down to 33.0%).</span></p>
+    </div>
+  </section>
+
+  <!-- History Panel -->
+  <div class="history-card" id="historyCard">
+    <h4 data-translate="recentRuns">Recent Report Interpretations</h4>
+    <div class="history-list" id="historyListContainer">
+      <p style="font-size:0.75rem; color:var(--muted);" data-translate="noHistory">No recent runs recorded.</p>
+    </div>
+  </div>
+
+  <!-- FAQs Accordion -->
+  <section class="content-card faq-section">
+    <h3 data-translate="faqTitle">❓ Frequently Asked Questions (FAQ)</h3>
+    <div class="faq-list" id="faqAccordionContainer"></div>
+  </section>
+
+  <!-- Warning Disclaimer -->
+  <div class="medical-disclaimer-box" data-translate="disclaimerText">
+    ⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.
+  </div>
+</main>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const translations = {
+    en: {
+      navHome: "Home",
+      navCat: "Medical & Lab Tools",
+      toolTitle: "Hematocrit (PCV) Analyzer",
+      toolDesc: "Analyze your Hematocrit / Packed Cell Volume (PCV) percentage. Evaluate red blood cell ratio and hydration dynamically.",
+      inputsTitle: "🩸 Hematocrit Parameters",
+      clearBtn: "Reset",
+      labelAge: "Age (Years)",
+      labelGender: "Gender",
+      genderMale: "Male",
+      genderFemale: "Female",
+      genderPregnant: "Pregnant Female",
+      labelPCV: "Hematocrit (PCV) [%]",
+      btnAnalyze: "Analyze Hematocrit",
+      placeholderTitle: "Analysis Report Pending",
+      placeholderDesc: "Enter your age, gender, and Hematocrit value, then click the analyze button to display medical summaries.",
+      reportTitle: "🔬 Hematocrit (PCV) Diagnostics Report",
+      copyBtn: "Copy",
+      printBtn: "Print",
+      downloadImageBtn: "Save Image",
+      labelDate: "Date",
+      recentRuns: "Recent Report Interpretations",
+      noHistory: "No recent runs recorded.",
+      faqTitle: "❓ Frequently Asked Questions (FAQ)",
+      disclaimerText: "⚠️ <strong>Medical Disclaimer:</strong> This tool is intended for educational and informational purposes only. It does not diagnose diseases and should not replace professional medical advice. Always discuss anomalous reports with your doctor.",
+      badgeNormal: "Normal Hematocrit (PCV)",
+      badgeLow: "Low Hematocrit (Anemia / Fluid Overload)",
+      badgeCriticalLow: "CRITICAL SEVERE HEMODILUTION / ANEMIA",
+      badgeHigh: "High Hematocrit (Erythrocytosis / Dehydration)",
+      badgeCriticalHigh: "CRITICAL SEVERE HEMOCONCENTRATION",
+      titleInterpretation: "📋 Clinical Analysis Overview",
+      titleCauses: "Possible Causes",
+      titleSymptoms: "Common Symptoms",
+      titlePrevention: "Actionable Healthy Tips",
+      titleConsult: "When to see a Doctor"
+    },
+    bn: {
+      navHome: "হোম",
+      navCat: "মেডিকেল ও ল্যাব টুলস",
+      toolTitle: "হেমাটোক্রিট (PCV) বিশ্লেষক",
+      toolDesc: "আপনার হেমাটোক্রিট বা প্যাকড সেল ভলিউম (PCV) এর শতকরা হার বিশ্লেষণ করুন। লোহিত রক্তকণিকার অনুপাত ও পানিশূন্যতার ঝুঁকি পরীক্ষা করুন।",
+      inputsTitle: "🩸 হেমাটোক্রিটের পরিমাপক সমূহ",
+      clearBtn: "মুছে ফেলুন",
+      labelAge: "বয়স (বছর)",
+      labelGender: "লিঙ্গ",
+      genderMale: "পুরুষ",
+      genderFemale: "নারী",
+      genderPregnant: "গর্ভবতী নারী",
+      labelPCV: "হেমাটোক্রিট মান (%)",
+      btnAnalyze: "হেমাটোক্রিট বিশ্লেষণ করুন",
+      placeholderTitle: "বিশ্লেষণ রিপোর্ট অমীমাংসিত",
+      placeholderDesc: "আপনার বয়স, লিঙ্গ এবং হেমাটোক্রিটের মান লিখুন, তারপর বিশ্লেষণ বোতামটি চাপুন রিপোর্টের সামারি দেখতে।",
+      reportTitle: "🔬 হেমাটোক্রিট (PCV) ডায়াগনস্টিক রিপোর্ট",
+      copyBtn: "কপি",
+      printBtn: "প্রিন্ট",
+      downloadImageBtn: "ছবি সংরক্ষণ",
+      labelDate: "তারিখ",
+      recentRuns: "সাম্প্রতিক রিপোর্ট বিশ্লেষণসমূহ",
+      noHistory: "কোনো সাম্প্রতিক রেকর্ড পাওয়া যায়নি।",
+      faqTitle: "❓ সচরাচর জিজ্ঞাস্য প্রশ্নাবলী (FAQ)",
+      disclaimerText: "⚠️ <strong>মেডিকেল সতর্কতা:</strong> এই টুলটি শুধুমাত্র শিক্ষামূলক ও তথ্যগত উদ্দেশ্যে তৈরি। এটি কোনো রোগ নির্ণয় করে না এবং চিকিৎসকের পরামর্শের বিকল্প নয়। রিপোর্টের যেকোনো অসঙ্গতির জন্য ডাক্তারের পরামর্শ নিন।",
+      badgeNormal: "স্বাভাবিক হেমাটোক্রিট (PCV)",
+      badgeLow: "কম হেমাটোক্রিট (রক্তস্বল্পতা / অতিরিক্ত তরলতা)",
+      badgeCriticalLow: "মারাত্মক ঝুঁকিপূর্ণ রক্তস্বল্পতা / কম পিসিভি",
+      badgeHigh: "উচ্চ হেমাটোক্রিট (পানিশূন্যতা / ঘন রক্ত)",
+      badgeCriticalHigh: "মারাত্মক ঝুঁকিপূর্ণ উচ্চ হেমাটোক্রিট",
+      titleInterpretation: "📋 ক্লিনিক্যাল বিশ্লেষণ ওভারভিউ",
+      titleCauses: "সম্ভাব্য কারণসমূহ",
+      titleSymptoms: "সাধারণ লক্ষণসমূহ",
+      titlePrevention: "করণীয় ও স্বাস্থ্য টিপস",
+      titleConsult: "কখন চিকিৎসকের কাছে যাবেন"
+    },
+    hi: {
+      navHome: "घर",
+      navCat: "चिकित्सा एवं प्रयोगशाला उपकरण",
+      toolTitle: "हेमाटोक्रिट (पीसीवी) विश्लेषक",
+      toolDesc: "अपने हेमाटोक्रिट/पैक्ड सेल वॉल्यूम (पीसीवी) प्रतिशत का विश्लेषण करें। लाल रक्त कोशिका अनुपात और जलयोजन का गतिशील रूप से मूल्यांकन करें।",
+      inputsTitle: "🩸 हेमाटोक्रिट पैरामीटर्स",
+      clearBtn: "रीसेट करें",
+      labelAge: "आयु (वर्ष)",
+      labelGender: "लिंग",
+      genderMale: "पुरुष",
+      genderFemale: "स्त्री",
+      genderPregnant: "गर्भवती महिला",
+      labelPCV: "हेमाटोक्रिट (पीसीवी) [%]",
+      btnAnalyze: "हेमेटोक्रिट का विश्लेषण करें",
+      placeholderTitle: "विश्लेषण रिपोर्ट लंबित",
+      placeholderDesc: "अपनी आयु, लिंग और हेमाटोक्रिट मान दर्ज करें, फिर चिकित्सा सारांश प्रदर्शित करने के लिए विश्लेषण बटन पर क्लिक करें।",
+      reportTitle: "🔬 हेमाटोक्रिट (पीसीवी) डायग्नोस्टिक्स रिपोर्ट",
+      copyBtn: "प्रतिलिपि",
+      printBtn: "प्रिंट करें",
+      downloadImageBtn: "छवि सहेजें",
+      labelDate: "तारीख",
+      recentRuns: "हालिया रिपोर्ट व्याख्याएँ",
+      noHistory: "कोई हालिया रन रिकॉर्ड नहीं किया गया.",
+      faqTitle: "❓ अक्सर पूछे जाने वाले प्रश्न (एफएक्यू)",
+      disclaimerText: "⚠️ <strong>चिकित्सा अस्वीकरण:</strong> यह उपकरण केवल शैक्षिक और सूचनात्मक उद्देश्यों के लिए है। यह बीमारियों का निदान नहीं करता है और इसे पेशेवर चिकित्सा सलाह का स्थान नहीं लेना चाहिए। हमेशा अपने डॉक्टर से असामान्य रिपोर्टों पर चर्चा करें।",
+      badgeNormal: "सामान्य हेमटोक्रिट (पीसीवी)",
+      badgeLow: "कम हेमाटोक्रिट (एनीमिया/द्रव अधिभार)",
+      badgeCriticalLow: "गंभीर गंभीर रक्ताल्पता/एनीमि���ा",
+      badgeHigh: "उच्च हेमटोक्रिट (एरिथ्रोसाइटोसिस / निर्जलीकरण)",
+      badgeCriticalHigh: "गंभीर गंभीर रक्तसंकेन्द्रण",
+      titleInterpretation: "📋 क्लिनिकल विश्लेषण अवलोकन",
+      titleCauses: "संभावित कारण",
+      titleSymptoms: "सामान्य लक्षण",
+      titlePrevention: "क्रियाशील स्वस्थ युक्तियाँ",
+      titleConsult: "डॉक्टर से कब मिलना है"
+    }
+  };
+
+  const faqData = {
+    en: [
+      { q: "What is Hematocrit (PCV)?", a: "Hematocrit (also called Packed Cell Volume) represents the percentage of total blood volume composed of red blood cells." },
+      { q: "What are normal Hematocrit ranges?", a: "For adult males: 40.7% - 50.3%; for adult females: 36.1% - 44.3%; and for pregnant females: 33.0% - 42.0%." },
+      { q: "What causes low Hematocrit?", a: "Common causes are nutrient anemias (iron, folate, B12), chronic bleeding, overhydration, kidney disease, or bone marrow disorders." },
+      { q: "What are symptoms of low Hematocrit?", a: "Symptoms are similar to anemia: fatigue, weakness, pale skin, cold hands and feet, shortness of breath, and headaches." },
+      { q: "What causes high Hematocrit?", a: "The most common cause is dehydration. Other causes include chronic lung disease, sleep apnea, smoking, high altitudes, or Polycythemia Vera." },
+      { q: "What are symptoms of high Hematocrit?", a: "Symptoms include headaches, dizziness, red skin tone, blurred vision, or itching after warm baths." },
+      { q: "How does dehydration increase Hematocrit?", a: "Dehydration reduces the fluid portion of blood (plasma), causing red cells to be highly concentrated and occupy a larger percentage of volume." },
+      { q: "How does pregnancy change Hematocrit ranges?", a: "During pregnancy, plasma volume expands by up to 50%, diluting RBCs. This causes a natural physiological drop in Hematocrit." },
+      { q: "When is a low Hematocrit count critical?", a: "A count below 20.0% is critically low, suggesting severe anemia or hemorrhage, presenting oxygen deprivation risks." },
+      { q: "When is a high Hematocrit count critical?", a: "A count at or above 60.0% is critically high, increasing blood viscosity and posing severe blood clot (thrombosis) risks." },
+      { q: "How can I raise my Hematocrit count?", a: "Consume foods rich in iron, Vitamin B12, and folate, pair them with Vitamin C, and treat underlying inflammatory conditions." },
+      { q: "What is the relationship between Hemoglobin and Hematocrit?", a: "Hematocrit is generally three times the value of Hemoglobin (e.g., a Hemoglobin of 14 g/dL roughly equals a Hematocrit of 42%)." },
+      { q: "Can overhydration cause low Hematocrit?", a: "Yes. Consuming excessive fluids or receiving large amounts of IV fluids can temporarily dilute blood, lowering PCV." },
+      { q: "Can smoking affect Hematocrit?", a: "Yes. Carbon monoxide in cigarette smoke binds to hemoglobin, prompting the body to produce more RBCs to meet oxygen needs, raising Hematocrit." },
+      { q: "Is this analyzer diagnostic?", a: "No. This tool provides numerical analysis for educational use. Consult a doctor for diagnostic advice." }
+    ],
+    bn: [
+      { q: "হেমাটোক্রিট (PCV) কী?", a: "হেমাটোক্রিট (প্যাকড সেল ভলিউম বা পিসিভি) হলো রক্তের লোহিত কোষের পরিমাণ যা রক্তের মোট আয়তনের শতকরা অংশ হিসেবে প্রকাশ করা হয়।" },
+      { q: "হেমাটোক্রিটের স্বাভাবিক মাত্রা কত?", a: "প্রাপ্তবয়স্ক পুরুষের জন্য ৪০.৭% - ৫০.৩%; প্রাপ্তবয়স্ক নারীর জন্য ৩৬.১% - ৪৪.৩%; এবং গর্ভবতী নারীর জন্য ৩৩.০% - ৪২.০%।" },
+      { q: "কম হেমাটোক্রিটের কারণ কী?", a: "আয়রনের ঘাটতিজনিত রক্তস্বল্পতা, অতিরিক্ত রক্তক্ষরণ, শরীরে তরলের আধিক্য, কিডনি রোগ বা অস্থিমজ্জার সমস্যা।" },
+      { q: "হেমাটোক্রিট কম হলে কী লক্ষণ দেখা যায়?", a: "দুর্বলতা, শরীর ফ্যাকাশে হয়ে যাওয়া, হাত-পা ঠান্ডা হওয়া, শ্বাসকষ্ট এবং মাথা ঘোরানো।" },
+      { q: "হেমাটোক্রিট বৃদ্ধির কারণ কী?", a: "সবচেয়ে সাধারণ কারণ পানিশূন্যতা। এছাড়াও ক্রনিক লাং ডিজিজ, ধূমপান, উচ্চ উচ্চতা বা পলিসাইথেমিয়া ভেরার কারণে এটি বাড়তে পারে।" },
+      { q: "হেমাটোক্রিট বেশি হলে কী লক্ষণ দেখা যায়?", a: "মাথাব্যহা, মাথা ঘোরানো, ত্বক লালচে হওয়া, চোখে ঝাপসা দেখা এবং কুসুম গরম পানিতে গোসলের পর গা চুলকানো।" },
+      { q: "পানিশূন্যতা কীভাবে হেমাটোক্রিট বাড়ায়?", a: "পানিশূন্যতার কারণে রক্তের তরল উপাদান কমে যায়, ফলে লোহিত রক্তকণিকার ঘনত্ব সাময়িকভাবে বাড়ে যা হেমাটোক্রিটের শতকরা হার বাড়িয়ে দেয়।" },
+      { q: "গর্ভাবস্থায় হেমাটোক্রিটের কী পরিবর্তন হয়?", a: "গর্ভাবস্থায় রক্তের তরল অংশ (প্লাজমা) ব্যাপক বৃদ্ধি পায়, যা রক্তকে কিছুটা পাতলা করে দেয়। তাই এই সময় ৩৩.০% পর্যন্ত হেমাটোক্রিটকে স্বাভাবিক ধরা হয়।" },
+      { q: "হেমাটোক্রিট কত কম হলে তা বিপজ্জনক?", a: "২০.০% এর নিচে নামলে তা মারাত্মক রক্তস্বল্পতা বা রক্তক্ষরণ নির্দেশ করে এবং শরীরে অক্সিজেনের ঘাটতি ঘটায়।" },
+      { q: "হেমাটোক্রিট কত বেশি হলে তা বিপজ্জনক?", a: "৬০.০% বা তার বেশি হলে তা চরম ঝুঁকিপূর্ণ অবস্থা যা রক্তকে অতিরিক্ত ঘন করে তোলে এবং রক্তনালীতে ক্লট তৈরির ঝুঁকি বাড়ায়।" },
+      { q: "হেমাটোক্রিট কীভাবে বাড়ানো যায়?", a: "আয়রন, ভিটামিন বি১২ ও ফোলেট সমৃদ্ধ খাবার খেয়ে এবং ডাক্তারের পরামর্শ অনুযায়ী সাপ্লিমেন্ট গ্রহণের মাধ্যমে।" },
+      { q: "হিমোগ্লোবিন ও হেমাটোক্রিট এর সম্পর্ক কী?", a: "হেমাটোক্রিটের মান সাধারণত হিমোগ্লোবিনের মানের তিন গুণ হয় (যেমন হিমোগ্লোবিন ১৪ g/dL হলে হেমাটোক্রিট প্রায় ৪২% হবে)।" },
+      { q: "অতিরিক্ত পানি পান কি হেমাটোক্রিট কমাতে পারে?", a: "হ্যাঁ। অতিরিক্ত তরল গ্রহণ বা বেশি আইভি ফ্লুইড গ্রহণের ফলে রক্ত সাময়িকভাবে পাতলা হয়ে হেমাটোক্রিট কমে যেতে পারে।" },
+      { q: "ধূমপান কি হেমাটোক্রিটকে প্রভাবিত করে?", a: "হ্যাঁ। ধূমপানের ফলে শরীরে অক্সিজেনের ঘাটতি তৈরি হয়, যা লোহিত রক্তকণিকা উৎপাদন বাড়িয়ে হেমাটোক্রিট বাড়িয়ে দেয়।" },
+      { q: "এই টুলটি কি ডাক্তারের রোগ নির্ণয়ের বিকল্প?", a: "না। এই টুলটি স্ট্যান্ডার্ড লিমিটের ভিত্তিতে শুধুমাত্র শিক্ষামূলক তথ্য দেয়। রিপোর্টের সঠিক ব্যাখ্যার জন্য ডাক্তারের পরামর্শ নিন।" }
+    ],
+    hi: [
+      { q: "हेमाटोक्रिट (पीसीवी) क्या है?", a: "हेमाटोक्रिट (जिसे पैक्ड सेल वॉल्यूम भी कहा जाता है) लाल रक्त कोशिकाओं से बनी कुल रक्त मात्रा का प्रतिशत दर्शाता है।" },
+      { q: "सामान्य हेमाटोक्रिट श्रेणियां क्या हैं?", a: "वयस्क पुरुषों के लिए: 40.7% - 50.3%; वयस्क महिलाओं के लिए: 36.1% - 44.3%; और गर्भवती महिलाओं के लिए: 33.0% - 42.0%।" },
+      { q: "हेमेटोक्रिट कम होने का क्या कारण है?", a: "सामान्य कारण हैं पोषक तत्वों की कमी (आयरन, फोलेट, बी12), क्रोनिक ब्लीडिंग, ओवरहाइड्रेशन, किडनी रोग या अस्थि मज्जा विकार।" },
+      { q: "कम हेमटोक्रिट के लक्षण क्या हैं?", a: "लक्षण एनीमिया के समान हैं: थकान, कमजोरी, पीली त्वचा, ठंडे हाथ और पैर, सांस लेने में तकलीफ और सिरदर्द।" },
+      { q: "उच्च हेमाटोक्रिट का क्या कारण है?", a: "सबसे आम कारण निर्जलीकरण है। अन्य कारणों में पुरानी फे���ड़ों की बीमारी, स्लीप एपनिया, धूम्रपान, उच्च ऊंचाई, या पॉलीसिथेमिया वेरा शामिल हैं।" },
+      { q: "उच्च हेमटोक्रिट के लक्षण क्या हैं?", a: "लक्षणों में सिरदर्द, चक्कर आना, त्वचा का लाल होना, धुंधली दृष्टि या गर्म स्नान के बाद खुजली शामिल हैं।" },
+      { q: "निर्जलीकरण हेमाटोक्रिट को कैसे बढ़ाता है?", a: "निर्जलीकरण रक्त (प्लाज्मा) के तरल हिस्से को कम कर देता है, जिससे लाल कोशिकाएं अत्यधिक केंद्रित हो जाती हैं और मात्रा का एक बड़ा प्रतिशत घेर लेती हैं।" },
+      { q: "गर्भावस्था हेमाटोक्रिट रेंज को कैसे बदलती है?", a: "गर्भावस्था के दौरान, प्लाज्मा की मात्���ा 50% तक बढ़ जाती है, जिससे आरबीसी कमजोर हो जाती है। इससे हेमाटोक्रिट में प्राकृतिक शारीरिक गिरावट आती है।" },
+      { q: "कम हेमटोक्रिट गिनती कब महत्वपूर्ण है?", a: "20.0% से नीचे की गिनती गंभीर रूप से कम है, जो गंभीर एनीमिया या रक्तस्राव का संकेत देती है, जिससे ऑक्सीजन की कमी का खतरा होता है।" },
+      { q: "उच्च हेमटोक्रिट गिनती कब महत्वपूर्ण है?", a: "60.0% या उससे ऊपर की गिनती गंभीर रूप से अधिक है, जिससे रक्त की चिपचिपाहट बढ़ जाती है और गंभीर रक्त का थक्का (घनास्त्रता) का खतरा पैदा हो जाता है।" },
+      { q: "मैं अपनी हेमाटोक्रिट गिनती कैसे बढ़ा सकता हूं?", a: "आयरन, विटामिन बी12 और फोलेट से भरपूर खाद्य पदार्थों का सेवन करें, उन्हें विटामिन सी के साथ मिलाएं और अंतर्निहित सूजन संबंधी स्थितियों का इलाज करें।" },
+      { q: "हीमोग्लोबिन और हेमाटोक्रिट के बीच क्या संबंध है?", a: "हेमाट���क्रिट आम ​​तौर पर हीमोग्लोबिन के मूल्य का तीन गुना होता है (उदाहरण के लिए, 14 ग्राम/डीएल का हीमोग्लोबिन लगभग 42% हेमाटोक्रिट के बराबर होता है)।" },
+      { q: "क्या अत्यधिक जलयोजन के कारण हेमाटोक्रिट कम हो सकता है?", a: "हाँ। अत्यधिक तरल पदार्थों का सेवन या बड़ी मात्रा में IV तरल पदार्थ लेने से रक्त अस्थायी रूप से पतला हो सकता है, जिससे पीसीवी कम हो सकता है।" },
+      { q: "क्या धूम्रपान हेमाटोक्रिट को प्रभावित कर सकता है?", a: "हाँ। सिगरेट के धुएं में कार्बन मोनोऑक्साइड हीमोग्लोबिन को बांधता है, जिससे शरीर ऑक्सीजन की जरूरतों को पूरा करने के लिए अधिक आरबीसी का उत्पादन करने के लिए प्रेरित होता है, जिससे हेमाटोक्रिट बढ़ता है।" },
+      { q: "क्या यह विश्लेषक निदान है?", a: "नहीं, यह उपकरण शैक्षिक उपयोग के लिए संख्यात्मक विश्लेषण प्रदान करता है। निदान संबंधी सलाह के लिए डॉक्टर से परामर्श लें।" }
+    ]
+  };
+
+  const pcvInsights = {
+    en: {
+      normal: {
+        desc: "Your Hematocrit (PCV) level is completely within the normal range for your demographic profile. This indicates healthy proportion of red blood cells, normal blood hydration balance, and proper cardiovascular distribution. Maintain your healthy habits.",
+        causes: ["Optimal red cell production", "Healthy body hydration", "No signs of severe anemia or polycythemia"],
+        symptoms: ["Good physical stamina", "No signs of volume dilution or concentration", "Healthy capillary refill"],
+        prevention: ["Eat a balanced diet high in iron and essential vitamins", "Drink plenty of water daily", "Exercise regularly"],
+        consult: "Regular annual health screenings are recommended to monitor long-term trends."
+      },
+      low: {
+        desc: "Your Hematocrit is below the normal limit, indicating Mild to Moderate PCV reduction (Anemia or Hemodilution). This means your red blood cells are diluted or deficient, which can lead to fatigue.",
+        causes: ["Nutritional anemias (iron, B12, folate deficiency)", "Chronic silent blood loss", "Overhydration (excess fluid intake)", "Kidney disease (low EPO)"],
+        symptoms: ["Fatigue and weakness", "Pale or yellowish skin tone", "Shortness of breath on mild exertion", "Cold hands and feet"],
+        prevention: ["Eat iron and vitamin-rich foods (red meat, green vegetables, beans)", "Avoid drinking tea or coffee during meals", "Consult your physician about evaluating iron status"],
+        consult: "Schedule a consultation with your general physician to check your red blood cell count and iron stores."
+      },
+      criticalLow: {
+        desc: "Your Hematocrit is critically low (under 20.0%). This represents severe anemia or hemorrhage, presenting serious risk of tissue hypoxia and cardiovascular strain.",
+        causes: ["Severe acute hemorrhage", "Severe active hemolytic anemia", "Bone marrow failure", "Severe malnutrition"],
+        symptoms: ["Extreme lethargy or fainting", "Shortness of breath even at rest", "Chest pain or tachycardia", "Severe dizziness"],
+        prevention: ["Avoid any physical strain or sudden movements", "Do not attempt self-medication"],
+        consult: "⚠️ Seek immediate medical attention or visit an emergency room. Urgent clinical evaluation or blood transfusion is often required."
+      },
+      high: {
+        desc: "Your Hematocrit is higher than standard normal limits (Hemoconcentration). This means your blood contains higher red cell density, which can make it thicker than normal.",
+        causes: ["Dehydration (most common cause)", "Heavy smoking", "Chronic lung diseases (COPD, sleep apnea)", "High altitude adaptation"],
+        symptoms: ["Headaches or dizziness", "Flushed or reddish skin tone", "Fatigue", "Itching after warm showers"],
+        prevention: ["Drink plenty of fluids immediately to restore hydration", "Quit smoking or limit tobacco exposure", "Seek evaluation for sleep apnea or chronic cough"],
+        consult: "Consult a general physician to rule out dehydration or chronic respiratory conditions."
+      },
+      criticalHigh: {
+        desc: "Your Hematocrit is critically high (at or above 60.0%). This represents severe hemoconcentration, increasing blood viscosity dramatically and raising immediate thrombosis (clotting) risks.",
+        causes: ["Polycythemia Vera (myeloproliferative disorder)", "Severe hypoxia", "Extreme dehydration"],
+        symptoms: ["Severe headaches or visual disturbances", "Numbness or tingling in fingers/toes", "Chest discomfort", "Redness in palms and face"],
+        prevention: ["Rehydrate immediately with fluids", "Avoid iron supplements or red meat"],
+        consult: "⚠️ Seek urgent medical attention. A therapeutic phlebotomy (clinically removing blood) may be necessary to reduce blood thickness."
+      }
+    },
+    bn: {
+      normal: {
+        desc: "আপনার হেমাটোক্রিট (PCV) এর মাত্রা সম্পূর্ণ স্বাভাবিক সীমার মধ্যে রয়েছে। এটি রক্তে লোহিত রক্তকণিকার সঠিক অনুপাত, স্বাভাবিক শারীরিক তরলের ভারসাম্য এবং সঠিক রক্ত সঞ্চালনকে নির্দেশ করে। আপনার স্বাস্থ্যকর জীবনযাত্রা বজায় রাখুন।",
+        causes: ["সঠিক লোহিত কোষ উৎপাদন", "শরীরের তরলের স্বাভাবিক ভারসাম্য", "রক্তস্বল্পতা বা পলিসাইথেমিয়ার অনুপস্থিতি"],
+        symptoms: ["স্বাভাবিক শারীরিক শক্তি", "কোনো পানিশূন্যতা বা অতিরিক্ত তরলতার লক্ষণ না থাকা", "ত্বকের স্বাভাবিক রঙ"],
+        prevention: ["আয়রন ও ভিটামিন সমৃদ্ধ পুষ্টিকর খাবার খান", "পর্যাপ্ত পানি পান করুন", "হৃদযন্ত্রের কর্মক্ষমতা বাড়াতে নিয়মিত অ্যারোবিক ব্যায়াম করুন"],
+        consult: "দীর্ঘমেয়াদী রক্তস্বাস্থ্য ট্র্যাক করতে বছরে অন্তত একবার রুটিন ব্লাড স্ক্রীনিং করা ভালো।"
+      },
+      low: {
+        desc: "আপনার হেমাটোক্রিট কাউন্ট স্বাভাবিকের চেয়ে কম, যা মৃদু থেকে মাঝারি মানের রক্তস্বল্পতা বা রক্তের তরলতা বৃদ্ধি নির্দেশ করে। এর ফলে কোষে পর্যাপ্ত অক্সিজেন পৌঁছায় না, যার কারণে ক্লান্তি ও দুর্বলতা অনুভূত হয়।",
+        causes: ["আয়রন, ভিটামিন বি১২ বা ফোলেটের অভাব", "ক্রনিক রক্তক্ষরণ", "শরীরে অতিরিক্ত তরলের উপস্থিতি (Overhydration)", "কিডনি রোগ"],
+        symptoms: ["ক্লান্তি ও দুর্বলতা অনুভব করা", "ত্বক ফ্যাকাশে বা হলদেটে হয়ে যাওয়া", "মাথা ঘোরানো বা সামান্য পরিশ্রমে শ্বাসকষ্ট", "হাত-পা ঠান্ডা হয়ে যাওয়া"],
+        prevention: ["আয়রন ও ভিটামিন সমৃদ্ধ খাবার খান (লাল মাংস, সবুজ শাকসবজি, ডাল)", "খাবার খাওয়ার সময় চা বা কফি খাওয়া এড়ান", "খাদ্যতালিকায় সুষম খাবার রাখুন"],
+        consult: "হেমাটোক্রিট হ্রাসের সঠিক কারণ ও শরীরে আয়রনের সঞ্চয় পরীক্ষা করতে ডাক্তারের পরামর্শ নিন।"
+      },
+      criticalLow: {
+        desc: "আপনার হেমাটোক্রিট কাউন্ট মারাত্মক কম (২০.০% এর নিচে)। এটি শরীরের কোষে তীব্র অক্সিজেনের ঘাটতি তৈরি করে এবং হৃদযন্ত্রের উপর মারাত্মক চাপ ফেলে যা রক্ত সঞ্চালনের জন্য ক্ষতিকর।",
+        causes: ["তীব্র বা আকস্মিক রক্তক্ষরণ", "লোহিত রক্তকণিকা দ্রুত ভেঙে যাওয়া (হেমোলাইটিক অ্যানিমিয়া)", "অস্থিমজ্জার অকার্যকারিতা", "তীব্র পুষ্টির অভাব"],
+        symptoms: ["তীব্র দুর্বলতা বা অজ্ঞান হয়ে যাওয়া", "বিশ্রামরত অবস্থাতেও শ্বাসকষ্ট", "বুকে ব্যথা বা তীব্র হৃদস্পন্দন", "তীব্র মাথা ঘোরানো"],
+        prevention: ["হৃৎপিণ্ডের উপর চাপ এড়াতে ভারী কাজ করা বন্ধ করুন", "জরুরি ক্লিনিক্যাল প্রটোকল ছাড়া নিজে থেকে কোনো ওষুধ শুরু করবেন না"],
+        consult: "⚠️ অবিলম্বে কোনো হাসপাতালের জরুরি বিভাগে যোগাযোগ করুন। জরুরি রক্ত সঞ্চালন (Blood Transfusion) বা তাৎক্ষণিক চিকিৎসার প্রয়োজন হতে পারে।"
+      },
+      high: {
+        desc: "আপনার হেমাটোক্রিট কাউন্ট স্বাভাবিক সীমার চেয়ে বেশি (রক্ত ঘন হয়ে যাওয়া)। এর অর্থ আপনার রক্ত স্বাভাবিকের চেয়ে কিছুটা ঘন হতে পারে, যা রক্ত সঞ্চালনে বাধা সৃষ্টি করে।",
+        causes: ["পানিশূন্যতা (সবচেয়ে সাধারণ কারণ)", "ধূমপান", "ফুসফুসের দীর্ঘস্থায়ী রোগ (COPD) বা স্লিপ অ্যাপনিয়া", "উচ্চ উচ্চতায় বসবাস"],
+        symptoms: ["মাথাব্যহা বা মাথা ঘোরানো", "ত্বক অতিরিক্ত লালচে দেখাবে", "সবসময় ঘুম ঘুম ভাব", "কুসুম গরম পানিতে গোসলের পর শরীরে চুলকানি"],
+        prevention: ["রক্তের তরলতা ফেরাতে অবিলম্বে পর্যাপ্ত পানি পান করুন", "ধূমপানের অভ্যাস পরিহার করুন", "ঘুমের সমস্যা ও নাক ডাকার সঠিক চিকিৎসা নিন"],
+        consult: "হেমাটোক্রিট বেশি থাকার সঠিক কারণ নির্ণয় ও ফুসফুসের কার্যকারিতা পরীক্ষা করতে একজন চিকিৎসকের পরামর্শ নিন।"
+      },
+      criticalHigh: {
+        desc: "আপনার হেমাটোক্রিট কাউন্ট মারাত্মক বেশি (৬০.০% বা তার বেশি)। এটি রক্তকে অত্যন্ত ঘন করে তোলে, যা রক্তনালীতে রক্ত জমাট বাঁধার (Clotting) ঝুঁকি বহুলাংশে বাড়িয়ে দেয়।",
+        causes: ["পলিসাইথেমিয়া ভেরা (অস্থিমজ্জার রোগ)", "তীব্র ডিহাইড্রেশন", "ফুসফুসের মারাত্মক অক্ষমতা"],
+        symptoms: ["তীব্র মাথাব্যহা বা চোখে ঝাপসা দেখা", "হাত ও পায়ের পাতায় অবশ বা ঝিনঝিন ভাব", "বুকে ব্যথা বা ট্রানজিয়েন্ট ইসকেমিক অ্যাটাক", "মুখ ও হাতের তালু অতিরিক্ত লালচে হওয়া"],
+        prevention: ["আয়রন যুক্ত খাবার বা লাল মাংস পরিহার করুন", "প্রচুর তরল খাবার পান করুন"],
+        consult: "⚠️ জরুরি ভিত্তিতে ডাক্তারের সাথে যোগাযোগ করুন। রক্তের ঘনত্ব কমাতে থেরাপিউটিক ফ্লেবোটমি (শরীর থেকে অতিরিক্ত রক্ত বের করা) করার প্রয়োজন হতে পারে।"
+      }
+    },
+    hi: {
+      normal: {
+        desc: "आपका हेमटोक्रिट (पीसीवी) स्तर आपके जनसांख्यिकीय प्रोफ़ाइल के लिए पूरी तरह से सामान्य सीमा के भीतर है। यह लाल रक्त कोशिकाओं के स्वस्थ अनुपात, सामान्य रक्त जलयोजन संतुलन और उचित हृदय वितरण को इंगित करता है। अपनी स्वस्थ आदतें बनाए रखें.",
+        causes: ["इष्टतम लाल कोशिका उत्पादन", "स्वस्थ शरीर जलयोजन", "गंभीर एनीमिया या पॉलीसिथेमिया का कोई लक्षण नहीं"],
+        symptoms: ["अच्छी शारीरिक सहनशक्ति", "मात्रा में कमी या एकाग्रता का कोई संकेत नहीं", "स्वस्थ केशिका पुनः भरना"],
+        prevention: ["आयरन और आवश्यक विटामिन से भरपूर संतुलित आहार लें", "प्रतिदिन खूब पानी पियें", "नियमित व्यायाम करें"],
+        consult: "दीर्घकालिक रुझानों पर नज़र रखने के लिए नियमित वार्षिक स्वास्थ्य जांच की सिफारिश की जाती है।"
+      },
+      low: {
+        desc: "आपका हेमाटोक्रिट सामान्य सीमा से नीचे है, जो हल्के से मध्यम पीसीवी कमी (एनीमिया या हेमोडायल्यूशन) का संकेत देता है। इसका मतलब है कि आपकी लाल रक्त कोशिकाएं कमजोर या कम हो गई हैं, जिससे थकान हो सकती है।",
+        causes: ["पोषण संबंधी रक्ताल्पता (आयरन, बी12, फोलेट की कमी)", "दीर्घकालिक मौन रक्त हानि", "ओवरहाइड्रेशन (अतिरिक्त तरल पदार्थ का सेवन)", "गुर्दे की बीमारी (कम ईपीओ)"],
+        symptoms: ["थकान और कमजोरी", "त्वचा का रंग पीला या पीला पड़ना", "हल्का परिश्रम करने पर सांस फूलना", "ठंडे हाथ और पैर"],
+        prevention: ["आयरन और विटामिन युक्त खाद्य पदार्थ खाएं (लाल मांस, हरी सब्जियां, बीन्स)", "भोजन के दौरान चाय या कॉफी पीने से बचें", "आयरन की स्थिति के मूल्यांकन के बारे में अपने चिकित्सक से परामर्श करें"],
+        consult: "अपनी लाल रक्त कोशिका की गिनती और आयरन भंडार की जांच के लिए अपने सामान्य चिकित्सक से परामर्श ल��ं।"
+      },
+      criticalLow: {
+        desc: "आपका हेमाटोक्रिट गंभीर रूप से कम (20.0% से कम) है। यह गंभीर एनीमिया या रक्तस्राव का प्रतिनिधित्व करता है, जिससे ऊतक हाइपोक्सिया और हृदय संबंधी तनाव का गंभीर खतरा होता है।",
+        causes: ["गंभीर तीव्र रक्तस्राव", "गंभीर सक्रिय हेमोलिटिक एनीमिया", "अस्थि मज्जा विफलता", "गंभीर कुपोषण"],
+        symptoms: ["अत्यधिक सुस्ती या बेहोशी", "आराम करने पर भी सांस फूलना", "सीने में ���र्द या तचीकार्डिया", "गंभीर चक्कर आना"],
+        prevention: ["किसी भी शारीरिक तनाव या अचानक हरकत से बचें", "स्व-दवा का प्रयास न करें"],
+        consult: "⚠️ तत्काल चिकित्सा सहायता लें या आपातकालीन कक्ष में जाएँ। तत्काल नैदानिक ​​मूल्यांकन या रक्त आधान की अक्सर आवश्यकता होती है।"
+      },
+      high: {
+        desc: "आपका हेमाटोक्रिट मानक सामान्य सीमा (हेमोकन्सन्ट्रेशन) से अधिक है। इसका मतलब है कि आपके रक्त में लाल कोशिका घनत्व अधिक है, जो इसे सामान्य से अधिक गाढ़ा बना सकता है।",
+        causes: ["निर्जलीकरण (सबसे आम कारण)", "भारी धूम्रपान", "फेफड़ों की पुरानी बीमारियाँ (सीओपीडी, स्लीप एपनिया)", "उच्च ऊंचाई अनुकूलन"],
+        symptoms: ["सिरदर्द या चक्कर आना", "त्वचा का रंग निखरना या लाल होना", "थकान", "गर्म पानी से नहाने के बाद खुजली होना"],
+        prevention: ["जलयोजन बहाल करने क�� लिए तुरंत खूब सारे तरल पदार्थ पियें", "धूम्रपान छोड़ें या तंबाकू का सेवन सीमित करें", "स्लीप एपनिया या पुरानी खांसी के लिए मूल्यांकन लें"],
+        consult: "निर्जलीकरण या पुरानी श्वसन स्थितियों से बचने के लिए एक सामान्य चिकित्सक से परामर्श लें।"
+      },
+      criticalHigh: {
+        desc: "आपका हेमेटोक्रिट गंभीर रूप से उच्च (60.0% पर या उससे ऊपर) है। यह गंभीर हेमोकोनसेंट्रेशन का प्रतिनिधित्व करता है, रक्त की चिपचिपाहट में नाटकीय रूप से वृद्धि करता है और तत्काल थ्रोम्बोसिस (थक्के जमने) के जोखिम को बढ़ाता है।",
+        causes: ["पॉलीसिथेमिया वेरा (मायेलोप्रोलिफेरेटिव विकार)", "गंभीर हाइपोक्सिया", "अत्यधिक निर्जलीकरण"],
+        symptoms: ["गंभीर सिरदर्द या दृश्य गड़बड़ी", "उंगलियों/पैरों की उंगलियों में सुन्नता या झुनझुनी", "सीने में बेचैनी", "हथेलियों और चेहरे पर लालिमा"],
+        prevention: ["तरल पदार्थों से तुरंत पुनर्जलीकरण करें", "आयरन सप्लीमेंट या लाल मांस से बचें"],
+        consult: "⚠️ तत्काल चिकित्सा सहायता लें। रक्त का गाढ़ापन कम करने के लिए चिकित्सीय फ़्लेबोटॉमी (चिकित्सकीय रूप से रक्त निकालना) आवश्यक हो सकता है।"
+      }
+    }
+  };
+
+  let currentLang = localStorage.getItem("ssdk-lang") || "en";
+  let recentHistory = JSON.parse(localStorage.getItem("ssdk-pcv-history")) || [];
+  let activeReportData = null;
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("ssdk-lang", lang);
+    
+    
+
+    document.querySelectorAll("[data-translate]").forEach(el => {
+      const key = el.getAttribute("data-translate");
+      if (translations[lang] && translations[lang][key]) {
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = translations[lang][key];
+        } else {
+          el.innerHTML = translations[lang][key];
+        }
+      }
+    });
+
+    renderFAQs();
+    renderHistoryDisplay();
+    updateActiveTicks();
+    
+    if (activeReportData) {
+      updateReportDisplay();
+    }
+  }
+
+  function toggleLanguage() {
+    setLanguage(currentLang === "en" ? "bn" : "en");
+  }
+
+  function renderFAQs() {
+    const container = document.getElementById("faqAccordionContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    const faqs = faqData[currentLang] || faqData["en"];
+    faqs.forEach((faq) => {
+      const item = document.createElement("div");
+      item.className = "faq-item";
+      item.innerHTML = `
+        <div class="faq-q">${faq.q}<span>＋</span></div>
+        <div class="faq-a">${faq.a}</div>
+      `;
+      const q = item.querySelector(".faq-q");
+      q.onclick = () => {
+        const isOpen = item.classList.toggle("open");
+        const a = item.querySelector(".faq-a");
+        a.style.maxHeight = isOpen ? "250px" : "0";
+        a.style.padding = isOpen ? "0 22px 16px" : "0 22px";
+      };
+      container.appendChild(item);
+    });
+  }
+
+  function resetForm() {
+    document.getElementById("patientAge").value = "30";
+    document.getElementById("patientGender").value = "male";
+    document.getElementById("valPCV").value = "";
+    document.getElementById("placeholderSec").style.display = "block";
+    document.getElementById("reportCardSec").style.display = "none";
+  }
+
+  function getReferenceLimits(age, gender) {
+    let limits = { min: 40.7, max: 50.3, criticalMin: 20.0, criticalMax: 60.0 };
+
+    if (age < 12) {
+      limits.min = 32.0; limits.max = 44.0;
+    } else {
+      if (gender === "female") {
+        limits.min = 36.1; limits.max = 44.3;
+      } else if (gender === "pregnant") {
+        limits.min = 33.0; limits.max = 42.0;
+      }
+    }
+    return limits;
+  }
+
+  function updateActiveTicks() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    const limits = getReferenceLimits(age, gender);
+    
+    document.getElementById("tickNormalRange").textContent = `${limits.min}% - ${limits.max}% (${currentLang === "en" ? "Normal" : "স্বাভাবিক"})`;
+  }
+
+  document.getElementById("patientAge").oninput = updateActiveTicks;
+  document.getElementById("patientGender").onchange = updateActiveTicks;
+
+  function analyzePCV() {
+    const age = parseInt(document.getElementById("patientAge").value) || 30;
+    const gender = document.getElementById("patientGender").value;
+    const valPCV = parseFloat(document.getElementById("valPCV").value);
+
+    if (isNaN(valPCV) || valPCV <= 0) {
+      alert(currentLang === "en" ? "Please enter a valid Hematocrit value." : "দয়া করে হেমাটোক্রিটের একটি সঠিক মান লিখুন।");
+      return;
+    }
+
+    const limits = getReferenceLimits(age, gender);
+    let statusKey = "normal"; 
+    let badgeKey = "badgeNormal";
+
+    if (valPCV < limits.min) {
+      if (valPCV <= limits.criticalMin) {
+        statusKey = "criticalLow";
+        badgeKey = "badgeCriticalLow";
+      } else {
+        statusKey = "low";
+        badgeKey = "badgeLow";
+      }
+    } else if (valPCV > limits.max) {
+      if (valPCV >= limits.criticalMax) {
+        statusKey = "criticalHigh";
+        badgeKey = "badgeCriticalHigh";
+      } else {
+        statusKey = "high";
+        badgeKey = "badgeHigh";
+      }
+    }
+
+    // Scale mapping for gauge pointer position (5% - 95%)
+    let pointerPct = 50;
+    if (valPCV >= limits.min && valPCV <= limits.max) {
+      const range = limits.max - limits.min;
+      pointerPct = range > 0 ? 40 + ((valPCV - limits.min) / range) * 20 : 50;
+    } else if (valPCV < limits.min) {
+      const range = limits.min - limits.criticalMin;
+      pointerPct = range > 0 ? Math.max(5, 5 + ((valPCV - limits.criticalMin) / range) * 35) : 20;
+    } else {
+      const range = limits.criticalMax - limits.max;
+      pointerPct = range > 0 ? Math.min(95, 60 + ((valPCV - limits.max) / range) * 35) : 80;
+    }
+
+    activeReportData = {
+      age,
+      gender,
+      date: new Date().toLocaleDateString(),
+      valPCV,
+      limits,
+      statusKey,
+      badgeKey,
+      pointerPct
+    };
+
+    updateReportDisplay();
+    
+    document.getElementById("placeholderSec").style.display = "none";
+    document.getElementById("reportCardSec").style.display = "block";
+
+    addToHistory(badgeKey, valPCV);
+  }
+
+  function updateReportDisplay() {
+    if (!activeReportData) return;
+    
+    const d = activeReportData;
+    document.getElementById("resAge").textContent = d.age;
+    const genderKey = d.gender === "male" ? "genderMale" : d.gender === "female" ? "genderFemale" : "genderPregnant";
+    document.getElementById("resGender").textContent = translations[currentLang][genderKey];
+    document.getElementById("resDate").textContent = d.date;
+
+    document.getElementById("resPcvVal").textContent = d.valPCV.toFixed(1);
+    
+    const statusLabel = document.getElementById("resStatusLabel");
+    statusLabel.textContent = translations[currentLang][d.badgeKey];
+    
+    let colorClass = "normal";
+    if (d.statusKey === "low") colorClass = "low";
+    else if (d.statusKey === "high") colorClass = "high";
+    else if (d.statusKey.startsWith("critical")) colorClass = "critical";
+    
+    statusLabel.style.color = `var(--${colorClass}-color)`;
+    document.getElementById("resPcvVal").style.color = `var(--${colorClass}-color)`;
+    document.getElementById("rangePointer").style.left = `${d.pointerPct}%`;
+    document.getElementById("rangePointer").style.borderColor = `var(--${colorClass}-color)`;
+
+    const insightSection = document.getElementById("insightSection");
+    insightSection.innerHTML = "";
+
+    const details = pcvInsights[currentLang][d.statusKey];
+    if (details) {
+      const mainCard = document.createElement("div");
+      mainCard.className = "insight-card";
+      mainCard.style.borderLeft = `4px solid var(--${colorClass}-color)`;
+      
+      let causesList = details.causes.map(c => `<li>${c}</li>`).join("");
+      let symptomsList = details.symptoms.map(s => `<li>${s}</li>`).join("");
+      let tipsList = details.prevention.map(p => `<li>${p}</li>`).join("");
+
+      mainCard.innerHTML = `
+        <h5>${translations[currentLang].titleInterpretation}</h5>
+        <p>${details.desc}</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:14px;">
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleCauses}</strong>
+            <ul>${causesList}</ul>
+          </div>
+          <div>
+            <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titleSymptoms}</strong>
+            <ul>${symptomsList}</ul>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: 1px solid var(--border); padding-top:10px;">
+          <strong style="font-size:0.8rem;color:var(--text);">${translations[currentLang].titlePrevention}</strong>
+          <ul>${tipsList}</ul>
+        </div>
+
+        <div style="margin-top:10px; font-size:0.8rem; color:#fbbf24;">
+          <strong>${translations[currentLang].titleConsult}:</strong> ${details.consult}
+        </div>
+      `;
+      insightSection.appendChild(mainCard);
+    }
+  }
+
+  function addToHistory(badgeKey, valPCV) {
+    const item = {
+      date: new Date().toLocaleDateString(),
+      badgeKey,
+      valPCV,
+      id: Date.now()
+    };
+    recentHistory.unshift(item);
+    if (recentHistory.length > 5) recentHistory.pop();
+    localStorage.setItem("ssdk-pcv-history", JSON.stringify(recentHistory));
+    renderHistoryDisplay();
+  }
+
+  function renderHistoryDisplay() {
+    const container = document.getElementById("historyListContainer");
+    if (!container) return;
+    container.innerHTML = "";
+
+    if (recentHistory.length === 0) {
+      container.innerHTML = `<p style="font-size:0.75rem; color:var(--muted);">${translations[currentLang].noHistory}</p>`;
+      return;
+    }
+
+    recentHistory.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "history-item";
+      const statusText = translations[currentLang][item.badgeKey] || item.badgeKey;
+      div.innerHTML = `
+        <span>📅 ${item.date}</span>
+        <strong>${item.valPCV.toFixed(1)}% (${statusText})</strong>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  function printReport() {
+    window.print();
+  }
+
+  function copyFormattedResult() {
+    if (!activeReportData) return;
+    let t = `--- HEMATOCRIT (PCV) DIAGNOSTIC REPORT ---\n`;
+    t += `Date: ${activeReportData.date}\n`;
+    t += `Age: ${activeReportData.age} | Gender: ${activeReportData.gender}\n`;
+    t += `Value: ${activeReportData.valPCV.toFixed(1)}% (Ref: ${activeReportData.limits.min}-${activeReportData.limits.max}%)\n`;
+    t += `Assessment: ${translations[currentLang][activeReportData.badgeKey]}\n`;
+    
+    navigator.clipboard.writeText(t).then(() => {
+      alert(currentLang === "en" ? "Report copied to clipboard!" : "রিপোর্ট ক্লিপবোর্ডে কপি করা হয়েছে!");
+    });
+  }
+
+  function captureReportPng() {
+    const target = document.getElementById("resultsPanel");
+    if (!target) return;
+    html2canvas(target, {
+      backgroundColor: "#0a0e17",
+      scale: 2
+    }).then(canvas => {
+      const link = document.createElement("a");
+      link.download = `hematocrit-report-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+
+  function toggleFavorite() {
+    document.getElementById("toolFavBtn").classList.toggle("on");
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    setLanguage(currentLang);
+  });
+
+  window.addEventListener("ssdk-lang-change", (e) => {
+    if (typeof setLanguage === "function") setLanguage(e.detail);
+  });
+</script>
+</body>
+</html>
