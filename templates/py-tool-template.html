@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Python WebAssembly Tool Boilerplate &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Template showing how to create 100% client-side Python utilities in the browser using WebAssembly.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  
+  <!-- 1. Load Pyodide WebAssembly Python Engine from public CDN -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Python WASM Tool Boilerplate</h1>
+  <p class="page-sub">Learn how to build responsive Python tools running fully offline inside client-side browsers.</p>
+
+  <div class="content-card tool-playground">
+    <div class="tool-io">
+      <div>
+        <h4 style="margin-bottom: 8px;">1. Python Script Input</h4>
+        <textarea id="pythonCode" rows="10" placeholder="Write python code here..." style="font-family: monospace; font-size: 0.85rem;"></textarea>
+      </div>
+      <div>
+        <h4 style="margin-bottom: 8px;">2. Console Output (stdout / return)</h4>
+        <div id="pyOutput" class="tool-output-box" style="font-family: monospace; font-size: 0.85rem; min-height: 180px; white-space: pre-wrap; background: var(--bg3); padding: 12px; border-radius: 8px; border: 1px solid var(--border);"></div>
+      </div>
+    </div>
+    
+    <div class="tool-control">
+      <!-- We disable button initially until Pyodide runtime finishes loading -->
+      <button class="btn" id="btnExecute" disabled style="background: var(--grad2);">⌛ Loading Python Engine...</button>
+      <button class="btn ghost" id="btnCopy">📋 Copy Output</button>
+      <button class="btn ghost" id="btnClear" style="border-color: #ff6b6b; color: #ff6b6b;">🗑 Clear</button>
+    </div>
+    <p id="statusMsg" style="margin-top: 10px; font-weight: bold; font-size: 0.9rem;"></p>
+  </div>
+
+  <div class="content-card">
+    <h3>Developer Quick Start Guide</h3>
+    <p>To run Python scripts directly inside HTML/JS templates without any server overhead, follow these instructions:</p>
+    <ul>
+      <li><strong>Load Pyodide:</strong> Include the Pyodide WebAssembly script tag inside the document <code>&lt;head&gt;</code>.</li>
+      <li><strong>Initialize Runtime:</strong> Invoke <code>loadPyodide()</code> in Javascript. This fetches the core Python interpreter WASM binaries asynchronously.</li>
+      <li><strong>Bridge Variables:</strong> Use <code>pyodide.globals.set("variable_name", js_value)</code> to pass elements into Python.</li>
+      <li><strong>Fetch Outputs:</strong> Access variables inside Python using <code>pyodide.globals.get("variable_name")</code> in JS after running scripts.</li>
+    </ul>
+  </div>
+</section>
+
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  const $ = id => document.getElementById(id);
+  let pyodideInstance = null;
+
+  function showStatus(text, isError = false) {
+    const el = $('statusMsg');
+    el.style.display = 'block';
+    el.textContent = text;
+    el.style.color = isError ? '#ff6b6b' : 'var(--accent)';
+  }
+
+  // 2. Initialize the Python WASM interpreter environment
+  async function initPython() {
+    try {
+      showStatus("Downloading WebAssembly Python runtime binaries...");
+      pyodideInstance = await loadPyodide();
+      
+      // Setup stdout capturing helper inside Pyodide
+      await pyodideInstance.runPythonAsync(`
+        import sys
+        import io
+        sys.stdout = io.StringIO()
+        sys.stderr = io.StringIO()
+      `);
+
+      showStatus("✅ Python Engine loaded successfully. Ready to execute!");
+      $('btnExecute').disabled = false;
+      $('btnExecute').textContent = "🐍 Execute Python";
+    } catch (err) {
+      showStatus("❌ Failed loading WebAssembly. Verify internet connection.", true);
+      $('btnExecute').textContent = "Failed Loading Engine";
+    }
+  }
+
+  initPython();
+
+  $('btnExecute').onclick = async () => {
+    if (!pyodideInstance) return;
+
+    const code = $('pythonCode').value.trim();
+    if (!code) {
+      showStatus("Please enter some Python code first.", true);
+      return;
+    }
+
+    showStatus("Running code...");
+    $('pyOutput').textContent = "";
+
+    try {
+      // Clear previous stdout buffers
+      await pyodideInstance.runPythonAsync(`
+        sys.stdout.seek(0)
+        sys.stdout.truncate(0)
+        sys.stderr.seek(0)
+        sys.stderr.truncate(0)
+      `);
+
+      // Run Python script
+      const result = await pyodideInstance.runPythonAsync(code);
+
+      // Extract written print() / stdout buffer logs
+      const stdout = pyodideInstance.runPython(`sys.stdout.getvalue()`);
+      const stderr = pyodideInstance.runPython(`sys.stderr.getvalue()`);
+
+      let outputText = "";
+      if (stdout) outputText += stdout;
+      if (stderr) outputText += "ERROR LOGS:\n" + stderr;
+      if (result !== undefined) outputText += `\n[Result]: ${result}`;
+
+      $('pyOutput').textContent = outputText || "Code ran successfully (no stdout/return outputs).";
+      $('pyOutput').style.color = "var(--text)";
+      showStatus("✅ Execution finished.");
+    } catch (e) {
+      $('pyOutput').textContent = e.message;
+      $('pyOutput').style.color = "#ff6b6b";
+      showStatus("❌ Execution error detected.", true);
+    }
+  };
+
+  $('btnCopy').onclick = () => {
+    const text = $('pyOutput').textContent;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      showStatus("📋 Output copied to clipboard!");
+    });
+  };
+
+  $('btnClear').onclick = () => {
+    $('pythonCode').value = "";
+    $('pyOutput').textContent = "";
+    showStatus("Editor reset.");
+  };
+</script>
+</body>
+</html>

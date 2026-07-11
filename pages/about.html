@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us &bull; SSDK Tools Hub</title>
+  <meta name="description" content="About SSDK Tools Hub - One Platform. Every Tool You Need. Built by Swarnava Das.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+  <style>
+    /* ===== About Page Specific Styles ===== */
+
+    .about-hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 50px;
+      align-items: center;
+      padding: 120px 6% 60px;
+      max-width: 1200px;
+      margin: 0 auto;
+      min-height: 80vh;
+    }
+
+    .about-hero-left {
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    .about-badge {
+      display: inline-block;
+      padding: 6px 18px;
+      border-radius: 30px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .about-hero-left h1 {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 900;
+      line-height: 1.05;
+      margin-bottom: 12px;
+    }
+
+    .about-hero-left h1 .brand-ssdk {
+      display: block;
+      font-size: clamp(3rem, 6vw, 4.8rem);
+    }
+
+    .about-tagline {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .about-desc {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 28px;
+      max-width: 500px;
+    }
+
+    .about-btns {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .about-btn {
+      padding: 12px 28px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .about-btn.primary {
+      background: var(--grad);
+      color: #fff;
+      border: none;
+      box-shadow: 0 6px 20px var(--glow);
+    }
+
+    .about-btn.primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px var(--glow);
+    }
+
+    .about-btn.outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .about-btn.outline:hover {
+      border-color: var(--accent);
+      background: var(--card2);
+      transform: translateY(-3px);
+    }
+
+    /* Hero Image */
+    .about-hero-right {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+
+    .profile-container {
+      position: relative;
+      width: 340px;
+      height: 400px;
+    }
+
+    .profile-glow {
+      position: absolute;
+      inset: -20px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(124,58,237,0.3), rgba(168,85,247,0.15));
+      filter: blur(40px);
+      z-index: 0;
+    }
+
+    .profile-image {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 2px solid var(--border);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    .profile-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+    }
+
+    .profile-dots {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      width: 80px;
+      height: 80px;
+      z-index: 2;
+      opacity: 0.4;
+      background-image: radial-gradient(circle, var(--accent) 1.5px, transparent 1.5px);
+      background-size: 12px 12px;
+    }
+
+    /* Stats Row */
+    .stats-section {
+      padding: 40px 6%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .stats-left {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 14px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+      box-shadow: 0 10px 30px var(--glow);
+    }
+
+    .stat-icon {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: 900;
+      background: var(--grad2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    .stats-right {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .trust-card {
+      background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.06));
+      border: 1px solid rgba(124,58,237,0.25);
+      border-radius: 16px;
+      padding: 20px 14px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .trust-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 30px var(--glow);
+    }
+
+    .trust-label {
+      font-size: 0.7rem;
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .trust-value {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .trust-sub {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .trust-stars {
+      color: #fbbf24;
+      font-size: 0.8rem;
+      margin-top: 4px;
+    }
+
+    /* Categories Section */
+    .categories-showcase {
+      padding: 60px 6%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 16px;
+      margin-top: 30px;
+    }
+
+    .cat-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 12px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .cat-item:hover {
+      border-color: var(--accent);
+      transform: translateY(-6px);
+      box-shadow: 0 15px 35px var(--glow);
+    }
+
+    .cat-icon {
+      font-size: 2.4rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .cat-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .cat-count {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    /* Info Cards Section (Mission, Roadmap, Tech) */
+    .info-section {
+      padding: 40px 6%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .info-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 10px 30px var(--glow);
+    }
+
+    .info-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .info-card-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--grad);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .info-card-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .info-card p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    /* Timeline / Roadmap */
+    .timeline {
+      position: relative;
+      padding-left: 20px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      position: relative;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -18px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg1);
+    }
+
+    .timeline-dot.done {
+      background: #22c55e;
+    }
+
+    .timeline-dot.pending {
+      background: var(--muted);
+    }
+
+    .timeline-date {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 70px;
+    }
+
+    .timeline-text {
+      font-size: 0.85rem;
+      color: var(--text);
+      flex: 1;
+      margin: 0 12px;
+    }
+
+    .timeline-check {
+      font-size: 0.9rem;
+    }
+
+    /* Tech Stack Tags */
+    .tech-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .tech-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      transition: all 0.3s ease;
+    }
+
+    .tech-tag:hover {
+      border-color: var(--accent);
+      background: var(--card2);
+      transform: translateY(-2px);
+    }
+
+    /* Why Choose Section */
+    .why-section {
+      padding: 60px 6%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .why-title {
+      text-align: center;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 900;
+      margin-bottom: 40px;
+    }
+
+    .why-title .highlight {
+      background: var(--grad2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .why-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+    }
+
+    .why-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 16px;
+      text-align: center;
+      transition: all 0.3s ease;
+    }
+
+    .why-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-6px);
+      box-shadow: 0 15px 35px var(--glow);
+    }
+
+    .why-icon {
+      font-size: 1.8rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .why-card h4 {
+      font-size: 0.88rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .why-card p {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* CTA Section */
+    .about-cta {
+      max-width: 1200px;
+      margin: 40px auto 60px;
+      padding: 0 6%;
+    }
+
+    .cta-box {
+      background: linear-gradient(135deg, rgba(124,58,237,0.15), rgba(168,85,247,0.08));
+      border: 1px solid rgba(124,58,237,0.3);
+      border-radius: 24px;
+      padding: 50px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 30px;
+    }
+
+    .cta-box-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .cta-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      background: var(--grad);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+
+    .cta-box h3 {
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .cta-box p {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .cta-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 32px;
+      background: var(--grad);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.95rem;
+      border-radius: 12px;
+      text-decoration: none;
+      border: none;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      box-shadow: 0 6px 20px var(--glow);
+    }
+
+    .cta-link:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px var(--glow);
+    }
+
+    /* Quote Card */
+    .quote-card {
+      background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(168,85,247,0.05));
+      border: 1px solid rgba(124,58,237,0.2);
+      border-radius: 20px;
+      padding: 28px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .quote-mark {
+      font-size: 2.5rem;
+      font-weight: 900;
+      background: var(--grad2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .quote-card p {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.7;
+      font-style: italic;
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 1024px) {
+      .categories-grid { grid-template-columns: repeat(3, 1fr); }
+      .why-grid { grid-template-columns: repeat(3, 1fr); }
+      .stats-grid { grid-template-columns: 1fr; }
+      .stats-left { grid-template-columns: repeat(4, 1fr); }
+      .stats-right { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+      .about-hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+        padding-top: 100px;
+        gap: 30px;
+        min-height: auto;
+      }
+      .about-hero-left { order: 2; }
+      .about-hero-right { order: 1; }
+      .about-desc { margin-left: auto; margin-right: auto; }
+      .about-btns { justify-content: center; }
+      .profile-container { width: 240px; height: 300px; }
+      .info-grid { grid-template-columns: 1fr; }
+      .categories-grid { grid-template-columns: repeat(3, 1fr); }
+      .why-grid { grid-template-columns: repeat(2, 1fr); }
+      .stats-left { grid-template-columns: repeat(2, 1fr); }
+      .stats-right { grid-template-columns: 1fr 1fr 1fr; }
+      .cta-box { flex-direction: column; text-align: center; }
+      .cta-box-left { flex-direction: column; }
+    }
+
+    @media (max-width: 480px) {
+      .categories-grid { grid-template-columns: repeat(2, 1fr); }
+      .why-grid { grid-template-columns: 1fr 1fr; }
+      .stats-left { grid-template-columns: repeat(2, 1fr); }
+      .stats-right { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- ===== HERO SECTION ===== -->
+<section class="about-hero">
+  <div class="about-hero-left">
+    <div class="about-badge">ABOUT US</div>
+    <h1>
+      About<br>
+      <span class="brand-ssdk">SSDK</span> <span class="brand-th">Tools Hub</span>
+    </h1>
+    <p class="about-tagline">One Platform. Every Tool You Need.</p>
+    <p class="about-desc">
+      SSDK Tools Hub is your all-in-one platform to simplify tasks, boost productivity,
+      and solve real-world problems with 150+ free, fast, and easy-to-use tools.
+    </p>
+    <div class="about-btns">
+      <a href="../index.html#tools" class="about-btn primary">🚀 Explore Tools</a>
+      <a href="contact.html" class="about-btn outline">✉️ Contact Us</a>
+    </div>
+  </div>
+
+  <div class="about-hero-right">
+    <div class="profile-container">
+      <div class="profile-glow"></div>
+      <div class="profile-dots"></div>
+      <div class="profile-image">
+        <img src="../assets/images/swarnava.jpg" alt="Swarnava Das - Creator of SSDK Tools Hub"
+             onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:6rem;background:linear-gradient(135deg,#4c1d95,#7C3AED);\'>👨‍💻</div>'">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== STATS SECTION ===== -->
+<section class="stats-section">
+  <div class="stats-grid">
+    <div class="stats-left">
+      <div class="stat-card">
+        <div class="stat-icon">⚙️</div>
+        <div class="stat-value">150+</div>
+        <div class="stat-label">Tools</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📂</div>
+        <div class="stat-value">20+</div>
+        <div class="stat-label">Categories</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🤖</div>
+        <div class="stat-value">AI</div>
+        <div class="stat-label">Powered</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">♾️</div>
+        <div class="stat-value">Free</div>
+        <div class="stat-label">Forever</div>
+      </div>
+    </div>
+
+    <div class="stats-right">
+      <div class="trust-card">
+        <div class="trust-label">Trusted by</div>
+        <div class="trust-value">10K+</div>
+        <div class="trust-sub">Users</div>
+      </div>
+      <div class="trust-card">
+        <div class="trust-label">Tools Used</div>
+        <div class="trust-value">500K+</div>
+        <div class="trust-sub">Times</div>
+      </div>
+      <div class="trust-card">
+        <div class="trust-label">User Rating</div>
+        <div class="trust-value">4.9/5</div>
+        <div class="trust-stars">★★★★★</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TOOL CATEGORIES SHOWCASE ===== -->
+<section class="categories-showcase">
+  <div class="categories-grid">
+    <a href="../index.html?cat=AI+Tools" class="cat-item">
+      <span class="cat-icon">⚡</span>
+      <div class="cat-name">AI Tools</div>
+      <div class="cat-count">20+ Tools</div>
+    </a>
+    <a href="../index.html?cat=Medical" class="cat-item">
+      <span class="cat-icon">❤️</span>
+      <div class="cat-name">Medical</div>
+      <div class="cat-count">15+ Tools</div>
+    </a>
+    <a href="../index.html?cat=Developer" class="cat-item">
+      <span class="cat-icon">&lt;/&gt;</span>
+      <div class="cat-name">Developer</div>
+      <div class="cat-count">25+ Tools</div>
+    </a>
+    <a href="../index.html?cat=PDF+Tools" class="cat-item">
+      <span class="cat-icon">📄</span>
+      <div class="cat-name">PDF Tools</div>
+      <div class="cat-count">20+ Tools</div>
+    </a>
+    <a href="../index.html?cat=Image+Tools" class="cat-item">
+      <span class="cat-icon">🖼️</span>
+      <div class="cat-name">Image Tools</div>
+      <div class="cat-count">30+ Tools</div>
+    </a>
+    <a href="../index.html?cat=SEO+Tools" class="cat-item">
+      <span class="cat-icon">🔍</span>
+      <div class="cat-name">SEO Tools</div>
+      <div class="cat-count">20+ Tools</div>
+    </a>
+  </div>
+</section>
+
+<!-- ===== MISSION + QUOTE ROW ===== -->
+<section class="info-section">
+  <div class="info-grid">
+    <div class="info-card">
+      <div class="info-card-header">
+        <div class="info-card-icon">🎯</div>
+        <h3 class="info-card-title">Our Mission</h3>
+      </div>
+      <p>Our mission is to provide free, fast, and reliable tools that empower everyone — students, professionals, developers, and businesses — to work smarter and achieve more every day.</p>
+    </div>
+
+    <div class="quote-card">
+      <span class="quote-mark">❝</span>
+      <p>Our mission is to empower everyone — students, professionals, developers, and businesses — to work smarter and achieve more every day with powerful, reliable tools.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ROADMAP + TECH + WHY CHOOSE ===== -->
+<section class="info-section">
+  <div class="info-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+    <!-- Platform Roadmap -->
+    <div class="info-card">
+      <div class="info-card-header">
+        <div class="info-card-icon">🗺️</div>
+        <h3 class="info-card-title">Platform Journey</h3>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot done"></div>
+          <span class="timeline-date">Q2 2024</span>
+          <span class="timeline-text">Launch of 100+ Essential Tools</span>
+          <span class="timeline-check">✅</span>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot done"></div>
+          <span class="timeline-date">Q3 2024</span>
+          <span class="timeline-text">AI Tools Expansion & Automation</span>
+          <span class="timeline-check">✅</span>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot done"></div>
+          <span class="timeline-date">Q4 2024</span>
+          <span class="timeline-text">Workflow Integrations & User Accounts</span>
+          <span class="timeline-check">✅</span>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot pending"></div>
+          <span class="timeline-date">Q1 2025</span>
+          <span class="timeline-text">Mobile App & Advanced Features</span>
+          <span class="timeline-check">⏳</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Core Technologies -->
+    <div class="info-card">
+      <div class="info-card-header">
+        <div class="info-card-icon">&lt;/&gt;</div>
+        <h3 class="info-card-title">Core Technologies</h3>
+      </div>
+      <div class="tech-tags">
+        <span class="tech-tag">🟧 HTML</span>
+        <span class="tech-tag">🟦 CSS</span>
+        <span class="tech-tag">🟨 JavaScript</span>
+        <span class="tech-tag">🌊 Tailwind</span>
+        <span class="tech-tag">🔥 Firebase</span>
+        <span class="tech-tag">⚡ PWA</span>
+      </div>
+      <p style="font-size:0.85rem; color:var(--muted); line-height:1.6;">
+        Modern, fast, and scalable tech stack to deliver a smooth and reliable experience.
+      </p>
+    </div>
+
+    <!-- Why Choose -->
+    <div class="info-card">
+      <div class="info-card-header">
+        <div class="info-card-icon">⭐</div>
+        <h3 class="info-card-title">Why Choose SSDK Tools Hub?</h3>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div>
+          <div style="font-size:1.2rem; margin-bottom:4px;">🆓</div>
+          <h4 style="font-size:0.82rem; font-weight:800; margin-bottom:3px;">100% Free</h4>
+          <p style="font-size:0.72rem; color:var(--muted); line-height:1.4;">All tools are completely free to use. Forever.</p>
+        </div>
+        <div>
+          <div style="font-size:1.2rem; margin-bottom:4px;">🤖</div>
+          <h4 style="font-size:0.82rem; font-weight:800; margin-bottom:3px;">AI Powered</h4>
+          <p style="font-size:0.72rem; color:var(--muted); line-height:1.4;">Smart tools powered by cutting-edge AI.</p>
+        </div>
+        <div>
+          <div style="font-size:1.2rem; margin-bottom:4px;">🔒</div>
+          <h4 style="font-size:0.82rem; font-weight:800; margin-bottom:3px;">Secure & Private</h4>
+          <p style="font-size:0.72rem; color:var(--muted); line-height:1.4;">Your data is safe with us. Always.</p>
+        </div>
+        <div>
+          <div style="font-size:1.2rem; margin-bottom:4px;">⚡</div>
+          <h4 style="font-size:0.82rem; font-weight:800; margin-bottom:3px;">Fast & Reliable</h4>
+          <p style="font-size:0.72rem; color:var(--muted); line-height:1.4;">Lightning fast tools with accurate results.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== WHY CHOOSE SECTION ===== -->
+<section class="why-section">
+  <h2 class="why-title">Why Choose <span class="highlight">SSDK Tools Hub</span>?</h2>
+  <div class="why-grid">
+    <div class="why-card">
+      <span class="why-icon">🛠️</span>
+      <h4>All-in-One Platform</h4>
+      <p>150+ tools in one place. No switching, no hassle.</p>
+    </div>
+    <div class="why-card">
+      <span class="why-icon">💰</span>
+      <h4>100% Free</h4>
+      <p>All tools are completely free to use. Forever.</p>
+    </div>
+    <div class="why-card">
+      <span class="why-icon">🤖</span>
+      <h4>AI Powered</h4>
+      <p>Smart tools powered by cutting-edge AI.</p>
+    </div>
+    <div class="why-card">
+      <span class="why-icon">🔐</span>
+      <h4>Secure & Private</h4>
+      <p>Your data is safe with us. Always.</p>
+    </div>
+    <div class="why-card">
+      <span class="why-icon">⚡</span>
+      <h4>Fast & Reliable</h4>
+      <p>Lightning fast tools with accurate results.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CTA SECTION ===== -->
+<section class="about-cta">
+  <div class="cta-box">
+    <div class="cta-box-left">
+      <div class="cta-icon">🚀</div>
+      <div>
+        <h3>Ready to Supercharge Your Productivity?</h3>
+        <p>Explore our powerful collection of tools and accomplish more in less time.</p>
+      </div>
+    </div>
+    <a href="../index.html#tools" class="cta-link">Explore Tools →</a>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+</body>
+</html>

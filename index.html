@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSDK Tools Hub - Smart Tools for Smart Creators By SWARNAVA DAS</title>
+  <meta name="google-site-verification" content="K1wWHs_82XaX1Vj3SxtzKcs48Vty3JLMenSfHkZV2eI" />
+  <meta name="description" content="All in one tools in one place. 100+ free online tools for developers, designers, and creators.">
+  <link rel="icon" href="assets/images/favicon.ico">
+  <!-- Load outfit font for premium typography -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/ssdk-style.css?v=1783524201.11621">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://ssdk-tools-hub.firebaseapp.com https://api.ssdktoolshub.com https://*.googleapis.com;">
+  <!-- SSDK Core Engine Bootloader -->
+  <script src="core/bootstrap.js?v=1783525977.67498.59044.78614" type="module"></script>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<!-- Hero Section: Left 3D Cuboid, Right Text Details -->
+<header class="hero">
+  <div class="beam"></div>
+  
+  <div class="cuboid-wrap reveal-on-scroll" style="animation-delay: 0.2s;">
+    <div class="cuboid">
+      <div class="cuboid-face face-front">🛠 JS</div>
+      <div class="cuboid-face face-back">🐍 PY</div>
+      <div class="cuboid-face face-right">🎨 CSS</div>
+      <div class="cuboid-face face-left">🧩 HTML</div>
+      <div class="cuboid-face face-top">🔐 PHP</div>
+      <div class="cuboid-face face-bottom">🌐 SQL</div>
+    </div>
+  </div>
+
+  <div class="hero-text reveal-on-scroll">
+    <div class="tag">Smart Tools for Smart Creators By Swarnava</div>
+    <h1 class="text-3d"><span class="brand-ssdk">SSDK</span> <span class="brand-th">Tools Hub</span></h1>
+    <div class="morph"><span id="morphText">Developer Tools</span></div>
+    <p class="subtitle">Designed to inspire. Built to create. Aesthetic tools for the modern creator — 100+ free online tools in one place, accessible without login.</p>
+    <div class="btns">
+      <a href="#tools" class="btn">🚀 Explore Tools</a>
+      <a href="pages/login.html" class="btn ghost">Login / Sign Up</a>
+    </div>
+  </div>
+</header>
+
+<div class="banner reveal-on-scroll">
+  <h2>ALL IN ONE TOOLS IN ONE PLACE</h2>
+</div>
+
+<div class="search-wrap">
+  <input id="search" type="text" placeholder="🔍 Search 100+ tools... (e.g. PDF, QR, Password, JSON)">
+</div>
+
+<section class="tools" id="tools">
+  <h2 class="sec-title reveal-on-scroll">Explore Tool Categories</h2>
+  <p class="sec-sub reveal-on-scroll">Click a category to open its tools, or use the dropdown in the menu</p>
+  <div id="toolContainer"></div>
+  <div class="no-result" id="noResult">No tools found 😕</div>
+</section>
+
+<!-- SSDK Morphing Text Slider Core -->
+<script type="module">
+  const words = ["Developer Tools", "Image Tools", "PDF Tools", "Calculator Tools", "100+ Free Online Tools"];
+  let wi = 0;
+  const mt = document.getElementById("morphText");
+  if (mt) {
+    mt.style.transition = "opacity .3s";
+    setInterval(() => {
+      wi = (wi + 1) % words.length;
+      mt.style.opacity = 0;
+      setTimeout(() => {
+        mt.textContent = words[wi];
+        mt.style.opacity = 1;
+      }, 300);
+    }, 2500);
+  }
+</script>
+</body>
+</html>

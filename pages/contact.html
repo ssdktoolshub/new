@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Get in touch with SSDK Tools Hub.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">Contact Us</h1>
+  <p class="page-sub">We'd love to hear from you</p>
+
+  <div class="contact-grid">
+    <div class="content-card">
+      <h3 style="margin-top:0">Get in touch</h3>
+      <p class="contact-line">📧 <a href="mailto:support@ssdktoolshub.com">support@ssdktoolshub.com</a></p>
+      <p class="contact-line">🌐 <a href="https://ssdk-tools-hub.vercel.app" target="_blank">ssdk-tools-hub.vercel.app</a></p>
+      <p class="contact-line">⏱ We usually reply within 24 hours.</p>
+      <div class="socials" style="margin-top:14px">
+        <a href="#">📘</a><a href="#">📷</a><a href="#">🐦</a><a href="#">▶️</a>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <form class="contact-form" id="contactForm">
+        <input type="text" id="cName" placeholder="Your Name" required>
+        <input type="email" id="cEmail" placeholder="Your Email" required autocomplete="email">
+        <input type="text" id="cSubject" placeholder="Subject">
+        <textarea rows="5" id="cMessage" placeholder="Your Message" required></textarea>
+        <button type="submit" class="btn" id="cSubmit">Send Message</button>
+        <p id="formMsg" class="auth-msg"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { firebaseConfig } from "../assets/js/firebase-config.js";
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const $ = id => document.getElementById(id);
+
+function msg(t, ok=false){
+  const el = $("formMsg");
+  el.textContent = t;
+  el.style.color = ok ? "var(--accent)" : "#ff6b6b";
+  el.style.display = t ? "block" : "none";
+}
+
+$("contactForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = $("cSubmit");
+  btn.disabled = true; btn.textContent = "Sending...";
+  try {
+    await addDoc(collection(db, "messages"), {
+      name: $("cName").value.trim(),
+      email: $("cEmail").value.trim(),
+      subject: $("cSubject").value.trim(),
+      message: $("cMessage").value.trim(),
+      createdAt: serverTimestamp()
+    });
+    e.target.reset();
+    msg("✅ Thanks! Your message has been sent.", true);
+  } catch(err){
+    msg("❌ Could not send message. Check Firebase setup or connection.");
+    console.error(err);
+  } finally {
+    btn.disabled = false; btn.textContent = "Send Message";
+  }
+});
+</script>
+</body>
+</html>

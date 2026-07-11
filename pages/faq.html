@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAQ &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Frequently asked questions about SSDK Tools Hub.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">FAQ</h1>
+  <p class="page-sub">Frequently Asked Questions</p>
+  
+  <div class="faq-list" id="faqList" style="margin-top: 20px;">
+    
+    <div class="faq-item">
+      <div class="faq-q">Is SSDK Tools Hub completely free to use?<span>＋</span></div>
+      <div class="faq-a">Yes. Every tool on our platform is 100% free to use with no hidden costs, subscription plans, or usage limit restrictions.</div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Do I need to sign up or create an account?<span>＋</span></div>
+      <div class="faq-a">No! All utilities are available to use immediately without registering. Creating an optional account simply enables you to save your favorite tools to your dashboard.</div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Are my uploaded files or pasted text content secure?<span>＋</span></div>
+      <div class="faq-a">Absolutely. Most of our tools operate strictly client-side (directly inside your web browser). That means your text, files, images, or code never leave your computer or get uploaded to any servers. Your data is entirely secure.</div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Does SSDK Tools Hub support multiple hosting providers?<span>＋</span></div>
+      <div class="faq-a">Yes! The frontend landing page and client-side tools run on Vercel/Netlify for lightning-fast speeds. Special back-end services, like Python script processing, are linked to servers hosted on Render.</div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">How can I save my favorite tools for quick access?<span>＋</span></div>
+      <div class="faq-a">Simply sign up or login via the "Login / Sign Up" button (using Email or Google login). Once logged in, tap the star icon (★) at the top-right corner of any tool card, and it will be saved to your dashboard!</div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Can I request a custom tool to be added to the hub?<span>＋</span></div>
+      <div class="faq-a">Yes! We welcome developer and creator requests. Head over to our "Contact Us" page and send a request containing details of the utility you want added.</div>
+    </div>
+    
+    <div class="faq-item">
+      <div class="faq-q">Why does the theme change automatically?<span>＋</span></div>
+      <div class="faq-a">We save your theme selection (Light Mode or Dark Mode) to your browser's LocalStorage. This guarantees that your preferred styling is kept when opening other pages or returning later.</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-q">Does SSDK Tools Hub support mobile devices?<span>＋</span></div>
+      <div class="faq-a">Yes. SSDK Tools Hub is designed with a fully responsive mobile-first grid system. It adapts seamlessly to smartphones, tablets, laptops, and wide desktop screens.</div>
+    </div>
+    
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script>
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.onclick = () => {
+      const parent = q.parentElement;
+      const isOpen = parent.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(item => item.classList.remove('open'));
+      if (!isOpen) {
+        parent.classList.add('open');
+      }
+    };
+  });
+</script>
+</body>
+</html>

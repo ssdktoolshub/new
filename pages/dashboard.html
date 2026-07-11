@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Dashboard &bull; SSDK TOOLS HUB</title>
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page reveal-on-scroll">
+  <h1 class="page-title">My Dashboard</h1>
+  <p class="page-sub" id="dashSub">Loading...</p>
+
+  <div id="dashContent" style="display:none">
+    <div class="admin-bar" style="margin-bottom: 20px;">
+      <span id="whoami"></span>
+      <button class="btn ghost" id="logoutBtn">Logout</button>
+    </div>
+
+    <h3 style="margin-bottom:12px;">⭐ My Favorite Tools</h3>
+    <div class="content-card" style="margin-bottom: 24px;">
+      <div class="fav-grid" id="favGrid"><p style="color:var(--muted)">Loading favorites...</p></div>
+    </div>
+
+    <h3 style="margin-bottom:12px;">✍️ Leave a Review</h3>
+    <div class="content-card" style="margin-bottom: 24px;">
+      <form class="contact-form" id="reviewForm">
+        <div class="star-pick" id="starPick">
+          <span data-v="1">☆</span><span data-v="2">☆</span><span data-v="3">☆</span><span data-v="4">☆</span><span data-v="5">☆</span>
+        </div>
+        <textarea rows="3" id="revText" placeholder="Share your experience..." required></textarea>
+        <button type="submit" class="btn" id="revSubmit">Submit Review</button>
+        <p id="revMsg" class="auth-msg"></p>
+      </form>
+    </div>
+
+    <h3 style="margin-bottom:12px;">💬 Recent Reviews</h3>
+    <div class="content-card">
+      <div id="reviewList"><p style="color:var(--muted)">Loading reviews...</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, query, orderBy, limit, onSnapshot,
+  doc, getDoc, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { firebaseConfig } from "../assets/js/firebase-config.js";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const $ = id => document.getElementById(id);
+let rating = 0, currentUser = null;
+
+$("logoutBtn").onclick = () => signOut(auth).then(()=>location.href="login.html");
+function esc(s){ return (s||"").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+onAuthStateChanged(auth, user => {
+  if(!user){ location.href = "login.html"; return; }
+  currentUser = user;
+  $("dashSub").textContent = "Manage your favorites and reviews";
+  $("dashContent").style.display = "block";
+  $("whoami").textContent = "👤 " + (user.displayName || user.email);
+  loadFavorites(user.uid);
+  loadReviews();
+});
+
+async function loadFavorites(uid){
+  try {
+    const snap = await getDoc(doc(db, "users", uid));
+    const favs = snap.exists() ? (snap.data().favorites || []) : [];
+    if(!favs.length){ $("favGrid").innerHTML = '<p style="color:var(--muted)">No favorites yet. Go to the homepage and tap ★ on any tool.</p>'; return; }
+    // Prefix URL if it references a local tool
+    $("favGrid").innerHTML = favs.map(f => {
+      let targetUrl = f.u || '#';
+      if (!targetUrl.startsWith('http') && !targetUrl.startsWith('..')) {
+        targetUrl = '../' + targetUrl;
+      }
+      return `<a class="fav-chip" href="${esc(targetUrl)}" target="_blank">${esc(f.i||'🔧')} ${esc(f.n||f)}</a>`;
+    }).join("");
+  } catch(e){ $("favGrid").innerHTML = '<p style="color:#ff6b6b">Could not load favorites.</p>'; }
+}
+
+$("starPick").querySelectorAll("span").forEach(s => {
+  s.onclick = () => {
+    rating = +s.dataset.v;
+    $("starPick").querySelectorAll("span").forEach(x => x.textContent = (+x.dataset.v <= rating) ? "★" : "☆");
+  };
+});
+
+function revMsg(t, ok=false){
+  const el = $("revMsg"); el.textContent = t;
+  el.style.color = ok ? "var(--accent)" : "#ff6b6b"; el.style.display = t ? "block" : "none";
+}
+
+$("reviewForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  if(!rating){ revMsg("Please select a star rating."); return; }
+  const btn = $("revSubmit"); btn.disabled = true; btn.textContent = "Submitting...";
+  try {
+    await addDoc(collection(db, "reviews"), {
+      uid: currentUser.uid,
+      name: currentUser.displayName || currentUser.email,
+      rating,
+      text: $("revText").value.trim(),
+      createdAt: serverTimestamp()
+    });
+    e.target.reset(); rating = 0;
+    $("starPick").querySelectorAll("span").forEach(x => x.textContent = "☆");
+    revMsg("✅ Thanks for your review!", true);
+  } catch(err){ revMsg("❌ Could not submit review."); console.error(err); }
+  finally { btn.disabled = false; btn.textContent = "Submit Review"; }
+});
+
+function loadReviews(){
+  const q = query(collection(db, "reviews"), orderBy("createdAt", "desc"), limit(20));
+  onSnapshot(q, snap => {
+    if(snap.empty){ $("reviewList").innerHTML = '<p style="color:var(--muted)">No reviews yet. Be the first!</p>'; return; }
+    $("reviewList").innerHTML = snap.docs.map(d => {
+      const r = d.data();
+      const stars = "★".repeat(r.rating||0) + "☆".repeat(5-(r.rating||0));
+      return `<div class="review-item">
+        <div class="review-top"><strong>${esc(r.name)}</strong><span class="stars">${stars}</span></div>
+        <p>${esc(r.text)}</p></div>`;
+    }).join("");
+  });
+}
+</script>
+</body>
+</html>

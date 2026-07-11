@@ -1,0 +1,100 @@
+<!-- Universal SSDK Tool Template Glassmorphic Interface -->
+<div class="bg-fx"></div>
+<div id="progress" aria-hidden="true"></div>
+
+<main class="page reveal-on-scroll">
+  <!-- Dynamic Breadcrumbs -->
+  <nav class="breadcrumb" id="ssdk-breadcrumb" aria-label="Breadcrumb">
+    <a href="../index.html">Home</a> 
+    <span class="sep">/</span> 
+    <a href="../index.html#tools" id="cat-breadcrumb-link">Category</a> 
+    <span class="sep">/</span> 
+    <span class="active" id="tool-breadcrumb-name">Tool</span>
+  </nav>
+
+  <!-- Header & Slogan Metadata -->
+  <header class="tool-meta">
+    <div class="tool-header-row">
+      <h1 class="page-title" id="tool-title">Tool Name</h1>
+      <button class="fav-btn" id="tool-fav-btn" aria-label="Add to Favorites" title="Add to Favorites">★</button>
+    </div>
+    <p class="page-sub" id="tool-description">Dynamic tool description text.</p>
+  </header>
+
+  <!-- Main Interactive Playground Grid -->
+  <section class="content-card tool-playground" id="ssdk-playground" aria-label="Tool Workspace">
+    <div class="tool-io-grid">
+      <!-- Input Panel -->
+      <div class="input-pane">
+        <div class="pane-header">
+          <span class="pane-title">Input Controls</span>
+          <div id="upload-zone-slot"></div>
+        </div>
+        
+        <!-- Slot populated dynamically by the Tool Engine based on tool schema input configurations -->
+        <div id="tool-inputs-container" class="inputs-container"></div>
+        
+        <!-- Slot populated dynamically for tool options/configurations -->
+        <div id="tool-options-container" class="options-container"></div>
+      </div>
+
+      <!-- Output Panel -->
+      <div class="output-pane">
+        <div class="pane-header">
+          <span class="pane-title">Output Result &amp; Preview</span>
+          <div class="output-actions">
+            <button class="btn-icon" id="btn-copy-output" aria-label="Copy Output" title="Copy Output">📋</button>
+            <button class="btn-icon" id="btn-download-output" aria-label="Download Output" title="Download Output">📥</button>
+            <button class="btn-icon" id="btn-share-output" aria-label="Share Tool" title="Share Tool">🔗</button>
+          </div>
+        </div>
+        
+        <!-- Progress overlay indicator -->
+        <div class="progress-overlay" id="tool-progress" style="display: none;" role="alert" aria-busy="true">
+          <div class="spinner" aria-hidden="true"></div>
+          <span id="progress-text">Processing data...</span>
+        </div>
+
+        <!-- Preview slot (For Images, PDFs, QR Codes etc) -->
+        <div id="tool-preview-container" class="preview-container" style="display: none;"></div>
+
+        <!-- Slot populated dynamically for output rendering -->
+        <div id="tool-outputs-container" class="outputs-container"></div>
+      </div>
+    </div>
+
+    <!-- Core Action Buttons -->
+    <div class="tool-control">
+      <button class="btn btn-primary" id="btn-run-action">
+        <span class="btn-icon-inside" aria-hidden="true">🚀</span> Run Action
+      </button>
+      <button class="btn ghost" id="btn-clear-action">🗑 Clear Input</button>
+    </div>
+
+    <!-- Live Execution Status Badge -->
+    <div class="status-badge" id="tool-status-badge" style="display: none;" role="status"></div>
+  </section>
+
+  <!-- Interactive History & Recommendations -->
+  <section class="meta-relations-grid">
+    <!-- History Stack -->
+    <div class="content-card history-section">
+      <h3>Recently Visited</h3>
+      <div class="history-list" id="tool-history-list" aria-live="polite">
+        <p class="empty-msg">No visited tools yet.</p>
+      </div>
+    </div>
+
+    <!-- Related Tools -->
+    <div class="content-card related-tools-section">
+      <h3>Related Tools</h3>
+      <div class="grid" id="related-tools-grid"></div>
+    </div>
+  </section>
+
+  <!-- Declarative Dynamic FAQs Section -->
+  <section class="content-card faq-section">
+    <h3>Frequently Asked Questions</h3>
+    <div class="faq-list" id="tool-faq-accordion"></div>
+  </section>
+</main>

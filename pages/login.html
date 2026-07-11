@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login &bull; SSDK TOOLS HUB</title>
+  <meta name="description" content="Login or sign up to SSDK Tools Hub.">
+  <link rel="icon" href="../assets/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/ssdk-style.css">
+  <script src="../assets/js/theme.js"></script>
+</head>
+<body>
+
+<div class="bg-fx"></div>
+<div id="progress"></div>
+
+<section class="page page--center reveal-on-scroll">
+  <div class="auth-card">
+    <h1 class="page-title" id="authTitle" style="font-size: 2rem;">Welcome Back</h1>
+    <p class="page-sub" id="authSub" style="margin-bottom: 20px;">Login to your account</p>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" type="button">Login</button>
+      <button class="auth-tab" id="tabSignup" type="button">Sign Up</button>
+    </div>
+
+    <form class="contact-form" id="authForm">
+      <input type="text" id="nameField" placeholder="Full Name" style="display:none">
+      <input type="email" id="emailField" placeholder="Email" required autocomplete="email">
+      <input type="password" id="passField" placeholder="Password (min 6 chars)" required autocomplete="current-password">
+      <button type="submit" class="btn" id="authSubmit" style="align-self: stretch; justify-content: center;">Login</button>
+      <button type="button" class="btn ghost" id="googleBtn" style="align-self: stretch; justify-content: center;">Continue with Google</button>
+      <p class="auth-msg" id="authMsg"></p>
+    </form>
+
+    <p style="margin-top:16px; text-align: center; font-size: 0.9rem;">
+      <a href="#" id="forgotLink" style="color:var(--accent); text-decoration: none;">Forgot password?</a>
+    </p>
+
+    <div id="loggedIn" style="display:none; text-align: center;">
+      <p class="page-sub">You are logged in as</p>
+      <p id="userEmail" style="color:var(--accent); font-weight:700; word-break:break-all; margin-bottom: 20px;"></p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <a href="dashboard.html" class="btn" style="justify-content: center;">My Dashboard</a>
+        <a href="../admin/index.html" class="btn" id="adminLink" style="display:none; justify-content: center;">Open Admin Panel</a>
+        <button class="btn ghost" id="logoutBtn" style="justify-content: center;">Logout</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Dynamic Header and Footer Injections -->
+<script src="../assets/js/ssdk-header.js"></script>
+<script src="../assets/js/ssdk-footer.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail,
+  GoogleAuthProvider, signInWithPopup
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { firebaseConfig, ADMIN_EMAILS } from "../assets/js/firebase-config.js";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+const $ = id => document.getElementById(id);
+let mode = "login";
+const isAdmin = e => ADMIN_EMAILS.map(x=>x.toLowerCase()).includes((e||"").toLowerCase());
+
+function setMode(m){
+  mode = m;
+  const signup = m === "signup";
+  $("tabLogin").classList.toggle("active", !signup);
+  $("tabSignup").classList.toggle("active", signup);
+  $("nameField").style.display = signup ? "block" : "none";
+  $("authTitle").textContent = signup ? "Create Account" : "Welcome Back";
+  $("authSub").textContent = signup ? "Sign up for a free account" : "Login to your account";
+  $("authSubmit").textContent = signup ? "Sign Up" : "Login";
+  msg("");
+}
+function msg(t, ok=false){
+  const el = $("authMsg");
+  el.textContent = t;
+  el.style.color = ok ? "var(--accent)" : "#ff6b6b";
+  el.style.display = t ? "block" : "none";
+}
+
+$("tabLogin").onclick = () => setMode("login");
+$("tabSignup").onclick = () => setMode("signup");
+
+$("authForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const email = $("emailField").value.trim();
+  const pass  = $("passField").value;
+  try {
+    if(mode === "signup"){
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      const name = $("nameField").value.trim();
+      if(name) await updateProfile(cred.user, { displayName: name });
+      msg("Account created successfully!", true);
+    } else {
+      await signInWithEmailAndPassword(auth, email, pass);
+    }
+  } catch(err){ msg(prettyError(err.code)); }
+});
+
+$("googleBtn").onclick = async () => {
+  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+  catch(err){ msg(prettyError(err.code)); }
+};
+
+$("forgotLink").onclick = async e => {
+  e.preventDefault();
+  const email = $("emailField").value.trim();
+  if(!email){ msg("Enter your email above first, then click Forgot password."); return; }
+  try { await sendPasswordResetEmail(auth, email); msg("Password reset email sent!", true); }
+  catch(err){ msg(prettyError(err.code)); }
+};
+
+$("logoutBtn").onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, user => {
+  const form = $("authForm");
+  $("adminLink").style.display = "none";
+  if(user){
+    form.style.display = "none";
+    $("forgotLink").parentElement.style.display = "none";
+    document.querySelector(".auth-tabs").style.display = "none";
+    $("loggedIn").style.display = "block";
+    $("userEmail").textContent = user.email;
+    $("authTitle").textContent = "Hello " + (user.displayName || "there") + " 👋";
+    $("authSub").textContent = "Good to see you again";
+    if(isAdmin(user.email)) $("adminLink").style.display = "inline-block";
+  } else {
+    form.style.display = "flex";
+    $("forgotLink").parentElement.style.display = "block";
+    document.querySelector(".auth-tabs").style.display = "flex";
+    $("loggedIn").style.display = "none";
+  }
+});
+
+function prettyError(code){
+  const map = {
+    "auth/invalid-email":"Invalid email address.",
+    "auth/user-not-found":"No account found with this email.",
+    "auth/wrong-password":"Incorrect password.",
+    "auth/invalid-credential":"Invalid email or password.",
+    "auth/email-already-in-use":"This email is already registered. Try logging in.",
+    "auth/weak-password":"Password should be at least 6 characters.",
+    "auth/popup-closed-by-user":"Google sign-in was cancelled.",
+    "auth/too-many-requests":"Too many attempts. Please try again later."
+  };
+  return map[code] || ("Something went wrong (" + code + ").");
+}
+</script>
+</body>
+</html>
