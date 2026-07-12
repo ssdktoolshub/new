@@ -155,10 +155,18 @@ export class ConfigEngine {
   getEnv() { return this.env || "production"; }
   getEnvConfig() { return this.envConfig || {}; }
   
-  getApiUrl(endpointKey) {
-    const base = this.envConfig?.apiBaseUrl || "";
-    const ep = this.settings?.api?.endpoints?.[endpointKey] || "";
-    return `${base}${ep}`;
+  getApiUrl(endpoint) {
+    // Enterprise Production API URL
+    const base = "https://ssdk-backend.onrender.com/api/v1";
+    
+    const endpoints = {
+      tools: `${base}/tools`,
+      categories: `${base}/categories`,
+      admin: `${base}/admin`,
+      medical: `${base}/medical`,
+      ai: `${base}/ai`
+    };
+    return endpoints[endpoint] || null;
   }
 
   isFeatureEnabled(flag) {
