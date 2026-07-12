@@ -4,48 +4,690 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login &bull; SSDK TOOLS HUB</title>
-  <meta name="description" content="Login or sign up to SSDK Tools Hub.">
+  <meta name="description" content="Login or sign up to SSDK Tools Hub - Access 150+ premium tools.">
   <link rel="icon" href="../assets/images/favicon.ico">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../assets/css/ssdk-style.css">
   <script src="../assets/js/theme.js"></script>
+  <style>
+    /* ═══════════════════════════════════════════════════
+       SSDK Auth Page — Premium Glassmorphism Design
+       ═══════════════════════════════════════════════════ */
+
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Animated floating orbs */
+    .auth-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.4;
+      z-index: -1;
+      animation: orbFloat 8s ease-in-out infinite;
+    }
+    .auth-orb--1 {
+      width: 400px; height: 400px;
+      background: var(--wine);
+      top: -100px; left: -100px;
+      animation-delay: 0s;
+    }
+    .auth-orb--2 {
+      width: 350px; height: 350px;
+      background: var(--purple);
+      bottom: -80px; right: -80px;
+      animation-delay: -3s;
+    }
+    .auth-orb--3 {
+      width: 250px; height: 250px;
+      background: #6d28d9;
+      top: 50%; left: 60%;
+      animation-delay: -5s;
+    }
+
+    @keyframes orbFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -40px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+
+    /* Main auth container */
+    .auth-container {
+      width: 100%;
+      max-width: 460px;
+      perspective: 1200px;
+    }
+
+    /* Glass card */
+    .auth-glass {
+      background: rgba(15, 10, 30, 0.65);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 24px;
+      padding: 45px 38px;
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 80px rgba(139, 92, 246, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      animation: cardEntry 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-glass::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -50%; right: -50%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.6), transparent);
+    }
+
+    @keyframes cardEntry {
+      from {
+        opacity: 0;
+        transform: translateY(40px) rotateX(8deg);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) rotateX(0);
+      }
+    }
+
+    /* Logo & branding */
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 30px;
+      animation: fadeSlideDown 0.6s 0.2s both;
+    }
+    .auth-logo-icon {
+      width: 56px; height: 56px;
+      background: var(--grad);
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+    }
+    .auth-logo h1 {
+      font-size: 1.7rem;
+      font-weight: 800;
+      background: var(--grad-title);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+    .auth-logo p {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    @keyframes fadeSlideDown {
+      from { opacity: 0; transform: translateY(-15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Tab switcher */
+    .auth-tabs {
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 14px;
+      padding: 4px;
+      margin-bottom: 28px;
+      animation: fadeSlideDown 0.6s 0.3s both;
+    }
+    .auth-tab-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+    .auth-tab-btn.active {
+      background: var(--grad);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.35);
+    }
+    .auth-tab-btn:not(.active):hover {
+      color: #fff;
+      background: rgba(255,255,255,0.06);
+    }
+
+    /* Form panels with slide animation */
+    .auth-panel {
+      display: none;
+      animation: panelSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .auth-panel.active { display: block; }
+
+    @keyframes panelSlideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Input groups */
+    .auth-input-group {
+      position: relative;
+      margin-bottom: 18px;
+    }
+    .auth-input-group .auth-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.1rem;
+      color: var(--muted);
+      transition: color 0.3s;
+      pointer-events: none;
+    }
+    .auth-input {
+      width: 100%;
+      padding: 15px 16px 15px 48px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.15);
+      border-radius: 14px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    .auth-input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+    .auth-input:focus {
+      border-color: var(--purple);
+      background: rgba(139, 92, 246, 0.06);
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+    }
+    .auth-input:focus + .auth-icon,
+    .auth-input:focus ~ .auth-icon {
+      color: var(--purple);
+    }
+
+    /* Password toggle */
+    .auth-pass-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: color 0.3s;
+    }
+    .auth-pass-toggle:hover { color: var(--purple); }
+
+    /* Submit button */
+    .auth-submit {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      background: var(--grad);
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .auth-submit::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .auth-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
+    }
+    .auth-submit:hover::before { opacity: 1; }
+    .auth-submit:active { transform: translateY(0); }
+
+    .auth-submit.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    .auth-submit.loading::after {
+      content: '';
+      display: inline-block;
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      margin-left: 10px;
+      vertical-align: middle;
+      animation: btnSpin 0.6s linear infinite;
+    }
+    @keyframes btnSpin { to { transform: rotate(360deg); } }
+
+    /* Divider */
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 24px 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+    .auth-divider::before, .auth-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(139,92,246,0.25), transparent);
+    }
+
+    /* Social buttons */
+    .auth-social-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .auth-social-btn {
+      width: 100%;
+      padding: 14px 20px;
+      border: 1.5px solid rgba(139, 92, 246, 0.15);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .auth-social-btn:hover {
+      background: rgba(139, 92, 246, 0.08);
+      border-color: rgba(139, 92, 246, 0.35);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .auth-social-btn svg {
+      width: 20px; height: 20px;
+      flex-shrink: 0;
+    }
+
+    /* Phone input row */
+    .auth-phone-row {
+      display: flex;
+      gap: 10px;
+    }
+    .auth-phone-row .auth-country-code {
+      width: 90px;
+      padding: 15px 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.15);
+      border-radius: 14px;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      outline: none;
+      text-align: center;
+    }
+    .auth-phone-row .auth-input { flex: 1; padding-left: 16px; }
+
+    /* OTP input row */
+    .auth-otp-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .auth-otp-box {
+      width: 50px; height: 56px;
+      text-align: center;
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 14px;
+      color: var(--text);
+      outline: none;
+      transition: all 0.3s;
+    }
+    .auth-otp-box:focus {
+      border-color: var(--purple);
+      background: rgba(139, 92, 246, 0.08);
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+    }
+
+    /* Message alert */
+    .auth-msg {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      margin-top: 16px;
+      display: none;
+      animation: fadeSlideDown 0.3s both;
+    }
+    .auth-msg.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      color: #fca5a5;
+    }
+    .auth-msg.success {
+      display: block;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      color: #86efac;
+    }
+
+    /* Footer links */
+    .auth-footer {
+      text-align: center;
+      margin-top: 22px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      animation: fadeSlideDown 0.6s 0.5s both;
+    }
+    .auth-footer a {
+      color: var(--purple);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s;
+    }
+    .auth-footer a:hover {
+      color: #a78bfa;
+      text-decoration: underline;
+    }
+
+    /* Logged in state */
+    .auth-logged-in {
+      text-align: center;
+      animation: panelSlideIn 0.5s both;
+    }
+    .auth-avatar {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: var(--grad);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(139, 92, 246, 0.3);
+    }
+    .auth-user-email {
+      color: var(--purple);
+      font-weight: 700;
+      word-break: break-all;
+      margin: 4px 0 24px;
+      font-size: 0.95rem;
+    }
+    .auth-logged-in .auth-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .auth-btn-outline {
+      padding: 14px 20px;
+      border: 1.5px solid rgba(139, 92, 246, 0.3);
+      border-radius: 14px;
+      background: transparent;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+    }
+    .auth-btn-outline:hover {
+      background: rgba(139, 92, 246, 0.08);
+      border-color: var(--purple);
+      transform: translateY(-2px);
+    }
+
+    /* reCAPTCHA container (hidden) */
+    #recaptcha-container { margin-top: 10px; }
+
+    /* Responsive */
+    @media (max-width: 500px) {
+      .auth-glass { padding: 32px 22px; border-radius: 20px; }
+      .auth-logo h1 { font-size: 1.4rem; }
+      .auth-otp-box { width: 42px; height: 48px; font-size: 1.2rem; }
+    }
+
+    /* Particles effect */
+    .auth-particle {
+      position: fixed;
+      width: 3px; height: 3px;
+      background: rgba(139, 92, 246, 0.5);
+      border-radius: 50%;
+      z-index: -1;
+      animation: particleRise linear infinite;
+    }
+    @keyframes particleRise {
+      from { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      to { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+  </style>
 </head>
 <body>
 
+<!-- Animated Background -->
 <div class="bg-fx"></div>
+<div class="auth-orb auth-orb--1"></div>
+<div class="auth-orb auth-orb--2"></div>
+<div class="auth-orb auth-orb--3"></div>
 <div id="progress"></div>
 
-<section class="page page--center reveal-on-scroll">
-  <div class="auth-card">
-    <h1 class="page-title" id="authTitle" style="font-size: 2rem;">Welcome Back</h1>
-    <p class="page-sub" id="authSub" style="margin-bottom: 20px;">Login to your account</p>
+<!-- Particles -->
+<script>
+  for (let i = 0; i < 25; i++) {
+    const p = document.createElement('div');
+    p.className = 'auth-particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (6 + Math.random() * 8) + 's';
+    p.style.animationDelay = Math.random() * 5 + 's';
+    p.style.width = p.style.height = (2 + Math.random() * 3) + 'px';
+    document.body.appendChild(p);
+  }
+</script>
 
-    <div class="auth-tabs">
-      <button class="auth-tab active" id="tabLogin" type="button">Login</button>
-      <button class="auth-tab" id="tabSignup" type="button">Sign Up</button>
-    </div>
+<section class="auth-page">
+  <div class="auth-container">
+    <div class="auth-glass">
 
-    <form class="contact-form" id="authForm">
-      <input type="text" id="nameField" placeholder="Full Name" style="display:none">
-      <input type="email" id="emailField" placeholder="Email" required autocomplete="email">
-      <input type="password" id="passField" placeholder="Password (min 6 chars)" required autocomplete="current-password">
-      <button type="submit" class="btn" id="authSubmit" style="align-self: stretch; justify-content: center;">Login</button>
-      <button type="button" class="btn ghost" id="googleBtn" style="align-self: stretch; justify-content: center;">Continue with Google</button>
-      <p class="auth-msg" id="authMsg"></p>
-    </form>
-
-    <p style="margin-top:16px; text-align: center; font-size: 0.9rem;">
-      <a href="#" id="forgotLink" style="color:var(--accent); text-decoration: none;">Forgot password?</a>
-    </p>
-
-    <div id="loggedIn" style="display:none; text-align: center;">
-      <p class="page-sub">You are logged in as</p>
-      <p id="userEmail" style="color:var(--accent); font-weight:700; word-break:break-all; margin-bottom: 20px;"></p>
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <a href="dashboard.html" class="btn" style="justify-content: center;">My Dashboard</a>
-        <a href="../admin/index.html" class="btn" id="adminLink" style="display:none; justify-content: center;">Open Admin Panel</a>
-        <button class="btn ghost" id="logoutBtn" style="justify-content: center;">Logout</button>
+      <!-- Logo -->
+      <div class="auth-logo">
+        <div class="auth-logo-icon">S</div>
+        <h1 id="authMainTitle">Welcome Back</h1>
+        <p id="authMainSub">Sign in to access your tools</p>
       </div>
+
+      <!-- ═══ LOGIN / SIGNUP FORM ═══ -->
+      <div id="authFormWrapper">
+        <!-- Tabs -->
+        <div class="auth-tabs" id="authTabs">
+          <button class="auth-tab-btn active" data-tab="login" id="tabLoginBtn">Login</button>
+          <button class="auth-tab-btn" data-tab="signup" id="tabSignupBtn">Sign Up</button>
+        </div>
+
+        <!-- Login Panel -->
+        <div class="auth-panel active" id="panelLogin">
+          <form id="loginForm" autocomplete="on">
+            <div class="auth-input-group">
+              <span class="auth-icon">📧</span>
+              <input class="auth-input" type="email" id="loginEmail" placeholder="Email address" required autocomplete="email">
+            </div>
+            <div class="auth-input-group">
+              <span class="auth-icon">🔒</span>
+              <input class="auth-input" type="password" id="loginPass" placeholder="Password" required autocomplete="current-password">
+              <button type="button" class="auth-pass-toggle" id="toggleLoginPass">👁</button>
+            </div>
+            <div style="text-align:right; margin: -8px 0 14px;">
+              <a href="#" id="forgotPassLink" style="color:var(--purple); font-size:0.85rem; text-decoration:none; font-weight:500;">Forgot password?</a>
+            </div>
+            <button type="submit" class="auth-submit" id="loginSubmitBtn">
+              Login →
+            </button>
+          </form>
+
+          <div class="auth-divider">or continue with</div>
+
+          <div class="auth-social-grid">
+            <button class="auth-social-btn" id="googleLoginBtn">
+              <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+              Continue with Google
+            </button>
+            <button class="auth-social-btn" id="phoneLoginBtn">
+              📱 Continue with Phone
+            </button>
+          </div>
+        </div>
+
+        <!-- Signup Panel -->
+        <div class="auth-panel" id="panelSignup">
+          <form id="signupForm" autocomplete="on">
+            <div class="auth-input-group">
+              <span class="auth-icon">👤</span>
+              <input class="auth-input" type="text" id="signupName" placeholder="Full Name" required>
+            </div>
+            <div class="auth-input-group">
+              <span class="auth-icon">📧</span>
+              <input class="auth-input" type="email" id="signupEmail" placeholder="Email address" required autocomplete="email">
+            </div>
+            <div class="auth-input-group">
+              <span class="auth-icon">🔒</span>
+              <input class="auth-input" type="password" id="signupPass" placeholder="Create password (min 6 chars)" required autocomplete="new-password" minlength="6">
+              <button type="button" class="auth-pass-toggle" id="toggleSignupPass">👁</button>
+            </div>
+            <div class="auth-input-group">
+              <span class="auth-icon">🔒</span>
+              <input class="auth-input" type="password" id="signupConfirm" placeholder="Confirm password" required autocomplete="new-password">
+            </div>
+            <button type="submit" class="auth-submit" id="signupSubmitBtn">
+              Create Account →
+            </button>
+          </form>
+
+          <div class="auth-divider">or sign up with</div>
+
+          <div class="auth-social-grid">
+            <button class="auth-social-btn" id="googleSignupBtn">
+              <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+              Continue with Google
+            </button>
+          </div>
+        </div>
+
+        <!-- Phone OTP Panel -->
+        <div class="auth-panel" id="panelPhone">
+          <div id="phoneStep1">
+            <p style="color:var(--muted); font-size:0.9rem; margin-bottom:18px; text-align:center;">Enter your phone number to receive a verification code</p>
+            <div class="auth-input-group">
+              <div class="auth-phone-row">
+                <input class="auth-country-code" type="text" value="+91" id="countryCode">
+                <input class="auth-input" type="tel" id="phoneNumber" placeholder="Mobile number" required pattern="[0-9]{10}">
+              </div>
+            </div>
+            <div id="recaptcha-container"></div>
+            <button type="button" class="auth-submit" id="sendOtpBtn">
+              Send OTP →
+            </button>
+          </div>
+
+          <div id="phoneStep2" style="display:none;">
+            <p style="color:var(--muted); font-size:0.9rem; margin-bottom:8px; text-align:center;">Enter the 6-digit code sent to</p>
+            <p style="color:var(--purple); font-weight:700; text-align:center; margin-bottom:18px;" id="otpSentTo"></p>
+            <div class="auth-otp-row">
+              <input class="auth-otp-box" type="text" maxlength="1" id="otp1">
+              <input class="auth-otp-box" type="text" maxlength="1" id="otp2">
+              <input class="auth-otp-box" type="text" maxlength="1" id="otp3">
+              <input class="auth-otp-box" type="text" maxlength="1" id="otp4">
+              <input class="auth-otp-box" type="text" maxlength="1" id="otp5">
+              <input class="auth-otp-box" type="text" maxlength="1" id="otp6">
+            </div>
+            <button type="button" class="auth-submit" id="verifyOtpBtn">
+              Verify & Login →
+            </button>
+            <p style="text-align:center; margin-top:14px;">
+              <a href="#" id="resendOtp" style="color:var(--purple); font-size:0.85rem; text-decoration:none;">Resend OTP</a>
+            </p>
+          </div>
+
+          <div style="text-align:center; margin-top:20px;">
+            <a href="#" id="backToEmail" style="color:var(--muted); font-size:0.85rem; text-decoration:none;">← Back to Email Login</a>
+          </div>
+        </div>
+
+        <!-- Forgot Password Panel -->
+        <div class="auth-panel" id="panelForgot">
+          <p style="color:var(--muted); font-size:0.9rem; margin-bottom:18px; text-align:center;">Enter your email and we'll send you a password reset link</p>
+          <form id="forgotForm">
+            <div class="auth-input-group">
+              <span class="auth-icon">📧</span>
+              <input class="auth-input" type="email" id="forgotEmail" placeholder="Email address" required>
+            </div>
+            <button type="submit" class="auth-submit" id="forgotSubmitBtn">
+              Send Reset Link →
+            </button>
+          </form>
+          <div style="text-align:center; margin-top:20px;">
+            <a href="#" id="backToLogin" style="color:var(--muted); font-size:0.85rem; text-decoration:none;">← Back to Login</a>
+          </div>
+        </div>
+
+        <!-- Message box -->
+        <div class="auth-msg" id="authMsg"></div>
+      </div>
+
+      <!-- ═══ LOGGED IN STATE ═══ -->
+      <div class="auth-logged-in" id="loggedInView" style="display:none;">
+        <div class="auth-avatar" id="userAvatar">S</div>
+        <h2 id="welcomeName" style="font-size:1.4rem; margin-bottom:2px;">Hello! 👋</h2>
+        <p class="auth-user-email" id="userEmailDisplay"></p>
+        <div class="auth-actions">
+          <a href="dashboard.html" class="auth-submit" style="text-decoration:none; text-align:center;">My Dashboard</a>
+          <a href="../admin/index.html" class="auth-btn-outline" id="adminPanelLink" style="display:none;">🔒 Admin Panel</a>
+          <button class="auth-btn-outline" id="logoutBtn">Logout</button>
+        </div>
+      </div>
+
     </div>
   </div>
 </section>
@@ -54,107 +696,238 @@
 <script src="../assets/js/ssdk-header.js"></script>
 <script src="../assets/js/ssdk-footer.js"></script>
 
+<!-- ═══ Supabase Authentication Logic ═══ -->
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import {
-  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-  signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail,
-  GoogleAuthProvider, signInWithPopup
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { firebaseConfig, ADMIN_EMAILS } from "../assets/js/firebase-config.js";
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Your Supabase Keys
+const SUPABASE_URL = "https://wyqdfwtslkfzmorvggdq.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5cWRmd3RzbGtmem1vcnZnZ2RxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3NzQ5MTYsImV4cCI6MjA5OTM1MDkxNn0.I1CPWLqtv-p3XBC2F_6f-IEBbr0M_G6JkB76vc1ZR8A";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const ADMIN_EMAILS = ["dearswarnavadaskarmakar@gmail.com"];
 
 const $ = id => document.getElementById(id);
-let mode = "login";
 const isAdmin = e => ADMIN_EMAILS.map(x=>x.toLowerCase()).includes((e||"").toLowerCase());
 
-function setMode(m){
-  mode = m;
-  const signup = m === "signup";
-  $("tabLogin").classList.toggle("active", !signup);
-  $("tabSignup").classList.toggle("active", signup);
-  $("nameField").style.display = signup ? "block" : "none";
-  $("authTitle").textContent = signup ? "Create Account" : "Welcome Back";
-  $("authSub").textContent = signup ? "Sign up for a free account" : "Login to your account";
-  $("authSubmit").textContent = signup ? "Sign Up" : "Login";
-  msg("");
+// ─── Tab Switching ───
+const panels = { login: $("panelLogin"), signup: $("panelSignup"), phone: $("panelPhone"), forgot: $("panelForgot") };
+const tabs = { login: $("tabLoginBtn"), signup: $("tabSignupBtn") };
+
+function showPanel(name) {
+  Object.values(panels).forEach(p => p.classList.remove("active"));
+  Object.values(tabs).forEach(t => t.classList.remove("active"));
+  panels[name].classList.add("active");
+  if (tabs[name]) tabs[name].classList.add("active");
+
+  const titles = {
+    login: ["Welcome Back", "Sign in to access your tools"],
+    signup: ["Create Account", "Join 10,000+ users today"],
+    phone: ["Phone Login", "Verify with your mobile number"],
+    forgot: ["Reset Password", "We'll help you get back in"]
+  };
+  $("authMainTitle").textContent = titles[name][0];
+  $("authMainSub").textContent = titles[name][1];
+  
+  $("authTabs").style.display = (name === "phone" || name === "forgot") ? "none" : "flex";
+  clearMsg();
 }
-function msg(t, ok=false){
+
+$("tabLoginBtn").onclick = () => showPanel("login");
+$("tabSignupBtn").onclick = () => showPanel("signup");
+$("phoneLoginBtn").onclick = () => showPanel("phone");
+$("backToEmail").onclick = e => { e.preventDefault(); showPanel("login"); };
+$("forgotPassLink").onclick = e => { e.preventDefault(); showPanel("forgot"); };
+$("backToLogin").onclick = e => { e.preventDefault(); showPanel("login"); };
+
+// ─── Message Display ───
+function showMsg(text, type = "error") {
   const el = $("authMsg");
-  el.textContent = t;
-  el.style.color = ok ? "var(--accent)" : "#ff6b6b";
-  el.style.display = t ? "block" : "none";
+  el.textContent = text;
+  el.className = "auth-msg " + type;
+}
+function clearMsg() {
+  const el = $("authMsg");
+  el.className = "auth-msg";
+  el.textContent = "";
 }
 
-$("tabLogin").onclick = () => setMode("login");
-$("tabSignup").onclick = () => setMode("signup");
+function setLoading(btn, loading) {
+  btn.classList.toggle("loading", loading);
+}
 
-$("authForm").addEventListener("submit", async e => {
+// ─── Password Toggle ───
+function setupToggle(toggleId, inputId) {
+  $(toggleId).onclick = () => {
+    const inp = $(inputId);
+    const isPass = inp.type === "password";
+    inp.type = isPass ? "text" : "password";
+    $(toggleId).textContent = isPass ? "🙈" : "👁";
+  };
+}
+setupToggle("toggleLoginPass", "loginPass");
+setupToggle("toggleSignupPass", "signupPass");
+
+// ─── OTP Input Auto-focus ───
+for (let i = 1; i <= 6; i++) {
+  $(`otp${i}`).addEventListener("input", function() {
+    if (this.value.length === 1 && i < 6) $(`otp${i+1}`).focus();
+  });
+  $(`otp${i}`).addEventListener("keydown", function(e) {
+    if (e.key === "Backspace" && !this.value && i > 1) $(`otp${i-1}`).focus();
+  });
+}
+
+// ─── Email Login ───
+$("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const email = $("emailField").value.trim();
-  const pass  = $("passField").value;
-  try {
-    if(mode === "signup"){
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      const name = $("nameField").value.trim();
-      if(name) await updateProfile(cred.user, { displayName: name });
-      msg("Account created successfully!", true);
-    } else {
-      await signInWithEmailAndPassword(auth, email, pass);
-    }
-  } catch(err){ msg(prettyError(err.code)); }
+  const btn = $("loginSubmitBtn");
+  setLoading(btn, true);
+  
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: $("loginEmail").value.trim(),
+    password: $("loginPass").value
+  });
+  
+  if (error) showMsg(error.message);
+  setLoading(btn, false);
 });
 
-$("googleBtn").onclick = async () => {
-  try { await signInWithPopup(auth, new GoogleAuthProvider()); }
-  catch(err){ msg(prettyError(err.code)); }
-};
-
-$("forgotLink").onclick = async e => {
+// ─── Email Signup ───
+$("signupForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const email = $("emailField").value.trim();
-  if(!email){ msg("Enter your email above first, then click Forgot password."); return; }
-  try { await sendPasswordResetEmail(auth, email); msg("Password reset email sent!", true); }
-  catch(err){ msg(prettyError(err.code)); }
+  const pass = $("signupPass").value;
+  const confirm = $("signupConfirm").value;
+  if (pass !== confirm) { showMsg("Passwords do not match!"); return; }
+
+  const btn = $("signupSubmitBtn");
+  setLoading(btn, true);
+  
+  const { data, error } = await supabase.auth.signUp({
+    email: $("signupEmail").value.trim(),
+    password: pass,
+    options: {
+      data: { full_name: $("signupName").value.trim() }
+    }
+  });
+
+  if (error) {
+    showMsg(error.message);
+  } else {
+    showMsg("Account created! Please check your email to verify.", "success");
+  }
+  setLoading(btn, false);
+});
+
+// ─── Google Login ───
+async function googleLogin() {
+  const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+  if (error) showMsg(error.message);
+}
+$("googleLoginBtn").onclick = googleLogin;
+$("googleSignupBtn").onclick = googleLogin;
+
+// ─── Phone OTP Login ───
+let currentPhone = "";
+$("sendOtpBtn").onclick = async () => {
+  currentPhone = $("countryCode").value + $("phoneNumber").value.trim();
+  if ($("phoneNumber").value.trim().length < 10) {
+    showMsg("Please enter a valid 10-digit phone number.");
+    return;
+  }
+
+  const btn = $("sendOtpBtn");
+  setLoading(btn, true);
+  clearMsg();
+
+  const { error } = await supabase.auth.signInWithOtp({ phone: currentPhone });
+
+  if (error) {
+    showMsg(error.message);
+  } else {
+    $("otpSentTo").textContent = currentPhone;
+    $("phoneStep1").style.display = "none";
+    $("phoneStep2").style.display = "block";
+    showMsg("OTP sent successfully! 📱", "success");
+  }
+  setLoading(btn, false);
 };
 
-$("logoutBtn").onclick = () => signOut(auth);
+$("verifyOtpBtn").onclick = async () => {
+  let otp = "";
+  for (let i = 1; i <= 6; i++) otp += $(`otp${i}`).value;
+  if (otp.length !== 6) { showMsg("Please enter the full 6-digit OTP."); return; }
 
-onAuthStateChanged(auth, user => {
-  const form = $("authForm");
-  $("adminLink").style.display = "none";
-  if(user){
-    form.style.display = "none";
-    $("forgotLink").parentElement.style.display = "none";
-    document.querySelector(".auth-tabs").style.display = "none";
-    $("loggedIn").style.display = "block";
-    $("userEmail").textContent = user.email;
-    $("authTitle").textContent = "Hello " + (user.displayName || "there") + " 👋";
-    $("authSub").textContent = "Good to see you again";
-    if(isAdmin(user.email)) $("adminLink").style.display = "inline-block";
+  const btn = $("verifyOtpBtn");
+  setLoading(btn, true);
+  
+  const { data, error } = await supabase.auth.verifyOtp({
+    phone: currentPhone,
+    token: otp,
+    type: 'sms'
+  });
+
+  if (error) {
+    showMsg("Invalid OTP. Please try again.");
+  }
+  setLoading(btn, false);
+};
+
+$("resendOtp").onclick = async e => {
+  e.preventDefault();
+  const { error } = await supabase.auth.signInWithOtp({ phone: currentPhone });
+  if (error) showMsg(error.message);
+  else showMsg("OTP Resent! Check your phone.", "success");
+};
+
+// ─── Forgot Password ───
+$("forgotForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const btn = $("forgotSubmitBtn");
+  setLoading(btn, true);
+  
+  const { error } = await supabase.auth.resetPasswordForEmail($("forgotEmail").value.trim());
+  
+  if (error) {
+    showMsg(error.message);
   } else {
-    form.style.display = "flex";
-    $("forgotLink").parentElement.style.display = "block";
-    document.querySelector(".auth-tabs").style.display = "flex";
-    $("loggedIn").style.display = "none";
+    showMsg("Password reset email sent! Check your inbox. ✉️", "success");
+  }
+  setLoading(btn, false);
+});
+
+// ─── Logout ───
+$("logoutBtn").onclick = async () => {
+  await supabase.auth.signOut();
+  window.location.reload();
+};
+
+// ─── Auth State Observer ───
+supabase.auth.onAuthStateChange((event, session) => {
+  if (session && session.user) {
+    const user = session.user;
+    $("authFormWrapper").style.display = "none";
+    $("loggedInView").style.display = "block";
+    
+    $("userEmailDisplay").textContent = user.email || user.phone || "";
+    const displayName = user.user_metadata?.full_name || "there";
+    
+    $("welcomeName").textContent = `Hello, ${displayName}! 👋`;
+    $("userAvatar").textContent = (displayName[0] || "U").toUpperCase();
+    $("authMainTitle").textContent = "Welcome Back!";
+    $("authMainSub").textContent = "You are logged in";
+
+    if (isAdmin(user.email)) $("adminPanelLink").style.display = "block";
+  } else {
+    $("authFormWrapper").style.display = "block";
+    $("loggedInView").style.display = "none";
   }
 });
 
-function prettyError(code){
-  const map = {
-    "auth/invalid-email":"Invalid email address.",
-    "auth/user-not-found":"No account found with this email.",
-    "auth/wrong-password":"Incorrect password.",
-    "auth/invalid-credential":"Invalid email or password.",
-    "auth/email-already-in-use":"This email is already registered. Try logging in.",
-    "auth/weak-password":"Password should be at least 6 characters.",
-    "auth/popup-closed-by-user":"Google sign-in was cancelled.",
-    "auth/too-many-requests":"Too many attempts. Please try again later."
-  };
-  return map[code] || ("Something went wrong (" + code + ").");
-}
+// Initial check
+supabase.auth.getSession().then(({ data: { session } }) => {
+  if(!session) showPanel("login");
+});
 </script>
 </body>
 </html>
